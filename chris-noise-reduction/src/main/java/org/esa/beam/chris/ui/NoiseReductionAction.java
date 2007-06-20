@@ -44,7 +44,8 @@ public class NoiseReductionAction extends ExecCommand {
         //
         ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(), "CHRIS Noise Reduction",
                                                   ModalDialog.ID_OK_CANCEL_HELP, "");
-        modalDialog.setContent(new NoiseReductionPanel());
+        NoiseReductionPresenter presenter = new NoiseReductionPresenter(VisatApp.getApp().getProductManager().getProducts());
+        modalDialog.setContent(new NoiseReductionPanel(presenter));
         modalDialog.show();
     }
 
