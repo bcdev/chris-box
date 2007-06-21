@@ -197,6 +197,16 @@
                     <encoding>ISO-8859-1</encoding>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-idea-plugin</artifactId>
+                <configuration>
+                    <downloadSources>true</downloadSources>
+                    <downloadJavadocs>true</downloadJavadocs>
+                    <jdkName>1.6</jdkName>
+                    <jdkLevel>1.6</jdkLevel>
+                    <exclude>target</exclude>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
