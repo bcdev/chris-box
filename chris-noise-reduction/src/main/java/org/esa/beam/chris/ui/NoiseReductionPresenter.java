@@ -71,13 +71,14 @@ public class NoiseReductionPresenter {
     }
 
     public String[][] getMetadata() {
+        final String na = "Not available";
         Product selectedProduct = productList.get(getSelectionIndex());
 
-        metadata[0][1] = "Not available";
-        metadata[1][1] = "Not available";
-        metadata[2][1] = "Not available";
-        metadata[3][1] = "Not available";
-        metadata[4][1] = "Not available";
+        metadata[0][1] = na;
+        metadata[1][1] = na;
+        metadata[2][1] = na;
+        metadata[3][1] = na;
+        metadata[4][1] = na;
 
         MetadataElement root = selectedProduct.getMetadataRoot();
         if (root == null) {
@@ -89,11 +90,11 @@ public class NoiseReductionPresenter {
             return metadata;
         }
 
-        metadata[0][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_CHRIS_MODE, "Not available");
-        metadata[1][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_TARGET_NAME, "Not available");
-        metadata[2][1] = getTargetCoordinatesString(mph, "Not available");
-        metadata[3][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_NOMINAL_FLY_BY_ZENITH_ANGLE, "Not available");;
-        metadata[4][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE, "Not available");
+        metadata[0][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_CHRIS_MODE, na);
+        metadata[1][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_TARGET_NAME, na);
+        metadata[2][1] = getTargetCoordinatesString(mph, na);
+        metadata[3][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_NOMINAL_FLY_BY_ZENITH_ANGLE, na);
+        metadata[4][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE, na);
 
         return metadata;
     }
@@ -122,4 +123,5 @@ public class NoiseReductionPresenter {
     public void setSelectionIndex(int i) {
         productSelectionModel.setSelectionInterval(i, i);
     }
+    
 }
