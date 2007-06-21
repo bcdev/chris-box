@@ -55,7 +55,21 @@ public class NoiseReductionPresenterTest extends TestCase {
 
         String[][] metaData = nrp.getMetadata();
         checkMetadata(metaData, "DummyMode1", "DummyTarget1");
+        String[] productNames = nrp.getProductNames();
+        for (int i = 0; i < expectedProducts.length; i++) {
+            assertEquals(expectedProducts[i].getName(), productNames[i]);
+        }
 
+    }
+
+    public void testConstructorWithoutProducts() {
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(new Product[0]);
+
+        String[][] metadata = nrp.getMetadata();
+        assertEquals(5, metadata.length);
+        for (int i = 0; i < metadata.length; i++) {
+            assertEquals("", metadata[i][1]);
+        }
     }
 
     public void testAddingRemoving() {

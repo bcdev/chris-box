@@ -48,6 +48,7 @@ public class NoiseReductionPanel extends JPanel {
     private javax.swing.JButton removeButton;
     private javax.swing.JPanel verticalStripingPanel;
 
+    // todo - remove this when finished
     public static void main(String[] args) {
         JFrame frame = new JFrame("Noise Reduction");
         NoiseReductionPresenter presenter = new NoiseReductionPresenter(new Product[0]);
@@ -77,11 +78,12 @@ public class NoiseReductionPanel extends JPanel {
         dataPanel = new JPanel();
         aquisitionSetPanel = new JPanel();
         jScrollPane1 = new JScrollPane();
-        aquisitionImageList = new JList();
-        addButton = new JButton();
+        aquisitionImageList = new JList(presenter.getProductNames());
+        aquisitionImageList.setSelectionModel(presenter.getSelectionModel());
+        addButton = new JButton(presenter.getAddProductAction());
         removeButton = new JButton();
         metadataPanel = new JPanel();
-        metadataTable = new JTable();
+        metadataTable = new JTable(new DefaultTableModel(presenter.getMetadata(), new String[]{"Name", "Value"}));
         optionalSettingsPanel = new JPanel();
         jPanel4 = new JPanel();
         advancedSettingsButton = new JButton();
@@ -159,32 +161,6 @@ public class NoiseReductionPanel extends JPanel {
                                                                  new Font("Tahoma", 0, 11),
                                                                  new Color(0, 70, 213)));
         metadataTable.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0)));
-        metadataTable.setModel(new DefaultTableModel(
-                new Object [][]{
-                        {"CHRIS-Mode", null},
-                        {"Target Coordinates", null},
-                        {"Fly-By Zenith", null},
-                        {"Minimal Zenith", null}
-                },
-                new String []{
-                        "Name", "Value"
-                }
-        ) {
-            Class[] types = new Class []{
-                    java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean []{
-                    false, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types[columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit[columnIndex];
-            }
-        });
         metadataTable.setTableHeader(null);
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.fill = GridBagConstraints.BOTH;
