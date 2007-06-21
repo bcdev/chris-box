@@ -25,12 +25,15 @@ public class NoiseReductionPresenter {
 
     public NoiseReductionPresenter(Product[] products) {
         productList = new ArrayList<Product>(5);
-        for (Product product : products) {
-            addProduct(product);
-        }
 
         productSelectionModel = new DefaultListSelectionModel();
         productSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        if (products.length > 0) {
+            for (Product product : products) {
+                addProduct(product);
+            }
+            productSelectionModel.setSelectionInterval(0, 0);
+        }
 
         metadata = new String[5][2];
         metadata[0][0] = ChrisConstants.ATTR_NAME_CHRIS_MODE;
@@ -50,6 +53,8 @@ public class NoiseReductionPresenter {
 
     public void addProduct(Product product) {
         productList.add(product);
+        int newIndex = productList.size() - 1;
+        productSelectionModel.setSelectionInterval(newIndex, newIndex);
     }
 
     public void removeSelectedProduct() {
@@ -62,7 +67,7 @@ public class NoiseReductionPresenter {
         if (productList.isEmpty()) {
             return -1;
         } else {
-            if (getSelectionIndex() > 0) {
+            if (getSelectionIndex() == productList.size()) {
                 return getSelectionIndex() - 1;
             }
 
@@ -117,11 +122,15 @@ public class NoiseReductionPresenter {
     }
 
     public int getSelectionIndex() {
-        return productSelectionModel.getLeadSelectionIndex();
+        return productSelectionModel.getMaxSelectionIndex();
     }
 
     public void setSelectionIndex(int i) {
-        productSelectionModel.setSelectionInterval(i, i);
+        if (i == -1) {
+            productSelectionModel.clearSelection();
+        } else {
+            productSelectionModel.setSelectionInterval(i, i);
+        }
     }
-    
+
 }
