@@ -1,4 +1,4 @@
-/* $Id: $
+/* $Id$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
@@ -25,7 +25,7 @@ import java.util.Arrays;
  * Class for performing local regression smoothing.
  *
  * @author Ralf Quast
- * @version $Revision: $ $Date: $
+ * @version $Revision$ $Date$
  */
 class LocalRegressionSmoothing {
 

@@ -39,7 +39,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The operator implementation.
+ * Operator for calculating the vertical striping correction factors.
+ *
+ * @author Ralf Quast
+ * @version $Revision: $ $Date: $
  */
 public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
@@ -61,6 +64,11 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     private transient Band[][] sourceDataBands;
     private transient Band[][] sourceMaskBands;
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param spi the operator service provider interface.
+     */
     public VerticalStripingCorrectionOperator(OperatorSpi spi) {
         super(spi);
     }
@@ -337,16 +345,16 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
 
     public static class Spi extends AbstractOperatorSpi {
-
         public Spi() {
             super(VerticalStripingCorrectionOperator.class, "VerticalStripingCorrection");
         }
-
     }
 
 
+    /**
+     * Panorama raster.
+     */
     private static class PanoramaRaster implements Raster {
-
         private Raster[] rasters;
         private int height;
 
@@ -423,7 +431,6 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                 }
             }
         }
-
     }
 
 }
