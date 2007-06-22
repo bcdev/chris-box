@@ -67,12 +67,12 @@ public class NoiseReductionPresenterTest extends TestCase {
 
         String[][] metadata = nrp.getMetadata();
         assertEquals(5, metadata.length);
-        for (int i = 0; i < metadata.length; i++) {
-            assertEquals("", metadata[i][1]);
+        for (String[] metadataEntry : metadata) {
+            assertEquals("", metadataEntry[1]);
         }
     }
 
-    public void testAddingRemoving() {
+    public void testAddRemove() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts);
 
         Product fourth = createChrisDummyProduct("fourth", "type4", "DummyMode4", "DummyTarget4");
@@ -109,17 +109,14 @@ public class NoiseReductionPresenterTest extends TestCase {
         assertEquals(0, nrp.getSelectionIndex());
     }
 
-
     public void testSelectionChange() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts);
         checkMetadata(nrp.getMetadata(), "DummyMode1", "DummyTarget1");
 
         nrp.setSelectionIndex(2);
-
         checkMetadata(nrp.getMetadata(), "DummyMode3", "DummyTarget3");
 
         nrp.setSelectionIndex(1);
-
         checkMetadata(nrp.getMetadata(), "DummyMode2", "DummyTarget2");
     }
 
@@ -146,13 +143,17 @@ public class NoiseReductionPresenterTest extends TestCase {
     private void checkMetadata(String[][] metaData, String mode, String target) {
         assertNotNull(metaData);
         assertEquals(5, metaData.length);
+
         for (int i = 0; i < meatadatNames.length; i++) {
             assertEquals(meatadatNames[i], metaData[i][0]);
         }
+
         assertEquals(2, metaData[0].length);
         assertEquals(mode, metaData[0][1]);
         assertEquals(target, metaData[1][1]);
+
         assertEquals(new GeoPos(45.32f, 10.8f).toString(), metaData[2][1]);
+
         assertEquals("Not available", metaData[3][1]);
         assertEquals("Not available", metaData[4][1]);
     }

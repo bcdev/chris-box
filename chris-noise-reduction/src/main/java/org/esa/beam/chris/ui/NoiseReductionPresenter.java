@@ -6,9 +6,9 @@ import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.util.SystemUtils;
 import org.esa.beam.util.io.BeamFileChooser;
 import org.esa.beam.util.io.BeamFileFilter;
-import org.esa.beam.util.SystemUtils;
 import org.esa.beam.visat.VisatApp;
 
 import javax.swing.AbstractAction;
@@ -25,6 +25,7 @@ import java.util.List;
 /**
  * Created by IntelliJ IDEA.
  *
+ * @author Marco Peters
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
@@ -33,7 +34,7 @@ public class NoiseReductionPresenter {
     private List<Product> productList;
     private ListSelectionModel productSelectionModel;
     private String[][] metadata;
-    private AbstractAction addProductAction;
+    private Action addProductAction;
 
     public NoiseReductionPresenter(Product[] products) {
         productList = new ArrayList<Product>(5);
@@ -174,7 +175,8 @@ public class NoiseReductionPresenter {
     }
 
     private static class AddProductAction extends AbstractAction {
-        private static String LAST_OPEN_DIR = "chris.noisered.file.lastOpenDir";
+
+        private static String LAST_OPEN_DIR = "chris.ui.file.lastOpenDir";
         private NoiseReductionPresenter presenter;
 
         public AddProductAction(NoiseReductionPresenter presenter) {
@@ -189,30 +191,28 @@ public class NoiseReductionPresenter {
                 public boolean accept(File file) {
                     boolean accept = super.accept(file);
 
-                    if (!accept) {
-                        return false;
-                    }
-                    if (presenter.getProducts().length == 0) {
-                        return true;
+                    if (!accept || presenter.getProducts().length == 0) {
+                        return accept;
                     }
 
-                    return isValidFileName(file);
+                    return acceptFileName(file);
                 }
 
-                private boolean isValidFileName(File file) {
+                private boolean acceptFileName(File file) {
                     File fileLocation = presenter.getProducts()[0].getFileLocation();
                     String[] expectedParts = fileLocation.getName().split("_", 4);
                     String[] actualParts = file.getName().split("_", 4);
 
-                    return expectedParts[0].equals(actualParts[0]) && expectedParts[1].equals(
-                            actualParts[1]) && expectedParts[2].equals(actualParts[2]) && expectedParts[4].equals(
-                            actualParts[4]);
+                    return expectedParts[0].equals(actualParts[0])
+                           && expectedParts[1].equals(actualParts[1]) 
+                           && expectedParts[2].equals(actualParts[2])
+                           && expectedParts[4].equals(actualParts[4]);
                 }
             };
 
             BeamFileChooser fileChooser = new BeamFileChooser();
             String lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR,
-                                                                SystemUtils.getUserHomeDir().getPath());
+                                                                                  SystemUtils.getUserHomeDir().getPath());
             fileChooser.setFileFilter(fileFilter);
             fileChooser.setCurrentDirectory(new File(lastDir));
 
@@ -227,7 +227,8 @@ public class NoiseReductionPresenter {
                     }
                 }
 
-                VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR, fileChooser.getCurrentDirectory().getPath());
+                VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR,
+                                                                     fileChooser.getCurrentDirectory().getPath());
             }
 
         }
