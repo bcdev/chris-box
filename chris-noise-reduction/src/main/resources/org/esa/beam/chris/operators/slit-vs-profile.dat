@@ -1,4 +1,4 @@
-# column 1: CCD column index
+# column 1: CCD position (across-track)
 # column 2: vertical striping gain factor
 0.725	9.4352705e-01
 0.730	9.5327607e-01

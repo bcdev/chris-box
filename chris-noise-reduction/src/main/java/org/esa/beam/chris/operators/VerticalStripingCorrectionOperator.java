@@ -39,7 +39,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Operator for calculating the vertical striping correction factors.
+ * Operator for calculating the vertical striping correction factors for noise
+ * due to the CCD elements.
  *
  * @author Ralf Quast
  * @version $Revision: $ $Date: $
@@ -161,10 +162,19 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         computeCorrectionFactors(sourceData, sourceMask, targetData, targetRectangle);
     }
 
+    @Override
     public void dispose() {
         // todo - add any clean-up code here, the targetProduct is disposed by the framework
     }
 
+    /**
+     * Computes the vertical striping correction factors for a hyperspectral image.
+     *
+     * @param data            the hyperspectral image.
+     * @param mask            the quality mask for the hyperspectral image.
+     * @param target          the target raster which, on return, holds the correction factors.
+     * @param targetRectangle the target rectangle.
+     */
     private void computeCorrectionFactors(Raster[] data, Raster[] mask, Raster[] target, Rectangle targetRectangle) {
         final boolean[][] edge = createSpatioSpectralEdgeMask(data);
 
