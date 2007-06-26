@@ -79,12 +79,12 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
         // initialization
         thresholdMap = new HashMap<String, Double>(6);
-        thresholdMap.put("CHRIS_M1", 0.08);
-        thresholdMap.put("CHRIS_M2", 0.05);
-        thresholdMap.put("CHRIS_M3", 0.08);
-        thresholdMap.put("CHRIS_M3A", 0.08);
-        thresholdMap.put("CHRIS_M4", 0.08);
-        thresholdMap.put("CHRIS_M5", 0.08);
+        thresholdMap.put("1", 0.08);
+        thresholdMap.put("2", 0.05);
+        thresholdMap.put("3", 0.08);
+        thresholdMap.put("3A", 0.08);
+        thresholdMap.put("4", 0.08);
+        thresholdMap.put("5", 0.08);
 
         smoothing = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
@@ -135,11 +135,13 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
     @Override
     public void computeTiles(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+    	System.out.println("Compute: "+targetRectangle.toString());
         try {
             pm.beginTask("computing correction factors", 2 * spectralBandCount + 3);
             edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
 
             for (int i = 0; i < spectralBandCount; ++i) {
+            	System.out.println("***** BandNr:"+i);
                 computeCorrectionFactors(sourceDataBands[i], sourceMaskBands[i], targetBands[i], targetRectangle);
                 pm.worked(1);
             }
@@ -172,23 +174,26 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
         // 1. Compute the average across-track spatial derivative profile
         final double[] p = new double[colCount];
-        for (int row = 0, i = 0; i < sourceProducts.length; ++i) {
+        int[] count = new int[colCount]; 
+        int panY = 0;
+        for (int i = 0; i < sourceProducts.length; ++i) {
             final Raster data = getTile(sourceDataBands[i], panorama.getRectangle(i));
             final Raster mask = getTile(sourceMaskBands[i], panorama.getRectangle(i));
 
-            for (int count = 0, col = 1; col < colCount; ++col) {
-                for (int j = 0; j < panorama.getHeight(i); ++j, ++row) {
-                    if (!edgeMask[row][col] && mask.getInt(col, j) == 0 && mask.getInt(col - 1, j) == 0) {
-                        p[col] += log(data.getDouble(col, j) / data.getDouble(col - 1, j));
-                        ++count;
+            for (int col = 1; col < colCount; ++col) {
+                for (int sceneY = 0; sceneY < panorama.getHeight(i); ++sceneY) {
+                    if (!edgeMask[panY+sceneY][col] && mask.getInt(col, sceneY) == 0 && mask.getInt(col - 1, sceneY) == 0) {
+                        p[col] += log(data.getDouble(col, sceneY) / data.getDouble(col - 1, sceneY));
+                        ++count[col];
                     }
                 }
-                if (count > 0) {
-                    p[col] /= count;
+                if (count[col] > 0) {
+                    p[col] /= count[col];
                 } else {
                     p[col] = p[col - 1];
                 }
             }
+            panY += panorama.getHeight(i);
         }
         // 2. Compute the integrated profile
         for (int col = 1; col < colCount; ++col) {
@@ -236,18 +241,18 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             final double[][] sca = new double[colCount][rowCount];
 
             for (final Band[] bands : sourceDataBands) {
-                for (int row = 0, i = 0; i < bands.length; ++i) {
+                for (int panY = 0, i = 0; i < bands.length; ++i) {
                     final Raster data = getTile(bands[i], panorama.getRectangle(i));
 
-                    for (int j = 0; j < data.getHeight(); ++j, ++row) {
-                        double r1 = data.getDouble(0, j);
-                        sad[0][row] += r1 * r1;
+                    for (int sceneY = 0; sceneY < data.getHeight(); ++sceneY, ++panY) {
+                        double r1 = data.getDouble(0, sceneY);
+                        sad[0][panY] += r1 * r1;
 
                         for (int col = 1; col < colCount; ++col) {
-                            final double r2 = data.getDouble(col, j);
+                            final double r2 = data.getDouble(col, sceneY);
 
-                            sca[col][row] += r2 * r1;
-                            sad[col][row] += r2 * r2;
+                            sca[col][panY] += r2 * r1;
+                            sad[col][panY] += r2 * r2;
                             r1 = r2;
                         }
                     }
