@@ -27,7 +27,6 @@ import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Raster;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -65,7 +64,8 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     private transient Band[] targetBands;
     private transient Band[][] sourceDataBands;
     private transient Band[][] sourceMaskBands;
-    private transient PanoramaLayout sourceLayout;
+    private transient Panorama panorama;
+    private transient boolean[][] edgeMask;
 
     /**
      * Creates an instance of this class.
@@ -114,7 +114,8 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             }
         }
 
-        sourceLayout = new PanoramaLayout(sourceProducts);
+        // create panorama
+        panorama = new Panorama(sourceProducts);
 
         // set up target product
         targetProduct = new Product("product_name", "product_type", sourceProducts[0].getSceneRasterWidth(), 1);
@@ -134,7 +135,17 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
     @Override
     public void computeTiles(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        computeCorrectionFactors(targetRectangle, pm);
+        try {
+            pm.beginTask("computing correction factors", 2 * spectralBandCount + 3);
+            edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
+
+            for (int i = 0; i < spectralBandCount; ++i) {
+                computeCorrectionFactors(sourceDataBands[i], sourceMaskBands[i], targetBands[i], targetRectangle);
+                pm.worked(1);
+            }
+        } finally {
+            pm.done();
+        }
     }
 
     @Override
@@ -143,64 +154,63 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     }
 
     /**
-     * Computes the vertical striping correction factors for a hyperspectral image.
+     * Computes the vertical striping correction factors for a single target band.
      *
+     * @param sourceDataBands the source data bands.
+     * @param sourceMaskBands the source mask bands.
+     * @param targetBand      the target band.
      * @param targetRectangle the target rectangle.
+     *
+     * @throws OperatorException
      */
-    private void computeCorrectionFactors(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        try {
-            pm.beginTask("computing correction factors", 2 * spectralBandCount + 3);
-            final boolean[][] edge = createSpatioSpectralEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
+    private void computeCorrectionFactors(Band[] sourceDataBands,
+                                          Band[] sourceMaskBands,
+                                          Band targetBand,
+                                          Rectangle targetRectangle)
+            throws OperatorException {
+        final int colCount = panorama.getWidth();
 
-            for (int i = 0; i < spectralBandCount; ++i) {
-                final Raster data = new PanoramaRaster(sourceDataBands[i]);
-                final Raster mask = new PanoramaRaster(sourceMaskBands[i]);
+        // 1. Compute the average across-track spatial derivative profile
+        final double[] p = new double[colCount];
+        for (int j = 0, row = 0; j < sourceProducts.length; ++j) {
+            final Raster data = getTile(sourceDataBands[j], panorama.getRectangle(j));
+            final Raster mask = getTile(sourceMaskBands[j], panorama.getRectangle(j));
 
-                final int rowCount = sourceLayout.getHeight(i);
-                final int colCount = sourceLayout.getWidth();
-
-                // 1. Compute the average across-track spatial derivative profile
-                final double[] p = new double[colCount];
-                for (int count = 0, col = 1; col < colCount; ++col) {
-                    for (int row = 0; row < rowCount; ++row) {
-                        if (!edge[row][col] && mask.getInt(col, row) == 0 && mask.getInt(col - 1, row) == 0) {
-                            p[col] += log(data.getDouble(col, row) / data.getDouble(col - 1, row));
-                            ++count;
-                        }
-                    }
-                    if (count > 0) {
-                        p[col] /= count;
-                    } else {
-                        p[col] = p[col - 1];
+            for (int count = 0, col = 1; col < colCount; ++col) {
+                for (int k = 0; k < panorama.getHeight(j); ++k, ++row) {
+                    if (!edgeMask[row][col] && mask.getInt(col, k) == 0 && mask.getInt(col - 1, k) == 0) {
+                        p[col] += log(data.getDouble(col, k) / data.getDouble(col - 1, k));
+                        ++count;
                     }
                 }
-                // 2. Compute the integrated profile
-                for (int col = 1; col < colCount; ++col) {
-                    p[col] += p[col - 1];
+                if (count > 0) {
+                    p[col] /= count;
+                } else {
+                    p[col] = p[col - 1];
                 }
-                // 3. Smooth the integrated profile to get rid of small-scale variations (noise)
-                final double[] s = new double[colCount];
-                smoothing.smooth(p, s);
-                // 4. Compute the noise profile
-                double meanNoise = 0.0;
-                for (int col = 0; col < colCount; ++col) {
-                    p[col] -= s[col];
-                    meanNoise += p[col];
-                }
-                meanNoise /= colCount;
-                for (int col = 0; col < colCount; ++col) {
-                    p[col] -= meanNoise;
-                }
-                // 5. Compute the correction factors
-                final Raster targetRaster = getTile(targetBands[i], targetRectangle);
-                for (int col = targetRectangle.x; col < targetRectangle.x + targetRectangle.width; ++col) {
-                    targetRaster.setDouble(col, 0, exp(-p[col]));
-                }
-
-                pm.worked(1);
             }
-        } finally {
-            pm.done();
+        }
+        // 2. Compute the integrated profile
+        for (int col = 1; col < colCount; ++col) {
+            p[col] += p[col - 1];
+        }
+        // 3. Smooth the integrated profile to get rid of small-scale variations (noise)
+        final double[] s = new double[colCount];
+        smoothing.smooth(p, s);
+        // 4. Compute the noise profile
+        double meanNoise = 0.0;
+        for (int col = 0; col < colCount; ++col) {
+            p[col] -= s[col];
+            meanNoise += p[col];
+        }
+        meanNoise /= colCount;
+        for (int col = 0; col < colCount; ++col) {
+            p[col] -= meanNoise;
+        }
+        // 5. Compute the correction factors
+        final Raster targetRaster = getTile(targetBand, targetRectangle);
+        for (int col = targetRectangle.x; col < targetRectangle.x + targetRectangle.width; ++col) {
+            targetRaster.setDouble(col, 0, exp(-p[col]));
         }
     }
 
@@ -214,29 +224,32 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
      *
      * @throws OperatorException
      */
-    private boolean[][] createSpatioSpectralEdgeMask(ProgressMonitor pm) throws OperatorException {
-        final int rowCount = sourceLayout.getHeight();
-        final int colCount = sourceLayout.getWidth();
+    private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
+        final int rowCount = panorama.getHeight();
+        final int colCount = panorama.getWidth();
 
         try {
             pm.beginTask("creating spatio-spectral edge mask", spectralBandCount + 3);
-            
-            // 1. Compute the squares and across-track scalar products
+
+            // 1. Compute the squares and across-track scalar products of the spectral vectors
             final double[][] sad = new double[colCount][rowCount];
             final double[][] sca = new double[colCount][rowCount];
+
             for (final Band[] bands : sourceDataBands) {
-                final Raster data = new PanoramaRaster(bands);
+                for (int j = 0, row = 0; j < bands.length; ++j) {
+                    final Raster data = getTile(bands[j], panorama.getRectangle(j));
 
-                for (int row = 0; row < rowCount; ++row) {
-                    double r1 = data.getDouble(0, row);
-                    sad[0][row] += r1 * r1;
+                    for (int y = 0; y < data.getHeight(); ++y, ++row) {
+                        double r1 = data.getDouble(0, y);
+                        sad[0][row] += r1 * r1;
 
-                    for (int col = 1; col < colCount; ++col) {
-                        final double r2 = data.getDouble(col, row);
+                        for (int col = 1; col < colCount; ++col) {
+                            final double r2 = data.getDouble(col, y);
 
-                        sca[col][row] += r2 * r1;
-                        sad[col][row] += r2 * r2;
-                        r1 = r2;
+                            sca[col][row] += r2 * r1;
+                            sad[col][row] += r2 * r2;
+                            r1 = r2;
+                        }
                     }
                 }
                 pm.worked(1);
@@ -261,7 +274,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             double minThreshold = 0.0;
             double maxThreshold = 0.0;
 
-            // 3. Adjust the edge detection threshold
+            // 3. Adjust the edge-detection threshold
             for (int col = 1; col < colCount; ++col) {
                 final double[] values = Arrays.copyOf(sad[col], rowCount);
                 Arrays.sort(values);
@@ -352,19 +365,14 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
 
     /**
-     * Panorama layout.
+     * Image panorama.
      */
-    private static class PanoramaLayout {
+    private static class Panorama {
 
         private int height;
-        private int width;
-
         private Rectangle[] rectangles;
 
-        private int[] rasterIndexTable;
-        private int[] rowIndexTable;
-
-        public PanoramaLayout(Product[] products) throws OperatorException {
+        public Panorama(Product[] products) throws OperatorException {
             int height = products[0].getSceneRasterHeight();
             int width = products[0].getSceneRasterWidth();
 
@@ -377,22 +385,10 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             }
 
             this.height = height;
-            this.width = width;
-
             rectangles = new Rectangle[products.length];
 
             for (int i = 0; i < products.length; ++i) {
                 rectangles[i] = new Rectangle(0, 0, width, products[i].getSceneRasterHeight());
-            }
-
-            rasterIndexTable = new int[height];
-            rowIndexTable = new int[height];
-
-            for (int i = 0, j = 0; i < rectangles.length; ++i) {
-                for (int k = 0; k < rectangles[i].height; ++k, ++j) {
-                    rasterIndexTable[j] = i;
-                    rowIndexTable[j] = k;
-                }
             }
         }
 
@@ -405,80 +401,11 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         }
 
         public int getWidth() {
-            return width;
+            return rectangles[0].width;
         }
 
         public Rectangle getRectangle(int i) {
             return rectangles[i];
-        }
-
-        public int getRasterIndex(int row) {
-            return rasterIndexTable[row];
-        }
-
-        public int getRowIndex(int row) {
-            return rowIndexTable[row];
-        }
-    }
-
-
-    /**
-     * Panorama raster.
-     */
-    private class PanoramaRaster implements Raster {
-
-        private Raster[] rasters;
-
-        public PanoramaRaster(Band[] bands) throws OperatorException {
-            this.rasters = new Tile[bands.length];
-
-            for (int i = 0; i < bands.length; ++i) {
-                rasters[i] = getTile(bands[i], sourceLayout.getRectangle(i));
-            }
-        }
-
-        public int getHeight() {
-            return sourceLayout.getHeight();
-        }
-
-        public int getWidth() {
-            return sourceLayout.getWidth();
-        }
-
-        public int getOffsetX() {
-            return 0;
-        }
-
-        public int getOffsetY() {
-            return 0;
-        }
-
-        public ProductData getDataBuffer() {
-            return null;
-        }
-
-        public double getDouble(int col, int row) {
-            return rasters[sourceLayout.getRasterIndex(row)].getDouble(col, sourceLayout.getRowIndex(row));
-        }
-
-        public void setDouble(int col, int row, double value) {
-            rasters[sourceLayout.getRasterIndex(row)].setDouble(col, sourceLayout.getRowIndex(row), value);
-        }
-
-        public float getFloat(int col, int row) {
-            return rasters[sourceLayout.getRasterIndex(row)].getFloat(col, sourceLayout.getRowIndex(row));
-        }
-
-        public void setFloat(int col, int row, float value) {
-            rasters[sourceLayout.getRasterIndex(row)].setFloat(col, sourceLayout.getRowIndex(row), value);
-        }
-
-        public int getInt(int col, int row) {
-            return rasters[sourceLayout.getRasterIndex(row)].getInt(col, sourceLayout.getRowIndex(row));
-        }
-
-        public void setInt(int col, int row, int value) {
-            rasters[sourceLayout.getRasterIndex(row)].setInt(col, sourceLayout.getRowIndex(row), value);
         }
     }
 
