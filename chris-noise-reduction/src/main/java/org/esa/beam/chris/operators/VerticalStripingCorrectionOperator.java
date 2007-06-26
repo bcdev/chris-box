@@ -150,7 +150,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
     @Override
     public void dispose() {
-        // todo - add any clean-up code here, the targetProduct is disposed by the framework
+        super.dispose();
     }
 
     /**
@@ -172,14 +172,14 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
         // 1. Compute the average across-track spatial derivative profile
         final double[] p = new double[colCount];
-        for (int j = 0, row = 0; j < sourceProducts.length; ++j) {
-            final Raster data = getTile(sourceDataBands[j], panorama.getRectangle(j));
-            final Raster mask = getTile(sourceMaskBands[j], panorama.getRectangle(j));
+        for (int row = 0, i = 0; i < sourceProducts.length; ++i) {
+            final Raster data = getTile(sourceDataBands[i], panorama.getRectangle(i));
+            final Raster mask = getTile(sourceMaskBands[i], panorama.getRectangle(i));
 
             for (int count = 0, col = 1; col < colCount; ++col) {
-                for (int k = 0; k < panorama.getHeight(j); ++k, ++row) {
-                    if (!edgeMask[row][col] && mask.getInt(col, k) == 0 && mask.getInt(col - 1, k) == 0) {
-                        p[col] += log(data.getDouble(col, k) / data.getDouble(col - 1, k));
+                for (int j = 0; j < panorama.getHeight(i); ++j, ++row) {
+                    if (!edgeMask[row][col] && mask.getInt(col, j) == 0 && mask.getInt(col - 1, j) == 0) {
+                        p[col] += log(data.getDouble(col, j) / data.getDouble(col - 1, j));
                         ++count;
                     }
                 }
@@ -236,15 +236,15 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             final double[][] sca = new double[colCount][rowCount];
 
             for (final Band[] bands : sourceDataBands) {
-                for (int j = 0, row = 0; j < bands.length; ++j) {
-                    final Raster data = getTile(bands[j], panorama.getRectangle(j));
+                for (int row = 0, i = 0; i < bands.length; ++i) {
+                    final Raster data = getTile(bands[i], panorama.getRectangle(i));
 
-                    for (int y = 0; y < data.getHeight(); ++y, ++row) {
-                        double r1 = data.getDouble(0, y);
+                    for (int j = 0; j < data.getHeight(); ++j, ++row) {
+                        double r1 = data.getDouble(0, j);
                         sad[0][row] += r1 * r1;
 
                         for (int col = 1; col < colCount; ++col) {
-                            final double r2 = data.getDouble(col, y);
+                            final double r2 = data.getDouble(col, j);
 
                             sca[col][row] += r2 * r1;
                             sad[col][row] += r2 * r2;
