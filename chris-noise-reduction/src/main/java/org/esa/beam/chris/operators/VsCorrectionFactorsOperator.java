@@ -30,6 +30,7 @@ import org.esa.beam.framework.gpf.Raster;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
 
 import java.awt.Rectangle;
 import static java.lang.Math.*;

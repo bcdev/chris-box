@@ -13,27 +13,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 /**
- * Interface representing an infinite sequence of real functions. The
- * interface is suited for families of functions which are defined by
- * recursion, for example Hermite or Legendre polynomials.
+ * Class for calculating Legendre polynomials.
  *
  * @author Ralf Quast
  * @version $Revision: $ $Date: $
  */
-public interface Functions {
+final public class LegendrePolynomials implements Functions {
 
-    /**
-     * Evaluates the first n functions at a given abscissa value.
-     *
-     * @param x the abscissa value.
-     * @param y the calculated function values. The number of calculated
-     *          values is defined by the length of this array.  No value
-     *          is calculated if the array is empty.
-     * @throws NullPointerException if {@code y} is {@code null}.
-     */
-    void calculate(double x, double[] y) throws NullPointerException;
+    public void calculate(double x, double[] y) {
+        if (y.length > 0) {
+            double l1 = 1.0;
+            double l2 = 0.0;
+            double l3;
+
+            y[0] = 1.0;
+
+            for (int i = 1; i < y.length; ++i) {
+                l3 = l2;
+                l2 = l1;
+                l1 = ((2 * i - 1) * x * l2 - (i - 1) * l3) / i;
+
+                y[i] = l1;
+            }
+        }
+    }
 
 }

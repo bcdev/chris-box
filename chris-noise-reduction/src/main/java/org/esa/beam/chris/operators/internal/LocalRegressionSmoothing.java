@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 import Jama.Matrix;
 import Jama.SingularValueDecomposition;
@@ -27,7 +27,7 @@ import java.util.Arrays;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-class LocalRegressionSmoothing {
+public class LocalRegressionSmoothing {
 
     private int degree; // the polynomial degree
     private int span;   // the span
@@ -78,7 +78,7 @@ class LocalRegressionSmoothing {
      *
      * @return the polynomial drgree.
      */
-    public int getPolynomialDegree() {
+    public final int getPolynomialDegree() {
         return degree;
     }
 
@@ -87,7 +87,7 @@ class LocalRegressionSmoothing {
      *
      * @return the span.
      */
-    public int getSpan() {
+    public final int getSpan() {
         return span;
     }
 
@@ -96,7 +96,7 @@ class LocalRegressionSmoothing {
      *
      * @return the number of robust regression iterations.
      */
-    public int getRobustRegressionCount() {
+    public final  int getRobustRegressionCount() {
         return iter;
     }
 
