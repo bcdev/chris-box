@@ -8,7 +8,7 @@
             <filePath>${inputFile1}</filePath>
         </parameters>
     </node>
-
+    
     <node>
         <id>slit-correction</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
@@ -32,7 +32,7 @@
         <id>apply</id>
         <operator>org.esa.beam.chris.operators.ApplyOperator$Spi</operator>
         <sources>
-            <input>load</input>
+            <input>slit-correction</input>
             <factors>vertical-striping-factors</factors>
         </sources>
     </node>

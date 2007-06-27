@@ -1,0 +1,121 @@
+<graph>
+    <id>VS</id>
+
+    <node>
+        <id>load1</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile1}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load2</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile2}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load3</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile3}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load4</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile4}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load5</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile5}</filePath>
+        </parameters>
+    </node>
+
+    <node>
+        <id>slit1</id>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <sources>
+            <sourceProduct>load1</sourceProduct>
+        </sources>
+    </node>
+    
+        <node>
+        <id>slit2</id>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <sources>
+            <sourceProduct>load2</sourceProduct>
+        </sources>
+    </node>
+    
+        <node>
+        <id>slit3</id>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <sources>
+            <sourceProduct>load3</sourceProduct>
+        </sources>
+    </node>
+    
+        <node>
+        <id>slit4</id>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <sources>
+            <sourceProduct>load4</sourceProduct>
+        </sources>
+    </node>
+    
+        <node>
+        <id>slit5</id>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <sources>
+            <sourceProduct>load5</sourceProduct>
+        </sources>
+    </node>
+    
+
+    <node>
+        <id>vertical-striping-factors</id>
+        <operator>org.esa.beam.chris.operators.VerticalStripingCorrectionOperator$Spi</operator>
+        <sources>
+            <input1>slit1</input1>
+            <input2>slit2</input2>
+            <input3>slit3</input3>
+            <input4>slit4</input4>
+            <input5>slit5</input5>
+        </sources>
+        <parameters>
+            <smoothingOrder>27</smoothingOrder>
+        </parameters>
+    </node>
+
+    <node>
+        <id>apply</id>
+        <operator>org.esa.beam.chris.operators.ApplyOperator$Spi</operator>
+        <sources>
+            <input>slit2</input>
+            <factors>vertical-striping-factors</factors>
+        </sources>
+    </node>
+
+    <node>
+        <id>write</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
+        <sources>
+            <input>apply</input>
+        </sources>
+        <parameters>
+            <filePath>${outputFile1}</filePath>
+        </parameters>
+    </node>
+
+</graph>
+        
