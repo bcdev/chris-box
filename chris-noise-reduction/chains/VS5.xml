@@ -101,7 +101,7 @@
         <id>apply</id>
         <operator>org.esa.beam.chris.operators.ApplyOperator$Spi</operator>
         <sources>
-            <input>slit2</input>
+            <input>slit1</input>
             <factors>vertical-striping-factors</factors>
         </sources>
     </node>

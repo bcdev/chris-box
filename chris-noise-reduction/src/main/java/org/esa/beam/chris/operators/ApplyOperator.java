@@ -16,6 +16,11 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+
+import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.FlagCoding;
+import org.esa.beam.framework.datamodel.MetadataAttribute;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
@@ -63,11 +68,48 @@ public class ApplyOperator extends AbstractOperator {
                                     sourceProduct.getSceneRasterHeight());
 
         for (final String sourceBandName : sourceProduct.getBandNames()) {
-            ProductUtils.copyBand(sourceBandName, sourceProduct, targetProduct);
+        	Band destBand = ProductUtils.copyBand(sourceBandName, sourceProduct, targetProduct);
+        	
+            Band srcBand = sourceProduct.getBand(sourceBandName);
+            if (srcBand.getFlagCoding() != null) {
+                FlagCoding srcFlagCoding = srcBand.getFlagCoding();
+                if (targetProduct.getFlagCoding(srcFlagCoding.getName()) == null) {
+                	ProductUtils.copyFlagCoding(srcFlagCoding, targetProduct);
+                }
+                destBand.setFlagCoding(targetProduct.getFlagCoding(srcFlagCoding.getName()));
+            }
         }
+        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        cloneMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot(), 0);
 
         return targetProduct;
     }
+    
+/////////////////////////////////////////////////////
+    // TODO move to a more apropriate place! super??
+    protected void cloneMetadataElementsAndAttributes(MetadataElement sourceRoot, MetadataElement destRoot, int level) {
+        cloneMetadataElements(sourceRoot, destRoot, level);
+        cloneMetadataAttributes(sourceRoot, destRoot);
+    }
+
+    protected void cloneMetadataElements(MetadataElement sourceRoot, MetadataElement destRoot, int level) {
+        for (int i = 0; i < sourceRoot.getNumElements(); i++) {
+            MetadataElement sourceElement = sourceRoot.getElementAt(i);
+            MetadataElement element = new MetadataElement(sourceElement.getName());
+            element.setDescription(sourceElement.getDescription());
+            destRoot.addElement(element);
+            cloneMetadataElementsAndAttributes(sourceElement, element, level + 1);
+        }
+    }
+
+    protected void cloneMetadataAttributes(MetadataElement sourceRoot, MetadataElement destRoot) {
+        for (int i = 0; i < sourceRoot.getNumAttributes(); i++) {
+            MetadataAttribute sourceAttribute = sourceRoot.getAttributeAt(i);
+            destRoot.addAttribute(sourceAttribute.createDeepClone());
+        }
+    }
+    // TODO move to a more apropriate place! super??
+    /////////////////////////////////////////////////////
 
     @Override
     public void computeTile(Tile targetTile, ProgressMonitor progressMonitor) throws OperatorException {
