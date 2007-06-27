@@ -87,8 +87,8 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
         smoothing = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
-        setEdgeDetectionThreshold();
-        setSpectralBandCount();
+        edgeDetectionThreshold = getEdgeDetectionThreshold();
+        spectralBandCount = getAnnotationInt(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         // set up source bands
         sourceDataBands = new Band[spectralBandCount][sourceProducts.length];
@@ -293,29 +293,18 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         }
     }
 
-    private void setEdgeDetectionThreshold() throws OperatorException {
+    private double getEdgeDetectionThreshold() throws OperatorException {
         final String mode = getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE);
 
         if (thresholdMap.containsKey(mode)) {
-            edgeDetectionThreshold = thresholdMap.get(mode);
+            return thresholdMap.get(mode);
         } else {
             throw new OperatorException(MessageFormat.format(
-                    "could not set edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
+                    "could not get edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
         }
     }
 
-    private void setSpectralBandCount() throws OperatorException {
-        final String annotation = getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
-
-        try {
-            spectralBandCount = Integer.parseInt(annotation);
-        } catch (NumberFormatException e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not parse annotation ''{0}''", ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS));
-        }
-    }
-
-    private static int getIntAnnotation(Product product, String name) throws OperatorException {
+    private static int getAnnotationInt(Product product, String name) throws OperatorException {
         final String string = getAnnotationString(product, name);
 
         try {
