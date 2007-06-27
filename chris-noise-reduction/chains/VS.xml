@@ -10,10 +10,18 @@
     </node>
 
     <node>
-        <id>vertical_striping</id>
+        <id>slit-correction</id>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <sources>
+            <sourceProduct>load</sourceProduct>
+        </sources>
+    </node>
+
+    <node>
+        <id>vertical-striping-factors</id>
         <operator>org.esa.beam.chris.operators.VerticalStripingCorrectionOperator$Spi</operator>
         <sources>
-            <input>load</input>
+            <input>slit-correction</input>
         </sources>
         <parameters>
             <smoothingOrder>27</smoothingOrder>
@@ -21,10 +29,19 @@
     </node>
 
     <node>
+        <id>apply</id>
+        <operator>org.esa.beam.chris.operators.ApplyOperator$Spi</operator>
+        <sources>
+            <input>load</input>
+            <factors>vertical-striping-factors</factors>
+        </sources>
+    </node>
+
+    <node>
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>vertical_striping</input>
+            <input>apply</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>
@@ -32,3 +49,4 @@
     </node>
 
 </graph>
+        

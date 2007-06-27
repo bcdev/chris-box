@@ -15,8 +15,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.Functions;
-
 /**
  * Class for calculating Legendre polynomials.
  *
