@@ -1,5 +1,5 @@
 <graph>
-    <id>VS</id>
+    <id>slit-correction</id>
 
     <node>
         <id>load</id>
@@ -10,10 +10,10 @@
     </node>
 
     <node>
-        <id>slit_correction</id>
+        <id>slit-correction</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load</sourceProduct>
+            <input>load</input>
         </sources>
     </node>
 
@@ -21,7 +21,7 @@
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>slit_correction</input>
+            <input>slit-correction</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>

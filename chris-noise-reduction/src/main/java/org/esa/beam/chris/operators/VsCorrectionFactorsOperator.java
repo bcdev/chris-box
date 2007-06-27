@@ -45,7 +45,7 @@ import java.util.Map;
  * @author Ralf Quast
  * @version $Revision: $ $Date: $
  */
-public class VerticalStripingCorrectionOperator extends AbstractOperator {
+public class VsCorrectionFactorsOperator extends AbstractOperator {
 
     @SourceProducts
     Product[] sourceProducts;
@@ -71,7 +71,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
      *
      * @param spi the operator service provider interface.
      */
-    public VerticalStripingCorrectionOperator(OperatorSpi spi) {
+    public VsCorrectionFactorsOperator(OperatorSpi spi) {
         super(spi);
     }
 
@@ -95,8 +95,8 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         sourceMaskBands = new Band[spectralBandCount][sourceProducts.length];
 
         for (int i = 0; i < spectralBandCount; ++i) {
-            final String dataBandName = MessageFormat.format("radiance_{0}", i + 1);
-            final String maskBandName = MessageFormat.format("mask_{0}", i + 1);
+            final String dataBandName = new StringBuilder("radiance_").append(i + 1).toString();
+            final String maskBandName = new StringBuilder("mask_").append(i + 1).toString();
 
             for (int j = 0; j < sourceProducts.length; ++j) {
                 sourceDataBands[i][j] = sourceProducts[j].getBand(dataBandName);
@@ -115,16 +115,17 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         panorama = new Panorama(sourceProducts);
 
         // set up target product
-        targetProduct = new Product("product_name", "product_type", sourceProducts[0].getSceneRasterWidth(), 1);
+        targetProduct = new Product("VSC", "CHRIS_VSC", sourceProducts[0].getSceneRasterWidth(), 1);
         targetBands = new Band[spectralBandCount];
 
         for (int i = 0; i < spectralBandCount; ++i) {
             targetBands[i] = targetProduct.addBand(
-                    MessageFormat.format("vs_correction_{0}", i + 1), ProductData.TYPE_FLOAT64);
+                    new StringBuilder("vs_corr_").append(i + 1).toString(), ProductData.TYPE_FLOAT64);
 
             targetBands[i].setSpectralBandIndex(i + 1);
-            targetBands[i].setDescription(
-                    MessageFormat.format("Vertical striping correction factors for radiance band {0}", i + 1));
+            targetBands[i].setDescription(MessageFormat.format(
+                    "Vertical striping correction factors for radiance band {0}", i + 1));
+            pm.worked(1);
         }
 
         return targetProduct;
@@ -231,15 +232,15 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                     final Raster data = getTile(bands[i], sourceRectangle);
 
                     for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
-                        double d1 = data.getDouble(0, sceneY);
-                        sad[0][panoramaY] += d1 * d1;
+                        double r1 = data.getDouble(0, sceneY);
+                        sad[0][panoramaY] += r1 * r1;
 
                         for (int x = 1; x < panorama.width; ++x) {
-                            final double d2 = data.getDouble(x, sceneY);
+                            final double r2 = data.getDouble(x, sceneY);
 
-                            sca[x][panoramaY] += d2 * d1;
-                            sad[x][panoramaY] += d2 * d2;
-                            d1 = d2;
+                            sca[x][panoramaY] += r2 * r1;
+                            sad[x][panoramaY] += r2 * r2;
+                            r1 = r2;
                         }
                     }
                 }
@@ -304,14 +305,14 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         }
     }
 
+    // todo -- move
     private static int getAnnotationInt(Product product, String name) throws OperatorException {
         final String string = getAnnotationString(product, name);
 
         try {
             return Integer.parseInt(string);
         } catch (NumberFormatException e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not parse CHRIS annotation ''{0}''", name));
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
@@ -325,6 +326,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
      *
      * @throws OperatorException if the annotation could not be read.
      */
+    // todo -- move
     private static String getAnnotationString(Product product, String name) throws OperatorException {
         final MetadataElement metadataRoot = product.getMetadataRoot();
         String string = null;
@@ -347,7 +349,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {
-            super(VerticalStripingCorrectionOperator.class, "VerticalStripingCorrection");
+            super(VsCorrectionFactorsOperator.class, "VsCorrectionFactors");
         }
     }
 

@@ -1,5 +1,5 @@
 <graph>
-    <id>VS</id>
+    <id>vs-removal</id>
 
     <node>
         <id>load</id>
@@ -8,18 +8,18 @@
             <filePath>${inputFile1}</filePath>
         </parameters>
     </node>
-    
+
     <node>
         <id>slit-correction</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load</sourceProduct>
+            <input>load</input>
         </sources>
     </node>
 
     <node>
-        <id>vertical-striping-factors</id>
-        <operator>org.esa.beam.chris.operators.VerticalStripingCorrectionOperator$Spi</operator>
+        <id>vs-correction-factors</id>
+        <operator>org.esa.beam.chris.operators.VsCorrectionFactorsOperator$Spi</operator>
         <sources>
             <input>slit-correction</input>
         </sources>
@@ -29,11 +29,11 @@
     </node>
 
     <node>
-        <id>apply</id>
-        <operator>org.esa.beam.chris.operators.ApplyOperator$Spi</operator>
+        <id>vs-removal</id>
+        <operator>org.esa.beam.chris.operators.VsRemovalOperator$Spi</operator>
         <sources>
             <input>slit-correction</input>
-            <factors>vertical-striping-factors</factors>
+            <factors>vs-correction-factors</factors>
         </sources>
     </node>
 
@@ -41,7 +41,7 @@
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>apply</input>
+            <input>vs-removal</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>
@@ -49,4 +49,3 @@
     </node>
 
 </graph>
-        

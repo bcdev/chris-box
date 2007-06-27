@@ -1,5 +1,5 @@
 <graph>
-    <id>VS</id>
+    <id>vs-removal</id>
 
     <node>
         <id>load1</id>
@@ -45,7 +45,7 @@
         <id>slit1</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load1</sourceProduct>
+            <input>load1</input>
         </sources>
     </node>
     
@@ -53,7 +53,7 @@
         <id>slit2</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load2</sourceProduct>
+            <input>load2</input>
         </sources>
     </node>
     
@@ -61,7 +61,7 @@
         <id>slit3</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load3</sourceProduct>
+            <input>load3</input>
         </sources>
     </node>
     
@@ -69,7 +69,7 @@
         <id>slit4</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load4</sourceProduct>
+            <input>load4</input>
         </sources>
     </node>
     
@@ -77,14 +77,14 @@
         <id>slit5</id>
         <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
         <sources>
-            <sourceProduct>load5</sourceProduct>
+            <input>load5</input>
         </sources>
     </node>
     
 
     <node>
-        <id>vertical-striping-factors</id>
-        <operator>org.esa.beam.chris.operators.VerticalStripingCorrectionOperator$Spi</operator>
+        <id>vs-factors</id>
+        <operator>org.esa.beam.chris.operators.VsCorrectionFactorsOperator$Spi</operator>
         <sources>
             <input1>slit1</input1>
             <input2>slit2</input2>
@@ -98,11 +98,11 @@
     </node>
 
     <node>
-        <id>apply</id>
-        <operator>org.esa.beam.chris.operators.ApplyOperator$Spi</operator>
+        <id>vs-removal</id>
+        <operator>org.esa.beam.chris.operators.VsRemovalOperator$Spi</operator>
         <sources>
             <input>slit1</input>
-            <factors>vertical-striping-factors</factors>
+            <factors>vs-factors</factors>
         </sources>
     </node>
 
@@ -110,7 +110,7 @@
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>apply</input>
+            <input>vs-removal</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>
