@@ -43,6 +43,7 @@ import java.util.Map;
  * due to the CCD elements.
  *
  * @author Ralf Quast
+ * @author Marco Zühlke
  * @version $Revision: $ $Date: $
  */
 public class VsCorrectionFactorsOperator extends AbstractOperator {
