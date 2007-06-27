@@ -103,18 +103,16 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                 sourceDataBands[i][j] = sourceProducts[j].getBand(dataBandName);
                 sourceMaskBands[i][j] = sourceProducts[j].getBand(maskBandName);
 
-                if (sourceDataBands == null) {
-                    throw new OperatorException("");
-                    // todo - message
+                if (sourceDataBands[i][j] == null) {
+                    throw new OperatorException(MessageFormat.format("Could not find band {0}", dataBandName));
                 }
-                if (sourceMaskBands == null) {
-                    throw new OperatorException("");
-                    // todo - message
+                if (sourceMaskBands[i][j] == null) {
+                    throw new OperatorException(MessageFormat.format("Could not find band {0}", maskBandName));
                 }
             }
         }
 
-        // create panorama
+        // create image panorama
         panorama = new Panorama(sourceProducts);
 
         // set up target product
@@ -141,7 +139,6 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
 
             for (int i = 0; i < spectralBandCount; ++i) {
-                System.out.println("***** BandNr:" + i);
                 computeCorrectionFactors(sourceDataBands[i], sourceMaskBands[i], targetBands[i], targetRectangle);
                 pm.worked(1);
             }
@@ -168,8 +165,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     private void computeCorrectionFactors(Band[] sourceDataBands,
                                           Band[] sourceMaskBands,
                                           Band targetBand,
-                                          Rectangle targetRectangle)
-            throws OperatorException {
+                                          Rectangle targetRectangle) throws OperatorException {
         // 1. Compute the average across-track spatial derivative profile
         final double[] p = new double[panorama.width];
         final int[] count = new int[panorama.width];
@@ -179,10 +175,10 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
             final Raster data = getTile(sourceDataBands[i], sourceRectangle);
             final Raster mask = getTile(sourceMaskBands[i], sourceRectangle);
 
-            for (int y = 0; y < sourceRectangle.height; ++y, ++panoramaY) {
+            for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
                 for (int x = 1; x < panorama.width; ++x) {
-                    if (!edgeMask[panoramaY][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
-                        p[x] += log(data.getDouble(x, y) / data.getDouble(x - 1, y));
+                    if (!edgeMask[panoramaY][x] && mask.getInt(x, sceneY) == 0 && mask.getInt(x - 1, sceneY) == 0) {
+                        p[x] += log(data.getDouble(x, sceneY) / data.getDouble(x - 1, sceneY));
                         ++count[x];
                     }
                 }
@@ -230,7 +226,6 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
      * @throws OperatorException
      */
     private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
-
         try {
             pm.beginTask("creating spatio-spectral edge mask", spectralBandCount + 3);
 
@@ -243,12 +238,12 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                     final Rectangle sourceRectangle = panorama.getRectangle(i);
                     final Raster data = getTile(bands[i], sourceRectangle);
 
-                    for (int y = 0; y < sourceRectangle.height; ++y, ++panoramaY) {
-                        double d1 = data.getDouble(0, y);
+                    for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
+                        double d1 = data.getDouble(0, sceneY);
                         sad[0][panoramaY] += d1 * d1;
 
                         for (int x = 1; x < panorama.width; ++x) {
-                            final double d2 = data.getDouble(x, y);
+                            final double d2 = data.getDouble(x, sceneY);
 
                             sca[x][panoramaY] += d2 * d1;
                             sad[x][panoramaY] += d2 * d2;
@@ -310,14 +305,14 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         final String mode = getChrisAnnotation(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE);
 
         if (mode == null) {
-            throw new OperatorException("");
-            // todo - message
+            throw new OperatorException(MessageFormat.format(
+                    "Could not read annotation ''{0}''", ChrisConstants.ATTR_NAME_CHRIS_MODE));
         }
         if (thresholdMap.containsKey(mode)) {
             edgeDetectionThreshold = thresholdMap.get(mode);
         } else {
-            throw new OperatorException("");
-            // todo - message
+            throw new OperatorException(MessageFormat.format(
+                    "Could not determine edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
         }
     }
 
@@ -325,14 +320,14 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         final String annotation = getChrisAnnotation(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         if (annotation == null) {
-            throw new OperatorException("");
-            // todo - message
+            throw new OperatorException(MessageFormat.format(
+                    "Could not read annotation ''{0}''", ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS));
         }
         try {
             spectralBandCount = Integer.parseInt(annotation);
         } catch (NumberFormatException e) {
-            throw new OperatorException("", e);
-            // todo - message
+            throw new OperatorException(MessageFormat.format(
+                    "Could not parse annotation ''{0}''", ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS));
         }
     }
 
@@ -384,8 +379,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
             for (int i = 1; i < products.length; ++i) {
                 if (width != products[i].getSceneRasterWidth()) {
-                    throw new OperatorException("");
-                    // todo -- message
+                    throw new OperatorException("Input products have inconsistent raster widths");
                 }
                 height += products[i].getSceneRasterHeight();
             }
