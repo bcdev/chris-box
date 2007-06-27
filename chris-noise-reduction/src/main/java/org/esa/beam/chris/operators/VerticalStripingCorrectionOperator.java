@@ -65,7 +65,6 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     private transient Band[][] sourceDataBands;
     private transient Band[][] sourceMaskBands;
     private transient Panorama panorama;
-    private transient boolean[][] edgeMask;
 
     /**
      * Creates an instance of this class.
@@ -133,13 +132,12 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
     @Override
     public void computeTiles(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        System.out.println("Compute: " + targetRectangle.toString());
         try {
             pm.beginTask("computing correction factors", 2 * spectralBandCount + 3);
-            edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
+            boolean[][] edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
 
             for (int i = 0; i < spectralBandCount; ++i) {
-                computeCorrectionFactors(sourceDataBands[i], sourceMaskBands[i], targetBands[i], targetRectangle);
+                computeCorrectionFactors(i, edgeMask, targetRectangle);
                 pm.worked(1);
             }
         } finally {
@@ -147,33 +145,26 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         }
     }
 
-    @Override
-    public void dispose() {
-        super.dispose();
-    }
-
     /**
      * Computes the vertical striping correction factors for a single target band.
      *
-     * @param sourceDataBands the source data bands.
-     * @param sourceMaskBands the source mask bands.
-     * @param targetBand      the target band.
+     * @param bandIndex       the spactral band index.
+     * @param edgeMask        the edgeMask.
      * @param targetRectangle the target rectangle.
      *
      * @throws OperatorException
      */
-    private void computeCorrectionFactors(Band[] sourceDataBands,
-                                          Band[] sourceMaskBands,
-                                          Band targetBand,
+    private void computeCorrectionFactors(int bandIndex,
+                                          boolean[][] edgeMask,
                                           Rectangle targetRectangle) throws OperatorException {
-        // 1. Compute the average across-track spatial derivative profile
+        // 1. Accumulate the across-track spatial derivative profile
         final double[] p = new double[panorama.width];
         final int[] count = new int[panorama.width];
 
         for (int i = 0, panoramaY = 0; i < sourceProducts.length; ++i) {
             final Rectangle sourceRectangle = panorama.getRectangle(i);
-            final Raster data = getTile(sourceDataBands[i], sourceRectangle);
-            final Raster mask = getTile(sourceMaskBands[i], sourceRectangle);
+            final Raster data = getTile(sourceDataBands[bandIndex][i], sourceRectangle);
+            final Raster mask = getTile(sourceMaskBands[bandIndex][i], sourceRectangle);
 
             for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
                 for (int x = 1; x < panorama.width; ++x) {
@@ -184,6 +175,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                 }
             }
         }
+        // 2. Compute the average profile
         for (int x = 1; x < panorama.width; ++x) {
             if (count[x] > 0) {
                 p[x] /= count[x];
@@ -191,14 +183,14 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                 p[x] = p[x - 1];
             }
         }
-        // 2. Compute the integrated profile
+        // 3. Compute the integrated profile
         for (int x = 1; x < panorama.width; ++x) {
             p[x] += p[x - 1];
         }
-        // 3. Smooth the integrated profile to get rid of small-scale variations (noise)
+        // 4. Smooth the integrated profile to get rid of small-scale variations (noise)
         final double[] s = new double[panorama.width];
         smoothing.smooth(p, s);
-        // 4. Compute the noise profile
+        // 5. Compute the noise profile
         double meanNoise = 0.0;
         for (int x = 0; x < panorama.width; ++x) {
             p[x] -= s[x];
@@ -208,8 +200,8 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
         for (int x = 0; x < panorama.width; ++x) {
             p[x] -= meanNoise;
         }
-        // 5. Compute the correction factors
-        final Raster targetRaster = getTile(targetBand, targetRectangle);
+        // 6. Compute the correction factors
+        final Raster targetRaster = getTile(targetBands[bandIndex], targetRectangle);
         for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
             targetRaster.setDouble(x, 0, exp(-p[x]));
         }
