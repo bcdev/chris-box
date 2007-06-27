@@ -103,10 +103,10 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
                 sourceMaskBands[i][j] = sourceProducts[j].getBand(maskBandName);
 
                 if (sourceDataBands[i][j] == null) {
-                    throw new OperatorException(MessageFormat.format("Could not find band {0}", dataBandName));
+                    throw new OperatorException(MessageFormat.format("could not find band {0}", dataBandName));
                 }
                 if (sourceMaskBands[i][j] == null) {
-                    throw new OperatorException(MessageFormat.format("Could not find band {0}", maskBandName));
+                    throw new OperatorException(MessageFormat.format("could not find band {0}", maskBandName));
                 }
             }
         }
@@ -294,32 +294,35 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
     }
 
     private void setEdgeDetectionThreshold() throws OperatorException {
-        final String mode = getChrisAnnotation(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        final String mode = getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE);
 
-        if (mode == null) {
-            throw new OperatorException(MessageFormat.format(
-                    "Could not read annotation ''{0}''", ChrisConstants.ATTR_NAME_CHRIS_MODE));
-        }
         if (thresholdMap.containsKey(mode)) {
             edgeDetectionThreshold = thresholdMap.get(mode);
         } else {
             throw new OperatorException(MessageFormat.format(
-                    "Could not determine edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
+                    "could not set edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
         }
     }
 
     private void setSpectralBandCount() throws OperatorException {
-        final String annotation = getChrisAnnotation(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
+        final String annotation = getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
-        if (annotation == null) {
-            throw new OperatorException(MessageFormat.format(
-                    "Could not read annotation ''{0}''", ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS));
-        }
         try {
             spectralBandCount = Integer.parseInt(annotation);
         } catch (NumberFormatException e) {
             throw new OperatorException(MessageFormat.format(
-                    "Could not parse annotation ''{0}''", ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS));
+                    "could not parse annotation ''{0}''", ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS));
+        }
+    }
+
+    private static int getIntAnnotation(Product product, String name) throws OperatorException {
+        final String string = getAnnotationString(product, name);
+
+        try {
+            return Integer.parseInt(string);
+        } catch (NumberFormatException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
@@ -330,20 +333,25 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
      * @param name    the name of the CHRIS annotation.
      *
      * @return the annotation or {@code null} if the annotation could not be found.
+     *
+     * @throws OperatorException if the annotation could not be read.
      */
-    private static String getChrisAnnotation(Product product, String name) {
+    private static String getAnnotationString(Product product, String name) throws OperatorException {
         final MetadataElement metadataRoot = product.getMetadataRoot();
-        String annotation = null;
+        String string = null;
 
         if (metadataRoot != null) {
             final MetadataElement mph = metadataRoot.getElement(ChrisConstants.MPH_NAME);
 
             if (mph != null) {
-                annotation = mph.getAttributeString(name, null);
+                string = mph.getAttributeString(name, null);
             }
         }
+        if (string == null) {
+            throw new OperatorException(MessageFormat.format("could not read CHRIS annotation ''{0}''", name));
+        }
 
-        return annotation;
+        return string;
     }
 
 
@@ -371,7 +379,7 @@ public class VerticalStripingCorrectionOperator extends AbstractOperator {
 
             for (int i = 1; i < products.length; ++i) {
                 if (width != products[i].getSceneRasterWidth()) {
-                    throw new OperatorException("Input products have inconsistent raster widths");
+                    throw new OperatorException("input products have inconsistent raster widths");
                 }
                 height += products[i].getSceneRasterHeight();
             }

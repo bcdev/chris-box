@@ -1,1 +1,2 @@
 org.esa.beam.chris.operators.VerticalStripingCorrectionOperator$Spi
+org.esa.beam.chris.operators.SlitCorrectionOperator$Spi

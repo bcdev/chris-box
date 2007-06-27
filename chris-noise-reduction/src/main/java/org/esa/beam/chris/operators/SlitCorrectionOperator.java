@@ -24,8 +24,10 @@ import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.util.ProductUtils;
 
 import java.awt.Rectangle;
 import java.io.InputStream;
@@ -51,12 +53,19 @@ public class SlitCorrectionOperator extends AbstractOperator {
 
     private int spectralBandCount;
 
-    private double[] positions;
-    private double[] gains;
+    private double[] vsPixels;
+    private double[] vsMean;
 
     private transient Band[] targetBands;
     private transient Band[][] sourceDataBands;
     private transient Band[][] sourceMaskBands;
+
+    private static final double P2VSG_1 = 0.13045510094294;
+    private static final double P2VSG_2 = 0.28135856882126;
+    private static final double P2VSS_1 = -0.12107994955864;
+    private static final double P2VSS_2 = 0.65034734426230;
+    private double[] vs;
+
 
     /**
      * Creates an instance of this class.
@@ -71,12 +80,72 @@ public class SlitCorrectionOperator extends AbstractOperator {
         setSpectralBandCount();
         setReferenceSlitVsProfile();
 
-        return null;
+        adjustSlitVsProfile();
+
+        targetProduct = new Product("slit_corrected", sourceProduct.getProductType(),
+                                    sourceProduct.getSceneRasterWidth(),
+                                    sourceProduct.getSceneRasterHeight());
+        for (String sourceBandName : sourceProduct.getBandNames()) {
+            ProductUtils.copyBand(sourceBandName, sourceProduct, targetProduct);
+        }
+
+        return targetProduct;
+    }
+
+    private void adjustSlitVsProfile() throws OperatorException {
+        final double temperature = getChrisTemperature(sourceProduct);
+
+        final double vsGain = P2VSG_1 * temperature + P2VSG_2;
+        final double vsShift = P2VSS_1 * temperature + P2VSS_2;
+
+        // Correction of VS dependence on temperature
+        for (int i = 0; i < vsPixels.length; ++i) {
+            vsMean[i] = (vsMean[i] - 1.0) * vsGain + 1.0;
+            vsPixels[i] -= vsShift;
+        }
+
+        int ppc = 1;
+        if ("1".equals(getAnnotationString(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE))) {
+            ppc = 2;
+        }
+
+        final int width = sourceProduct.getSceneRasterWidth();
+        vs = new double[width];
+        int x = 0;
+        int count = 0;
+
+        for (int i = 0; i < vsPixels.length; ++i) {
+            if (x < width) {
+                if (vsPixels[i] > 0.5 && vsPixels[i] < (x + 1) * ppc + 0.5) {
+                    vs[x] += vsMean[i];
+                    count++;
+                }
+                if (i == vsPixels.length - 1) {
+                    vs[x] /= count;
+                } else if (vsPixels[i + 1] >= (x + 1) * ppc + 0.5) {
+                    vs[x] /= count;
+                    x++;
+                    count = 0;
+                }
+            }
+        }
     }
 
     @Override
-    public void computeTiles(Rectangle targetRectangle, ProgressMonitor progressMonitor) throws OperatorException {
-        // todo - implement
+    public void computeTile(Tile targetTile, ProgressMonitor progressMonitor) throws OperatorException {
+        String name = targetTile.getRasterDataNode().getName();
+        Rectangle rect = targetTile.getRectangle();
+        if (name.startsWith("mask")) {
+            getTile(sourceProduct.getBand(name), targetTile.getRectangle(), targetTile.getDataBuffer());
+        } else {
+            Tile sourceTile = getTile(sourceProduct.getBand(name), targetTile.getRectangle());
+            for (int y = rect.y; y < rect.y + rect.height; y++) {
+                for (int x = rect.x; x < rect.x + rect.width; x++) {
+                    int correctedValue = (int) (sourceTile.getInt(x, y) / vs[x] + 0.5);
+                    targetTile.setInt(x, y, correctedValue);
+                }
+            }
+        }
     }
 
     @Override
@@ -102,17 +171,17 @@ public class SlitCorrectionOperator extends AbstractOperator {
             scanner.close();
         }
 
-        final double[] positions = new double[abscissaList.size()];
-        final double[] gains = new double[ordinateList.size()];
+        vsPixels = new double[abscissaList.size()];
+        vsMean = new double[ordinateList.size()];
 
-        for (int i = 0; i < positions.length; ++i) {
-            positions[i] = abscissaList.get(i);
-            gains[i] = ordinateList.get(i);
+        for (int i = 0; i < vsPixels.length; ++i) {
+            vsPixels[i] = abscissaList.get(i);
+            vsMean[i] = ordinateList.get(i);
         }
     }
 
     private void setSpectralBandCount() throws OperatorException {
-        final String annotation = getChrisAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
+        final String annotation = getAnnotationString(sourceProduct, ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         if (annotation == null) {
             throw new OperatorException("");
@@ -126,6 +195,21 @@ public class SlitCorrectionOperator extends AbstractOperator {
         }
     }
 
+    private static double getChrisTemperature(Product product) throws OperatorException {
+        final String annotation = getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
+
+        if (annotation == null) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not read annotation ''{0}''", ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
+        }
+        try {
+            return Double.parseDouble(annotation);
+        } catch (NumberFormatException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not parse annotation: ''{0}''", ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
+        }
+    }
+
     /**
      * Returns a CHRIS annotation for a product of interest.
      *
@@ -134,7 +218,7 @@ public class SlitCorrectionOperator extends AbstractOperator {
      *
      * @return the annotation or {@code null} if the annotation could not be found.
      */
-    private static String getChrisAnnotation(Product product, String name) {
+    private static String getAnnotationString(Product product, String name) {
         final MetadataElement metadataRoot = product.getMetadataRoot();
         String annotation = null;
 
@@ -173,6 +257,7 @@ public class SlitCorrectionOperator extends AbstractOperator {
 
 
     public static class Spi extends AbstractOperatorSpi {
+
         public Spi() {
             super(SlitCorrectionOperator.class, "SlitCorrection");
         }
