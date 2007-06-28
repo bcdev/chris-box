@@ -84,11 +84,11 @@ public class SlitCorrectionOp extends AbstractOperator {
             final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
 
             if (sourceBand.getFlagCoding() != null) {
-                FlagCoding srcFlagCoding = sourceBand.getFlagCoding();
-                if (targetProduct.getFlagCoding(srcFlagCoding.getName()) == null) {
-                    ProductUtils.copyFlagCoding(srcFlagCoding, targetProduct);
+                FlagCoding sourceFlagCoding = sourceBand.getFlagCoding();
+                if (targetProduct.getFlagCoding(sourceFlagCoding.getName()) == null) {
+                    ProductUtils.copyFlagCoding(sourceFlagCoding, targetProduct);
                 }
-                targetBand.setFlagCoding(targetProduct.getFlagCoding(srcFlagCoding.getName()));
+                targetBand.setFlagCoding(targetProduct.getFlagCoding(sourceFlagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
