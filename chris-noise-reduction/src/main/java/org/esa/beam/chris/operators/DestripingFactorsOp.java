@@ -16,7 +16,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
+import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
@@ -30,7 +30,6 @@ import org.esa.beam.framework.gpf.Raster;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
 
 import java.awt.Rectangle;
 import static java.lang.Math.*;
@@ -61,12 +60,13 @@ public class DestripingFactorsOp extends AbstractOperator {
     private int spectralBandCount;
 
     private transient Map<String, Double> thresholdMap;
-    private transient LocalRegressionSmoothing smoothing;
+    private transient LocalRegressionSmoothing smoother;
 
     private transient Band[] targetBands;
     private transient Band[][] sourceDataBands;
     private transient Band[][] sourceMaskBands;
     private transient Panorama panorama;
+    private boolean[][] edgeMask;
 
     /**
      * Creates an instance of this class.
@@ -78,7 +78,6 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
-        // initialization
         thresholdMap = new HashMap<String, Double>(6);
         thresholdMap.put("1", 0.08);
         thresholdMap.put("2", 0.05);
@@ -87,9 +86,6 @@ public class DestripingFactorsOp extends AbstractOperator {
         thresholdMap.put("4", 0.08);
         thresholdMap.put("5", 0.08);
 
-        smoothing = new LocalRegressionSmoothing(2, smoothingOrder, 2);
-
-        edgeDetectionThreshold = getEdgeDetectionThreshold();
         spectralBandCount = getAnnotationInt(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         // set up source bands
@@ -113,10 +109,12 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
         }
 
-        // create image panorama
         panorama = new Panorama(sourceProducts);
+        edgeDetectionThreshold = getEdgeDetectionThreshold();
+        edgeMask = createEdgeMask(pm);
+        smoother = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
-        // set up target product
+        // set up target product and bands
         targetProduct = new Product("VSC", "CHRIS_VSC", sourceProducts[0].getSceneRasterWidth(), 1);
         targetBands = new Band[spectralBandCount];
 
@@ -136,9 +134,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     @Override
     public void computeTiles(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
         try {
-            pm.beginTask("computing correction factors", 2 * spectralBandCount + 3);
-            boolean[][] edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + 3));
-
+            pm.beginTask("computing correction factors", spectralBandCount);
             for (int i = 0; i < spectralBandCount; ++i) {
                 computeCorrectionFactors(i, edgeMask, targetRectangle);
                 pm.worked(1);
@@ -148,26 +144,31 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
     }
 
+    @Override
+    public void dispose() {
+        smoother = null;
+        edgeMask = null;
+    }
+
     /**
      * Computes the vertical striping correction factors for a single target band.
      *
-     * @param bandIndex       the spactral band index.
+     * @param bandIndex       the band index.
      * @param edgeMask        the edgeMask.
      * @param targetRectangle the target rectangle.
      *
      * @throws OperatorException
      */
-    private void computeCorrectionFactors(int bandIndex,
-                                          boolean[][] edgeMask,
-                                          Rectangle targetRectangle) throws OperatorException {
+    private void computeCorrectionFactors(int bandIndex, boolean[][] edgeMask, Rectangle targetRectangle)
+            throws OperatorException {
         // 1. Accumulate the across-track spatial derivative profile
         final double[] p = new double[panorama.width];
         final int[] count = new int[panorama.width];
 
-        for (int i = 0, panoramaY = 0; i < sourceProducts.length; ++i) {
-            final Rectangle sourceRectangle = panorama.getRectangle(i);
-            final Raster data = getTile(sourceDataBands[bandIndex][i], sourceRectangle);
-            final Raster mask = getTile(sourceMaskBands[bandIndex][i], sourceRectangle);
+        for (int j = 0, panoramaY = 0; j < sourceProducts.length; ++j) {
+            final Rectangle sourceRectangle = panorama.getRectangle(j);
+            final Raster data = getTile(sourceDataBands[bandIndex][j], sourceRectangle);
+            final Raster mask = getTile(sourceMaskBands[bandIndex][j], sourceRectangle);
 
             for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
                 for (int x = 1; x < panorama.width; ++x) {
@@ -192,7 +193,7 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
         // 4. Smooth the integrated profile to get rid of small-scale variations (noise)
         final double[] s = new double[panorama.width];
-        smoothing.smooth(p, s);
+        smoother.smooth(p, s);
         // 5. Compute the noise profile
         double meanNoise = 0.0;
         for (int x = 0; x < panorama.width; ++x) {
@@ -222,7 +223,7 @@ public class DestripingFactorsOp extends AbstractOperator {
      */
     private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
         try {
-            pm.beginTask("creating spatio-spectral edge mask", spectralBandCount + 3);
+            pm.beginTask("creating edge mask", spectralBandCount + 3);
 
             // 1. Compute the squares and across-track scalar products of the spectral vectors
             final double[][] sad = new double[panorama.width][panorama.height];
