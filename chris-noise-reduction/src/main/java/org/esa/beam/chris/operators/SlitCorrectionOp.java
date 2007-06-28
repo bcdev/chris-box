@@ -32,15 +32,14 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.Rectangle;
-import java.io.BufferedInputStream;
-import java.io.InputStream;
+import java.io.File;
+import java.io.IOException;
 import static java.lang.Math.round;
+import java.net.URL;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
 
 /**
  * Operator for correcting the vertical striping (VS) due to the entrance slit.
@@ -166,31 +165,26 @@ public class SlitCorrectionOp extends AbstractOperator {
     }
 
     private static double[][] readReferenceSlitVsProfile() throws OperatorException {
-        final Scanner scanner = getResourceAsScanner("slit-vs-profile.dat");
-
-        final List<Double> abscissaList = new ArrayList<Double>(150000);
-        final List<Double> ordinateList = new ArrayList<Double>(150000);
+        final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.dat");
 
         try {
-            while (scanner.hasNext()) {
-                abscissaList.add(scanner.nextDouble());
-                ordinateList.add(scanner.nextDouble());
-            }
+            final int length = iis.readInt();
+            final double[] abscissas = new double[length];
+            final double[] ordinates = new double[length];
+
+            iis.readFully(abscissas, 0, length);
+            iis.readFully(ordinates, 0, length);
+
+            return new double[][]{abscissas, ordinates};
         } catch (Exception e) {
             throw new OperatorException("could not read reference slit-VS profile", e);
         } finally {
-            scanner.close();
+            try {
+                iis.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
-
-        final double[] abscissas = new double[abscissaList.size()];
-        final double[] ordinates = new double[ordinateList.size()];
-
-        for (int i = 0; i < abscissas.length; ++i) {
-            abscissas[i] = abscissaList.get(i);
-            ordinates[i] = ordinateList.get(i);
-        }
-
-        return new double[][]{abscissas, ordinates};
     }
 
     // todo -- move
@@ -242,25 +236,27 @@ public class SlitCorrectionOp extends AbstractOperator {
     }
 
     /**
-     * Returns a {@link Scanner} for a resource file of interest.
+     * Returns an {@link ImageInputStream} for a resource file of interest.
      *
      * @param name the name of the resource file of interest.
      *
-     * @return the scanner.
+     * @return the image input stream.
      *
-     * @throws OperatorException if the resource could not be found.
+     * @throws OperatorException if the resource could not be found or the
+     *                           image input stream could not be created.
      */
-    private static Scanner getResourceAsScanner(String name) throws OperatorException {
-        final InputStream is = SlitCorrectionOp.class.getResourceAsStream(name);
+    private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
+        final URL url = SlitCorrectionOp.class.getResource(name);
 
-        if (is == null) {
+        if (url == null) {
             throw new OperatorException(MessageFormat.format("resource {0} not found", name));
         }
-
-        final Scanner scanner = new Scanner(new BufferedInputStream(is));
-        scanner.useLocale(Locale.ENGLISH);
-
-        return scanner;
+        try {
+            return new FileImageInputStream(new File(url.toURI()));
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not create image input stream for resource {0}", name), e);
+        }
     }
 
 
