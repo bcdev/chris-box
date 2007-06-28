@@ -1,3 +1,3 @@
-org.esa.beam.chris.operators.SlitCorrectionOperator$Spi
-org.esa.beam.chris.operators.VsCorrectionFactorsOperator$Spi
-org.esa.beam.chris.operators.VsRemovalOperator$Spi
+org.esa.beam.chris.operators.SlitCorrectionOp$Spi
+org.esa.beam.chris.operators.DestripingFactorsOp$Spi
+org.esa.beam.chris.operators.DestripingOp$Spi

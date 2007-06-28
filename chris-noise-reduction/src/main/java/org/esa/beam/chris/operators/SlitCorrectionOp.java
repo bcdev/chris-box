@@ -15,14 +15,7 @@
  */
 package org.esa.beam.chris.operators;
 
-import java.awt.Rectangle;
-import java.io.InputStream;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
-
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -33,72 +26,77 @@ import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Raster;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import com.bc.ceres.core.ProgressMonitor;
+import java.awt.Rectangle;
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import static java.lang.Math.round;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Scanner;
 
 /**
- * Operator for correcting the vertical striping (VS) due to irregularities of
- * the entrance slit.
+ * Operator for correcting the vertical striping (VS) due to the entrance slit.
  *
  * @author Ralf Quast
+ * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
-public class SlitCorrectionOperator extends AbstractOperator {
+public class SlitCorrectionOp extends AbstractOperator {
 
-    @SourceProduct
+    @SourceProduct(alias = "input")
     Product sourceProduct;
     @TargetProduct
     Product targetProduct;
 
-    private double[] vsPixels;
-    private double[] vsMean;
+    // todo -- operator parameters?
+    private static final double G1 = 0.13045510094294;
+    private static final double G2 = 0.28135856882126;
+    private static final double S1 = -0.12107994955864;
+    private static final double S2 = 0.65034734426230;
 
-    private static final double P2VSG_1 = 0.13045510094294;
-    private static final double P2VSG_2 = 0.28135856882126;
-    private static final double P2VSS_1 = -0.12107994955864;
-    private static final double P2VSS_2 = 0.65034734426230;
-
-    private double[] correctionFactors;
-
+    private double[] noiseFactors;
 
     /**
      * Creates an instance of this class.
      *
      * @param spi the operator service provider interface.
      */
-    public SlitCorrectionOperator(OperatorSpi spi) {
+    public SlitCorrectionOp(OperatorSpi spi) {
         super(spi);
     }
 
     @Override
-	protected Product initialize(ProgressMonitor progressMonitor) throws OperatorException {
-        computeCorrectionFactors();
-
+    protected Product initialize(ProgressMonitor pm) throws OperatorException {
+        computeNoiseFactors();
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
-        for (String sourceBandName : sourceProduct.getBandNames()) {
-        	Band destBand = ProductUtils.copyBand(sourceBandName, sourceProduct, targetProduct);
-        	
-            Band srcBand = sourceProduct.getBand(sourceBandName);
-            if (srcBand.getFlagCoding() != null) {
-                FlagCoding srcFlagCoding = srcBand.getFlagCoding();
+
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+
+            if (sourceBand.getFlagCoding() != null) {
+                FlagCoding srcFlagCoding = sourceBand.getFlagCoding();
                 if (targetProduct.getFlagCoding(srcFlagCoding.getName()) == null) {
-                	ProductUtils.copyFlagCoding(srcFlagCoding, targetProduct);
+                    ProductUtils.copyFlagCoding(srcFlagCoding, targetProduct);
                 }
-                destBand.setFlagCoding(targetProduct.getFlagCoding(srcFlagCoding.getName()));
+                targetBand.setFlagCoding(targetProduct.getFlagCoding(srcFlagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         cloneMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot(), 0);
+
         return targetProduct;
     }
-    
-    
+
     /////////////////////////////////////////////////////
     // TODO move to a more apropriate place! super??
     protected void cloneMetadataElementsAndAttributes(MetadataElement sourceRoot, MetadataElement destRoot, int level) {
@@ -125,75 +123,79 @@ public class SlitCorrectionOperator extends AbstractOperator {
     // TODO move to a more apropriate place! super??
     /////////////////////////////////////////////////////
 
-    
-    private void computeCorrectionFactors() throws OperatorException {
-        setReferenceSlitVsProfile();
+    private void computeNoiseFactors() throws OperatorException {
+        final double[][] table = readReferenceSlitVsProfile();
 
+        final double[] x = table[0];
+        final double[] y = table[1];
+
+        // shift and scale the reference profile according to actual temperature
         final double temperature = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
-
-        final double vsGain = P2VSG_1 * temperature + P2VSG_2;
-        final double vsShift = P2VSS_1 * temperature + P2VSS_2;
-
-        // Correction of VS dependence on temperature
-        for (int i = 0; i < vsPixels.length; ++i) {
-            vsMean[i] = (vsMean[i] - 1.0) * vsGain + 1.0;
-            vsPixels[i] -= vsShift;
+        final double scale = G1 * temperature + G2;
+        final double shift = S1 * temperature + S2;
+        for (int i = 0; i < x.length; ++i) {
+            x[i] -= shift;
+            y[i] = (y[i] - 1.0) * scale + 1.0;
         }
 
-        int ppc = 1;
+        int ppc;
         if ("1".equals(getAnnotationString(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE))) {
             ppc = 2;
-        }
-
-        final int width = sourceProduct.getSceneRasterWidth();
-        correctionFactors = new double[width];
-        int x = 0;
-        int count = 0;
-
-        for (int i = 0; i < vsPixels.length; ++i) {
-            if (x < width) {
-                if (vsPixels[i] > 0.5 && vsPixels[i] < (x + 1) * ppc + 0.5) {
-                    correctionFactors[x] += vsMean[i];
-                    count++;
-                }
-                if (i == vsPixels.length - 1) {
-                    correctionFactors[x] /= count;
-                } else if (vsPixels[i + 1] >= (x + 1) * ppc + 0.5) {
-                    correctionFactors[x] /= count;
-                    x++;
-                    count = 0;
-                }
-            }
-        }
-    }
-
-    @Override
-    public void computeTile(Tile targetTile, ProgressMonitor progressMonitor) throws OperatorException {
-        String name = targetTile.getRasterDataNode().getName();
-        Rectangle rect = targetTile.getRectangle();
-        if (name.startsWith("mask")) {
-            getTile(sourceProduct.getBand(name), targetTile.getRectangle(), targetTile.getDataBuffer());
         } else {
-            Tile sourceTile = getTile(sourceProduct.getBand(name), targetTile.getRectangle());
-            for (int y = rect.y; y < rect.y + rect.height; y++) {
-                for (int x = rect.x; x < rect.x + rect.width; x++) {
-                    int correctedValue = (int) (sourceTile.getInt(x, y) / correctionFactors[x] + 0.5);
-                    targetTile.setInt(x, y, correctedValue);
+            ppc = 1;
+        }
+
+        // rebin the profile onto CCD pixels
+        noiseFactors = new double[sourceProduct.getSceneRasterWidth()];
+        for (int pixel = 0, i = 0; pixel < noiseFactors.length; ++pixel) {
+            int count = 0;
+            for (; i < x.length; ++i) {
+                if (x[i] > (pixel + 1) * ppc + 0.5) {
+                    break;
                 }
+                if (x[i] > 0.5) {
+                    noiseFactors[pixel] += y[i];
+                    ++count;
+                }
+            }
+            if (count != 0) {
+                noiseFactors[pixel] /= count;
+            } else { // can only happen if the domain of the reference profile is too small
+                noiseFactors[pixel] = 1.0;
             }
         }
     }
 
     @Override
-    public void dispose() {
-        // todo - add any clean-up code here, the targetProduct is disposed by the framework
+    public void computeTile(Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        final String name = targetTile.getRasterDataNode().getName();
+        final Rectangle targetRectangle = targetTile.getRectangle();
+
+        if (name.startsWith("radiance")) {
+            try {
+                pm.beginTask("correcting slit vertical striping", targetRectangle.height);
+                final Raster sourceTile = getTile(sourceProduct.getBand(name), targetRectangle);
+
+                for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
+                    for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
+                        int value = (int) round(sourceTile.getInt(x, y) / noiseFactors[x]);
+                        targetTile.setInt(x, y, value);
+                    }
+                    pm.worked(1);
+                }
+            } finally {
+                pm.done();
+            }
+        } else {
+            getTile(sourceProduct.getBand(name), targetRectangle, targetTile.getDataBuffer());
+        }
     }
 
-    private void setReferenceSlitVsProfile() throws OperatorException {
+    private static double[][] readReferenceSlitVsProfile() throws OperatorException {
         final Scanner scanner = getResourceAsScanner("slit-vs-profile.dat");
 
-        final List<Double> abscissaList = new ArrayList<Double>();
-        final List<Double> ordinateList = new ArrayList<Double>();
+        final List<Double> abscissaList = new ArrayList<Double>(150000);
+        final List<Double> ordinateList = new ArrayList<Double>(150000);
 
         try {
             while (scanner.hasNext()) {
@@ -201,19 +203,20 @@ public class SlitCorrectionOperator extends AbstractOperator {
                 ordinateList.add(scanner.nextDouble());
             }
         } catch (Exception e) {
-            throw new OperatorException("", e);
-            // todo - message
+            throw new OperatorException("could not read reference slit-VS profile", e);
         } finally {
             scanner.close();
         }
 
-        vsPixels = new double[abscissaList.size()];
-        vsMean = new double[ordinateList.size()];
+        final double[] abscissas = new double[abscissaList.size()];
+        final double[] ordinates = new double[ordinateList.size()];
 
-        for (int i = 0; i < vsPixels.length; ++i) {
-            vsPixels[i] = abscissaList.get(i);
-            vsMean[i] = ordinateList.get(i);
+        for (int i = 0; i < abscissas.length; ++i) {
+            abscissas[i] = abscissaList.get(i);
+            ordinates[i] = ordinateList.get(i);
         }
+
+        return new double[][]{abscissas, ordinates};
     }
 
     private static double getAnnotationDouble(Product product, String name) throws OperatorException {
@@ -222,8 +225,7 @@ public class SlitCorrectionOperator extends AbstractOperator {
         try {
             return Double.parseDouble(string);
         } catch (NumberFormatException e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not parse CHRIS annotation ''{0}''", name));
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
@@ -265,13 +267,13 @@ public class SlitCorrectionOperator extends AbstractOperator {
      * @throws OperatorException if the resource could not be found.
      */
     private static Scanner getResourceAsScanner(String name) throws OperatorException {
-        final InputStream is = SlitCorrectionOperator.class.getResourceAsStream(name);
+        final InputStream is = SlitCorrectionOp.class.getResourceAsStream(name);
 
         if (is == null) {
             throw new OperatorException(MessageFormat.format("resource {0} not found", name));
         }
 
-        final Scanner scanner = new Scanner(is);
+        final Scanner scanner = new Scanner(new BufferedInputStream(is));
         scanner.useLocale(Locale.ENGLISH);
 
         return scanner;
@@ -281,7 +283,8 @@ public class SlitCorrectionOperator extends AbstractOperator {
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {
-            super(SlitCorrectionOperator.class, "SlitCorrection");
+            super(SlitCorrectionOp.class, "SlitCorrection");
+            // todo -- set description etc.
         }
     }
 

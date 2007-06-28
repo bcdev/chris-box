@@ -47,7 +47,7 @@ import java.util.Map;
  * @author Marco Zühlke
  * @version $Revision: $ $Date: $
  */
-public class VsCorrectionFactorsOperator extends AbstractOperator {
+public class DestripingFactorsOp extends AbstractOperator {
 
     @SourceProducts
     Product[] sourceProducts;
@@ -73,7 +73,7 @@ public class VsCorrectionFactorsOperator extends AbstractOperator {
      *
      * @param spi the operator service provider interface.
      */
-    public VsCorrectionFactorsOperator(OperatorSpi spi) {
+    public DestripingFactorsOp(OperatorSpi spi) {
         super(spi);
     }
 
@@ -351,7 +351,8 @@ public class VsCorrectionFactorsOperator extends AbstractOperator {
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {
-            super(VsCorrectionFactorsOperator.class, "VsCorrectionFactors");
+            super(DestripingFactorsOp.class, "DestripingFactors");
+            // todo -- set description etc.
         }
     }
 

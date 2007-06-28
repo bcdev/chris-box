@@ -36,13 +36,13 @@ import static java.lang.Math.round;
 
 /**
  * Operator for applying the vertical striping (VS) correction factors calculated by
- * the {@link VsCorrectionFactorsOperator}.
+ * the {@link DestripingFactorsOp}.
  *
  * @author Ralf Quast
  * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
-public class VsRemovalOperator extends AbstractOperator {
+public class DestripingOp extends AbstractOperator {
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -56,7 +56,7 @@ public class VsRemovalOperator extends AbstractOperator {
      *
      * @param spi the operator service provider interface.
      */
-    public VsRemovalOperator(OperatorSpi spi) {
+    public DestripingOp(OperatorSpi spi) {
         super(spi);
     }
 
@@ -124,7 +124,8 @@ public class VsRemovalOperator extends AbstractOperator {
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {
-            super(VsRemovalOperator.class, "VsRemoval");
+            super(DestripingOp.class, "Destriping");
+            // todo -- set description etc.
         }
     }
 

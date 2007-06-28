@@ -1,5 +1,5 @@
 <graph>
-    <id>vs-removal</id>
+    <id>destriping</id>
 
     <node>
         <id>load</id>
@@ -11,15 +11,15 @@
 
     <node>
         <id>slit-correction</id>
-        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOp$Spi</operator>
         <sources>
             <input>load</input>
         </sources>
     </node>
 
     <node>
-        <id>vs-correction-factors</id>
-        <operator>org.esa.beam.chris.operators.VsCorrectionFactorsOperator$Spi</operator>
+        <id>destriping-factors</id>
+        <operator>org.esa.beam.chris.operators.DestripingFactorsOp$Spi</operator>
         <sources>
             <input>slit-correction</input>
         </sources>
@@ -29,11 +29,11 @@
     </node>
 
     <node>
-        <id>vs-removal</id>
-        <operator>org.esa.beam.chris.operators.VsRemovalOperator$Spi</operator>
+        <id>destriping</id>
+        <operator>org.esa.beam.chris.operators.DestripingOp$Spi</operator>
         <sources>
             <input>slit-correction</input>
-            <factors>vs-correction-factors</factors>
+            <factors>destriping-factors</factors>
         </sources>
     </node>
 
@@ -41,7 +41,7 @@
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>vs-removal</input>
+            <input>destriping</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>

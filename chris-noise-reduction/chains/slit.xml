@@ -11,7 +11,7 @@
 
     <node>
         <id>slit-correction</id>
-        <operator>org.esa.beam.chris.operators.SlitCorrectionOperator$Spi</operator>
+        <operator>org.esa.beam.chris.operators.SlitCorrectionOp$Spi</operator>
         <sources>
             <input>load</input>
         </sources>
