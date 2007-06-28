@@ -92,36 +92,35 @@ public class SlitCorrectionOp extends AbstractOperator {
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
-        cloneMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot(), 0);
+        copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
         return targetProduct;
     }
 
-    /////////////////////////////////////////////////////
-    // TODO move to a more apropriate place! super??
-    protected void cloneMetadataElementsAndAttributes(MetadataElement sourceRoot, MetadataElement destRoot, int level) {
-        cloneMetadataElements(sourceRoot, destRoot, level);
-        cloneMetadataAttributes(sourceRoot, destRoot);
-    }
+    @Override
+    public void computeTile(Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        final String name = targetTile.getRasterDataNode().getName();
+        final Rectangle targetRectangle = targetTile.getRectangle();
 
-    protected void cloneMetadataElements(MetadataElement sourceRoot, MetadataElement destRoot, int level) {
-        for (int i = 0; i < sourceRoot.getNumElements(); i++) {
-            MetadataElement sourceElement = sourceRoot.getElementAt(i);
-            MetadataElement element = new MetadataElement(sourceElement.getName());
-            element.setDescription(sourceElement.getDescription());
-            destRoot.addElement(element);
-            cloneMetadataElementsAndAttributes(sourceElement, element, level + 1);
+        if (name.startsWith("radiance")) {
+            try {
+                pm.beginTask("correcting slit vertical striping", targetRectangle.height);
+                final Raster sourceTile = getTile(sourceProduct.getBand(name), targetRectangle);
+
+                for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
+                    for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
+                        final int value = (int) round(sourceTile.getInt(x, y) / noiseFactors[x]);
+                        targetTile.setInt(x, y, value);
+                    }
+                    pm.worked(1);
+                }
+            } finally {
+                pm.done();
+            }
+        } else {
+            getTile(sourceProduct.getBand(name), targetRectangle, targetTile.getDataBuffer());
         }
     }
-
-    protected void cloneMetadataAttributes(MetadataElement sourceRoot, MetadataElement destRoot) {
-        for (int i = 0; i < sourceRoot.getNumAttributes(); i++) {
-            MetadataAttribute sourceAttribute = sourceRoot.getAttributeAt(i);
-            destRoot.addAttribute(sourceAttribute.createDeepClone());
-        }
-    }
-    // TODO move to a more apropriate place! super??
-    /////////////////////////////////////////////////////
 
     private void computeNoiseFactors() throws OperatorException {
         final double[][] table = readReferenceSlitVsProfile();
@@ -166,31 +165,6 @@ public class SlitCorrectionOp extends AbstractOperator {
         }
     }
 
-    @Override
-    public void computeTile(Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        final String name = targetTile.getRasterDataNode().getName();
-        final Rectangle targetRectangle = targetTile.getRectangle();
-
-        if (name.startsWith("radiance")) {
-            try {
-                pm.beginTask("correcting slit vertical striping", targetRectangle.height);
-                final Raster sourceTile = getTile(sourceProduct.getBand(name), targetRectangle);
-
-                for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
-                    for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                        int value = (int) round(sourceTile.getInt(x, y) / noiseFactors[x]);
-                        targetTile.setInt(x, y, value);
-                    }
-                    pm.worked(1);
-                }
-            } finally {
-                pm.done();
-            }
-        } else {
-            getTile(sourceProduct.getBand(name), targetRectangle, targetTile.getDataBuffer());
-        }
-    }
-
     private static double[][] readReferenceSlitVsProfile() throws OperatorException {
         final Scanner scanner = getResourceAsScanner("slit-vs-profile.dat");
 
@@ -217,6 +191,16 @@ public class SlitCorrectionOp extends AbstractOperator {
         }
 
         return new double[][]{abscissas, ordinates};
+    }
+
+    // todo -- move
+    private static void copyMetadataElementsAndAttributes(MetadataElement source, MetadataElement target) {
+        for (final MetadataElement element : source.getElements()) {
+            target.addElement(element.createDeepClone());
+        }
+        for (final MetadataAttribute attribute : source.getAttributes()) {
+            target.addAttribute(attribute.createDeepClone());
+        }
     }
 
     private static double getAnnotationDouble(Product product, String name) throws OperatorException {

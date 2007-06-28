@@ -22,11 +22,13 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.datamodel.RasterDataNode;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Raster;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -132,18 +134,17 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTiles(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        try {
-            pm.beginTask("computing correction factors", spectralBandCount);
-            for (int i = 0; i < spectralBandCount; ++i) {
-                computeCorrectionFactors(i, edgeMask, targetRectangle);
-                pm.worked(1);
+    public void computeTile(Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        final RasterDataNode node = targetTile.getRasterDataNode();
+
+        for (int i = 0; i < targetBands.length; ++i) {
+            if (targetBands[i].equals(node)) {
+                computeCorrectionFactors(i, targetTile.getRectangle(), pm);
+                return;
             }
-        } finally {
-            pm.done();
         }
     }
-
+    
     @Override
     public void dispose() {
         smoother = null;
@@ -154,60 +155,72 @@ public class DestripingFactorsOp extends AbstractOperator {
      * Computes the vertical striping correction factors for a single target band.
      *
      * @param bandIndex       the band index.
-     * @param edgeMask        the edgeMask.
      * @param targetRectangle the target rectangle.
+     * @param pm              the {@link ProgressMonitor}.
      *
      * @throws OperatorException
      */
-    private void computeCorrectionFactors(int bandIndex, boolean[][] edgeMask, Rectangle targetRectangle)
+    private void computeCorrectionFactors(int bandIndex, Rectangle targetRectangle, ProgressMonitor pm)
             throws OperatorException {
-        // 1. Accumulate the across-track spatial derivative profile
-        final double[] p = new double[panorama.width];
-        final int[] count = new int[panorama.width];
+        try {
+            pm.beginTask("computing corection factors", panorama.height + 5);
 
-        for (int j = 0, panoramaY = 0; j < sourceProducts.length; ++j) {
-            final Rectangle sourceRectangle = panorama.getRectangle(j);
-            final Raster data = getTile(sourceDataBands[bandIndex][j], sourceRectangle);
-            final Raster mask = getTile(sourceMaskBands[bandIndex][j], sourceRectangle);
+            // 1. Accumulate the across-track spatial derivative profile
+            final double[] p = new double[panorama.width];
+            final int[] count = new int[panorama.width];
 
-            for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
-                for (int x = 1; x < panorama.width; ++x) {
-                    if (!edgeMask[panoramaY][x] && mask.getInt(x, sceneY) == 0 && mask.getInt(x - 1, sceneY) == 0) {
-                        p[x] += log(data.getDouble(x, sceneY) / data.getDouble(x - 1, sceneY));
-                        ++count[x];
+            for (int j = 0, panoramaY = 0; j < sourceProducts.length; ++j) {
+                final Rectangle sourceRectangle = panorama.getRectangle(j);
+                final Raster data = getTile(sourceDataBands[bandIndex][j], sourceRectangle);
+                final Raster mask = getTile(sourceMaskBands[bandIndex][j], sourceRectangle);
+
+                for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
+                    for (int x = 1; x < panorama.width; ++x) {
+                        if (!edgeMask[panoramaY][x] && mask.getInt(x, sceneY) == 0 && mask.getInt(x - 1, sceneY) == 0) {
+                            p[x] += log(data.getDouble(x, sceneY) / data.getDouble(x - 1, sceneY));
+                            ++count[x];
+                        }
                     }
+                    pm.worked(1);
                 }
             }
-        }
-        // 2. Compute the average profile
-        for (int x = 1; x < panorama.width; ++x) {
-            if (count[x] > 0) {
-                p[x] /= count[x];
-            } else {
-                p[x] = p[x - 1];
+            // 2. Compute the average profile
+            for (int x = 1; x < panorama.width; ++x) {
+                if (count[x] > 0) {
+                    p[x] /= count[x];
+                } else {
+                    p[x] = p[x - 1];
+                }
             }
-        }
-        // 3. Compute the integrated profile
-        for (int x = 1; x < panorama.width; ++x) {
-            p[x] += p[x - 1];
-        }
-        // 4. Smooth the integrated profile to get rid of small-scale variations (noise)
-        final double[] s = new double[panorama.width];
-        smoother.smooth(p, s);
-        // 5. Compute the noise profile
-        double meanNoise = 0.0;
-        for (int x = 0; x < panorama.width; ++x) {
-            p[x] -= s[x];
-            meanNoise += p[x];
-        }
-        meanNoise /= panorama.width;
-        for (int x = 0; x < panorama.width; ++x) {
-            p[x] -= meanNoise;
-        }
-        // 6. Compute the correction factors
-        final Raster targetRaster = getTile(targetBands[bandIndex], targetRectangle);
-        for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-            targetRaster.setDouble(x, 0, exp(-p[x]));
+            pm.worked(1);
+            // 3. Compute the integrated profile
+            for (int x = 1; x < panorama.width; ++x) {
+                p[x] += p[x - 1];
+            }
+            pm.worked(1);
+            // 4. Smooth the integrated profile to get rid of small-scale variations (noise)
+            final double[] s = new double[panorama.width];
+            smoother.smooth(p, s);
+            pm.worked(1);
+            // 5. Compute the noise profile
+            double meanNoise = 0.0;
+            for (int x = 0; x < panorama.width; ++x) {
+                p[x] -= s[x];
+                meanNoise += p[x];
+            }
+            meanNoise /= panorama.width;
+            for (int x = 0; x < panorama.width; ++x) {
+                p[x] -= meanNoise;
+            }
+            pm.worked(1);
+            // 6. Compute the correction factors
+            final Raster targetRaster = getTile(targetBands[bandIndex], targetRectangle);
+            for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                targetRaster.setDouble(x, 0, exp(-p[x]));
+            }
+            pm.worked(1);
+        } finally {
+            pm.done();
         }
     }
 
