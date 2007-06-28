@@ -15,7 +15,17 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
+import static java.lang.Math.round;
+
+import java.awt.Rectangle;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.text.MessageFormat;
+
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -27,19 +37,11 @@ import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Raster;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import javax.imageio.stream.FileImageInputStream;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.Rectangle;
-import java.io.File;
-import java.io.IOException;
-import static java.lang.Math.round;
-import java.net.URL;
-import java.text.MessageFormat;
+import com.bc.ceres.core.ProgressMonitor;
 
 /**
  * Operator for correcting the vertical striping (VS) due to the entrance slit.
@@ -97,9 +99,9 @@ public class SlitCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTile(Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        final String name = targetTile.getRasterDataNode().getName();
-        final Rectangle targetRectangle = targetTile.getRectangle();
+    public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        final String name = targetRaster.getRasterDataNode().getName();
+        final Rectangle targetRectangle = targetRaster.getRectangle();
 
         if (name.startsWith("radiance")) {
             try {
@@ -109,7 +111,7 @@ public class SlitCorrectionOp extends AbstractOperator {
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                     for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                         final int value = (int) round(sourceTile.getInt(x, y) / noiseFactors[x]);
-                        targetTile.setInt(x, y, value);
+                        targetRaster.setInt(x, y, value);
                     }
                     pm.worked(1);
                 }
@@ -117,7 +119,7 @@ public class SlitCorrectionOp extends AbstractOperator {
                 pm.done();
             }
         } else {
-            getTile(sourceProduct.getBand(name), targetRectangle, targetTile.getDataBuffer());
+            getTile(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
         }
     }
 

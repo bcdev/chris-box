@@ -15,7 +15,19 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
+import static java.lang.Math.acos;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
+
+import java.awt.Rectangle;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
@@ -28,17 +40,11 @@ import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Raster;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
-import java.awt.Rectangle;
-import static java.lang.Math.*;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import com.bc.ceres.core.ProgressMonitor;
 
 /**
  * Operator for calculating the vertical striping correction factors for noise
@@ -134,12 +140,12 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTile(Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        final RasterDataNode node = targetTile.getRasterDataNode();
+    public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        final RasterDataNode node = targetRaster.getRasterDataNode();
 
         for (int i = 0; i < targetBands.length; ++i) {
             if (targetBands[i].equals(node)) {
-                computeCorrectionFactors(i, targetTile.getRectangle(), pm);
+                computeCorrectionFactors(i, targetRaster.getRectangle(), pm);
                 return;
             }
         }

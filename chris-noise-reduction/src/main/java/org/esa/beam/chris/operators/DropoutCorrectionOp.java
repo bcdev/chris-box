@@ -1,12 +1,13 @@
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Tile;
+import org.esa.beam.framework.gpf.Raster;
 import org.esa.beam.framework.gpf.annotations.Parameter;
+
+import com.bc.ceres.core.ProgressMonitor;
 
 public class DropoutCorrectionOp  extends AbstractOperator {
 
@@ -26,7 +27,6 @@ public class DropoutCorrectionOp  extends AbstractOperator {
     }
 
     @Override
-    public void computeTile(Tile tile, ProgressMonitor progressMonitor) throws OperatorException {
-        super.computeTile(tile, progressMonitor);
+    public void computeBand(Raster raster, ProgressMonitor progressMonitor) throws OperatorException {
     }
 }
