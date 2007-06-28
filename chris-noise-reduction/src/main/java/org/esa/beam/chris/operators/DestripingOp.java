@@ -15,10 +15,7 @@
  */
 package org.esa.beam.chris.operators;
 
-import static java.lang.Math.round;
-
-import java.awt.Rectangle;
-
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
@@ -33,7 +30,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import com.bc.ceres.core.ProgressMonitor;
+import java.awt.Rectangle;
 
 /**
  * Operator for applying the vertical striping (VS) correction factors calculated by
@@ -48,7 +45,7 @@ public class DestripingOp extends AbstractOperator {
     @SourceProduct(alias = "input")
     Product sourceProduct;
     @SourceProduct(alias = "factors")
-    Product factorsProduct;
+    Product factorProduct;
     @TargetProduct
     Product targetProduct;
 
@@ -66,19 +63,35 @@ public class DestripingOp extends AbstractOperator {
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
-        for (final Band sourceBand : sourceProduct.getBands()) {
-            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+        for (final Band band : sourceProduct.getBands()) {
+            final Band targetBand = ProductUtils.copyBand(band.getName(), sourceProduct, targetProduct);
 
-            if (sourceBand.getFlagCoding() != null) {
-                final FlagCoding sourceFlagCoding = sourceBand.getFlagCoding();
-                if (targetProduct.getFlagCoding(sourceFlagCoding.getName()) == null) {
-                    ProductUtils.copyFlagCoding(sourceFlagCoding, targetProduct);
+            if (band.getFlagCoding() != null) {
+                final FlagCoding flagCoding = band.getFlagCoding();
+                if (targetProduct.getFlagCoding(flagCoding.getName()) == null) {
+                    ProductUtils.copyFlagCoding(flagCoding, targetProduct);
                 }
-                targetBand.setFlagCoding(targetProduct.getFlagCoding(sourceFlagCoding.getName()));
+                targetBand.setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+/*
+        targetProduct.getMetadataRoot().addElement(new MetadataElement("SPH"));
+
+        for (final Band band : factorsProduct.getBands()) {
+            final Rectangle rectangle = new Rectangle(0, 0, band.getSceneRasterWidth(), 1);
+            final Raster raster = getTile(band, rectangle);
+            final double[] factors = new double[rectangle.width];
+            for (int x = 0; x < rectangle.width; ++x) {
+                factors[x] = raster.getDouble(x, 0);
+            }
+            targetProduct.getMetadataRoot().getElement("SPH").addElement(new MetadataElement(band.getName()));
+            targetProduct.getMetadataRoot().getElement("SPH").getElement(band.getName()).setDescription(band.getDescription());
+            targetProduct.getMetadataRoot().getElement("SPH").getElement(band.getName()).addAttribute(
+                    new MetadataAttribute("column", ProductData.createInstance(factors), true));
+        }
+*/
 
         return targetProduct;
     }
@@ -92,13 +105,13 @@ public class DestripingOp extends AbstractOperator {
             try {
                 pm.beginTask("removing vertical striping artifacts", targetRectangle.height);
 
-                final Raster data = getRaster(sourceProduct.getBand(name), targetRectangle);
-                final Raster factors = getRaster(factorsProduct.getBand(name.replace("radiance", "vs_corr")),
-                                               new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1));
+                final Raster sourceRaster = getRaster(sourceProduct.getBand(name), targetRectangle);
+                final Raster factorRaster = getRaster(factorProduct.getBand(name.replace("radiance", "vs_corr")),
+                                                      new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1));
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                     for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                        final int value = (int) round(data.getInt(x, y) * factors.getDouble(x, 0));
+                        final int value = (int) (sourceRaster.getInt(x, y) * factorRaster.getDouble(x, 0) + 0.5);
                         targetRaster.setInt(x, y, value);
                     }
                     pm.worked(1);

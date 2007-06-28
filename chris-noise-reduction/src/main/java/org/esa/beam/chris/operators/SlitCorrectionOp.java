@@ -15,23 +15,14 @@
  */
 package org.esa.beam.chris.operators;
 
-import static java.lang.Math.round;
-
-import java.awt.Rectangle;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.text.MessageFormat;
-
-import javax.imageio.stream.FileImageInputStream;
-import javax.imageio.stream.ImageInputStream;
-
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -41,7 +32,13 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import com.bc.ceres.core.ProgressMonitor;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.Rectangle;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.text.MessageFormat;
 
 /**
  * Operator for correcting the vertical striping (VS) due to the entrance slit.
@@ -51,6 +48,15 @@ import com.bc.ceres.core.ProgressMonitor;
  * @version $Revision$ $Date$
  */
 public class SlitCorrectionOp extends AbstractOperator {
+
+    /**
+     * Name of the specific meta data element added to the source product
+     */
+    public static final String ELEM_NAME_NOISE_REDUCTION = "Noise Reduction";
+    /**
+     * Name of the attribute added to the {@link ELEM_NAME_NOISE_REDUCTION} element.
+     */
+    public static final String ATTR_NAME_SLIT_CORR = "slit_corr";
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -63,7 +69,8 @@ public class SlitCorrectionOp extends AbstractOperator {
     private static final double S1 = -0.12107994955864;
     private static final double S2 = 0.65034734426230;
 
-    private double[] noiseFactors;
+    private double[] f;
+    private boolean alreadyCorrected;
 
     /**
      * Creates an instance of this class.
@@ -76,7 +83,8 @@ public class SlitCorrectionOp extends AbstractOperator {
 
     @Override
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
-        computeNoiseFactors();
+        ensureValidProduct(sourceProduct);
+
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
@@ -92,8 +100,19 @@ public class SlitCorrectionOp extends AbstractOperator {
                 targetBand.setFlagCoding(targetProduct.getFlagCoding(sourceFlagCoding.getName()));
             }
         }
+
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
-        copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        final MetadataElement sourceRoot = sourceProduct.getMetadataRoot();
+        final MetadataElement targetRoot = targetProduct.getMetadataRoot();
+
+        copyMetadataElementsAndAttributes(sourceRoot, targetRoot);
+        alreadyCorrected = sourceRoot.containsElement(ChrisConstants.SPH_NAME)
+                           && sourceRoot.getElement(ChrisConstants.SPH_NAME).containsElement(ELEM_NAME_NOISE_REDUCTION);
+        if (!alreadyCorrected) {
+            computeCorrectionFactors();
+            addSpecificMetadata(targetRoot,
+                                ELEM_NAME_NOISE_REDUCTION, ATTR_NAME_SLIT_CORR, "Slit correction factors", f);
+        }
 
         return targetProduct;
     }
@@ -103,14 +122,16 @@ public class SlitCorrectionOp extends AbstractOperator {
         final String name = targetRaster.getRasterDataNode().getName();
         final Rectangle targetRectangle = targetRaster.getRectangle();
 
-        if (name.startsWith("radiance")) {
+        if (alreadyCorrected || !name.startsWith("radiance")) {
+            getRaster(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
+        } else {
             try {
-                pm.beginTask("correcting slit vertical striping", targetRectangle.height);
-                final Raster sourceTile = getRaster(sourceProduct.getBand(name), targetRectangle);
+                pm.beginTask("correcting slit artifacts", targetRectangle.height);
+                final Raster sourceRaster = getRaster(sourceProduct.getBand(name), targetRectangle);
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                     for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                        final int value = (int) round(sourceTile.getInt(x, y) / noiseFactors[x]);
+                        final int value = (int) (sourceRaster.getInt(x, y) * f[x] + 0.5);
                         targetRaster.setInt(x, y, value);
                     }
                     pm.worked(1);
@@ -118,12 +139,10 @@ public class SlitCorrectionOp extends AbstractOperator {
             } finally {
                 pm.done();
             }
-        } else {
-            getRaster(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
         }
     }
 
-    private void computeNoiseFactors() throws OperatorException {
+    private void computeCorrectionFactors() throws OperatorException {
         final double[][] table = readReferenceSlitVsProfile();
 
         final double[] x = table[0];
@@ -146,22 +165,22 @@ public class SlitCorrectionOp extends AbstractOperator {
         }
 
         // rebin the profile onto CCD pixels
-        noiseFactors = new double[sourceProduct.getSceneRasterWidth()];
-        for (int pixel = 0, i = 0; pixel < noiseFactors.length; ++pixel) {
+        f = new double[sourceProduct.getSceneRasterWidth()];
+        for (int pixel = 0, i = 0; pixel < f.length; ++pixel) {
             int count = 0;
             for (; i < x.length; ++i) {
                 if (x[i] > (pixel + 1) * ppc + 0.5) {
                     break;
                 }
                 if (x[i] > 0.5) {
-                    noiseFactors[pixel] += y[i];
+                    f[pixel] += y[i];
                     ++count;
                 }
             }
             if (count != 0) {
-                noiseFactors[pixel] /= count;
+                f[pixel] = count / f[pixel];
             } else { // can only happen if the domain of the reference profile is too small
-                noiseFactors[pixel] = 1.0;
+                f[pixel] = 1.0;
             }
         }
     }
@@ -189,6 +208,13 @@ public class SlitCorrectionOp extends AbstractOperator {
         }
     }
 
+    private static void ensureValidProduct(Product product) throws OperatorException {
+        if (!product.getProductType().startsWith("CHRIS_M")) {
+            throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' is not a CHRIS product", product.getName()));
+        }
+    }
+
     // todo -- move
     private static void copyMetadataElementsAndAttributes(MetadataElement source, MetadataElement target) {
         for (final MetadataElement element : source.getElements()) {
@@ -197,6 +223,23 @@ public class SlitCorrectionOp extends AbstractOperator {
         for (final MetadataAttribute attribute : source.getAttributes()) {
             target.addAttribute(attribute.createDeepClone());
         }
+    }
+
+    private static void addSpecificMetadata(MetadataElement target, String parentName, String childName,
+                                            String description, double[] values) {
+        if (!target.containsElement(ChrisConstants.SPH_NAME)) {
+            target.addElement(new MetadataElement(ChrisConstants.SPH_NAME));
+        }
+        final MetadataElement sph = target.getElement(ChrisConstants.SPH_NAME);
+        if (!sph.containsElement(parentName)) {
+            sph.addElement(new MetadataElement(parentName));
+        }
+
+        final MetadataElement child = new MetadataElement(childName);
+        child.setDescription(description);
+        child.addAttribute(new MetadataAttribute(childName, ProductData.createInstance(values), true));
+
+        sph.getElement(parentName).addElement(child);
     }
 
     private static double getAnnotationDouble(Product product, String name) throws OperatorException {
