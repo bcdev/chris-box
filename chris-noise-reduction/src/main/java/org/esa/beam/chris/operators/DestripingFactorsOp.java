@@ -15,22 +15,12 @@
  */
 package org.esa.beam.chris.operators;
 
-import static java.lang.Math.acos;
-import static java.lang.Math.exp;
-import static java.lang.Math.log;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
-
-import java.awt.Rectangle;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -44,7 +34,12 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
-import com.bc.ceres.core.ProgressMonitor;
+import java.awt.Rectangle;
+import static java.lang.Math.*;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Operator for calculating the vertical striping correction factors for noise
@@ -86,6 +81,10 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
+        for (Product sourceProduct : sourceProducts) {
+            assertValidity(sourceProduct);
+        }
+
         thresholdMap = new HashMap<String, Double>(6);
         thresholdMap.put("1", 0.08);
         thresholdMap.put("2", 0.05);
@@ -119,7 +118,6 @@ public class DestripingFactorsOp extends AbstractOperator {
 
         panorama = new Panorama(sourceProducts);
         edgeDetectionThreshold = getEdgeDetectionThreshold();
-        edgeMask = createEdgeMask(pm);
         smoother = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
         // set up target product and bands
@@ -136,18 +134,42 @@ public class DestripingFactorsOp extends AbstractOperator {
             pm.worked(1);
         }
 
+        if (sourceProducts.length > 1) {
+            final StringBuilder sb = new StringBuilder("Noise reduction applied using acquisition angles ");
+            for (int i = 0; i < sourceProducts.length; ++i) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
+            }
+            setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, sb.toString());
+        } else {
+            setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, "Yes");
+        }
+
         return targetProduct;
     }
 
     @Override
     public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        final RasterDataNode node = targetRaster.getRasterDataNode();
-
-        for (int i = 0; i < targetBands.length; ++i) {
-            if (targetBands[i].equals(node)) {
-                computeCorrectionFactors(i, targetRaster.getRectangle(), pm);
-                return;
+        try {
+            if (edgeMask == null) {
+                pm.beginTask("computing...", spectralBandCount + panorama.width + 2 + panorama.height + 5);
+                edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + panorama.width + 2));
+            } else {
+                pm.beginTask("computing...", panorama.height + 5);
             }
+            final RasterDataNode node = targetRaster.getRasterDataNode();
+
+            for (int i = 0; i < targetBands.length; ++i) {
+                if (targetBands[i].equals(node)) {
+                    computeCorrectionFactors(i, targetRaster.getRectangle(),
+                                             new SubProgressMonitor(pm, panorama.height + 5));
+                    return;
+                }
+            }
+        } finally {
+            pm.done();
         }
     }
 
@@ -316,6 +338,22 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
     }
 
+    private static void assertValidity(Product product) throws OperatorException {
+        try {
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
+        } catch (OperatorException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' is not a CHRIS product", product.getName()));
+        }
+        try {
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED);
+        } catch (OperatorException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' already is corrected", product.getName()));
+        }
+    }
+
     private double getEdgeDetectionThreshold() throws OperatorException {
         final String mode = getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE);
 
@@ -333,7 +371,7 @@ public class DestripingFactorsOp extends AbstractOperator {
 
         try {
             return Integer.parseInt(string);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
@@ -350,23 +388,27 @@ public class DestripingFactorsOp extends AbstractOperator {
      */
     // todo -- move
     private static String getAnnotationString(Product product, String name) throws OperatorException {
-        final MetadataElement metadataRoot = product.getMetadataRoot();
-        String string = null;
+        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
 
-        if (metadataRoot != null) {
-            final MetadataElement mph = metadataRoot.getElement(ChrisConstants.MPH_NAME);
-
-            if (mph != null) {
-                string = mph.getAttributeString(name, null);
-            }
+        if (element == null) {
+            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
         }
-        if (string == null) {
-            throw new OperatorException(MessageFormat.format("could not read CHRIS annotation ''{0}''", name));
-        }
-
-        return string;
+        return element.getAttributeString(name, null);
     }
 
+    // todo -- move
+    private static void setAnnotationString(Product product, String name, String value) throws OperatorException {
+        MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
+        if (element == null) {
+            element = new MetadataElement(ChrisConstants.MPH_NAME);
+            product.getMetadataRoot().addElement(element);
+        }
+        if (element.containsAttribute(name)) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not set CHRIS annotation ''{0}'' because it already exists", name));
+        }
+        element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
+    }
 
     public static class Spi extends AbstractOperatorSpi {
 

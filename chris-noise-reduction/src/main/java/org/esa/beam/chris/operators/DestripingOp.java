@@ -29,6 +29,7 @@ import org.esa.beam.framework.gpf.Raster;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
+import org.esa.beam.dataio.chris.ChrisConstants;
 
 import java.awt.Rectangle;
 
@@ -63,6 +64,9 @@ public class DestripingOp extends AbstractOperator {
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
+        targetProduct.setStartTime(sourceProduct.getStartTime());
+        targetProduct.setEndTime(sourceProduct.getEndTime());
+
         for (final Band band : sourceProduct.getBands()) {
             final Band targetBand = ProductUtils.copyBand(band.getName(), sourceProduct, targetProduct);
 
@@ -76,22 +80,8 @@ public class DestripingOp extends AbstractOperator {
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-/*
-        targetProduct.getMetadataRoot().addElement(new MetadataElement("SPH"));
-
-        for (final Band band : factorsProduct.getBands()) {
-            final Rectangle rectangle = new Rectangle(0, 0, band.getSceneRasterWidth(), 1);
-            final Raster raster = getTile(band, rectangle);
-            final double[] factors = new double[rectangle.width];
-            for (int x = 0; x < rectangle.width; ++x) {
-                factors[x] = raster.getDouble(x, 0);
-            }
-            targetProduct.getMetadataRoot().getElement("SPH").addElement(new MetadataElement(band.getName()));
-            targetProduct.getMetadataRoot().getElement("SPH").getElement(band.getName()).setDescription(band.getDescription());
-            targetProduct.getMetadataRoot().getElement("SPH").getElement(band.getName()).addAttribute(
-                    new MetadataAttribute("column", ProductData.createInstance(factors), true));
-        }
-*/
+        copyMetadataElementsAndAttributes(factorProduct.getMetadataRoot().getElement(ChrisConstants.MPH_NAME),
+                                          targetProduct.getMetadataRoot().getElement(ChrisConstants.MPH_NAME));
 
         return targetProduct;
     }
