@@ -144,7 +144,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
         }
     }
-    
+
     @Override
     public void dispose() {
         smoother = null;
@@ -236,7 +236,7 @@ public class DestripingFactorsOp extends AbstractOperator {
      */
     private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
         try {
-            pm.beginTask("creating edge mask", spectralBandCount + 3);
+            pm.beginTask("creating edge mask", spectralBandCount + panorama.width + 2);
 
             // 1. Compute the squares and across-track scalar products of the spectral vectors
             final double[][] sad = new double[panorama.width][panorama.height];
@@ -289,14 +289,14 @@ public class DestripingFactorsOp extends AbstractOperator {
 
                 minThreshold = max(minThreshold, values[minIndex]);
                 maxThreshold = max(maxThreshold, values[maxIndex]);
+                pm.worked(1);
             }
             final double threshold = min(max(edgeDetectionThreshold, minThreshold), maxThreshold);
-            pm.worked(1);
 
             // 4. Create the edge mask
             final boolean[][] edgeMask = new boolean[panorama.height][panorama.width];
-            for (int x = 1; x < panorama.width; ++x) {
-                for (int y = 0; y < panorama.height; ++ y) {
+            for (int y = 0; y < panorama.height; ++ y) {
+                for (int x = 1; x < panorama.width; ++x) {
                     if (sad[x][y] > threshold) {
                         edgeMask[y][x] = true;
                     }
