@@ -165,7 +165,7 @@ public class SlitCorrectionOp extends AbstractOperator {
     }
 
     private static double[][] readReferenceSlitVsProfile() throws OperatorException {
-        final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.dat");
+        final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.bin");
 
         try {
             final int length = iis.readInt();
