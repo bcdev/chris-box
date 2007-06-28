@@ -92,8 +92,8 @@ public class DestripingOp extends AbstractOperator {
             try {
                 pm.beginTask("removing vertical striping artifacts", targetRectangle.height);
 
-                final Raster data = getTile(sourceProduct.getBand(name), targetRectangle);
-                final Raster factors = getTile(factorsProduct.getBand(name.replace("radiance", "vs_corr")),
+                final Raster data = getRaster(sourceProduct.getBand(name), targetRectangle);
+                final Raster factors = getRaster(factorsProduct.getBand(name.replace("radiance", "vs_corr")),
                                                new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1));
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
@@ -107,7 +107,7 @@ public class DestripingOp extends AbstractOperator {
                 pm.done();
             }
         } else {
-            getTile(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
+            getRaster(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
         }
     }
 

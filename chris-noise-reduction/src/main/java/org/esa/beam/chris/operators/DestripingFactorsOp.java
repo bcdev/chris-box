@@ -177,8 +177,8 @@ public class DestripingFactorsOp extends AbstractOperator {
 
             for (int j = 0, panoramaY = 0; j < sourceProducts.length; ++j) {
                 final Rectangle sourceRectangle = panorama.getRectangle(j);
-                final Raster data = getTile(sourceDataBands[bandIndex][j], sourceRectangle);
-                final Raster mask = getTile(sourceMaskBands[bandIndex][j], sourceRectangle);
+                final Raster data = getRaster(sourceDataBands[bandIndex][j], sourceRectangle);
+                final Raster mask = getRaster(sourceMaskBands[bandIndex][j], sourceRectangle);
 
                 for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
                     for (int x = 1; x < panorama.width; ++x) {
@@ -220,7 +220,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
             pm.worked(1);
             // 6. Compute the correction factors
-            final Raster targetRaster = getTile(targetBands[bandIndex], targetRectangle);
+            final Raster targetRaster = getRaster(targetBands[bandIndex], targetRectangle);
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
                 targetRaster.setDouble(x, 0, exp(-p[x]));
             }
@@ -251,7 +251,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             for (final Band[] bands : sourceDataBands) {
                 for (int i = 0, panoramaY = 0; i < bands.length; i++) {
                     final Rectangle sourceRectangle = panorama.getRectangle(i);
-                    final Raster data = getTile(bands[i], sourceRectangle);
+                    final Raster data = getRaster(bands[i], sourceRectangle);
 
                     for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
                         double r1 = data.getDouble(0, sceneY);

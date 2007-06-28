@@ -106,7 +106,7 @@ public class SlitCorrectionOp extends AbstractOperator {
         if (name.startsWith("radiance")) {
             try {
                 pm.beginTask("correcting slit vertical striping", targetRectangle.height);
-                final Raster sourceTile = getTile(sourceProduct.getBand(name), targetRectangle);
+                final Raster sourceTile = getRaster(sourceProduct.getBand(name), targetRectangle);
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                     for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
@@ -119,7 +119,7 @@ public class SlitCorrectionOp extends AbstractOperator {
                 pm.done();
             }
         } else {
-            getTile(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
+            getRaster(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
         }
     }
 
