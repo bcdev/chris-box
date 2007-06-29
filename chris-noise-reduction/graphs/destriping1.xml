@@ -1,5 +1,5 @@
 <graph>
-    <id>slit-correction</id>
+    <id>destriping</id>
 
     <node>
         <id>load</id>
@@ -10,10 +10,22 @@
     </node>
 
     <node>
-        <id>slit-correction</id>
-        <operator>org.esa.beam.chris.operators.SlitCorrectionOp$Spi</operator>
+        <id>destriping-factors</id>
+        <operator>org.esa.beam.chris.operators.DestripingFactorsOp$Spi</operator>
         <sources>
             <input>load</input>
+        </sources>
+        <parameters>
+            <smoothingOrder>27</smoothingOrder>
+        </parameters>
+    </node>
+
+    <node>
+        <id>destriping</id>
+        <operator>org.esa.beam.chris.operators.DestripingOp$Spi</operator>
+        <sources>
+            <input>load</input>
+            <factors>destriping-factors</factors>
         </sources>
     </node>
 
@@ -21,7 +33,7 @@
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>slit-correction</input>
+            <input>destriping</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>

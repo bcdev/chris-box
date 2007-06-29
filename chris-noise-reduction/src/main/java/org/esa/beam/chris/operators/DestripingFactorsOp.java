@@ -34,8 +34,13 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.Rectangle;
+import java.io.File;
+import java.io.IOException;
 import static java.lang.Math.*;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,25 +56,33 @@ import java.util.Map;
  */
 public class DestripingFactorsOp extends AbstractOperator {
 
+    // todo -- operator parameters?
+    private static final double G1 = 0.13045510094294;
+    private static final double G2 = 0.28135856882126;
+    private static final double S1 = -0.12107994955864;
+    private static final double S2 = 0.65034734426230;
+
     @SourceProducts
     Product[] sourceProducts;
     @TargetProduct
     Product targetProduct;
 
-    @Parameter
+    @Parameter(defaultValue = "27")
     int smoothingOrder;
 
-    private double edgeDetectionThreshold;
+    @Parameter(defaultValue = "true")
+    boolean applySlitCorrection;
+
     private int spectralBandCount;
 
-    private transient Map<String, Double> thresholdMap;
     private transient LocalRegressionSmoothing smoother;
 
     private transient Band[] targetBands;
     private transient Band[][] sourceDataBands;
     private transient Band[][] sourceMaskBands;
     private transient Panorama panorama;
-    private boolean[][] edgeMask;
+    private boolean[][] edge;
+    private double[] f;
 
     /**
      * Creates an instance of this class.
@@ -84,14 +97,6 @@ public class DestripingFactorsOp extends AbstractOperator {
         for (Product sourceProduct : sourceProducts) {
             assertValidity(sourceProduct);
         }
-
-        thresholdMap = new HashMap<String, Double>(6);
-        thresholdMap.put("1", 0.08);
-        thresholdMap.put("2", 0.05);
-        thresholdMap.put("3", 0.08);
-        thresholdMap.put("3A", 0.08);
-        thresholdMap.put("4", 0.08);
-        thresholdMap.put("5", 0.08);
 
         spectralBandCount = getAnnotationInt(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
@@ -117,7 +122,6 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
 
         panorama = new Panorama(sourceProducts);
-        edgeDetectionThreshold = getEdgeDetectionThreshold();
         smoother = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
         // set up target product and bands
@@ -147,15 +151,21 @@ public class DestripingFactorsOp extends AbstractOperator {
             setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, "Yes");
         }
 
+        applySlitCorrection = true;
+
+        if (applySlitCorrection) {
+            f = getSlitNoiseFactors(sourceProducts[0]);
+        }
+
         return targetProduct;
     }
 
     @Override
     public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
         try {
-            if (edgeMask == null) {
+            if (edge == null) {
                 pm.beginTask("computing...", spectralBandCount + panorama.width + 2 + panorama.height + 5);
-                edgeMask = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + panorama.width + 2));
+                edge = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + panorama.width + 2));
             } else {
                 pm.beginTask("computing...", panorama.height + 5);
             }
@@ -176,7 +186,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     @Override
     public void dispose() {
         smoother = null;
-        edgeMask = null;
+        edge = null;
     }
 
     /**
@@ -197,15 +207,23 @@ public class DestripingFactorsOp extends AbstractOperator {
             final double[] p = new double[panorama.width];
             final int[] count = new int[panorama.width];
 
-            for (int j = 0, panoramaY = 0; j < sourceProducts.length; ++j) {
-                final Rectangle sourceRectangle = panorama.getRectangle(j);
-                final Raster data = getRaster(sourceDataBands[bandIndex][j], sourceRectangle);
-                final Raster mask = getRaster(sourceMaskBands[bandIndex][j], sourceRectangle);
+            for (int j = 0; j < sourceProducts.length; ++j) {
+                final Raster data = getSceneRaster(sourceDataBands[bandIndex][j]);
+                final Raster mask = getSceneRaster(sourceMaskBands[bandIndex][j]);
 
-                for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
-                    for (int x = 1; x < panorama.width; ++x) {
-                        if (!edgeMask[panoramaY][x] && mask.getInt(x, sceneY) == 0 && mask.getInt(x - 1, sceneY) == 0) {
-                            p[x] += log(data.getDouble(x, sceneY) / data.getDouble(x - 1, sceneY));
+                for (int y = 0; y < data.getHeight(); ++y) {
+                    double r1 = data.getDouble(0, y);
+                    if (applySlitCorrection) {
+                        r1 /= f[0];
+                    }
+                    for (int x = 1; x < data.getWidth(); ++x) {
+                        double r2 = data.getDouble(x, y);
+                        if (applySlitCorrection) {
+                            r2 /= f[x];
+                        }
+                        if (!edge[panorama.getY(j) + y][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
+                            p[x] += log(r2 / r1);
+                            r1 = r2;
                             ++count[x];
                         }
                     }
@@ -244,12 +262,61 @@ public class DestripingFactorsOp extends AbstractOperator {
             // 6. Compute the correction factors
             final Raster targetRaster = getRaster(targetBands[bandIndex], targetRectangle);
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                targetRaster.setDouble(x, 0, exp(-p[x]));
+                double factor = exp(-p[x]);
+                if (applySlitCorrection) {
+                    factor /= f[x];
+                }
+                targetRaster.setDouble(x, 0, factor);
             }
             pm.worked(1);
         } finally {
             pm.done();
         }
+    }
+
+    private static double[] getSlitNoiseFactors(Product product) throws OperatorException {
+        final double[][] table = readReferenceSlitVsProfile();
+
+        final double[] x = table[0];
+        final double[] y = table[1];
+
+        // shift and scale the reference profile according to actual temperature
+        final double temperature = getAnnotationDouble(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
+        final double scale = G1 * temperature + G2;
+        final double shift = S1 * temperature + S2;
+        for (int i = 0; i < x.length; ++i) {
+            x[i] -= shift;
+            y[i] = (y[i] - 1.0) * scale + 1.0;
+        }
+
+        int ppc;
+        if ("1".equals(getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE))) {
+            ppc = 2;
+        } else {
+            ppc = 1;
+        }
+
+        // rebin the profile onto CCD pixels
+        double[] f = new double[product.getSceneRasterWidth()];
+        for (int pixel = 0, i = 0; pixel < f.length; ++pixel) {
+            int count = 0;
+            for (; i < x.length; ++i) {
+                if (x[i] > (pixel + 1) * ppc + 0.5) {
+                    break;
+                }
+                if (x[i] > 0.5) {
+                    f[pixel] += y[i];
+                    ++count;
+                }
+            }
+            if (count != 0) {
+                f[pixel] /= count;
+            } else { // can only happen if the domain of the reference profile is too small
+                f[pixel] = 1.0;
+            }
+        }
+
+        return f;
     }
 
     /**
@@ -266,24 +333,28 @@ public class DestripingFactorsOp extends AbstractOperator {
         try {
             pm.beginTask("creating edge mask", spectralBandCount + panorama.width + 2);
 
-            // 1. Compute the squares and across-track scalar products of the spectral vectors
             final double[][] sad = new double[panorama.width][panorama.height];
             final double[][] sca = new double[panorama.width][panorama.height];
 
+            // 1. Compute the squares and across-track scalar products of the spectral vectors
             for (final Band[] bands : sourceDataBands) {
-                for (int i = 0, panoramaY = 0; i < bands.length; i++) {
-                    final Rectangle sourceRectangle = panorama.getRectangle(i);
-                    final Raster data = getRaster(bands[i], sourceRectangle);
+                for (int i = 0; i < bands.length; i++) {
+                    final Raster data = getSceneRaster(bands[i]);
 
-                    for (int sceneY = 0; sceneY < sourceRectangle.height; ++sceneY, ++panoramaY) {
-                        double r1 = data.getDouble(0, sceneY);
-                        sad[0][panoramaY] += r1 * r1;
+                    for (int y = 0; y < data.getHeight(); ++y) {
+                        double r1 = data.getDouble(0, y);
+                        if (applySlitCorrection) {
+                            r1 /= f[0];
+                        }
+                        sad[0][panorama.getY(i) + y] += r1 * r1;
 
-                        for (int x = 1; x < panorama.width; ++x) {
-                            final double r2 = data.getDouble(x, sceneY);
-
-                            sca[x][panoramaY] += r2 * r1;
-                            sad[x][panoramaY] += r2 * r2;
+                        for (int x = 1; x < data.getWidth(); ++x) {
+                            double r2 = data.getDouble(x, y) / f[x];
+                            if (applySlitCorrection) {
+                                r2 /= f[x];
+                            }
+                            sca[x][panorama.getY(i) + y] += r2 * r1;
+                            sad[x][panorama.getY(i) + y] += r2 * r2;
                             r1 = r2;
                         }
                     }
@@ -319,22 +390,45 @@ public class DestripingFactorsOp extends AbstractOperator {
                 maxThreshold = max(maxThreshold, values[maxIndex]);
                 pm.worked(1);
             }
-            final double threshold = min(max(edgeDetectionThreshold, minThreshold), maxThreshold);
+            final double threshold = min(max(getEdgeDetectionThreshold(sourceProducts[0]), minThreshold), maxThreshold);
 
             // 4. Create the edge mask
-            final boolean[][] edgeMask = new boolean[panorama.height][panorama.width];
+            final boolean[][] edge = new boolean[panorama.height][panorama.width];
             for (int y = 0; y < panorama.height; ++ y) {
                 for (int x = 1; x < panorama.width; ++x) {
                     if (sad[x][y] > threshold) {
-                        edgeMask[y][x] = true;
+                        edge[y][x] = true;
                     }
                 }
             }
             pm.worked(1);
 
-            return edgeMask;
+            return edge;
         } finally {
             pm.done();
+        }
+    }
+
+    private Raster getSceneRaster(Band band) throws OperatorException {
+        return getRaster(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()));
+    }
+
+    private static double getEdgeDetectionThreshold(Product product) throws OperatorException {
+        final Map<String, Double> thresholdMap = new HashMap<String, Double>();
+        thresholdMap.put("1", 0.08);
+        thresholdMap.put("2", 0.05);
+        thresholdMap.put("3", 0.08);
+        thresholdMap.put("3A", 0.08);
+        thresholdMap.put("4", 0.08);
+        thresholdMap.put("5", 0.08);
+
+        final String mode = getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+
+        if (thresholdMap.containsKey(mode)) {
+            return thresholdMap.get(mode);
+        } else {
+            throw new OperatorException(MessageFormat.format(
+                    "could not get edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
         }
     }
 
@@ -354,14 +448,14 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
     }
 
-    private double getEdgeDetectionThreshold() throws OperatorException {
-        final String mode = getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE);
+    // todo -- move
+    private static double getAnnotationDouble(Product product, String name) throws OperatorException {
+        final String string = getAnnotationString(product, name);
 
-        if (thresholdMap.containsKey(mode)) {
-            return thresholdMap.get(mode);
-        } else {
-            throw new OperatorException(MessageFormat.format(
-                    "could not get edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
+        try {
+            return Double.parseDouble(string);
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
@@ -410,6 +504,54 @@ public class DestripingFactorsOp extends AbstractOperator {
         element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
     }
 
+    private static double[][] readReferenceSlitVsProfile() throws OperatorException {
+        final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.img");
+
+        try {
+            final int length = iis.readInt();
+            final double[] abscissas = new double[length];
+            final double[] ordinates = new double[length];
+
+            iis.readFully(abscissas, 0, length);
+            iis.readFully(ordinates, 0, length);
+
+            return new double[][]{abscissas, ordinates};
+        } catch (Exception e) {
+            throw new OperatorException("could not read reference slit-VS profile", e);
+        } finally {
+            try {
+                iis.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Returns an {@link ImageInputStream} for a resource file of interest.
+     *
+     * @param name the name of the resource file of interest.
+     *
+     * @return the image input stream.
+     *
+     * @throws OperatorException if the resource could not be found or the
+     *                           image input stream could not be created.
+     */
+    private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
+        final URL url = SlitCorrectionOp.class.getResource(name);
+
+        if (url == null) {
+            throw new OperatorException(MessageFormat.format("resource {0} not found", name));
+        }
+        try {
+            return new FileImageInputStream(new File(url.toURI()));
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not create image input stream for resource {0}", name), e);
+        }
+    }
+
+
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {
@@ -424,33 +566,29 @@ public class DestripingFactorsOp extends AbstractOperator {
      */
     private static class Panorama {
 
-        public int height;
         public int width;
-
-        private Rectangle[] rectangles;
+        public int height;
+        public Rectangle[] rectangles;
 
         public Panorama(Product[] products) throws OperatorException {
-            int height = products[0].getSceneRasterHeight();
-            int width = products[0].getSceneRasterWidth();
+            width = products[0].getSceneRasterWidth();
 
-            for (int i = 1; i < products.length; ++i) {
-                if (width != products[i].getSceneRasterWidth()) {
+            for (Product product : products) {
+                if (width != product.getSceneRasterWidth()) {
                     throw new OperatorException("input products have inconsistent raster widths");
                 }
-                height += products[i].getSceneRasterHeight();
+                height += product.getSceneRasterHeight();
             }
 
-            this.height = height;
-            this.width = width;
             rectangles = new Rectangle[products.length];
 
-            for (int i = 0; i < products.length; ++i) {
-                rectangles[i] = new Rectangle(0, 0, width, products[i].getSceneRasterHeight());
+            for (int i = 0, y = 0; i < products.length; ++i) {
+                rectangles[i] = new Rectangle(0, y, width, y += products[i].getSceneRasterHeight());
             }
         }
 
-        public Rectangle getRectangle(int i) {
-            return rectangles[i];
+        public int getY(int i) {
+            return rectangles[i].y;
         }
     }
 
