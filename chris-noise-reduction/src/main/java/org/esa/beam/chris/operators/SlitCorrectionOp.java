@@ -97,7 +97,7 @@ public class SlitCorrectionOp extends AbstractOperator {
 
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_SLIT_CORRECTION_APPLIED, "Yes");
+        // setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_SLIT_CORRECTION_APPLIED, "Yes");
         
         return targetProduct;
     }
@@ -202,7 +202,7 @@ public class SlitCorrectionOp extends AbstractOperator {
                     "product ''{0}'' is not a CHRIS product", product.getName()));
         }
         try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_SLIT_CORRECTION_APPLIED);
+            //getAnnotationString(product, ChrisConstants.ATTR_NAME_SLIT_CORRECTION_APPLIED);
             getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
