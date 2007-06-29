@@ -58,15 +58,13 @@ public class NoiseReductionAction extends ExecCommand {
         AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
         if(settingsPresenter.isSlitApplied()){
             try {
-                Product product = GPF.createProduct("SlitCorrection", new HashMap<String, Object>(0), presenter.getProducts());
-                Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(), product);
+                Product product1 = presenter.getProducts()[0];
+                Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(), product1);
                 HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
-                productsMap.put("sourceProduct", product);
+                productsMap.put("sourceProduct", product1);
                 productsMap.put("factorProduct", product2);
                 Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap);
                 VisatApp.getApp().addProduct(product3);
-
-
             } catch (OperatorException e) {
                 // todo
                 e.printStackTrace();

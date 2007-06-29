@@ -71,7 +71,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     int smoothingOrder;
 
     @Parameter(defaultValue = "true")
-    boolean applySlitCorrection;
+    boolean slitCorrection;
 
     private int spectralBandCount;
 
@@ -125,7 +125,7 @@ public class DestripingFactorsOp extends AbstractOperator {
         smoother = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
         // set up target product and bands
-        targetProduct = new Product("VSC", "CHRIS_VSC", sourceProducts[0].getSceneRasterWidth(), 1);
+        targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC", sourceProducts[0].getSceneRasterWidth(), 1);
         targetBands = new Band[spectralBandCount];
 
         for (int i = 0; i < spectralBandCount; ++i) {
@@ -135,25 +135,24 @@ public class DestripingFactorsOp extends AbstractOperator {
             targetBands[i].setSpectralBandIndex(i + 1);
             targetBands[i].setDescription(MessageFormat.format(
                     "Vertical striping correction factors for radiance band {0}", i + 1));
+            targetBands[i].setSpectralBandwidth(sourceDataBands[i][0].getSpectralBandwidth());
+            targetBands[i].setSpectralWavelength(sourceDataBands[i][0].getSpectralWavelength());
             pm.worked(1);
         }
 
-        if (sourceProducts.length > 1) {
-            final StringBuilder sb = new StringBuilder("Noise reduction applied using acquisition angles ");
-            for (int i = 0; i < sourceProducts.length; ++i) {
-                if (i > 0) {
-                    sb.append(", ");
-                }
-                sb.append(getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < sourceProducts.length; ++i) {
+            if (i < 0) {
+                sb.append(", ");
             }
-            setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, sb.toString());
-        } else {
-            setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, "Yes");
+            sb.append(sourceProducts[i].getName());
+            sb.append(" [");
+            sb.append(getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
+            sb.append("°]");
         }
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES, sb.toString());
 
-        applySlitCorrection = true;
-
-        if (applySlitCorrection) {
+        if (slitCorrection) {
             f = getSlitNoiseFactors(sourceProducts[0]);
         }
 
@@ -213,12 +212,12 @@ public class DestripingFactorsOp extends AbstractOperator {
 
                 for (int y = 0; y < data.getHeight(); ++y) {
                     double r1 = data.getDouble(0, y);
-                    if (applySlitCorrection) {
+                    if (slitCorrection) {
                         r1 /= f[0];
                     }
                     for (int x = 1; x < data.getWidth(); ++x) {
                         double r2 = data.getDouble(x, y);
-                        if (applySlitCorrection) {
+                        if (slitCorrection) {
                             r2 /= f[x];
                         }
                         if (!edge[panorama.getY(j) + y][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
@@ -263,7 +262,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             final Raster targetRaster = getRaster(targetBands[bandIndex], targetRectangle);
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
                 double factor = exp(-p[x]);
-                if (applySlitCorrection) {
+                if (slitCorrection) {
                     factor /= f[x];
                 }
                 targetRaster.setDouble(x, 0, factor);
@@ -343,14 +342,14 @@ public class DestripingFactorsOp extends AbstractOperator {
 
                     for (int y = 0; y < data.getHeight(); ++y) {
                         double r1 = data.getDouble(0, y);
-                        if (applySlitCorrection) {
+                        if (slitCorrection) {
                             r1 /= f[0];
                         }
                         sad[0][panorama.getY(i) + y] += r1 * r1;
 
                         for (int x = 1; x < data.getWidth(); ++x) {
                             double r2 = data.getDouble(x, y) / f[x];
-                            if (applySlitCorrection) {
+                            if (slitCorrection) {
                                 r2 /= f[x];
                             }
                             sca[x][panorama.getY(i) + y] += r2 * r1;

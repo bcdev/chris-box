@@ -22,6 +22,7 @@ import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -32,6 +33,7 @@ import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
 import java.awt.Rectangle;
+import java.text.MessageFormat;
 
 /**
  * Operator for applying the vertical striping (VS) correction factors calculated by
@@ -60,28 +62,38 @@ public class DestripingOp extends AbstractOperator {
     }
 
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
-        targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
+        assertValidity(sourceProduct);
+
+        targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType(),
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
+        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+        /*
+        for (int i = 0; i < sourceProduct.getNumFlagCodings(); i++) {
+            FlagCoding sourceFlagCoding = sourceProduct.getFlagCodingAt(i);
+            FlagCoding destFlagCoding = new FlagCoding(sourceFlagCoding.getName());
+            destFlagCoding.setDescription(sourceFlagCoding.getDescription());
+            targetProduct.addFlagCoding(destFlagCoding);
+            copyMetadataElementsAndAttributes(sourceFlagCoding, destFlagCoding);
+        }
+        */
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
 
-        for (final Band band : sourceProduct.getBands()) {
-            final Band targetBand = ProductUtils.copyBand(band.getName(), sourceProduct, targetProduct);
-
-            if (band.getFlagCoding() != null) {
-                final FlagCoding flagCoding = band.getFlagCoding();
-                if (targetProduct.getFlagCoding(flagCoding.getName()) == null) {
-                    ProductUtils.copyFlagCoding(flagCoding, targetProduct);
-                }
+            final FlagCoding flagCoding = sourceBand.getFlagCoding();
+            if (flagCoding != null) {
                 targetBand.setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+
         copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-        copyMetadataElementsAndAttributes(factorProduct.getMetadataRoot().getElement(ChrisConstants.MPH_NAME),
-                                          targetProduct.getMetadataRoot().getElement(ChrisConstants.MPH_NAME));
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, "Yes");
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES,
+                            getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES));
 
         return targetProduct;
     }
@@ -114,6 +126,22 @@ public class DestripingOp extends AbstractOperator {
         }
     }
 
+    private static void assertValidity(Product product) throws OperatorException {
+        try {
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
+        } catch (OperatorException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' is not a CHRIS product", product.getName()));
+        }
+        try {
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED);
+        } catch (OperatorException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' already is corrected", product.getName()));
+        }
+    }
+
     // todo -- move
     private static void copyMetadataElementsAndAttributes(MetadataElement source, MetadataElement target) {
         for (final MetadataElement element : source.getElements()) {
@@ -124,6 +152,39 @@ public class DestripingOp extends AbstractOperator {
         }
     }
 
+    /**
+     * Returns a CHRIS annotation for a product of interest.
+     *
+     * @param product the product of interest.
+     * @param name    the name of the CHRIS annotation.
+     *
+     * @return the annotation or {@code null} if the annotation could not be found.
+     *
+     * @throws OperatorException if the annotation could not be read.
+     */
+    // todo -- move
+    private static String getAnnotationString(Product product, String name) throws OperatorException {
+        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
+
+        if (element == null) {
+            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
+        }
+        return element.getAttributeString(name, null);
+    }
+
+    // todo -- move
+    private static void setAnnotationString(Product product, String name, String value) throws OperatorException {
+        MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
+        if (element == null) {
+            element = new MetadataElement(ChrisConstants.MPH_NAME);
+            product.getMetadataRoot().addElement(element);
+        }
+        if (element.containsAttribute(name)) {
+            throw new OperatorException(MessageFormat.format(
+                    "could not set CHRIS annotation ''{0}'' because it already exists", name));
+        }
+        element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
+    }
 
     public static class Spi extends AbstractOperatorSpi {
 
