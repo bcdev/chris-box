@@ -6,6 +6,7 @@ import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.util.SystemUtils;
 import org.esa.beam.util.io.BeamFileChooser;
 import org.esa.beam.util.io.BeamFileFilter;
@@ -15,126 +16,309 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Vector;
 
 /**
- * Created by IntelliJ IDEA.
+ * Created by Marco Peters.
  *
  * @author Marco Peters
- * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision:$ $Date:$
  */
 public class NoiseReductionPresenter {
 
-    private List<Product> productList;
-    private ListSelectionModel productSelectionModel;
-    private String[][] metadata;
+    private DefaultTableModel productsTableModel;
+    private ListSelectionModel productsTableSelectionModel;
+
+    private DefaultTableModel metadataTableModel;
+
     private Action addProductAction;
+    private Action removeProductAction;
+    private Action settingsAction;
 
-    public NoiseReductionPresenter(Product[] products) {
-        productList = new ArrayList<Product>(5);
+    private Window window;
 
-        productSelectionModel = new DefaultListSelectionModel();
-        productSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    private AdvancedSettingsPresenter settingsPresenter;
+
+    public NoiseReductionPresenter(Product[] products, AdvancedSettingsPresenter settingsPresenter) {
+        Object[][] productsData = new Object[products.length][2];
         if (products.length > 0) {
-            for (Product product : products) {
-                addProduct(product);
+            for (int i = 0; i < productsData.length; i++) {
+                productsData[i][0] = Boolean.FALSE;
+                productsData[i][1] = products[i];
             }
-            productSelectionModel.setSelectionInterval(0, 0);
         }
 
-        metadata = new String[5][2];
+        productsTableModel = new DefaultTableModel(productsData, new String[]{"Output", "Product Name"});
+        productsTableSelectionModel = new DefaultListSelectionModel();
+        productsTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        productsTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                updateMetadata();
+            }
+        });
+
+        String[][] metadata = new String[5][2];
         metadata[0][0] = ChrisConstants.ATTR_NAME_CHRIS_MODE;
         metadata[1][0] = ChrisConstants.ATTR_NAME_TARGET_NAME;
         metadata[2][0] = "Target Coordinates";
-        metadata[3][0] = ChrisConstants.ATTR_NAME_NOMINAL_FLY_BY_ZENITH_ANGLE;
+        metadata[3][0] = ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE;
         metadata[4][0] = ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE;
+        metadataTableModel = new DefaultTableModel(metadata, new String[]{"Name", "Value"});
 
         addProductAction = new AddProductAction(this);
+        removeProductAction = new RemoveProductAction(this);
+        settingsAction = new AdvancedSettingsAction(this);
+
+        this.settingsPresenter = settingsPresenter;
+        if (products.length > 0) {
+            productsTableSelectionModel.setSelectionInterval(0, 0);
+        }
+
+    }
+
+
+    public DefaultTableModel getProductsTableModel() {
+        return productsTableModel;
+    }
+
+    public ListSelectionModel getProductsTableSelectionModel() {
+        return productsTableSelectionModel;
+    }
+
+    public DefaultTableModel getMetadataTableModel() {
+        return metadataTableModel;
+    }
+
+    public Action getAddProductAction() {
+        return addProductAction;
+    }
+
+    public Action getRemoveProductAction() {
+        return removeProductAction;
+    }
+
+    public Action getSettingsAction() {
+        return settingsAction;
+    }
+
+    public AdvancedSettingsPresenter getSettingsPresenter() {
+        return settingsPresenter;
+    }
+
+    public void setSettingsPresenter(AdvancedSettingsPresenter settingsPresenter) {
+        this.settingsPresenter = settingsPresenter;
+    }
+
+    public void setWindow(Window window) {
+        this.window = window;
+    }
+
+    public Window getWindow() {
+        return window;
     }
 
     public Product[] getProducts() {
-        return productList.toArray(new Product[productList.size()]);
-    }
-
-    public String[] getProductNames() {
-        String[] productNames = new String[productList.size()];
-        for (int i = 0; i < productList.size(); i++) {
-            Product product = productList.get(i);
-            productNames[i] = product.getName();
+        Vector productVector = (Vector) getProductsTableModel().getDataVector();
+        Product[] products = new Product[productVector.size()];
+        for (int i = 0; i < productVector.size(); i++) {
+            products[i] = (Product) ((Vector) productVector.elementAt(i)).get(1);
         }
-        return productNames;
+        return products;
     }
 
-    public void addPropteryChangeListener(PropertyChangeListener propertyChangeListener) {
-        //To change body of created methods use File | Settings | File Templates.
+    void setProductAsOutput(Product product, boolean output) {
+        for (int i = 0; i < getProductsTableModel().getRowCount(); i++) {
+            Product current = (Product) getProductsTableModel().getValueAt(i, 1);
+            if (current.equals(product)) {
+                getProductsTableModel().setValueAt(output, i, 0);
+                return;
+            }
+        }
     }
 
-    public void addProduct(Product product) {
-        productList.add(product);
-        int newIndex = productList.size() - 1;
-        productSelectionModel.setSelectionInterval(newIndex, newIndex);
+    boolean isProductAsOutputSet(Product product) {
+        for (int i = 0; i < getProductsTableModel().getRowCount(); i++) {
+            Product current = (Product) getProductsTableModel().getValueAt(i, 1);
+            if (current.equals(product)) {
+                Object isOutput = getProductsTableModel().getValueAt(i, 0);
+                if (isOutput != null) {
+                    return (Boolean) isOutput;
+                }
+            }
+        }
+        return false;
     }
 
-    public void removeSelectedProduct() {
-        productList.remove(getSelectionIndex());
 
-        setSelectionIndex(computeSelectionIndex());
+    void addProduct(Product product) {
+        // todo - check for correct product and for the
+        // todo - number of already contained products (max. 5)
+        DefaultTableModel tableModel = getProductsTableModel();
+        tableModel.addRow(new Object[]{Boolean.FALSE, product});
+        updateSelection(tableModel.getRowCount() - 1);
     }
 
-    private int computeSelectionIndex() {
-        if (productList.isEmpty()) {
-            return -1;
+    void removeSelectedProduct() {
+        getProductsTableModel().removeRow(getProductsTableSelectionModel().getLeadSelectionIndex());
+        int newSelectionIndex = getProductsTableSelectionModel().getLeadSelectionIndex() - 1;
+        updateSelection(newSelectionIndex);
+    }
+
+    private void updateSelection(int newSelectionIndex) {
+        if (newSelectionIndex < getProductsTableModel().getRowCount() - 1) {
+            newSelectionIndex++;
+        }
+        if (newSelectionIndex == -1) {
+            getProductsTableSelectionModel().clearSelection();
         } else {
-            if (getSelectionIndex() == productList.size()) {
-                return getSelectionIndex() - 1;
+            getProductsTableSelectionModel().setSelectionInterval(newSelectionIndex, newSelectionIndex);
+        }
+    }
+
+
+    private static class AddProductAction extends AbstractAction {
+
+        private static String LAST_OPEN_DIR_KEY = "chris.ui.file.lastOpenDir";
+        private static String CHRIS_IMPORT_DIR_KEY = "user." + ChrisConstants.FORMAT_NAME.toLowerCase() + ".import.dir";
+
+        private NoiseReductionPresenter presenter;
+
+        public AddProductAction(NoiseReductionPresenter presenter) {
+            super("Add...");
+            this.presenter = presenter;
+
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
+                                                           ChrisConstants.DEFAULT_FILE_EXTENSION,
+                                                           new ChrisProductReaderPlugIn().getDescription(null)) {
+                @Override
+                public boolean accept(File file) {
+                    return super.accept(file);
+
+                }
+
+                private boolean acceptFileName(File file) {
+                    TableModel productsTableModel = presenter.getProductsTableModel();
+                    if (productsTableModel.getRowCount() == 0) {
+                        return true;
+                    }
+                    File fileLocation = ((Product) productsTableModel.getValueAt(0, 1)).getFileLocation();
+                    String[] expectedParts = fileLocation.getName().split("_", 4);
+                    String[] actualParts = file.getName().split("_", 4);
+
+                    return expectedParts[0].equals(actualParts[0])
+                           && expectedParts[1].equals(actualParts[1])
+                           && expectedParts[2].equals(actualParts[2])
+                           && expectedParts[4].equals(actualParts[4]);
+                }
+
+            };
+
+            BeamFileChooser fileChooser = new BeamFileChooser();
+            String lastDir = SystemUtils.getUserHomeDir().getPath();
+            String chrisImportDir = VisatApp.getApp().getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
+                                                                                         SystemUtils.getUserHomeDir().getPath());
+            lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
+            fileChooser.setMultiSelectionEnabled(true);
+            fileChooser.setFileFilter(fileFilter);
+            fileChooser.setCurrentDirectory(new File(lastDir));
+
+            if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(presenter.getWindow())) {
+                File[] selectedFiles = fileChooser.getSelectedFiles();
+                for (File file : selectedFiles) {
+                    Product product = null;
+                    try {
+                        product = ProductIO.readProduct(file, null);
+                    } catch (IOException e1) {
+                        //todo
+                    }
+                    if (product != null) {
+                        presenter.addProduct(product);
+                    }
+                }
+                VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR_KEY,
+                                                                     fileChooser.getCurrentDirectory().getPath());
             }
 
-            return getSelectionIndex();
         }
     }
 
-    public String[][] getMetadata() {
+    private class RemoveProductAction extends AbstractAction {
+
+        private NoiseReductionPresenter presenter;
+
+        public RemoveProductAction(NoiseReductionPresenter presenter) {
+            super("Remove");
+            this.presenter = presenter;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            presenter.removeSelectedProduct();
+        }
+    }
+
+    private class AdvancedSettingsAction extends AbstractAction {
+
+        private NoiseReductionPresenter presenter;
+
+        public AdvancedSettingsAction(NoiseReductionPresenter presenter) {
+            super("Advanced Settings...");
+            this.presenter = presenter;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            // todo - add helpId
+            ModalDialog dialog = new ModalDialog(presenter.getWindow(),
+                                                 "Optional Settings",
+                                                 ModalDialog.ID_OK_CANCEL_HELP,
+                                                 null);
+            AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
+            AdvancedSettingsPresenter workingCopy = settingsPresenter.createCopy();
+            dialog.setContent(new AdvancedSettingsPanel(workingCopy));
+            if (dialog.show() == ModalDialog.ID_OK) {
+                presenter.setSettingsPresenter(workingCopy);
+            }
+        }
+    }
+
+
+    private void updateMetadata() {
         final String na = "Not available";
         Product selectedProduct = null;
-        if (getSelectionIndex() == -1) {
-            metadata[0][1] = "";
-            metadata[1][1] = "";
-            metadata[2][1] = "";
-            metadata[3][1] = "";
-            metadata[4][1] = "";
-            return metadata;
+        if (productsTableSelectionModel.getMaxSelectionIndex() == -1) {
+            return;
         }
-        selectedProduct = productList.get(getSelectionIndex());
-
-        metadata[0][1] = na;
-        metadata[1][1] = na;
-        metadata[2][1] = na;
-        metadata[3][1] = na;
-        metadata[4][1] = na;
+        selectedProduct = (Product) productsTableModel.getValueAt(productsTableSelectionModel.getMaxSelectionIndex(),
+                                                                  1);
 
         MetadataElement root = selectedProduct.getMetadataRoot();
         if (root == null) {
-            return metadata;
+            return;
         }
-
         MetadataElement mph = root.getElement(ChrisConstants.MPH_NAME);
         if (mph == null) {
-            return metadata;
+            return;
         }
 
-        metadata[0][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_CHRIS_MODE, na);
-        metadata[1][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_TARGET_NAME, na);
-        metadata[2][1] = getTargetCoordinatesString(mph, na);
-        metadata[3][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_NOMINAL_FLY_BY_ZENITH_ANGLE, na);
-        metadata[4][1] = mph.getAttributeString(ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE, na);
+        metadataTableModel.setValueAt(mph.getAttributeString(ChrisConstants.ATTR_NAME_CHRIS_MODE, na), 0, 1);
+        metadataTableModel.setValueAt(mph.getAttributeString(ChrisConstants.ATTR_NAME_TARGET_NAME, na), 1, 1);
+        metadataTableModel.setValueAt(getTargetCoordinatesString(mph, na), 2, 1);
+        metadataTableModel.setValueAt(mph.getAttributeString(ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE, na),
+                                      3, 1);
+        metadataTableModel.setValueAt(mph.getAttributeString(ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE, na), 4, 1);
 
-        return metadata;
+
+        return;
     }
 
     private static String getTargetCoordinatesString(MetadataElement element, String defaultValue) {
@@ -145,7 +329,8 @@ public class NoiseReductionPresenter {
 
         if (lat != null && lon != null) {
             try {
-                str = new GeoPos(Float.parseFloat(lat), Float.parseFloat(lon)).toString();
+                GeoPos geoPos = new GeoPos(Float.parseFloat(lat), Float.parseFloat(lon));
+                str = geoPos.getLatString() + ", " + geoPos.getLonString();
             } catch (NumberFormatException e) {
                 // ignore
             }
@@ -154,84 +339,5 @@ public class NoiseReductionPresenter {
         return str;
     }
 
-    public int getSelectionIndex() {
-        return productSelectionModel.getMaxSelectionIndex();
-    }
 
-    public void setSelectionIndex(int i) {
-        if (i == -1) {
-            productSelectionModel.clearSelection();
-        } else {
-            productSelectionModel.setSelectionInterval(i, i);
-        }
-    }
-
-    public ListSelectionModel getSelectionModel() {
-        return productSelectionModel;
-    }
-
-    public Action getAddProductAction() {
-        return addProductAction;
-    }
-
-    private static class AddProductAction extends AbstractAction {
-
-        private static String LAST_OPEN_DIR = "chris.ui.file.lastOpenDir";
-        private NoiseReductionPresenter presenter;
-
-        public AddProductAction(NoiseReductionPresenter presenter) {
-            this.presenter = presenter;
-        }
-
-        public void actionPerformed(ActionEvent e) {
-            BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
-                                                           ChrisConstants.DEFAULT_FILE_EXTENSION,
-                                                           new ChrisProductReaderPlugIn().getDescription(null)) {
-                @Override
-                public boolean accept(File file) {
-                    boolean accept = super.accept(file);
-
-                    if (!accept || presenter.getProducts().length == 0) {
-                        return accept;
-                    }
-
-                    return acceptFileName(file);
-                }
-
-                private boolean acceptFileName(File file) {
-                    File fileLocation = presenter.getProducts()[0].getFileLocation();
-                    String[] expectedParts = fileLocation.getName().split("_", 4);
-                    String[] actualParts = file.getName().split("_", 4);
-
-                    return expectedParts[0].equals(actualParts[0])
-                           && expectedParts[1].equals(actualParts[1]) 
-                           && expectedParts[2].equals(actualParts[2])
-                           && expectedParts[4].equals(actualParts[4]);
-                }
-            };
-
-            BeamFileChooser fileChooser = new BeamFileChooser();
-            String lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR,
-                                                                                  SystemUtils.getUserHomeDir().getPath());
-            fileChooser.setFileFilter(fileFilter);
-            fileChooser.setCurrentDirectory(new File(lastDir));
-
-            if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(null)) {
-                File[] selectedFiles = fileChooser.getSelectedFiles();
-                for (File file : selectedFiles) {
-                    try {
-                        Product product = ProductIO.readProduct(file, null);
-                        presenter.addProduct(product);
-                    } catch (IOException e1) {
-                        //todo
-                    }
-                }
-
-                VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR,
-                                                                     fileChooser.getCurrentDirectory().getPath());
-            }
-
-        }
-
-    }
 }

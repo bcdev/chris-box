@@ -16,10 +16,14 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.GPF;
+import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.framework.ui.command.ExecCommand;
 import org.esa.beam.visat.VisatApp;
+
+import java.util.HashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,13 +44,34 @@ public class NoiseReductionAction extends ExecCommand {
         setEnabled(product != null && product.getProductType().startsWith("CHRIS_M"));
     }
 
-    private void showNoiseReductionDialog() {
-        //
+    private static void showNoiseReductionDialog() {
         ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(), "CHRIS Noise Reduction",
                                                   ModalDialog.ID_OK_CANCEL_HELP, "");
-        NoiseReductionPresenter presenter = new NoiseReductionPresenter(VisatApp.getApp().getProductManager().getProducts());
+
+        Product[] products = new Product[]{VisatApp.getApp().getSelectedProduct()};
+        NoiseReductionPresenter presenter = new NoiseReductionPresenter(products, new AdvancedSettingsPresenter());
         modalDialog.setContent(new NoiseReductionPanel(presenter));
-        modalDialog.show();
+        if(ModalDialog.ID_OK != modalDialog.show()) {
+            return;
+        }
+
+        AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
+        if(settingsPresenter.isSlitApplied()){
+            try {
+                Product product = GPF.createProduct("SlitCorrection", new HashMap<String, Object>(0), presenter.getProducts());
+                Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(), product);
+                HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
+                productsMap.put("sourceProduct", product);
+                productsMap.put("factorProduct", product2);
+                Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap);
+                VisatApp.getApp().addProduct(product3);
+
+
+            } catch (OperatorException e) {
+                // todo
+                e.printStackTrace();
+            }
+        }
     }
 
 }

@@ -2,11 +2,14 @@ package org.esa.beam.chris.ui;
 
 import junit.framework.TestCase;
 import org.esa.beam.dataio.chris.ChrisConstants;
+import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.datamodel.GeoPos;
+
+import javax.swing.ListSelectionModel;
+import javax.swing.table.DefaultTableModel;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,7 +31,7 @@ public class NoiseReductionPresenterTest extends TestCase {
                 ChrisConstants.ATTR_NAME_CHRIS_MODE,
                 ChrisConstants.ATTR_NAME_TARGET_NAME,
                 "Target Coordinates",
-                ChrisConstants.ATTR_NAME_NOMINAL_FLY_BY_ZENITH_ANGLE,
+                ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE,
                 ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE,
         };
 
@@ -40,7 +43,7 @@ public class NoiseReductionPresenterTest extends TestCase {
     }
 
     public void testConstuctor() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts);
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
         Product[] actualProducts = nrp.getProducts();
         assertNotNull(actualProducts);
@@ -50,74 +53,84 @@ public class NoiseReductionPresenterTest extends TestCase {
             assertSame(expectedProducts[i], actualProducts[i]);
         }
 
-        assertEquals(0, nrp.getSelectionIndex());
-        assertSame(first, nrp.getProducts()[nrp.getSelectionIndex()]);
+        int selectionIndex = nrp.getProductsTableSelectionModel().getMaxSelectionIndex();
+        assertEquals(0, selectionIndex);
+        assertSame(first, nrp.getProducts()[selectionIndex]);
 
-        String[][] metaData = nrp.getMetadata();
-        checkMetadata(metaData, "DummyMode1", "DummyTarget1");
-        String[] productNames = nrp.getProductNames();
-        for (int i = 0; i < expectedProducts.length; i++) {
-            assertEquals(expectedProducts[i].getName(), productNames[i]);
-        }
-
+        checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
     }
 
     public void testConstructorWithoutProducts() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(new Product[0]);
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(new Product[0], new AdvancedSettingsPresenter());
 
-        String[][] metadata = nrp.getMetadata();
-        assertEquals(5, metadata.length);
-        for (String[] metadataEntry : metadata) {
-            assertEquals("", metadataEntry[1]);
+        DefaultTableModel metadata = nrp.getMetadataTableModel();
+        assertEquals(5, metadata.getRowCount());
+        for (int i = 0; i < metadata.getRowCount(); i++) {
+            assertEquals(nrp.getMetadataTableModel().getValueAt(i,1), null);
         }
     }
 
     public void testAddRemove() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts);
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
         Product fourth = createChrisDummyProduct("fourth", "type4", "DummyMode4", "DummyTarget4");
         nrp.addProduct(fourth);
         assertEquals(4, nrp.getProducts().length);
         assertSame(fourth, nrp.getProducts()[3]);
-        assertEquals(3, nrp.getSelectionIndex());
+        ListSelectionModel selectionModel = nrp.getProductsTableSelectionModel();
+        assertEquals(3, selectionModel.getMaxSelectionIndex());
 
-
-        nrp.setSelectionIndex(2);
+        nrp.getProductsTableSelectionModel().setSelectionInterval(2,2);
 
         nrp.removeSelectedProduct();
         assertEquals(3, nrp.getProducts().length);
         assertSame(first, nrp.getProducts()[0]);
         assertSame(second, nrp.getProducts()[1]);
         assertSame(fourth, nrp.getProducts()[2]);
-        assertEquals(2, nrp.getSelectionIndex());
+        assertEquals(2, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
 
 
-        assertEquals(2, nrp.getSelectionIndex());
         nrp.removeSelectedProduct();
         assertEquals(2, nrp.getProducts().length);
         assertSame(first, nrp.getProducts()[0]);
         assertSame(second, nrp.getProducts()[1]);
-        assertEquals(1, nrp.getSelectionIndex());
+        assertEquals(1, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
-        nrp.removeSelectedProduct();
+        assertEquals(0, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
+        assertSame(first, nrp.getProducts()[0]);
 
+        nrp.removeSelectedProduct();
         assertEquals(0, nrp.getProducts().length);
-        assertEquals(-1, nrp.getSelectionIndex());
+        assertEquals(-1, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
 
         nrp.addProduct(fourth);
-        assertEquals(0, nrp.getSelectionIndex());
+        assertEquals(0, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
     }
 
     public void testSelectionChange() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts);
-        checkMetadata(nrp.getMetadata(), "DummyMode1", "DummyTarget1");
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
+        checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
 
-        nrp.setSelectionIndex(2);
-        checkMetadata(nrp.getMetadata(), "DummyMode3", "DummyTarget3");
+        nrp.getProductsTableSelectionModel().setSelectionInterval(2,2);
+        checkMetadata(nrp.getMetadataTableModel(), "DummyMode3", "DummyTarget3");
 
-        nrp.setSelectionIndex(1);
-        checkMetadata(nrp.getMetadata(), "DummyMode2", "DummyTarget2");
+        nrp.getProductsTableSelectionModel().setSelectionInterval(1,1);
+        checkMetadata(nrp.getMetadataTableModel(), "DummyMode2", "DummyTarget2");
+    }
+
+    public void testProductAsOutput() {
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
+
+        assertFalse(nrp.isProductAsOutputSet(first));
+        assertFalse(nrp.isProductAsOutputSet(second));
+        assertFalse(nrp.isProductAsOutputSet(third));
+
+        nrp.setProductAsOutput(second, true);
+
+        assertFalse(nrp.isProductAsOutputSet(first));
+        assertTrue(nrp.isProductAsOutputSet(second));
+        assertFalse(nrp.isProductAsOutputSet(third));
     }
 
     private static Product createChrisDummyProduct(String name, String type, String mode, String targetName) {
@@ -140,22 +153,24 @@ public class NoiseReductionPresenterTest extends TestCase {
         return product;
     }
 
-    private void checkMetadata(String[][] metaData, String mode, String target) {
+    private void checkMetadata(DefaultTableModel metaData, String mode, String target) {
         assertNotNull(metaData);
-        assertEquals(5, metaData.length);
+        assertEquals(5, metaData.getRowCount());
 
         for (int i = 0; i < meatadatNames.length; i++) {
-            assertEquals(meatadatNames[i], metaData[i][0]);
+            assertEquals(meatadatNames[i], metaData.getValueAt(i, 0));
         }
 
-        assertEquals(2, metaData[0].length);
-        assertEquals(mode, metaData[0][1]);
-        assertEquals(target, metaData[1][1]);
+        assertEquals(2, metaData.getColumnCount());
+        assertEquals(mode, metaData.getValueAt(0,1));
+        assertEquals(target, metaData.getValueAt(1,1));
 
-        assertEquals(new GeoPos(45.32f, 10.8f).toString(), metaData[2][1]);
+        GeoPos expectedGeoPos = new GeoPos(45.32f, 10.8f);
+        String expectedGeoPosString = expectedGeoPos.getLatString() + ", " + expectedGeoPos.getLonString();
+        assertEquals(expectedGeoPosString, metaData.getValueAt(2,1));
 
-        assertEquals("Not available", metaData[3][1]);
-        assertEquals("Not available", metaData[4][1]);
+        assertEquals("Not available", metaData.getValueAt(3,1));
+        assertEquals("Not available", metaData.getValueAt(4,1));
     }
 
 }

@@ -10,8 +10,8 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 
 public class DropoutCorrectionOp  extends AbstractOperator {
 
-    @Parameter(defaultValue = "5")
-    private int includeSpectralBandsCount;
+    @Parameter(defaultValue = "5", interval = "(1, *)")
+    private int includeSpectralBandsCount = 5;
 
     @Parameter(defaultValue = "4", valueSet = {"2", "4", "8"})
     private int neighbourhoodType;

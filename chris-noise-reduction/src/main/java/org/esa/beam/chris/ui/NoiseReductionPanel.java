@@ -1,22 +1,27 @@
 package org.esa.beam.chris.ui;
 
+import com.jidesoft.grid.BooleanCheckBoxCellEditor;
+import com.jidesoft.grid.BooleanCheckBoxCellRenderer;
 import org.esa.beam.framework.datamodel.Product;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 /**
  * @author Marco Peters
@@ -25,34 +30,26 @@ import java.beans.PropertyChangeListener;
  */
 public class NoiseReductionPanel extends JPanel {
 
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton advancedSettingsButton;
-    private javax.swing.JPanel advancedSettingsPanel;
-    private javax.swing.JList aquisitionImageList;
-    private javax.swing.JPanel aquisitionSetPanel;
-    private javax.swing.JPanel dataPanel;
-    private javax.swing.JPanel dropoutPanel;
-    private javax.swing.JCheckBox jCheckBox1;
-    private javax.swing.JComboBox jComboBox1;
-    private javax.swing.JComboBox jComboBox2;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JPanel jPanel4;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JSpinner jSpinner1;
-    private javax.swing.JPanel metadataPanel;
-    private javax.swing.JTable metadataTable;
-    private javax.swing.JPanel optionalSettingsPanel;
-    private javax.swing.JButton removeButton;
-    private javax.swing.JPanel verticalStripingPanel;
+    private JPanel dataPanel;
+    private JPanel aquisitionSetPanel;
+    private JScrollPane aqusitionScrollPane;
+    private JTable aquisitionImageTable;
+    private JButton addButton;
+    private JButton removeButton;
 
-    // todo - remove this when finished
+    private JPanel metadataPanel;
+    private JTable metadataTable;
+
+    private JButton advancedSettingsButton;
+
+// todo - remove this when finished
+
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Noise Reduction");
-        NoiseReductionPresenter presenter = new NoiseReductionPresenter(new Product[0]);
-        frame.setContentPane(new NoiseReductionPanel(presenter));
+        final JFrame frame = new JFrame("Noise Reduction");
+        final NoiseReductionPresenter nrPresenter = new NoiseReductionPresenter(new Product[0],
+                                                                                new AdvancedSettingsPresenter());
+        nrPresenter.setWindow(frame);
+        frame.setContentPane(new NoiseReductionPanel(nrPresenter));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
@@ -61,8 +58,47 @@ public class NoiseReductionPanel extends JPanel {
     /**
      * Creates new form NRPanel
      */
-    public NoiseReductionPanel(NoiseReductionPresenter presenter) {
-        initComponents(presenter);
+    public NoiseReductionPanel(NoiseReductionPresenter nrPresenter) {
+        initComponents();
+        bindComponents(nrPresenter);
+    }
+
+    private void bindComponents(NoiseReductionPresenter nrPresenter) {
+        aquisitionImageTable.setModel(nrPresenter.getProductsTableModel());
+        aquisitionImageTable.setSelectionModel(nrPresenter.getProductsTableSelectionModel());
+
+        TableColumn firstTableColumn = aquisitionImageTable.getColumnModel().getColumn(0);
+        firstTableColumn.setCellRenderer(new BooleanCheckBoxCellRenderer());
+        firstTableColumn.setCellEditor(new BooleanCheckBoxCellEditor());
+
+        firstTableColumn.setPreferredWidth(60);
+        firstTableColumn.setMaxWidth(60);
+
+        TableColumn secondTableColumn = aquisitionImageTable.getColumnModel().getColumn(1);
+        secondTableColumn.setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus,
+                                                           int row, int column) {
+                Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
+                                                                          column);
+                if (component instanceof JLabel && value instanceof Product) {
+                    JLabel label = (JLabel) component;
+                    Product product = (Product) value;
+                    label.setText(product.getName());
+                    return label;
+                }
+                return component;
+
+            }
+
+        });
+
+        metadataTable.setModel(nrPresenter.getMetadataTableModel());
+
+        addButton.setAction(nrPresenter.getAddProductAction());
+        removeButton.setAction(nrPresenter.getRemoveProductAction());
+        advancedSettingsButton.setAction(nrPresenter.getSettingsAction());
     }
 
     /**
@@ -70,34 +106,19 @@ public class NoiseReductionPanel extends JPanel {
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
      * always regenerated by the Form Editor.
-     * @param presenter
      */
-    private void initComponents(NoiseReductionPresenter presenter) {
+    private void initComponents() {
         GridBagConstraints gridBagConstraints;
 
         dataPanel = new JPanel();
         aquisitionSetPanel = new JPanel();
-        jScrollPane1 = new JScrollPane();
-        aquisitionImageList = new JList(presenter.getProductNames());
-        aquisitionImageList.setSelectionModel(presenter.getSelectionModel());
-        addButton = new JButton(presenter.getAddProductAction());
+        aqusitionScrollPane = new JScrollPane();
+        aquisitionImageTable = new JTable();
+        addButton = new JButton();
         removeButton = new JButton();
         metadataPanel = new JPanel();
-        metadataTable = new JTable(new DefaultTableModel(presenter.getMetadata(), new String[]{"Name", "Value"}));
-        optionalSettingsPanel = new JPanel();
-        jPanel4 = new JPanel();
+        metadataTable = new JTable();
         advancedSettingsButton = new JButton();
-        advancedSettingsPanel = new JPanel();
-        verticalStripingPanel = new JPanel();
-        jCheckBox1 = new JCheckBox();
-        jSpinner1 = new JSpinner();
-        jLabel1 = new JLabel();
-        jLabel4 = new JLabel();
-        dropoutPanel = new JPanel();
-        jLabel2 = new JLabel();
-        jComboBox1 = new JComboBox();
-        jLabel3 = new JLabel();
-        jComboBox2 = new JComboBox();
 
         setLayout(new BorderLayout(5, 5));
 
@@ -110,21 +131,11 @@ public class NoiseReductionPanel extends JPanel {
                                                                       TitledBorder.DEFAULT_POSITION,
                                                                       new Font("Tahoma", 0, 11),
                                                                       new Color(0, 70, 213)));
-        aquisitionSetPanel.setPreferredSize(new Dimension(100, 130));
-        jScrollPane1.setPreferredSize(new Dimension(300, 150));
-        aquisitionImageList.setModel(new AbstractListModel() {
-            String[] strings = {"Product 1", "Product 2", "Product 3", "Product 4", "Product 5"};
-
-            public int getSize() {
-                return strings.length;
-            }
-
-            public Object getElementAt(int i) {
-                return strings[i];
-            }
-        });
-        aquisitionImageList.setPreferredSize(new Dimension(150, 80));
-        jScrollPane1.setViewportView(aquisitionImageList);
+        aquisitionSetPanel.setPreferredSize(new Dimension(450, 200));
+        aqusitionScrollPane.setPreferredSize(new Dimension(300, 150));
+        aquisitionImageTable.setPreferredSize(new Dimension(300, 150));
+        aquisitionImageTable.setFillsViewportHeight(true);
+        aqusitionScrollPane.setViewportView(aquisitionImageTable);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -134,16 +145,14 @@ public class NoiseReductionPanel extends JPanel {
         gridBagConstraints.anchor = GridBagConstraints.NORTH;
         gridBagConstraints.weightx = 0.8;
         gridBagConstraints.weighty = 1.0;
-        aquisitionSetPanel.add(jScrollPane1, gridBagConstraints);
+        aquisitionSetPanel.add(aqusitionScrollPane, gridBagConstraints);
 
-        addButton.setText("Add");
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         aquisitionSetPanel.add(addButton, gridBagConstraints);
 
-        removeButton.setText("Remove");
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -151,7 +160,7 @@ public class NoiseReductionPanel extends JPanel {
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         aquisitionSetPanel.add(removeButton, gridBagConstraints);
 
-        dataPanel.add(aquisitionSetPanel, BorderLayout.NORTH);
+        dataPanel.add(aquisitionSetPanel, BorderLayout.CENTER);
 
         metadataPanel.setLayout(new GridBagLayout());
 
@@ -170,144 +179,18 @@ public class NoiseReductionPanel extends JPanel {
 
         dataPanel.add(metadataPanel, BorderLayout.SOUTH);
 
-        add(dataPanel, BorderLayout.NORTH);
+        add(dataPanel, BorderLayout.CENTER);
 
-        optionalSettingsPanel.setLayout(new GridBagLayout());
-
-        jPanel4.setLayout(new GridLayout(1, 0));
-
-        advancedSettingsButton.setText("Advanced Settings");
-        advancedSettingsButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                boolean oldVisible = advancedSettingsPanel.isVisible();
-                advancedSettingsPanel.setVisible(!oldVisible);
-            }
-        });
-        jPanel4.add(advancedSettingsButton);
-
-        gridBagConstraints = new GridBagConstraints();
+        JPanel settingsButtonPanel = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = GridBagConstraints.WEST;
+        gridBagConstraints.fill = GridBagConstraints.NONE;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
-        optionalSettingsPanel.add(jPanel4, gridBagConstraints);
+        gridBagConstraints.insets = new Insets(0, 5, 5, 5);
+        settingsButtonPanel.add(advancedSettingsButton, gridBagConstraints);
+        add(settingsButtonPanel, BorderLayout.SOUTH);
 
-        advancedSettingsPanel.setLayout(new GridBagLayout());
-
-        verticalStripingPanel.setLayout(new GridBagLayout());
-
-        verticalStripingPanel.setBorder(BorderFactory.createTitledBorder(null,
-                                                                         "Vertical Striping Correction",
-                                                                         TitledBorder.DEFAULT_JUSTIFICATION,
-                                                                         TitledBorder.DEFAULT_POSITION,
-                                                                         new Font("Tahoma", 0, 11),
-                                                                         new Color(0, 70, 213)));
-        jCheckBox1.setSelected(true);
-        jCheckBox1.setText("Apply Slit Correction");
-        jCheckBox1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        jCheckBox1.setHorizontalTextPosition(SwingConstants.LEFT);
-        jCheckBox1.setMargin(new Insets(0, 0, 0, 0));
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new Insets(0, 3, 0, 10);
-        verticalStripingPanel.add(jCheckBox1, gridBagConstraints);
-
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 0.6;
-        gridBagConstraints.insets = new Insets(0, 0, 0, 3);
-        jSpinner1.setModel(new SpinnerNumberModel(27, 11, 39, 2));
-        verticalStripingPanel.add(jSpinner1, gridBagConstraints);
-
-        jLabel1.setText("Smoothing Order:");
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new Insets(0, 10, 0, 3);
-        verticalStripingPanel.add(jLabel1, gridBagConstraints);
-
-        jLabel4.setText("pixels");
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 0;
-        verticalStripingPanel.add(jLabel4, gridBagConstraints);
-
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 0.5;
-        advancedSettingsPanel.add(verticalStripingPanel, gridBagConstraints);
-
-        dropoutPanel.setLayout(new GridBagLayout());
-
-        dropoutPanel.setBorder(BorderFactory.createTitledBorder(null, "Dropout Correction",
-                                                                TitledBorder.DEFAULT_JUSTIFICATION,
-                                                                TitledBorder.DEFAULT_POSITION,
-                                                                new Font("Tahoma", 0, 11),
-                                                                new Color(0, 70, 213)));
-        jLabel2.setText("Number Of Spectral Bands:");
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new Insets(0, 3, 3, 10);
-        dropoutPanel.add(jLabel2, gridBagConstraints);
-
-        jComboBox1.setModel(new DefaultComboBoxModel(new String[]{"5", "6", "7"}));
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 0.6;
-        gridBagConstraints.insets = new Insets(0, 0, 3, 3);
-        dropoutPanel.add(jComboBox1, gridBagConstraints);
-
-        jLabel3.setText("Neighbourhood Type:");
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new Insets(0, 3, 0, 10);
-        dropoutPanel.add(jLabel3, gridBagConstraints);
-
-        jComboBox2.setModel(new DefaultComboBoxModel(new String[]{"2-Connected", "4-Connected", "8-Connected"}));
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 0.6;
-        gridBagConstraints.insets = new Insets(0, 0, 0, 3);
-        dropoutPanel.add(jComboBox2, gridBagConstraints);
-
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 0.5;
-        advancedSettingsPanel.add(dropoutPanel, gridBagConstraints);
-
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = GridBagConstraints.BOTH;
-        gridBagConstraints.anchor = GridBagConstraints.NORTH;
-        gridBagConstraints.weighty = 0.5;
-        gridBagConstraints.insets = new Insets(5, 5, 5, 5);
-        optionalSettingsPanel.add(advancedSettingsPanel, gridBagConstraints);
-
-        add(optionalSettingsPanel, BorderLayout.CENTER);
-
-        presenter.addPropteryChangeListener(new PropertyChangeListener(){
-            public void propertyChange(PropertyChangeEvent evt) {
-                // todo
-            }
-        });
     }
 
 
