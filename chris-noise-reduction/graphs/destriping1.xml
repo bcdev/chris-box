@@ -17,6 +17,7 @@
         </sources>
         <parameters>
             <smoothingOrder>27</smoothingOrder>
+            <slitCorrection>true</slitCorrection>
         </parameters>
     </node>
 
@@ -27,6 +28,17 @@
             <input>load</input>
             <factors>destriping-factors</factors>
         </sources>
+    </node>
+
+    <node>
+        <id>write-factors</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
+        <sources>
+            <input>destriping-factors</input>
+        </sources>
+        <parameters>
+            <filePath>${outputFile2}</filePath>
+        </parameters>
     </node>
 
     <node>
