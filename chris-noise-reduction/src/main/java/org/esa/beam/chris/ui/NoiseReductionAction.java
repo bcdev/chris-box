@@ -31,12 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- *
- * @author Ralf Quast
- * @version $Revision: $ $Date: $
- */
 public class NoiseReductionAction extends ExecCommand {
 
     @Override
@@ -71,6 +65,7 @@ public class NoiseReductionAction extends ExecCommand {
 
         AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
         try {
+            // todo setup graph properly
             Product product1 = presenter.getProducts()[0];
             Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(),
                                                  product1);
