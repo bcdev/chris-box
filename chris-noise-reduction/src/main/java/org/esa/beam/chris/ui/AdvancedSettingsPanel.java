@@ -3,15 +3,18 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.binding.swing.SwingBindingContext;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -51,6 +54,20 @@ public class AdvancedSettingsPanel extends JPanel {
         SwingBindingContext dropoutBinding = new SwingBindingContext(presenter.getDropOutCorrectionContainer());
         dropoutBinding.bind(numBandsComboBox,  "includeSpectralBandsCount");
         dropoutBinding.bind(neighbourhoodTypeComboBox,  "neighbourhoodType");
+        neighbourhoodTypeComboBox.setRenderer(new DefaultListCellRenderer(){
+            @Override
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+                                                                   boolean cellHasFocus) {
+                Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if(component instanceof JLabel) {
+                    JLabel label = (JLabel) component;
+                    label.setText(value + "-Connected");
+                }
+                return component;
+            }
+
+        }
+        );
 
     }
 
