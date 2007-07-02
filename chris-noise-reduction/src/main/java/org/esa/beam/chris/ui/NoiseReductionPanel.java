@@ -6,7 +6,6 @@ import org.esa.beam.framework.datamodel.Product;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -28,32 +27,15 @@ import java.awt.Insets;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class NoiseReductionPanel extends JPanel {
+class NoiseReductionPanel extends JPanel {
 
-    private JPanel dataPanel;
-    private JPanel aquisitionSetPanel;
-    private JScrollPane aqusitionScrollPane;
     private JTable aquisitionImageTable;
     private JButton addButton;
     private JButton removeButton;
 
-    private JPanel metadataPanel;
     private JTable metadataTable;
 
     private JButton advancedSettingsButton;
-
-// todo - remove this when finished
-
-    public static void main(String[] args) {
-        final JFrame frame = new JFrame("Noise Reduction");
-        final NoiseReductionPresenter nrPresenter = new NoiseReductionPresenter(new Product[0],
-                                                                                new AdvancedSettingsPresenter());
-        nrPresenter.setWindow(frame);
-        frame.setContentPane(new NoiseReductionPanel(nrPresenter));
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
-        frame.setVisible(true);
-    }
 
     /**
      * Creates new form NRPanel
@@ -110,13 +92,13 @@ public class NoiseReductionPanel extends JPanel {
     private void initComponents() {
         GridBagConstraints gridBagConstraints;
 
-        dataPanel = new JPanel();
-        aquisitionSetPanel = new JPanel();
-        aqusitionScrollPane = new JScrollPane();
+        JPanel dataPanel = new JPanel();
+        JPanel aquisitionSetPanel = new JPanel();
+        JScrollPane aqusitionScrollPane = new JScrollPane();
         aquisitionImageTable = new JTable();
         addButton = new JButton();
         removeButton = new JButton();
-        metadataPanel = new JPanel();
+        JPanel metadataPanel = new JPanel();
         metadataTable = new JTable();
         advancedSettingsButton = new JButton();
 

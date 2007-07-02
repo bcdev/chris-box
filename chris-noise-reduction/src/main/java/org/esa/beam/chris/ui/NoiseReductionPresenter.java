@@ -15,10 +15,12 @@ import org.esa.beam.visat.VisatApp;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.DefaultListSelectionModel;
+import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import java.awt.Component;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -31,7 +33,7 @@ import java.util.Vector;
  * @author Marco Peters
  * @version $Revision:$ $Date:$
  */
-public class NoiseReductionPresenter {
+class NoiseReductionPresenter {
 
     private DefaultTableModel productsTableModel;
     private ListSelectionModel productsTableSelectionModel;
@@ -157,15 +159,16 @@ public class NoiseReductionPresenter {
     }
 
 
-    void addProduct(Product product) {
+    void addProduct(Product product) throws Exception {
         Product[] products = getProducts();
         if (products.length >= 5) {
-            // todo - show message
-            return;
+            throw new Exception("Aqusition set already contains five products.");
         }
         if (products.length != 0 && !shouldConsiderProduct(products[0], product)) {
-            // todo - show message
-            return;
+            throw new Exception("Product does not belong to the aqusition set.");
+        }
+        if(containsProduct(products,  product)) {
+            throw new Exception("Product is already defined in the aqusition set.");
         }
         DefaultTableModel tableModel = getProductsTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
@@ -189,9 +192,18 @@ public class NoiseReductionPresenter {
         }
     }
 
+    private static boolean containsProduct(Product[] products, Product product) {
+        for (Product aProduct : products) {
+            if(aProduct.getName().equals(product.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static boolean shouldConsiderProduct(Product referenceProduct, Product product) {
-        return product.getProductType().equals(referenceProduct.getProductType()) && belongsToSameAquisitionSet(
-                referenceProduct.getFileLocation(), product.getFileLocation());
+        return product.getProductType().equals(referenceProduct.getProductType()) &&
+               belongsToSameAquisitionSet(referenceProduct.getFileLocation(), product.getFileLocation());
     }
 
     static boolean belongsToSameAquisitionSet(File refernceProductFile, File currentProductFile) {
@@ -223,7 +235,7 @@ public class NoiseReductionPresenter {
 
         public void actionPerformed(ActionEvent e) {
             if (presenter.getProducts().length == 5) {
-                // todo - show message that already 5 products are selected
+                JOptionPane.showMessageDialog((Component) e.getSource(), "You cannot select more than five products.");
                 return;
             }
             BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
@@ -245,11 +257,15 @@ public class NoiseReductionPresenter {
                     try {
                         product = ProductIO.readProduct(file, null);
                     } catch (IOException e1) {
-                        e1.printStackTrace();
-                        //todo
+                        JOptionPane.showMessageDialog((Component) e.getSource(), e1.getMessage());
                     }
                     if (product != null) {
-                        presenter.addProduct(product);
+                        try {
+                            presenter.addProduct(product);
+                        } catch (Exception e1) {
+                            JOptionPane.showMessageDialog((Component) e.getSource(),
+                                                          "Cannot add product.\n" + e1.getMessage());
+                        }
                     }
                 }
                 VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR_KEY,

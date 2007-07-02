@@ -14,7 +14,7 @@ import java.util.HashMap;
  * @author Marco Peters
  * @version $Revision:$ $Date:$
  */
-public class AdvancedSettingsPresenter {
+class AdvancedSettingsPresenter {
     private HashMap<String,Object> destripingParameter;
     private ValueContainer destripingContainer;
     private HashMap<String,Object> dropOutCorrectionParameter;

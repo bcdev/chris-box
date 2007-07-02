@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
 
 public class NoiseReductionAction extends ExecCommand {
 
@@ -65,7 +66,7 @@ public class NoiseReductionAction extends ExecCommand {
 
         AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
         try {
-            // todo setup graph properly
+            // todo - setup graph properly
             Product product1 = presenter.getProducts()[0];
             Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(),
                                                  product1);
@@ -75,8 +76,8 @@ public class NoiseReductionAction extends ExecCommand {
             Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap);
             VisatApp.getApp().addProduct(product3);
         } catch (OperatorException e) {
-            // todo
-            e.printStackTrace();
+            modalDialog.showErrorDialog(e.getMessage());
+            VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
         }
     }
 
@@ -102,8 +103,7 @@ public class NoiseReductionAction extends ExecCommand {
                     consideredProductList.add(ProductIO.readProduct(file, null));
                 }
             } catch (IOException e) {
-                // todo
-                e.printStackTrace();
+                // ignore - no message to user, we add products silently
             }
         }
 
