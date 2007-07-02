@@ -35,9 +35,9 @@ public class NoiseReductionPresenterTest extends TestCase {
                 ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE,
         };
 
-        first = createChrisDummyProduct("first", "type1", "DummyMode1", "DummyTarget1");
-        second = createChrisDummyProduct("second", "type2", "DummyMode2", "DummyTarget2");
-        third = createChrisDummyProduct("third", "type3", "DummyMode3", "DummyTarget3");
+        first = createChrisDummyProduct("first", "DummyMode1", "DummyTarget1");
+        second = createChrisDummyProduct("second", "DummyMode2", "DummyTarget2");
+        third = createChrisDummyProduct("third", "DummyMode3", "DummyTarget3");
 
         expectedProducts = new Product[]{first, second, third};
     }
@@ -73,7 +73,7 @@ public class NoiseReductionPresenterTest extends TestCase {
     public void testAddRemove() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
-        Product fourth = createChrisDummyProduct("fourth", "type4", "DummyMode4", "DummyTarget4");
+        Product fourth = createChrisDummyProduct("fourth", "chris", "DummyTarget4");
         nrp.addProduct(fourth);
         assertEquals(4, nrp.getProducts().length);
         assertSame(fourth, nrp.getProducts()[3]);
@@ -122,19 +122,19 @@ public class NoiseReductionPresenterTest extends TestCase {
     public void testProductAsOutput() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
-        assertFalse(nrp.isProductAsOutputSet(first));
-        assertFalse(nrp.isProductAsOutputSet(second));
-        assertFalse(nrp.isProductAsOutputSet(third));
-
-        nrp.setProductAsOutput(second, true);
-
-        assertFalse(nrp.isProductAsOutputSet(first));
+        assertTrue(nrp.isProductAsOutputSet(first));
         assertTrue(nrp.isProductAsOutputSet(second));
-        assertFalse(nrp.isProductAsOutputSet(third));
+        assertTrue(nrp.isProductAsOutputSet(third));
+
+        nrp.setProductAsOutput(second, false);
+
+        assertTrue(nrp.isProductAsOutputSet(first));
+        assertFalse(nrp.isProductAsOutputSet(second));
+        assertTrue(nrp.isProductAsOutputSet(third));
     }
 
-    private static Product createChrisDummyProduct(String name, String type, String mode, String targetName) {
-        Product product = new Product(name, type, 1, 1);
+    private static Product createChrisDummyProduct(String name, String mode, String targetName) {
+        Product product = new Product(name, "CHRIS_M2", 1, 1);
         MetadataElement mphElement = new MetadataElement("MPH");
         mphElement.addAttribute(new MetadataAttribute(ChrisConstants.ATTR_NAME_CHRIS_MODE,
                                                       ProductData.createInstance(mode),

@@ -163,7 +163,7 @@ public class NoiseReductionPresenter {
             // todo - show message
             return;
         }
-        if (!shouldConsiderProduct(products[0], product)) {
+        if (products.length != 0 && !shouldConsiderProduct(products[0], product)) {
             // todo - show message
             return;
         }
@@ -195,16 +195,16 @@ public class NoiseReductionPresenter {
     }
 
     static boolean belongsToSameAquisitionSet(File refernceProductFile, File currentProductFile) {
-        String[] expectedParts = refernceProductFile.getName().split("_", 5);
-        String[] actualParts = currentProductFile.getName().split("_", 5);
-
-        return expectedParts[0].equals(actualParts[0])
-               && expectedParts[1].equals(actualParts[1])
-               && expectedParts[2].equals(actualParts[2])
-               // actualParts[3] should be different
-               && expectedParts[4].equals(actualParts[4]);
-
-
+        if (refernceProductFile != null && currentProductFile != null) {
+            String[] expectedParts = expectedParts = refernceProductFile.getName().split("_", 5);
+            String[] actualParts = actualParts = currentProductFile.getName().split("_", 5);
+            return expectedParts[0].equals(actualParts[0])
+                   && expectedParts[1].equals(actualParts[1])
+                   && expectedParts[2].equals(actualParts[2])
+                   // actualParts[3] should be different
+                   && expectedParts[4].equals(actualParts[4]);
+        }
+        return true;
     }
 
 
