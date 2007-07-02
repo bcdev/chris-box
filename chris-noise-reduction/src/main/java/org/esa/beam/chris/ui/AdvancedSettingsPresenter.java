@@ -21,14 +21,22 @@ public class AdvancedSettingsPresenter {
     private ValueContainer dropOutCorrectionContainer;
 
     public AdvancedSettingsPresenter() {
-        Factory factory = new Factory(new ParameterDefinitionFactory());
-
         destripingParameter = new HashMap<String, Object>();
-        destripingContainer = factory.createMapBackedValueContainer(DestripingFactorsOp.class, destripingParameter);
-
         dropOutCorrectionParameter = new HashMap<String, Object>();
-        dropOutCorrectionContainer = factory.createMapBackedValueContainer(DropoutCorrectionOp.class, dropOutCorrectionParameter);
+        initValueContainers();
+    }
 
+    private AdvancedSettingsPresenter(HashMap<String, Object> destripingParameter,
+                                      HashMap<String, Object> dropOutCorrectionParameter) {
+        this.destripingParameter = new HashMap<String, Object>(destripingParameter);
+        this.dropOutCorrectionParameter = new HashMap<String, Object>(dropOutCorrectionParameter);
+        initValueContainers();
+    }
+
+    private void initValueContainers() {
+        Factory factory = new Factory(new ParameterDefinitionFactory());
+        destripingContainer = factory.createMapBackedValueContainer(DestripingFactorsOp.class, destripingParameter);
+        dropOutCorrectionContainer = factory.createMapBackedValueContainer(DropoutCorrectionOp.class, dropOutCorrectionParameter);
     }
 
     public ValueContainer getDestripingContainer() {
@@ -48,6 +56,6 @@ public class AdvancedSettingsPresenter {
     }
 
     public AdvancedSettingsPresenter createCopy() {
-        return new AdvancedSettingsPresenter();
+        return new AdvancedSettingsPresenter(this.getDestripingParameter(), this.getDropOutCorrectionParameter());
     }
 }
