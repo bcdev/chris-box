@@ -56,7 +56,7 @@ public class NoiseReductionAction extends ExecCommand {
         }
 
         AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
-        if(settingsPresenter.isSlitApplied()){
+//        if(settingsPresenter.isSlitApplied()){
             try {
                 Product product1 = presenter.getProducts()[0];
                 Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(), product1);
@@ -69,7 +69,7 @@ public class NoiseReductionAction extends ExecCommand {
                 // todo
                 e.printStackTrace();
             }
-        }
+//        }
     }
 
 }

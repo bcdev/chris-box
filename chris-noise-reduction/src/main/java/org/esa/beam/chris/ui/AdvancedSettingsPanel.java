@@ -47,11 +47,10 @@ public class AdvancedSettingsPanel extends JPanel {
     private void bindComponents(AdvancedSettingsPresenter presenter) {
         SwingBindingContext smoothingBinding = new SwingBindingContext(presenter.getDestripingContainer());
         smoothingBinding.bind(smoothingOrderSpinner,  "smoothingOrder");
+        smoothingBinding.bind(applySlitCheckBox, "slitCorrection");
         SwingBindingContext dropoutBinding = new SwingBindingContext(presenter.getDropOutCorrectionContainer());
         dropoutBinding.bind(numBandsComboBox,  "includeSpectralBandsCount");
         dropoutBinding.bind(neighbourhoodTypeComboBox,  "neighbourhoodType");
-        SwingBindingContext slitBinding = new SwingBindingContext(presenter.getSlitAppliedContainer());
-        slitBinding.bind(applySlitCheckBox, "slitApplied");
 
     }
 
