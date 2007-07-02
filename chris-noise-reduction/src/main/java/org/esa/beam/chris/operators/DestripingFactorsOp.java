@@ -67,7 +67,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     @TargetProduct
     Product targetProduct;
 
-    @Parameter(defaultValue = "27", interval = "(11, 39)")
+    @Parameter(defaultValue = "27", interval = "(11, 99)")
     int smoothingOrder;
 
     @Parameter(defaultValue = "true")
