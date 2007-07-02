@@ -37,7 +37,7 @@
             <input>destriping-factors</input>
         </sources>
         <parameters>
-            <filePath>${outputFile2}</filePath>
+            <filePath>${outputFile1}</filePath>
         </parameters>
     </node>
 
@@ -48,7 +48,7 @@
             <input>destriping</input>
         </sources>
         <parameters>
-            <filePath>${outputFile1}</filePath>
+            <filePath>${outputFile2}</filePath>
         </parameters>
     </node>
 

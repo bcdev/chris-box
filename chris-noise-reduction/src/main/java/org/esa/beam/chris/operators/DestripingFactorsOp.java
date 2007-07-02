@@ -16,7 +16,6 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
@@ -125,7 +124,8 @@ public class DestripingFactorsOp extends AbstractOperator {
         smoother = new LocalRegressionSmoothing(2, smoothingOrder, 2);
 
         // set up target product and bands
-        targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC", sourceProducts[0].getSceneRasterWidth(), 1);
+        targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC",
+                                    sourceProducts[0].getSceneRasterWidth(), 1);
         targetBands = new Band[spectralBandCount];
 
         for (int i = 0; i < spectralBandCount; ++i) {
@@ -155,30 +155,20 @@ public class DestripingFactorsOp extends AbstractOperator {
         if (slitCorrection) {
             f = getSlitNoiseFactors(sourceProducts[0]);
         }
+        edge = createEdgeMask(pm);
 
         return targetProduct;
     }
 
     @Override
     public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        try {
-            if (edge == null) {
-                pm.beginTask("computing...", spectralBandCount + panorama.width + 2 + panorama.height + 5);
-                edge = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + panorama.width + 2));
-            } else {
-                pm.beginTask("computing...", panorama.height + 5);
-            }
-            final RasterDataNode node = targetRaster.getRasterDataNode();
+        final RasterDataNode targetNode = targetRaster.getRasterDataNode();
 
-            for (int i = 0; i < targetBands.length; ++i) {
-                if (targetBands[i].equals(node)) {
-                    computeCorrectionFactors(i, targetRaster.getRectangle(),
-                                             new SubProgressMonitor(pm, panorama.height + 5));
-                    return;
-                }
+        for (int i = 0; i < targetBands.length; ++i) {
+            if (targetBands[i].equals(targetNode)) {
+                computeCorrectionFactors(i, targetRaster.getRectangle(), pm);
+                return;
             }
-        } finally {
-            pm.done();
         }
     }
 

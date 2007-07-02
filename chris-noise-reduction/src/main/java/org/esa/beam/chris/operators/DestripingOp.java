@@ -64,22 +64,14 @@ public class DestripingOp extends AbstractOperator {
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
         assertValidity(sourceProduct);
 
-        targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType(),
+        targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType() + "_NR",
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-        /*
-        for (int i = 0; i < sourceProduct.getNumFlagCodings(); i++) {
-            FlagCoding sourceFlagCoding = sourceProduct.getFlagCodingAt(i);
-            FlagCoding destFlagCoding = new FlagCoding(sourceFlagCoding.getName());
-            destFlagCoding.setDescription(sourceFlagCoding.getDescription());
-            targetProduct.addFlagCoding(destFlagCoding);
-            copyMetadataElementsAndAttributes(sourceFlagCoding, destFlagCoding);
-        }
-        */
+
         for (final Band sourceBand : sourceProduct.getBands()) {
             final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
 
