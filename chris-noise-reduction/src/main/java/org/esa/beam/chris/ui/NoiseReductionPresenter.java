@@ -228,14 +228,7 @@ public class NoiseReductionPresenter {
             }
             BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
                                                            ChrisConstants.DEFAULT_FILE_EXTENSION,
-                                                           new ChrisProductReaderPlugIn().getDescription(null)) {
-                @Override
-                public boolean accept(File file) {
-                    return super.accept(file);
-
-                }
-            };
-
+                                                           new ChrisProductReaderPlugIn().getDescription(null));
             BeamFileChooser fileChooser = new BeamFileChooser();
             String lastDir = SystemUtils.getUserHomeDir().getPath();
             String chrisImportDir = VisatApp.getApp().getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
