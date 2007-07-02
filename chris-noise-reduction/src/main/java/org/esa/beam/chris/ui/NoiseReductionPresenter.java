@@ -19,7 +19,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -51,7 +50,7 @@ public class NoiseReductionPresenter {
         Object[][] productsData = new Object[products.length][2];
         if (products.length > 0) {
             for (int i = 0; i < productsData.length; i++) {
-                productsData[i][0] = Boolean.FALSE;
+                productsData[i][0] = Boolean.TRUE;
                 productsData[i][1] = products[i];
             }
         }
@@ -159,10 +158,17 @@ public class NoiseReductionPresenter {
 
 
     void addProduct(Product product) {
-        // todo - check for correct product and for the
-        // todo - number of already contained products (max. 5)
+        Product[] products = getProducts();
+        if (products.length >= 5) {
+            // todo - show message
+            return;
+        }
+        if (!shouldConsiderProduct(products[0], product)) {
+            // todo - show message
+            return;
+        }
         DefaultTableModel tableModel = getProductsTableModel();
-        tableModel.addRow(new Object[]{Boolean.FALSE, product});
+        tableModel.addRow(new Object[]{Boolean.TRUE, product});
         updateSelection(tableModel.getRowCount() - 1);
     }
 
@@ -183,6 +189,24 @@ public class NoiseReductionPresenter {
         }
     }
 
+    public static boolean shouldConsiderProduct(Product referenceProduct, Product product) {
+        return product.getProductType().equals(referenceProduct.getProductType()) && belongsToSameAquisitionSet(
+                referenceProduct.getFileLocation(), product.getFileLocation());
+    }
+
+    static boolean belongsToSameAquisitionSet(File refernceProductFile, File currentProductFile) {
+        String[] expectedParts = refernceProductFile.getName().split("_", 5);
+        String[] actualParts = currentProductFile.getName().split("_", 5);
+
+        return expectedParts[0].equals(actualParts[0])
+               && expectedParts[1].equals(actualParts[1])
+               && expectedParts[2].equals(actualParts[2])
+               // actualParts[3] should be different
+               && expectedParts[4].equals(actualParts[4]);
+
+
+    }
+
 
     private static class AddProductAction extends AbstractAction {
 
@@ -198,6 +222,10 @@ public class NoiseReductionPresenter {
         }
 
         public void actionPerformed(ActionEvent e) {
+            if (presenter.getProducts().length == 5) {
+                // todo - show message that already 5 products are selected
+                return;
+            }
             BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
                                                            ChrisConstants.DEFAULT_FILE_EXTENSION,
                                                            new ChrisProductReaderPlugIn().getDescription(null)) {
@@ -206,22 +234,6 @@ public class NoiseReductionPresenter {
                     return super.accept(file);
 
                 }
-
-                private boolean acceptFileName(File file) {
-                    TableModel productsTableModel = presenter.getProductsTableModel();
-                    if (productsTableModel.getRowCount() == 0) {
-                        return true;
-                    }
-                    File fileLocation = ((Product) productsTableModel.getValueAt(0, 1)).getFileLocation();
-                    String[] expectedParts = fileLocation.getName().split("_", 4);
-                    String[] actualParts = file.getName().split("_", 4);
-
-                    return expectedParts[0].equals(actualParts[0])
-                           && expectedParts[1].equals(actualParts[1])
-                           && expectedParts[2].equals(actualParts[2])
-                           && expectedParts[4].equals(actualParts[4]);
-                }
-
             };
 
             BeamFileChooser fileChooser = new BeamFileChooser();
@@ -240,6 +252,7 @@ public class NoiseReductionPresenter {
                     try {
                         product = ProductIO.readProduct(file, null);
                     } catch (IOException e1) {
+                        e1.printStackTrace();
                         //todo
                     }
                     if (product != null) {

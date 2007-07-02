@@ -15,6 +15,7 @@
  */
 package org.esa.beam.chris.ui;
 
+import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -23,7 +24,12 @@ import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.framework.ui.command.ExecCommand;
 import org.esa.beam.visat.VisatApp;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,31 +51,89 @@ public class NoiseReductionAction extends ExecCommand {
     }
 
     private static void showNoiseReductionDialog() {
-        ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(), "CHRIS Noise Reduction",
-                                                  ModalDialog.ID_OK_CANCEL_HELP, "");
 
-        Product[] products = new Product[]{VisatApp.getApp().getSelectedProduct()};
-        NoiseReductionPresenter presenter = new NoiseReductionPresenter(products, new AdvancedSettingsPresenter());
+
+        Product selectedProduct = VisatApp.getApp().getSelectedProduct();
+        List<Product> consideredProductList = new ArrayList<Product>();
+        collectProductsFromVisat(selectedProduct, consideredProductList);
+        collectProductsFromFilelocation(selectedProduct, consideredProductList);
+        Product[] consideredProducts = consideredProductList.toArray(new Product[consideredProductList.size()]);
+        NoiseReductionPresenter presenter = new NoiseReductionPresenter(consideredProducts,
+                                                                        new AdvancedSettingsPresenter());
+        // todo - add helpId
+        ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(),
+                                                  "CHRIS Noise Reduction",
+                                                  ModalDialog.ID_OK_CANCEL_HELP, "");
         modalDialog.setContent(new NoiseReductionPanel(presenter));
-        if(ModalDialog.ID_OK != modalDialog.show()) {
+        if (ModalDialog.ID_OK != modalDialog.show()) {
             return;
         }
 
         AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
-//        if(settingsPresenter.isSlitApplied()){
+        try {
+            Product product1 = presenter.getProducts()[0];
+            Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(),
+                                                 product1);
+            HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
+            productsMap.put("sourceProduct", product1);
+            productsMap.put("factorProduct", product2);
+            Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap);
+            VisatApp.getApp().addProduct(product3);
+        } catch (OperatorException e) {
+            // todo
+            e.printStackTrace();
+        }
+    }
+
+    private static void collectProductsFromFilelocation(final Product selectedProduct, List<Product> consideredProductList) {
+        File productLocation = selectedProduct.getFileLocation();
+        if(productLocation == null) {
+            return;
+        }
+        File parentFile = productLocation.getParentFile();
+        if(parentFile == null || !parentFile.isDirectory()) {
+            return;
+        }
+
+        File[] files = parentFile.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                return NoiseReductionPresenter.belongsToSameAquisitionSet(selectedProduct.getFileLocation(), pathname);
+            }
+        });
+
+        for (File file : files) {
             try {
-                Product product1 = presenter.getProducts()[0];
-                Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(), product1);
-                HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
-                productsMap.put("sourceProduct", product1);
-                productsMap.put("factorProduct", product2);
-                Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap);
-                VisatApp.getApp().addProduct(product3);
-            } catch (OperatorException e) {
+                if(!containsProduct(consideredProductList, file)) {
+                    consideredProductList.add(ProductIO.readProduct(file, null));
+                }
+            } catch (IOException e) {
                 // todo
                 e.printStackTrace();
             }
-//        }
+        }
+
+
+    }
+
+    private static void collectProductsFromVisat(Product selectedProduct, List<Product> consideredProductList) {
+        Product[] allProducts = VisatApp.getApp().getProductManager().getProducts();
+        consideredProductList.add(selectedProduct);
+        for (Product product : allProducts) {
+            if (selectedProduct != product && NoiseReductionPresenter.shouldConsiderProduct(selectedProduct, product)) {
+                if(!containsProduct(consideredProductList, product.getFileLocation())) {
+                    consideredProductList.add(product);
+                }
+            }
+        }
+    }
+
+    private static boolean containsProduct(List<Product> consideredProductList, File fileLocation) {
+        for (Product currentProduct : consideredProductList) {
+            if(currentProduct.getFileLocation().equals(fileLocation)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
