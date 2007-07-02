@@ -189,7 +189,7 @@ public class NoiseReductionPresenter {
         }
     }
 
-    public static boolean shouldConsiderProduct(Product referenceProduct, Product product) {
+    static boolean shouldConsiderProduct(Product referenceProduct, Product product) {
         return product.getProductType().equals(referenceProduct.getProductType()) && belongsToSameAquisitionSet(
                 referenceProduct.getFileLocation(), product.getFileLocation());
     }
