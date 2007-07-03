@@ -70,7 +70,7 @@ public class NoiseReductionPresenterTest extends TestCase {
         }
     }
 
-    public void testAddRemove() throws Exception {
+    public void testAddRemove() throws NRPValidationException {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
         Product fourth = createChrisDummyProduct("fourth", "chris", "DummyTarget4");

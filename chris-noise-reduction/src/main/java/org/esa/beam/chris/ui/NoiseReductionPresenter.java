@@ -159,16 +159,16 @@ class NoiseReductionPresenter {
     }
 
 
-    void addProduct(Product product) throws Exception {
+    void addProduct(Product product) throws NRPValidationException {
         Product[] products = getProducts();
         if (products.length >= 5) {
-            throw new Exception("Aqusition set already contains five products.");
+            throw new NRPValidationException("Aqusition set already contains five products.");
         }
         if (products.length != 0 && !shouldConsiderProduct(products[0], product)) {
-            throw new Exception("Product does not belong to the aqusition set.");
+            throw new NRPValidationException("Product does not belong to the aqusition set.");
         }
         if(containsProduct(products,  product)) {
-            throw new Exception("Product is already defined in the aqusition set.");
+            throw new NRPValidationException("Product is already defined in the aqusition set.");
         }
         DefaultTableModel tableModel = getProductsTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
@@ -262,7 +262,7 @@ class NoiseReductionPresenter {
                     if (product != null) {
                         try {
                             presenter.addProduct(product);
-                        } catch (Exception e1) {
+                        } catch (NRPValidationException e1) {
                             JOptionPane.showMessageDialog((Component) e.getSource(),
                                                           "Cannot add product.\n" + e1.getMessage());
                         }
