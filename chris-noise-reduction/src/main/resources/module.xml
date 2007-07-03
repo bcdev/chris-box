@@ -12,6 +12,9 @@
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
     <dependency>
+        <module>ceres-binding</module>
+    </dependency>
+    <dependency>
         <module>beam-gpf</module>
     </dependency>
     <dependency>
