@@ -28,11 +28,18 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
 public class NoiseReductionAction extends ExecCommand {
+
+    static List<String> CHRIS_TYPES;
+    static{
+        CHRIS_TYPES = new ArrayList<String>();
+        Collections.addAll(CHRIS_TYPES, "CHRIS_M1", "CHRIS_M2", "CHRIS_M3", "CHRIS_M3A", "CHRIS_M4", "CHRIS_M5");
+    }
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
@@ -42,7 +49,7 @@ public class NoiseReductionAction extends ExecCommand {
     @Override
     public void updateState() {
         final Product product = VisatApp.getApp().getSelectedProduct();
-        setEnabled(product != null && product.getProductType().startsWith("CHRIS_M"));
+        setEnabled(product != null && CHRIS_TYPES.contains(product.getProductType()));
     }
 
     private static void showNoiseReductionDialog() {

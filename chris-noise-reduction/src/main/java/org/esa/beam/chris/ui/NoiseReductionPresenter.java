@@ -167,8 +167,21 @@ class NoiseReductionPresenter {
         if (products.length != 0 && !shouldConsiderProduct(products[0], product)) {
             throw new NRPValidationException("Product does not belong to the aqusition set.");
         }
-        if(containsProduct(products,  product)) {
+        if (containsProduct(products, product)) {
             throw new NRPValidationException("Product is already defined in the aqusition set.");
+        }
+
+        if (!NoiseReductionAction.CHRIS_TYPES.contains(product.getProductType())) {
+            StringBuilder sb = new StringBuilder(50);
+            for (java.util.Iterator it = NoiseReductionAction.CHRIS_TYPES.iterator(); it.hasNext();) {
+                String type = (String) it.next();
+                sb.append("\"").append(type).append("\"");
+                if (it.hasNext()) {
+                    sb.append(", ");
+                }
+            }
+            throw new NRPValidationException("Product type '" + product.getProductType() + "'is not valid .\n" +
+                                             "Must be one of " + sb + "\n");
         }
         DefaultTableModel tableModel = getProductsTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
@@ -194,7 +207,7 @@ class NoiseReductionPresenter {
 
     private static boolean containsProduct(Product[] products, Product product) {
         for (Product aProduct : products) {
-            if(aProduct.getName().equals(product.getName())) {
+            if (aProduct.getName().equals(product.getName())) {
                 return true;
             }
         }
