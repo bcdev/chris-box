@@ -299,11 +299,10 @@ class NoiseReductionPresenter {
         }
 
         public void actionPerformed(ActionEvent e) {
-            // todo - add helpId
             ModalDialog dialog = new ModalDialog(presenter.getWindow(),
                                                  "Optional Settings",
                                                  ModalDialog.ID_OK_CANCEL_HELP,
-                                                 null);
+                                                 "chrisNoiseReductionAdvancedSettings");
             AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
             AdvancedSettingsPresenter workingCopy = settingsPresenter.createCopy();
             dialog.setContent(new AdvancedSettingsPanel(workingCopy));

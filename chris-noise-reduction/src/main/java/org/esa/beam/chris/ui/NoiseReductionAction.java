@@ -55,10 +55,9 @@ public class NoiseReductionAction extends ExecCommand {
         Product[] consideredProducts = consideredProductList.toArray(new Product[consideredProductList.size()]);
         NoiseReductionPresenter presenter = new NoiseReductionPresenter(consideredProducts,
                                                                         new AdvancedSettingsPresenter());
-        // todo - add helpId
         ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(),
                                                   "CHRIS Noise Reduction",
-                                                  ModalDialog.ID_OK_CANCEL_HELP, "");
+                                                  ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionProcessor");
         modalDialog.setContent(new NoiseReductionPanel(presenter));
         if (ModalDialog.ID_OK != modalDialog.show()) {
             return;
