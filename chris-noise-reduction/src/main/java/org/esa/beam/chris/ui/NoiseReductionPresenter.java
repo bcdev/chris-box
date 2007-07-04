@@ -223,13 +223,15 @@ class NoiseReductionPresenter {
         if (refernceProductFile != null && currentProductFile != null) {
             String[] expectedParts = expectedParts = refernceProductFile.getName().split("_", 5);
             String[] actualParts = actualParts = currentProductFile.getName().split("_", 5);
+            if(expectedParts.length == 5 && expectedParts.length == actualParts.length) {
             return expectedParts[0].equals(actualParts[0])
                    && expectedParts[1].equals(actualParts[1])
                    && expectedParts[2].equals(actualParts[2])
                    // actualParts[3] should be different
                    && expectedParts[4].equals(actualParts[4]);
+            }
         }
-        return true;
+        return false;
     }
 
 

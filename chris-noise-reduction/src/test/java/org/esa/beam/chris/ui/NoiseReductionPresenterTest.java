@@ -10,6 +10,7 @@ import org.esa.beam.framework.datamodel.ProductData;
 
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
+import java.io.File;
 
 /**
  * Created by IntelliJ IDEA.
@@ -135,6 +136,7 @@ public class NoiseReductionPresenterTest extends TestCase {
 
     private static Product createChrisDummyProduct(String name, String mode, String targetName) {
         Product product = new Product(name, "CHRIS_M2", 1, 1);
+        product.setFileLocation(new File("CHRIS_BR_123456_9876_21.hdf"));
         MetadataElement mphElement = new MetadataElement("MPH");
         mphElement.addAttribute(new MetadataAttribute(ChrisConstants.ATTR_NAME_CHRIS_MODE,
                                                       ProductData.createInstance(mode),
