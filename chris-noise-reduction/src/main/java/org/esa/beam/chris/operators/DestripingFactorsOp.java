@@ -16,7 +16,8 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.internal.LocalRegressionSmoothing;
+import com.bc.ceres.core.SubProgressMonitor;
+import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
@@ -74,7 +75,7 @@ public class DestripingFactorsOp extends AbstractOperator {
 
     private int spectralBandCount;
 
-    private transient LocalRegressionSmoothing smoother;
+    private transient LocalRegressionSmoother smoother;
 
     private transient Band[] targetBands;
     private transient Band[][] sourceDataBands;
@@ -121,7 +122,7 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
 
         panorama = new Panorama(sourceProducts);
-        smoother = new LocalRegressionSmoothing(2, smoothingOrder, 2);
+        smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
 
         // set up target product and bands
         targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC",
@@ -132,7 +133,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             targetBands[i] = targetProduct.addBand(
                     new StringBuilder("vs_corr_").append(i + 1).toString(), ProductData.TYPE_FLOAT64);
 
-            targetBands[i].setSpectralBandIndex(i + 1);
+            targetBands[i].setSpectralBandIndex(i);
             targetBands[i].setDescription(MessageFormat.format(
                     "Vertical striping correction factors for radiance band {0}", i + 1));
             targetBands[i].setSpectralBandwidth(sourceDataBands[i][0].getSpectralBandwidth());
@@ -151,11 +152,12 @@ public class DestripingFactorsOp extends AbstractOperator {
             sb.append("°]");
         }
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES, sb.toString());
+        // todo -- consider writing the sources metadata to the SPH
 
         if (slitCorrection) {
             f = getSlitNoiseFactors(sourceProducts[0]);
         }
-        edge = createEdgeMask(pm);
+        edge = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + panorama.width + 2));
 
         return targetProduct;
     }
@@ -212,9 +214,9 @@ public class DestripingFactorsOp extends AbstractOperator {
                         }
                         if (!edge[panorama.getY(j) + y][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
                             p[x] += log(r2 / r1);
-                            r1 = r2;
                             ++count[x];
                         }
+                        r1 = r2;
                     }
                     pm.worked(1);
                 }
@@ -428,12 +430,6 @@ public class DestripingFactorsOp extends AbstractOperator {
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not a CHRIS product", product.getName()));
-        }
-        try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED);
-        } catch (OperatorException e) {
-            throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' already is corrected", product.getName()));
         }
     }
 
