@@ -31,13 +31,14 @@
     </node>
 
     <node>
-        <id>write-factors</id>
-        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
+        <id>dropout-correction</id>
+        <operator>org.esa.beam.chris.operators.DropoutCorrectionOp$Spi</operator>
         <sources>
-            <input>destriping-factors</input>
+            <input>destriping</input>
         </sources>
         <parameters>
-            <filePath>${outputFile1}</filePath>
+            <neighborhoodType>4</neighborhoodType>
+            <neighboringBandCount>5</neighboringBandCount>
         </parameters>
     </node>
 
@@ -45,11 +46,24 @@
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>destriping</input>
+            <input>dropout-correction</input>
+        </sources>
+        <parameters>
+            <filePath>${outputFile1}</filePath>
+        </parameters>
+    </node>
+
+    <!--
+    <node>
+        <id>write-factors</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
+        <sources>
+            <input>destriping-factors</input>
         </sources>
         <parameters>
             <filePath>${outputFile2}</filePath>
         </parameters>
     </node>
+    -->
 
 </graph>
