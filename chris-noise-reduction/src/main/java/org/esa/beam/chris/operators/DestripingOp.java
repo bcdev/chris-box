@@ -82,7 +82,7 @@ public class DestripingOp extends AbstractOperator {
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
 
-        copyMetadataElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        ProductUtils.copyElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, "Yes");
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES,
                             getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES));
@@ -93,18 +93,21 @@ public class DestripingOp extends AbstractOperator {
     @Override
     public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
         final String name = targetRaster.getRasterDataNode().getName();
-        final Rectangle targetRectangle = targetRaster.getRectangle();
 
         if (name.startsWith("radiance")) {
             try {
-                pm.beginTask("removing vertical striping artifacts", targetRectangle.height);
+                pm.beginTask("removing vertical striping artifacts", targetRaster.getHeight());
 
-                final Raster sourceRaster = getRaster(sourceProduct.getBand(name), targetRectangle);
-                final Raster factorRaster = getRaster(factorProduct.getBand(name.replace("radiance", "vs_corr")),
-                                                      new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1));
+                final Band sourceBand = sourceProduct.getBand(name);
+                final Band factorBand = factorProduct.getBand(name.replace("radiance", "vs_corr"));
 
-                for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
-                    for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                final Rectangle sourceRectangle = targetRaster.getRectangle();
+                final Rectangle factorRectangle = new Rectangle(sourceRectangle.x, 0, sourceRectangle.width, 1);
+                final Raster sourceRaster = getRaster(sourceBand, sourceRectangle);
+                final Raster factorRaster = getRaster(factorBand, factorRectangle);
+
+                for (int y = sourceRectangle.y; y < sourceRectangle.y + sourceRectangle.height; ++y) {
+                    for (int x = sourceRectangle.x; x < sourceRectangle.x + sourceRectangle.width; ++x) {
                         final int value = (int) (sourceRaster.getInt(x, y) * factorRaster.getDouble(x, 0) + 0.5);
                         targetRaster.setInt(x, y, value);
                     }
@@ -114,7 +117,7 @@ public class DestripingOp extends AbstractOperator {
                 pm.done();
             }
         } else {
-            getRaster(sourceProduct.getBand(name), targetRectangle, targetRaster.getDataBuffer());
+            getRaster(sourceProduct.getBand(name), targetRaster.getRectangle(), targetRaster.getDataBuffer());
         }
     }
 
@@ -125,22 +128,6 @@ public class DestripingOp extends AbstractOperator {
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not a CHRIS product", product.getName()));
-        }
-        try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED);
-        } catch (OperatorException e) {
-            throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' already is corrected", product.getName()));
-        }
-    }
-
-    // todo -- move
-    private static void copyMetadataElementsAndAttributes(MetadataElement source, MetadataElement target) {
-        for (final MetadataElement element : source.getElements()) {
-            target.addElement(element.createDeepClone());
-        }
-        for (final MetadataAttribute attribute : source.getAttributes()) {
-            target.addAttribute(attribute.createDeepClone());
         }
     }
 
