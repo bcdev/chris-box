@@ -1,3 +1,18 @@
+/* $Id: $
+ *
+ * Copyright (C) 2002-2007 by Brockmann Consult
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation. This program is distributed in the hope it will
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
@@ -21,6 +36,12 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import java.text.MessageFormat;
 
+/**
+ * Operator for computing the CHRIS dropout correction.
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ */
 public class DropoutCorrectionOp extends AbstractOperator {
 
     @SourceProduct(alias = "input")
@@ -121,16 +142,16 @@ public class DropoutCorrectionOp extends AbstractOperator {
 
         for (int i = minBandIndex, j = 1; i < maxBandIndex; ++i) {
             if (i != bandIndex) {
-                sourceRciData[j] = getRasterDataInt(sourceRciBands[i], sourceRectangle);
-                sourceMaskData[j] = getRasterDataShort(sourceMaskBands[i], sourceRectangle);
+                sourceRciData[j] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
+                sourceMaskData[j] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
                 ++j;
             } else {
-                sourceRciData[0] = getRasterDataInt(sourceRciBands[i], sourceRectangle);
-                sourceMaskData[0] = getRasterDataShort(sourceMaskBands[i], sourceRectangle);
+                sourceRciData[0] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
+                sourceMaskData[0] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
             }
         }
-        final int[] targetRciData = getRasterDataInt(targetRciBands[bandIndex], targetRectangle);
-        final short[] targetMaskData = getRasterDataShort(targetMaskBands[bandIndex], targetRectangle);
+        final int[] targetRciData = (int[]) getRasterData(targetRciBands[bandIndex], targetRectangle);
+        final short[] targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
 
         dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
                                   new Rectangle(targetRectangle.x - sourceRectangle.x,
@@ -163,12 +184,8 @@ public class DropoutCorrectionOp extends AbstractOperator {
         return new Rectangle(x, y, width, height);
     }
 
-    private int[] getRasterDataInt(Band band, Rectangle rectangle) throws OperatorException {
-        return (int[]) getRaster(band, rectangle).getDataBuffer().getElems();
-    }
-
-    private short[] getRasterDataShort(Band band, Rectangle rectangle) throws OperatorException {
-        return (short[]) getRaster(band, rectangle).getDataBuffer().getElems();
+    private Object getRasterData(Band band, Rectangle rectangle) throws OperatorException {
+        return getRaster(band, rectangle).getDataBuffer().getElems();
     }
 
     private static void assertValidity(Product product) throws OperatorException {
