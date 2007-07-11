@@ -151,13 +151,12 @@ public class DestripingFactorsOp extends AbstractOperator {
             sb.append(getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
             sb.append("°]");
         }
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES, sb.toString());
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET, sb.toString());
         // todo -- consider writing the sources metadata to the SPH
 
         if (slitCorrection) {
             f = getSlitNoiseFactors(sourceProducts[0]);
         }
-        edge = createEdgeMask(new SubProgressMonitor(pm, spectralBandCount + panorama.width + 2));
 
         return targetProduct;
     }
@@ -165,12 +164,25 @@ public class DestripingFactorsOp extends AbstractOperator {
     @Override
     public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
         final RasterDataNode targetNode = targetRaster.getRasterDataNode();
+        final int work = panorama.height + 5;
 
-        for (int i = 0; i < targetBands.length; ++i) {
-            if (targetBands[i].equals(targetNode)) {
-                computeCorrectionFactors(i, targetRaster.getRectangle(), pm);
-                return;
+        try {
+            if (edge == null) {
+                final int additionalWork = spectralBandCount + panorama.width + 2;
+                pm.beginTask("computing correction factors...", work + additionalWork);
+                edge = createEdgeMask(new SubProgressMonitor(pm, additionalWork));
+            } else {
+                pm.beginTask("computing correction factors...", work);
             }
+
+            for (int i = 0; i < targetBands.length; ++i) {
+                if (targetBands[i].equals(targetNode)) {
+                    computeCorrectionFactors(i, targetRaster, new SubProgressMonitor(pm, work));
+                    return;
+                }
+            }
+        } finally {
+            pm.done();
         }
     }
 
@@ -183,13 +195,13 @@ public class DestripingFactorsOp extends AbstractOperator {
     /**
      * Computes the vertical striping correction factors for a single target band.
      *
-     * @param bandIndex       the band index.
-     * @param targetRectangle the target rectangle.
-     * @param pm              the {@link ProgressMonitor}.
+     * @param bandIndex    the band index.
+     * @param targetRaster the target raster.
+     * @param pm           the {@link ProgressMonitor}.
      *
      * @throws OperatorException
      */
-    private void computeCorrectionFactors(int bandIndex, Rectangle targetRectangle, ProgressMonitor pm)
+    private void computeCorrectionFactors(int bandIndex, Raster targetRaster, ProgressMonitor pm)
             throws OperatorException {
         try {
             pm.beginTask("computing corection factors", panorama.height + 5);
@@ -251,7 +263,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
             pm.worked(1);
             // 6. Compute the correction factors
-            final Raster targetRaster = getRaster(targetBands[bandIndex], targetRectangle);
+            final Rectangle targetRectangle = targetRaster.getRectangle();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
                 double factor = exp(-p[x]);
                 if (slitCorrection) {
@@ -523,7 +535,7 @@ public class DestripingFactorsOp extends AbstractOperator {
      *                           image input stream could not be created.
      */
     private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final URL url = SlitCorrectionOp.class.getResource(name);
+        final URL url = DestripingFactorsOp.class.getResource(name);
 
         if (url == null) {
             throw new OperatorException(MessageFormat.format("resource {0} not found", name));

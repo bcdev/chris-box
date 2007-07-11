@@ -39,8 +39,8 @@ class AdvancedSettingsPanel extends JPanel {
         smoothingBinding.bind(smoothingOrderSpinner,  "smoothingOrder");
         smoothingBinding.bind(applySlitCheckBox, "slitCorrection");
         SwingBindingContext dropoutBinding = new SwingBindingContext(presenter.getDropOutCorrectionContainer());
-        dropoutBinding.bind(numBandsComboBox,  "includeSpectralBandsCount");
-        dropoutBinding.bind(neighbourhoodTypeComboBox,  "neighbourhoodType");
+        dropoutBinding.bind(numBandsComboBox,  "neighborBandCount");
+        dropoutBinding.bind(neighbourhoodTypeComboBox,  "type");
         neighbourhoodTypeComboBox.setRenderer(new DefaultListCellRenderer(){
             @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,

@@ -50,9 +50,9 @@ public class DropoutCorrectionOp extends AbstractOperator {
     Product targetProduct;
 
     @Parameter(defaultValue = "5", interval = "(1, 8)")
-    private int neighboringBandCount;
+    private int neighborBandCount;
 
-    @Parameter(alias = "neighborhoodType", defaultValue = "4", valueSet = {"2", "4", "8"})
+    @Parameter(defaultValue = "4", valueSet = {"2", "4", "8"})
     private int type;
 
     private DropoutCorrection dropoutCorrection;
@@ -89,21 +89,23 @@ public class DropoutCorrectionOp extends AbstractOperator {
         targetMaskBands = new Band[spectralBandCount];
 
         for (int i = 0; i < spectralBandCount; ++i) {
-            final String dataBandName = new StringBuilder("radiance_").append(i + 1).toString();
-            final String maskBandName = new StringBuilder("mask_").append(i + 1).toString();
-
-            sourceRciBands[i] = sourceProduct.getBand(dataBandName);
-            sourceMaskBands[i] = sourceProduct.getBand(maskBandName);
+            final String bandName = new StringBuilder("radiance_").append(i + 1).toString();
+            sourceRciBands[i] = sourceProduct.getBand(bandName);
 
             if (sourceRciBands[i] == null) {
-                throw new OperatorException(MessageFormat.format("could not find band {0}", dataBandName));
+                throw new OperatorException(MessageFormat.format("could not find band {0}", bandName));
             }
-            if (sourceMaskBands[i] == null) {
-                throw new OperatorException(MessageFormat.format("could not find band {0}", maskBandName));
-            }
+            targetRciBands[i] = ProductUtils.copyBand(bandName, sourceProduct, targetProduct);
+            targetRciBands[i].setValidPixelExpression(sourceRciBands[i].getValidPixelExpression());
+        }
+        for (int i = 0; i < spectralBandCount; ++i) {
+            final String bandName = new StringBuilder("mask_").append(i + 1).toString();
+            sourceMaskBands[i] = sourceProduct.getBand(bandName);
 
-            targetRciBands[i] = ProductUtils.copyBand(dataBandName, sourceProduct, targetProduct);
-            targetMaskBands[i] = ProductUtils.copyBand(maskBandName, sourceProduct, targetProduct);
+            if (sourceMaskBands[i] == null) {
+                throw new OperatorException(MessageFormat.format("could not find band {0}", bandName));
+            }
+            targetMaskBands[i] = ProductUtils.copyBand(bandName, sourceProduct, targetProduct);
 
             final FlagCoding flagCoding = sourceMaskBands[i].getFlagCoding();
             if (flagCoding != null) {
@@ -132,15 +134,15 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     private void computeCorrection(int bandIndex, Rectangle targetRectangle) throws OperatorException {
-        final int minBandIndex = max(bandIndex - neighboringBandCount, 0);
-        final int maxBandIndex = min(bandIndex + neighboringBandCount, spectralBandCount);
-        final int bandCount = minBandIndex - maxBandIndex + 1;
+        final int minBandIndex = max(bandIndex - neighborBandCount, 0);
+        final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
+        final int bandCount = maxBandIndex - minBandIndex + 1;
 
         final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
         final int[][] sourceRciData = new int[bandCount][];
         final short[][] sourceMaskData = new short[bandCount][];
 
-        for (int i = minBandIndex, j = 1; i < maxBandIndex; ++i) {
+        for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
             if (i != bandIndex) {
                 sourceRciData[j] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
                 sourceMaskData[j] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
@@ -233,7 +235,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {
-            super(DestripingOp.class, "DropoutCorrection");
+            super(DropoutCorrectionOp.class, "DropoutCorrection");
             // todo -- set description etc.
         }
     }

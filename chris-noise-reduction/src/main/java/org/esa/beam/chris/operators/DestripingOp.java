@@ -74,6 +74,7 @@ public class DestripingOp extends AbstractOperator {
 
         for (final Band sourceBand : sourceProduct.getBands()) {
             final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+            targetBand.setValidPixelExpression(sourceBand.getValidPixelExpression());
 
             final FlagCoding flagCoding = sourceBand.getFlagCoding();
             if (flagCoding != null) {
@@ -83,9 +84,9 @@ public class DestripingOp extends AbstractOperator {
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
 
         ProductUtils.copyElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_APPLIED, "Yes");
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES,
-                            getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION_SOURCES));
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_APPLIED, "Yes");
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET,
+                            getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET));
 
         return targetProduct;
     }
@@ -165,6 +166,7 @@ public class DestripingOp extends AbstractOperator {
         element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
     }
 
+    
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {

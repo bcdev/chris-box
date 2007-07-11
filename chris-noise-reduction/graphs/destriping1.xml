@@ -37,8 +37,8 @@
             <input>destriping</input>
         </sources>
         <parameters>
-            <neighborhoodType>4</neighborhoodType>
-            <neighboringBandCount>5</neighboringBandCount>
+            <type>4</type>
+            <neighborBandCount>5</neighborBandCount>
         </parameters>
     </node>
 
@@ -52,18 +52,5 @@
             <filePath>${outputFile1}</filePath>
         </parameters>
     </node>
-
-    <!--
-    <node>
-        <id>write-factors</id>
-        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
-        <sources>
-            <input>destriping-factors</input>
-        </sources>
-        <parameters>
-            <filePath>${outputFile2}</filePath>
-        </parameters>
-    </node>
-    -->
 
 </graph>

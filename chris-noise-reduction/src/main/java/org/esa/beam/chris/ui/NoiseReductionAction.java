@@ -15,6 +15,7 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.GPF;
@@ -29,8 +30,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 public class NoiseReductionAction extends ExecCommand {
@@ -74,12 +75,12 @@ public class NoiseReductionAction extends ExecCommand {
         try {
             // todo - setup graph properly
             Product product1 = presenter.getProducts()[0];
-            Product product2 = GPF.createProduct("DestripingFactors", settingsPresenter.getDestripingParameter(),
+            Product product2 = GPF.createProduct(ProgressMonitor.NULL, "DestripingFactors", settingsPresenter.getDestripingParameter(),
                                                  product1);
             HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
             productsMap.put("sourceProduct", product1);
             productsMap.put("factorProduct", product2);
-            Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap);
+            Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap, ProgressMonitor.NULL);
             VisatApp.getApp().addProduct(product3);
         } catch (OperatorException e) {
             modalDialog.showErrorDialog(e.getMessage());
