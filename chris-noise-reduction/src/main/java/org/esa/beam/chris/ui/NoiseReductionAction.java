@@ -15,7 +15,8 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
+import com.bc.ceres.swing.progress.DialogProgressMonitor;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.GPF;
@@ -25,19 +26,21 @@ import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.framework.ui.command.ExecCommand;
 import org.esa.beam.visat.VisatApp;
 
+import java.awt.Dialog;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 
 public class NoiseReductionAction extends ExecCommand {
 
     static List<String> CHRIS_TYPES;
-    static{
+
+    static {
         CHRIS_TYPES = new ArrayList<String>();
         Collections.addAll(CHRIS_TYPES, "CHRIS_M1", "CHRIS_M2", "CHRIS_M3", "CHRIS_M3A", "CHRIS_M4", "CHRIS_M5");
     }
@@ -59,7 +62,12 @@ public class NoiseReductionAction extends ExecCommand {
         Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         List<Product> consideredProductList = new ArrayList<Product>();
         collectProductsFromVisat(selectedProduct, consideredProductList);
-        collectProductsFromFilelocation(selectedProduct, consideredProductList);
+
+        // we must hold these seperately, cause we have to close them later
+        List<Product> productListFromFileLocation = new ArrayList<Product>();
+        collectProductsFromFilelocation(selectedProduct, productListFromFileLocation);
+        consideredProductList.addAll(productListFromFileLocation);
+
         Product[] consideredProducts = consideredProductList.toArray(new Product[consideredProductList.size()]);
         NoiseReductionPresenter presenter = new NoiseReductionPresenter(consideredProducts,
                                                                         new AdvancedSettingsPresenter());
@@ -68,33 +76,46 @@ public class NoiseReductionAction extends ExecCommand {
                                                   ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionProcessor");
         modalDialog.setContent(new NoiseReductionPanel(presenter));
         if (ModalDialog.ID_OK != modalDialog.show()) {
+            for (Product product : productListFromFileLocation) {
+                product.dispose();
+            }
             return;
         }
 
         AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
+        DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
+                                                             "CHRIS Noise Reduction",
+                                                             Dialog.ModalityType.APPLICATION_MODAL);
+
+        // todo - adjust progress ticks
+        pm.beginTask("Reducing Noise", 100);
         try {
-            // todo - setup graph properly
             Product product1 = presenter.getProducts()[0];
-            Product product2 = GPF.createProduct(ProgressMonitor.NULL, "DestripingFactors", settingsPresenter.getDestripingParameter(),
+            Product product2 = GPF.createProduct(new SubProgressMonitor(pm, 30), "DestripingFactors",
+                                                 settingsPresenter.getDestripingParameter(),
                                                  product1);
             HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
             productsMap.put("sourceProduct", product1);
             productsMap.put("factorProduct", product2);
-            Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap, ProgressMonitor.NULL);
+            Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap,
+                                                 new SubProgressMonitor(pm, 70));
             VisatApp.getApp().addProduct(product3);
         } catch (OperatorException e) {
             modalDialog.showErrorDialog(e.getMessage());
             VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
+        } finally {
+            pm.done();
         }
     }
 
-    private static void collectProductsFromFilelocation(final Product selectedProduct, List<Product> consideredProductList) {
+    private static void collectProductsFromFilelocation(final Product selectedProduct,
+                                                        List<Product> consideredProductList) {
         File productLocation = selectedProduct.getFileLocation();
-        if(productLocation == null) {
+        if (productLocation == null) {
             return;
         }
         File parentFile = productLocation.getParentFile();
-        if(parentFile == null || !parentFile.isDirectory()) {
+        if (parentFile == null || !parentFile.isDirectory()) {
             return;
         }
 
@@ -106,7 +127,7 @@ public class NoiseReductionAction extends ExecCommand {
 
         for (File file : files) {
             try {
-                if(!containsProduct(consideredProductList, file)) {
+                if (!containsProduct(consideredProductList, file)) {
                     consideredProductList.add(ProductIO.readProduct(file, null));
                 }
             } catch (IOException e) {
@@ -122,7 +143,7 @@ public class NoiseReductionAction extends ExecCommand {
         consideredProductList.add(selectedProduct);
         for (Product product : allProducts) {
             if (selectedProduct != product && NoiseReductionPresenter.shouldConsiderProduct(selectedProduct, product)) {
-                if(!containsProduct(consideredProductList, product.getFileLocation())) {
+                if (!containsProduct(consideredProductList, product.getFileLocation())) {
                     consideredProductList.add(product);
                 }
             }
@@ -131,7 +152,7 @@ public class NoiseReductionAction extends ExecCommand {
 
     private static boolean containsProduct(List<Product> consideredProductList, File fileLocation) {
         for (Product currentProduct : consideredProductList) {
-            if(currentProduct.getFileLocation().equals(fileLocation)) {
+            if (currentProduct.getFileLocation().equals(fileLocation)) {
                 return true;
             }
         }
