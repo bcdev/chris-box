@@ -91,9 +91,9 @@ public class NoiseReductionAction extends ExecCommand {
         pm.beginTask("Reducing Noise", 100);
         try {
             Product product1 = presenter.getProducts()[0];
-            Product product2 = GPF.createProduct(new SubProgressMonitor(pm, 30), "DestripingFactors",
+            Product product2 = GPF.createProduct("DestripingFactors",
                                                  settingsPresenter.getDestripingParameter(),
-                                                 product1);
+                                                 product1, new SubProgressMonitor(pm, 30));
             HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
             productsMap.put("sourceProduct", product1);
             productsMap.put("factorProduct", product2);
