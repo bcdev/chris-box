@@ -418,6 +418,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     private static double getEdgeDetectionThreshold(Product product) throws OperatorException {
+        // todo - store this map as resource
         final Map<String, Double> thresholdMap = new HashMap<String, Double>();
         thresholdMap.put("1", 0.08);
         thresholdMap.put("2", 0.05);
