@@ -82,7 +82,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     private transient Band[][] sourceMaskBands;
     private transient Panorama panorama;
     private boolean[][] edge;
-    private double[] f;
+    private double[] slitNoiseFactors;
 
     /**
      * Creates an instance of this class.
@@ -155,7 +155,7 @@ public class DestripingFactorsOp extends AbstractOperator {
         // todo -- consider writing the sources metadata to the SPH
 
         if (slitCorrection) {
-            f = getSlitNoiseFactors(sourceProducts[0]);
+            slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
         }
 
         return targetProduct;
@@ -168,13 +168,12 @@ public class DestripingFactorsOp extends AbstractOperator {
 
         try {
             if (edge == null) {
-                final int additionalWork = spectralBandCount + panorama.width + 2;
-                pm.beginTask("computing correction factors...", work + additionalWork);
-                edge = createEdgeMask(new SubProgressMonitor(pm, additionalWork));
+                final int edgeMaskWork = spectralBandCount + panorama.width + 2;
+                pm.beginTask("computing correction factors...", work + edgeMaskWork);
+                edge = createEdgeMask(new SubProgressMonitor(pm, edgeMaskWork));
             } else {
                 pm.beginTask("computing correction factors...", work);
             }
-
             for (int i = 0; i < targetBands.length; ++i) {
                 if (targetBands[i].equals(targetNode)) {
                     computeCorrectionFactors(i, targetRaster, new SubProgressMonitor(pm, work));
@@ -215,16 +214,12 @@ public class DestripingFactorsOp extends AbstractOperator {
                 final Raster mask = getSceneRaster(sourceMaskBands[bandIndex][j]);
 
                 for (int y = 0; y < data.getHeight(); ++y) {
-                    double r1 = data.getDouble(0, y);
-                    if (slitCorrection) {
-                        r1 /= f[0];
-                    }
+                    double r1 = getDouble(data, 0, y);
+
                     for (int x = 1; x < data.getWidth(); ++x) {
-                        double r2 = data.getDouble(x, y);
-                        if (slitCorrection) {
-                            r2 /= f[x];
-                        }
-                        if (!edge[panorama.getY(j) + y][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
+                        final double r2 = getDouble(data, x, y);
+
+                        if (!edge[panorama.getY(j, y)][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
                             p[x] += log(r2 / r1);
                             ++count[x];
                         }
@@ -263,13 +258,8 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
             pm.worked(1);
             // 6. Compute the correction factors
-            final Rectangle targetRectangle = targetRaster.getRectangle();
-            for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                double factor = exp(-p[x]);
-                if (slitCorrection) {
-                    factor /= f[x];
-                }
-                targetRaster.setDouble(x, 0, factor);
+            for (int x = targetRaster.getOffsetX(); x < targetRaster.getOffsetX() + targetRaster.getWidth(); ++x) {
+                setDouble(targetRaster, x, 0, exp(-p[x]));
             }
             pm.worked(1);
         } finally {
@@ -345,19 +335,14 @@ public class DestripingFactorsOp extends AbstractOperator {
                     final Raster data = getSceneRaster(bands[i]);
 
                     for (int y = 0; y < data.getHeight(); ++y) {
-                        double r1 = data.getDouble(0, y);
-                        if (slitCorrection) {
-                            r1 /= f[0];
-                        }
-                        sad[0][panorama.getY(i) + y] += r1 * r1;
+                        double r1 = getDouble(data, 0, y);
+                        sad[0][panorama.getY(i, y)] += r1 * r1;
 
                         for (int x = 1; x < data.getWidth(); ++x) {
-                            double r2 = data.getDouble(x, y) / f[x];
-                            if (slitCorrection) {
-                                r2 /= f[x];
-                            }
-                            sca[x][panorama.getY(i) + y] += r2 * r1;
-                            sad[x][panorama.getY(i) + y] += r2 * r2;
+                            final double r2 = getDouble(data, x, y);
+
+                            sca[x][panorama.getY(i, y)] += r2 * r1;
+                            sad[x][panorama.getY(i, y)] += r2 * r2;
                             r1 = r2;
                         }
                     }
@@ -409,6 +394,22 @@ public class DestripingFactorsOp extends AbstractOperator {
             return edge;
         } finally {
             pm.done();
+        }
+    }
+
+    private double getDouble(Raster raster, int x, int y) {
+        if (slitCorrection) {
+            return raster.getDouble(x, y) / slitNoiseFactors[x];
+        } else {
+            return raster.getDouble(x, y);
+        }
+    }
+
+    private void setDouble(Raster raster, int x, int y, double v) {
+        if (slitCorrection) {
+            raster.setDouble(x, y, v / slitNoiseFactors[x]);
+        } else {
+            raster.setDouble(x, y, v);
         }
     }
 
@@ -565,7 +566,7 @@ public class DestripingFactorsOp extends AbstractOperator {
 
         public int width;
         public int height;
-        public Rectangle[] rectangles;
+        private Rectangle[] rectangles;
 
         public Panorama(Product[] products) throws OperatorException {
             width = products[0].getSceneRasterWidth();
@@ -584,8 +585,8 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
         }
 
-        public int getY(int i) {
-            return rectangles[i].y;
+        public final int getY(int i, int y) {
+            return rectangles[i].y + y;
         }
     }
 
