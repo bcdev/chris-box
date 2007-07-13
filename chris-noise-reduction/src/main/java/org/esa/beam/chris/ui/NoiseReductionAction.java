@@ -93,13 +93,15 @@ public class NoiseReductionAction extends ExecCommand {
             Product product1 = presenter.getProducts()[0];
             Product product2 = GPF.createProduct("DestripingFactors",
                                                  settingsPresenter.getDestripingParameter(),
-                                                 product1, new SubProgressMonitor(pm, 30));
+                                                 product1, new SubProgressMonitor(pm, 70));
             HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
             productsMap.put("sourceProduct", product1);
             productsMap.put("factorProduct", product2);
             Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap,
-                                                 new SubProgressMonitor(pm, 70));
-            VisatApp.getApp().addProduct(product3);
+                                                 new SubProgressMonitor(pm, 10));
+            Product product4 = GPF.createProduct("DropoutCorrection", settingsPresenter.getDropOutCorrectionParameter(),
+                                                 product3, new SubProgressMonitor(pm, 20));
+            VisatApp.getApp().addProduct(product4);
         } catch (OperatorException e) {
             modalDialog.showErrorDialog(e.getMessage());
             VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);

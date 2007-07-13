@@ -116,6 +116,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
 
         dropoutCorrection = new DropoutCorrection();
         // todo -- consider type
+        neighborBandCount = 5;
 
         return targetProduct;
     }
