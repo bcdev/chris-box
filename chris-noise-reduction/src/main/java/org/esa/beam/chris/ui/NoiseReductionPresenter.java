@@ -219,10 +219,10 @@ class NoiseReductionPresenter {
                belongsToSameAquisitionSet(referenceProduct.getFileLocation(), product.getFileLocation());
     }
 
-    static boolean belongsToSameAquisitionSet(File refernceProductFile, File currentProductFile) {
-        if (refernceProductFile != null && currentProductFile != null) {
-            String[] expectedParts = expectedParts = refernceProductFile.getName().split("_", 5);
-            String[] actualParts = actualParts = currentProductFile.getName().split("_", 5);
+    static boolean belongsToSameAquisitionSet(File referenceProductFile, File currentProductFile) {
+        if (referenceProductFile != null && currentProductFile != null) {
+            String[] expectedParts = referenceProductFile.getName().split("_", 5);
+            String[] actualParts = currentProductFile.getName().split("_", 5);
             if(expectedParts.length == 5 && expectedParts.length == actualParts.length) {
             return expectedParts[0].equals(actualParts[0])
                    && expectedParts[1].equals(actualParts[1])

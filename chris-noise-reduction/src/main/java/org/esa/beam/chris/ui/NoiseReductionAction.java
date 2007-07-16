@@ -57,13 +57,11 @@ public class NoiseReductionAction extends ExecCommand {
     }
 
     private static void showNoiseReductionDialog() {
-
-
         Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         List<Product> consideredProductList = new ArrayList<Product>();
         collectProductsFromVisat(selectedProduct, consideredProductList);
 
-        // we must hold these seperately, cause we have to close them later
+        // we must hold these seperately, because we have to close them later
         List<Product> productListFromFileLocation = new ArrayList<Product>();
         collectProductsFromFilelocation(selectedProduct, productListFromFileLocation);
         consideredProductList.addAll(productListFromFileLocation);
@@ -93,14 +91,14 @@ public class NoiseReductionAction extends ExecCommand {
             Product product1 = presenter.getProducts()[0];
             Product product2 = GPF.createProduct("DestripingFactors",
                                                  settingsPresenter.getDestripingParameter(),
-                                                 product1, new SubProgressMonitor(pm, 70));
+                                                 product1, new SubProgressMonitor(pm, 40));
             HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
             productsMap.put("sourceProduct", product1);
             productsMap.put("factorProduct", product2);
             Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap,
-                                                 new SubProgressMonitor(pm, 10));
+                                                 new SubProgressMonitor(pm, 30));
             Product product4 = GPF.createProduct("DropoutCorrection", settingsPresenter.getDropOutCorrectionParameter(),
-                                                 product3, new SubProgressMonitor(pm, 20));
+                                                 product3, new SubProgressMonitor(pm, 30));
             VisatApp.getApp().addProduct(product4);
         } catch (OperatorException e) {
             modalDialog.showErrorDialog(e.getMessage());
@@ -111,42 +109,43 @@ public class NoiseReductionAction extends ExecCommand {
     }
 
     private static void collectProductsFromFilelocation(final Product selectedProduct,
-                                                        List<Product> consideredProductList) {
-        File productLocation = selectedProduct.getFileLocation();
+                                                        List<Product> productList) {
+        final File productLocation = selectedProduct.getFileLocation();
         if (productLocation == null) {
             return;
         }
-        File parentFile = productLocation.getParentFile();
+        final File parentFile = productLocation.getParentFile();
         if (parentFile == null || !parentFile.isDirectory()) {
             return;
         }
 
-        File[] files = parentFile.listFiles(new FileFilter() {
+        final File[] files = parentFile.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                return NoiseReductionPresenter.belongsToSameAquisitionSet(selectedProduct.getFileLocation(), pathname);
+                return NoiseReductionPresenter.belongsToSameAquisitionSet(productLocation, pathname);
             }
         });
 
-        for (File file : files) {
+        for (final File file : files) {
             try {
-                if (!containsProduct(consideredProductList, file)) {
-                    consideredProductList.add(ProductIO.readProduct(file, null));
+                if (!containsProduct(productList, file)) {
+                    final Product product = ProductIO.readProduct(file, null);
+                    if (product.getProductType().equals(selectedProduct.getProductType())) {
+                        productList.add(product);
+                    }
                 }
             } catch (IOException e) {
                 // ignore - no message to user, we add products silently
             }
         }
-
-
     }
 
-    private static void collectProductsFromVisat(Product selectedProduct, List<Product> consideredProductList) {
-        Product[] allProducts = VisatApp.getApp().getProductManager().getProducts();
-        consideredProductList.add(selectedProduct);
-        for (Product product : allProducts) {
+    private static void collectProductsFromVisat(Product selectedProduct, List<Product> productList) {
+        final Product[] allProducts = VisatApp.getApp().getProductManager().getProducts();
+        productList.add(selectedProduct);
+        for (final Product product : allProducts) {
             if (selectedProduct != product && NoiseReductionPresenter.shouldConsiderProduct(selectedProduct, product)) {
-                if (!containsProduct(consideredProductList, product.getFileLocation())) {
-                    consideredProductList.add(product);
+                if (!containsProduct(productList, product.getFileLocation())) {
+                    productList.add(product);
                 }
             }
         }

@@ -17,7 +17,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.math.LocalRegressionSmoother;
+import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
@@ -77,9 +77,9 @@ public class DestripingFactorsOp extends AbstractOperator {
 
     private transient LocalRegressionSmoother smoother;
 
-    private transient Band[] targetBands;
-    private transient Band[][] sourceDataBands;
+    private transient Band[][] sourceRciBands;
     private transient Band[][] sourceMaskBands;
+    private transient Band[] targetBands;
     private transient Panorama panorama;
     private boolean[][] edge;
     private double[] slitNoiseFactors;
@@ -101,19 +101,19 @@ public class DestripingFactorsOp extends AbstractOperator {
         spectralBandCount = getAnnotationInt(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         // set up source bands
-        sourceDataBands = new Band[spectralBandCount][sourceProducts.length];
+        sourceRciBands = new Band[spectralBandCount][sourceProducts.length];
         sourceMaskBands = new Band[spectralBandCount][sourceProducts.length];
 
         for (int i = 0; i < spectralBandCount; ++i) {
-            final String dataBandName = new StringBuilder("radiance_").append(i + 1).toString();
+            final String rciBandName = new StringBuilder("radiance_").append(i + 1).toString();
             final String maskBandName = new StringBuilder("mask_").append(i + 1).toString();
 
             for (int j = 0; j < sourceProducts.length; ++j) {
-                sourceDataBands[i][j] = sourceProducts[j].getBand(dataBandName);
+                sourceRciBands[i][j] = sourceProducts[j].getBand(rciBandName);
                 sourceMaskBands[i][j] = sourceProducts[j].getBand(maskBandName);
 
-                if (sourceDataBands[i][j] == null) {
-                    throw new OperatorException(MessageFormat.format("could not find band {0}", dataBandName));
+                if (sourceRciBands[i][j] == null) {
+                    throw new OperatorException(MessageFormat.format("could not find band {0}", rciBandName));
                 }
                 if (sourceMaskBands[i][j] == null) {
                     throw new OperatorException(MessageFormat.format("could not find band {0}", maskBandName));
@@ -136,8 +136,8 @@ public class DestripingFactorsOp extends AbstractOperator {
             targetBands[i].setSpectralBandIndex(i);
             targetBands[i].setDescription(MessageFormat.format(
                     "Vertical striping correction factors for radiance band {0}", i + 1));
-            targetBands[i].setSpectralBandwidth(sourceDataBands[i][0].getSpectralBandwidth());
-            targetBands[i].setSpectralWavelength(sourceDataBands[i][0].getSpectralWavelength());
+            targetBands[i].setSpectralBandwidth(sourceRciBands[i][0].getSpectralBandwidth());
+            targetBands[i].setSpectralWavelength(sourceRciBands[i][0].getSpectralWavelength());
             pm.worked(1);
         }
 
@@ -187,6 +187,10 @@ public class DestripingFactorsOp extends AbstractOperator {
 
     @Override
     public void dispose() {
+        sourceRciBands = null;
+        sourceMaskBands = null;
+        targetBands = null;
+        panorama = null;
         smoother = null;
         edge = null;
     }
@@ -210,14 +214,14 @@ public class DestripingFactorsOp extends AbstractOperator {
             final int[] count = new int[panorama.width];
 
             for (int j = 0; j < sourceProducts.length; ++j) {
-                final Raster data = getSceneRaster(sourceDataBands[bandIndex][j]);
+                final Raster rci = getSceneRaster(sourceRciBands[bandIndex][j]);
                 final Raster mask = getSceneRaster(sourceMaskBands[bandIndex][j]);
 
-                for (int y = 0; y < data.getHeight(); ++y) {
-                    double r1 = getDouble(data, 0, y);
+                for (int y = 0; y < rci.getHeight(); ++y) {
+                    double r1 = getDouble(rci, 0, y);
 
-                    for (int x = 1; x < data.getWidth(); ++x) {
-                        final double r2 = getDouble(data, x, y);
+                    for (int x = 1; x < rci.getWidth(); ++x) {
+                        final double r2 = getDouble(rci, x, y);
 
                         if (!edge[panorama.getY(j, y)][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
                             p[x] += log(r2 / r1);
@@ -330,7 +334,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             final double[][] sca = new double[panorama.width][panorama.height];
 
             // 1. Compute the squares and across-track scalar products of the spectral vectors
-            for (final Band[] bands : sourceDataBands) {
+            for (final Band[] bands : sourceRciBands) {
                 for (int i = 0; i < bands.length; i++) {
                     final Raster data = getSceneRaster(bands[i]);
 

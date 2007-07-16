@@ -166,7 +166,7 @@ public class DestripingOp extends AbstractOperator {
         element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
     }
 
-    
+
     public static class Spi extends AbstractOperatorSpi {
 
         public Spi() {

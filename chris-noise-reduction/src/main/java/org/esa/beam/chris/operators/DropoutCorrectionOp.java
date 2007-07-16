@@ -26,6 +26,7 @@ import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Raster;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -122,45 +123,61 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    public void computeAllBands(Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+    public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        final Band targetBand = (Band) targetRaster.getRasterDataNode();
+        final int bandIndex = targetBand.getSpectralBandIndex();
+
+        final int minBandIndex = max(bandIndex - neighborBandCount, 0);
+        final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
+        final int bandCount = maxBandIndex - minBandIndex + 1;
+
+        final Rectangle targetRectangle = targetRaster.getRectangle();
+        final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
+        final int[][] sourceRciData = new int[bandCount][];
+        final short[][] sourceMaskData = new short[bandCount][];
+
         try {
-            pm.beginTask("computing dropout correction...", spectralBandCount);
-            for (int i = 0; i < spectralBandCount; ++i) {
-                computeCorrection(i, targetRectangle);
+            pm.beginTask("computing dropout correction", bandCount + 1);
+            for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
+                if (i != bandIndex) {
+                    sourceRciData[j] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
+                    sourceMaskData[j] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
+                    ++j;
+                } else {
+                    sourceRciData[0] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
+                    sourceMaskData[0] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
+                }
                 pm.worked(1);
             }
+
+            final int[] targetRciData;
+            final short[] targetMaskData;
+            if (targetBand.equals(targetRciBands[bandIndex])) {
+                targetRciData = (int[]) targetRaster.getDataBuffer().getElems();
+                targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
+            } else {
+                targetRciData = (int[]) getRasterData(targetRciBands[bandIndex], targetRectangle);
+                targetMaskData = (short[]) targetRaster.getDataBuffer().getElems();
+            }
+
+            dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
+                                      new Rectangle(targetRectangle.x - sourceRectangle.x,
+                                                    targetRectangle.y - sourceRectangle.y,
+                                                    targetRectangle.width, targetRectangle.height),
+                                      targetRciData, targetMaskData, 0, 0, targetRectangle.width);
+            pm.worked(1);
         } finally {
             pm.done();
         }
     }
 
-    private void computeCorrection(int bandIndex, Rectangle targetRectangle) throws OperatorException {
-        final int minBandIndex = max(bandIndex - neighborBandCount, 0);
-        final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
-        final int bandCount = maxBandIndex - minBandIndex + 1;
-
-        final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
-        final int[][] sourceRciData = new int[bandCount][];
-        final short[][] sourceMaskData = new short[bandCount][];
-
-        for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
-            if (i != bandIndex) {
-                sourceRciData[j] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
-                sourceMaskData[j] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
-                ++j;
-            } else {
-                sourceRciData[0] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
-                sourceMaskData[0] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
-            }
-        }
-        final int[] targetRciData = (int[]) getRasterData(targetRciBands[bandIndex], targetRectangle);
-        final short[] targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
-
-        dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
-                                  new Rectangle(targetRectangle.x - sourceRectangle.x,
-                                                targetRectangle.y - sourceRectangle.y,
-                                                targetRectangle.width, targetRectangle.height),
-                                  targetRciData, targetMaskData, 0, 0, targetRectangle.width);
+    @Override
+    public void dispose() {
+        dropoutCorrection = null;
+        sourceRciBands = null;
+        sourceMaskBands = null;
+        targetRciBands = null;
+        targetMaskBands = null;
     }
 
     private Rectangle createSourceRectangle(Rectangle targetRectangle) {
