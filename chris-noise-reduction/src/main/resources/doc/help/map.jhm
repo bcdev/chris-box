@@ -5,7 +5,7 @@
 
 <map version="2.0">
 
-    <mapID target="chrisNoiseReductionProcessor" url="noisereduction/NoiseReductionProcessor.html"/>
-    <mapID target="chrisNoiseReductionAdvancedSettings" url="noisereduction/NoiseReductionProcessor.html#advancedSettings"/>
+    <mapID target="chrisNoiseReductionTool" url="noisereduction/NoiseReductionTool.html"/>
+    <mapID target="chrisNoiseReductionAdvancedSettings" url="noisereduction/NoiseReductionTool.html#advancedSettings"/>
 
 </map>

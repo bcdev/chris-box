@@ -15,6 +15,8 @@
  */
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.binding.ConverterRegistry;
+import com.bc.ceres.binding.converters.EnumConverter;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
@@ -50,11 +52,11 @@ public class DropoutCorrectionOp extends AbstractOperator {
     @TargetProduct
     Product targetProduct;
 
-    @Parameter(defaultValue = "5", interval = "(1, 8)")
-    private int neighborBandCount;
+    @Parameter(defaultValue = "5", interval = "[1, 62]")
+    private Integer neighborBandCount;
 
-    @Parameter(defaultValue = "4", valueSet = {"2", "4", "8"})
-    private int type;
+    @Parameter(defaultValue = "FOUR", valueSet = {"FOUR", "EIGHT"})
+    private DropoutCorrection.Neigborhood neighborhood;
 
     private DropoutCorrection dropoutCorrection;
     private int spectralBandCount;
@@ -114,10 +116,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
-
-        dropoutCorrection = new DropoutCorrection();
-        // todo -- consider type
-        neighborBandCount = 5;
+        dropoutCorrection = new DropoutCorrection(neighborhood);
 
         return targetProduct;
     }
@@ -254,7 +253,12 @@ public class DropoutCorrectionOp extends AbstractOperator {
 
         public Spi() {
             super(DropoutCorrectionOp.class, "DropoutCorrection");
-            // todo -- set description etc.
+
+            final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
+            final Class<DropoutCorrection.Neigborhood> type = DropoutCorrection.Neigborhood.class;
+            if (converterRegistry.getConverter(type) == null) {
+                converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Neigborhood>(type));
+            }
         }
     }
 

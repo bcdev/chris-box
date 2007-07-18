@@ -46,9 +46,9 @@ class NoiseReductionPresenter {
 
     private Window window;
 
-    private AdvancedSettingsPresenter settingsPresenter;
+    private AdvancedSettingsPresenter advancedSettingsPresenter;
 
-    public NoiseReductionPresenter(Product[] products, AdvancedSettingsPresenter settingsPresenter) {
+    public NoiseReductionPresenter(Product[] products, AdvancedSettingsPresenter advancedSettingsPresenter) {
         Object[][] productsData = new Object[products.length][2];
         if (products.length > 0) {
             for (int i = 0; i < productsData.length; i++) {
@@ -78,13 +78,12 @@ class NoiseReductionPresenter {
         removeProductAction = new RemoveProductAction(this);
         settingsAction = new AdvancedSettingsAction(this);
 
-        this.settingsPresenter = settingsPresenter;
+        this.advancedSettingsPresenter = advancedSettingsPresenter;
         if (products.length > 0) {
             productsTableSelectionModel.setSelectionInterval(0, 0);
         }
 
     }
-
 
     public DefaultTableModel getProductsTableModel() {
         return productsTableModel;
@@ -110,12 +109,12 @@ class NoiseReductionPresenter {
         return settingsAction;
     }
 
-    public AdvancedSettingsPresenter getSettingsPresenter() {
-        return settingsPresenter;
+    public AdvancedSettingsPresenter getAdvancedSettingsPresenter() {
+        return advancedSettingsPresenter;
     }
 
-    public void setSettingsPresenter(AdvancedSettingsPresenter settingsPresenter) {
-        this.settingsPresenter = settingsPresenter;
+    public void setAdvancedSettingsPresenter(AdvancedSettingsPresenter advancedSettingsPresenter) {
+        this.advancedSettingsPresenter = advancedSettingsPresenter;
     }
 
     public void setWindow(Window window) {
@@ -127,7 +126,7 @@ class NoiseReductionPresenter {
     }
 
     public Product[] getProducts() {
-        Vector productVector = (Vector) getProductsTableModel().getDataVector();
+        Vector productVector = getProductsTableModel().getDataVector();
         Product[] products = new Product[productVector.size()];
         for (int i = 0; i < productVector.size(); i++) {
             products[i] = (Product) ((Vector) productVector.elementAt(i)).get(1);
@@ -159,16 +158,16 @@ class NoiseReductionPresenter {
     }
 
 
-    void addProduct(Product product) throws NRPValidationException {
+    void addProduct(Product product) throws NoiseReductionValidationException {
         Product[] products = getProducts();
         if (products.length >= 5) {
-            throw new NRPValidationException("Aqusition set already contains five products.");
+            throw new NoiseReductionValidationException("Acquisition set already contains five products.");
         }
         if (products.length != 0 && !shouldConsiderProduct(products[0], product)) {
-            throw new NRPValidationException("Product does not belong to the aqusition set.");
+            throw new NoiseReductionValidationException("Product does not belong to the acquisition set.");
         }
         if (containsProduct(products, product)) {
-            throw new NRPValidationException("Product is already defined in the aqusition set.");
+            throw new NoiseReductionValidationException("Product is already contained in the acquisition set.");
         }
 
         if (!NoiseReductionAction.CHRIS_TYPES.contains(product.getProductType())) {
@@ -180,8 +179,8 @@ class NoiseReductionPresenter {
                     sb.append(", ");
                 }
             }
-            throw new NRPValidationException("Product type '" + product.getProductType() + "'is not valid .\n" +
-                                             "Must be one of " + sb + "\n");
+            throw new NoiseReductionValidationException("Product type '" + product.getProductType() + "'is not valid .\n" +
+                                                        "Must be one of " + sb + "\n");
         }
         DefaultTableModel tableModel = getProductsTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
@@ -257,10 +256,9 @@ class NoiseReductionPresenter {
                                                            ChrisConstants.DEFAULT_FILE_EXTENSION,
                                                            new ChrisProductReaderPlugIn().getDescription(null));
             BeamFileChooser fileChooser = new BeamFileChooser();
-            String lastDir = SystemUtils.getUserHomeDir().getPath();
             String chrisImportDir = VisatApp.getApp().getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
                                                                                          SystemUtils.getUserHomeDir().getPath());
-            lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
+            String lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
             fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setFileFilter(fileFilter);
             fileChooser.setCurrentDirectory(new File(lastDir));
@@ -277,7 +275,7 @@ class NoiseReductionPresenter {
                     if (product != null) {
                         try {
                             presenter.addProduct(product);
-                        } catch (NRPValidationException e1) {
+                        } catch (NoiseReductionValidationException e1) {
                             JOptionPane.showMessageDialog((Component) e.getSource(),
                                                           "Cannot add product.\n" + e1.getMessage());
                         }
@@ -315,14 +313,14 @@ class NoiseReductionPresenter {
 
         public void actionPerformed(ActionEvent e) {
             ModalDialog dialog = new ModalDialog(presenter.getWindow(),
-                                                 "Optional Settings",
+                                                 "Advanced Settings",
                                                  ModalDialog.ID_OK_CANCEL_HELP,
                                                  "chrisNoiseReductionAdvancedSettings");
-            AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
+            AdvancedSettingsPresenter settingsPresenter = presenter.getAdvancedSettingsPresenter();
             AdvancedSettingsPresenter workingCopy = settingsPresenter.createCopy();
             dialog.setContent(new AdvancedSettingsPanel(workingCopy));
             if (dialog.show() == ModalDialog.ID_OK) {
-                presenter.setSettingsPresenter(workingCopy);
+                presenter.setAdvancedSettingsPresenter(workingCopy);
             }
         }
     }
@@ -330,7 +328,7 @@ class NoiseReductionPresenter {
 
     private void updateMetadata() {
         final String na = "Not available";
-        Product selectedProduct = null;
+        Product selectedProduct;
         if (productsTableSelectionModel.getMaxSelectionIndex() == -1) {
             return;
         }
@@ -352,9 +350,6 @@ class NoiseReductionPresenter {
         metadataTableModel.setValueAt(mph.getAttributeString(ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE, na),
                                       3, 1);
         metadataTableModel.setValueAt(mph.getAttributeString(ChrisConstants.ATTR_NAME_MINIMUM_ZENITH_ANGLE, na), 4, 1);
-
-
-        return;
     }
 
     private static String getTargetCoordinatesString(MetadataElement element, String defaultValue) {
@@ -374,6 +369,5 @@ class NoiseReductionPresenter {
 
         return str;
     }
-
 
 }

@@ -108,7 +108,7 @@ class NoiseReductionPanel extends JPanel {
 
         aquisitionSetPanel.setLayout(new GridBagLayout());
 
-        aquisitionSetPanel.setBorder(BorderFactory.createTitledBorder(null, "Aquisition Set",
+        aquisitionSetPanel.setBorder(BorderFactory.createTitledBorder(null, "Acquisition Set",
                                                                       TitledBorder.DEFAULT_JUSTIFICATION,
                                                                       TitledBorder.DEFAULT_POSITION,
                                                                       new Font("Tahoma", 0, 11),
@@ -172,7 +172,6 @@ class NoiseReductionPanel extends JPanel {
         gridBagConstraints.insets = new Insets(0, 5, 5, 5);
         settingsButtonPanel.add(advancedSettingsButton, gridBagConstraints);
         add(settingsButtonPanel, BorderLayout.SOUTH);
-
     }
 
 

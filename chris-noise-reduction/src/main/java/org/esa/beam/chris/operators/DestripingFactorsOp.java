@@ -67,11 +67,11 @@ public class DestripingFactorsOp extends AbstractOperator {
     @TargetProduct
     Product targetProduct;
 
-    @Parameter(defaultValue = "27", interval = "(11, 99)")
-    int smoothingOrder;
+    @Parameter(defaultValue = "27", interval = "[11, 99]")
+    Integer smoothingOrder;
 
     @Parameter(defaultValue = "true")
-    boolean slitCorrection;
+    Boolean slitCorrection;
 
     private int spectralBandCount;
 
@@ -121,9 +121,6 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
         }
 
-        panorama = new Panorama(sourceProducts);
-        smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
-
         // set up target product and bands
         targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC",
                                     sourceProducts[0].getSceneRasterWidth(), 1);
@@ -154,6 +151,8 @@ public class DestripingFactorsOp extends AbstractOperator {
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET, sb.toString());
         // todo -- consider writing the sources metadata to the SPH
 
+        panorama = new Panorama(sourceProducts);
+        smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
         if (slitCorrection) {
             slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
         }

@@ -71,7 +71,7 @@ public class NoiseReductionAction extends ExecCommand {
                                                                         new AdvancedSettingsPresenter());
         ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(),
                                                   "CHRIS Noise Reduction",
-                                                  ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionProcessor");
+                                                  ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionTool");
         modalDialog.setContent(new NoiseReductionPanel(presenter));
         if (ModalDialog.ID_OK != modalDialog.show()) {
             for (Product product : productListFromFileLocation) {
@@ -80,12 +80,11 @@ public class NoiseReductionAction extends ExecCommand {
             return;
         }
 
-        AdvancedSettingsPresenter settingsPresenter = presenter.getSettingsPresenter();
+        AdvancedSettingsPresenter settingsPresenter = presenter.getAdvancedSettingsPresenter();
         DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
                                                              "CHRIS Noise Reduction",
                                                              Dialog.ModalityType.APPLICATION_MODAL);
 
-        // todo - adjust progress ticks
         pm.beginTask("Reducing Noise", 100);
         try {
             Product product1 = presenter.getProducts()[0];

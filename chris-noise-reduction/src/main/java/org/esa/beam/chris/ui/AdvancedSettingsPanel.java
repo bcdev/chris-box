@@ -23,11 +23,11 @@ import java.awt.Insets;
 
 class AdvancedSettingsPanel extends JPanel {
 
-    private javax.swing.JCheckBox applySlitCheckBox;
+    private javax.swing.JCheckBox slitCorrectionCheckBox;
     private javax.swing.JSpinner smoothingOrderSpinner;
 
-    private javax.swing.JSpinner numBandsComboBox;
-    private javax.swing.JComboBox neighbourhoodTypeComboBox;
+    private javax.swing.JSpinner neighborBandCountComboBox;
+    private javax.swing.JComboBox neighborhoodComboBox;
 
     public AdvancedSettingsPanel(AdvancedSettingsPresenter presenter) {
         initComponents();
@@ -35,39 +35,35 @@ class AdvancedSettingsPanel extends JPanel {
     }
 
     private void bindComponents(AdvancedSettingsPresenter presenter) {
-        SwingBindingContext smoothingBinding = new SwingBindingContext(presenter.getDestripingContainer());
-        smoothingBinding.bind(smoothingOrderSpinner,  "smoothingOrder");
-        smoothingBinding.bind(applySlitCheckBox, "slitCorrection");
-        SwingBindingContext dropoutBinding = new SwingBindingContext(presenter.getDropOutCorrectionContainer());
-        dropoutBinding.bind(numBandsComboBox,  "neighborBandCount");
-        dropoutBinding.bind(neighbourhoodTypeComboBox,  "type");
-        neighbourhoodTypeComboBox.setRenderer(new DefaultListCellRenderer(){
+        SwingBindingContext destripingBinding = new SwingBindingContext(presenter.getDestripingContainer());
+        destripingBinding.bind(slitCorrectionCheckBox, "slitCorrection");
+        destripingBinding.bind(smoothingOrderSpinner, "smoothingOrder");
+        SwingBindingContext dropoutCorrectionBinding = new SwingBindingContext(presenter.getDropOutCorrectionContainer());
+        dropoutCorrectionBinding.bind(neighborBandCountComboBox, "neighborBandCount");
+        dropoutCorrectionBinding.bind(neighborhoodComboBox, "neighborhood");
+        neighborhoodComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
-                                                                   boolean cellHasFocus) {
+                                                          boolean cellHasFocus) {
                 Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if(component instanceof JLabel) {
+                if (component instanceof JLabel) {
                     JLabel label = (JLabel) component;
-                    label.setText(value + "-Connected");
+                    label.setText(value.toString());
                 }
                 return component;
             }
-
-        }
-        );
-
+        });
     }
 
     private void initComponents() {
-        GridBagConstraints gridBagConstraints = new GridBagConstraints();
         setLayout(new BorderLayout(5, 5));
 
-        applySlitCheckBox = new JCheckBox();
+        slitCorrectionCheckBox = new JCheckBox();
 
         smoothingOrderSpinner = new JSpinner();
-        numBandsComboBox = new JSpinner();
+        neighborBandCountComboBox = new JSpinner();
         JLabel neighbourhoodLabel = new JLabel();
-        neighbourhoodTypeComboBox = new JComboBox();
+        neighborhoodComboBox = new JComboBox();
 
         JPanel advancedSettingsPanel = new JPanel(new GridBagLayout());
 
@@ -79,16 +75,16 @@ class AdvancedSettingsPanel extends JPanel {
                                                                          TitledBorder.DEFAULT_POSITION,
                                                                          new Font("Tahoma", 0, 11),
                                                                          new Color(0, 70, 213)));
-        applySlitCheckBox.setSelected(true);
-        applySlitCheckBox.setText("Apply Slit Correction");
-        applySlitCheckBox.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        applySlitCheckBox.setHorizontalTextPosition(SwingConstants.LEFT);
-        applySlitCheckBox.setMargin(new Insets(0, 0, 0, 0));
-        gridBagConstraints = new GridBagConstraints();
+        slitCorrectionCheckBox.setSelected(true);
+        slitCorrectionCheckBox.setText("Apply Slit Correction");
+        slitCorrectionCheckBox.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        slitCorrectionCheckBox.setHorizontalTextPosition(SwingConstants.LEFT);
+        slitCorrectionCheckBox.setMargin(new Insets(0, 0, 0, 0));
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new Insets(0, 3, 0, 10);
-        verticalStripingPanel.add(applySlitCheckBox, gridBagConstraints);
+        verticalStripingPanel.add(slitCorrectionCheckBox, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -140,9 +136,9 @@ class AdvancedSettingsPanel extends JPanel {
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 0.6;
         gridBagConstraints.insets = new Insets(0, 0, 3, 3);
-        dropoutPanel.add(numBandsComboBox, gridBagConstraints);
+        dropoutPanel.add(neighborBandCountComboBox, gridBagConstraints);
 
-        neighbourhoodLabel.setText("Neighbourhood Type:");
+        neighbourhoodLabel.setText("Neighborhood:");
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
@@ -155,7 +151,7 @@ class AdvancedSettingsPanel extends JPanel {
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 0.6;
         gridBagConstraints.insets = new Insets(0, 0, 0, 3);
-        dropoutPanel.add(neighbourhoodTypeComboBox, gridBagConstraints);
+        dropoutPanel.add(neighborhoodComboBox, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -174,8 +170,6 @@ class AdvancedSettingsPanel extends JPanel {
         gridBagConstraints.insets = new Insets(5, 5, 5, 5);
 
         add(advancedSettingsPanel, BorderLayout.CENTER);
-
     }
-
 
 }

@@ -1,5 +1,5 @@
 <graph>
-    <id>destriping</id>
+    <id>nr</id>
 
     <node>
         <id>load</id>
@@ -37,8 +37,8 @@
             <input>destriping</input>
         </sources>
         <parameters>
-            <type>4</type>
             <neighborBandCount>5</neighborBandCount>
+            <neighborhood>FOUR</neighborhood>
         </parameters>
     </node>
 
