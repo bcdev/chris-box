@@ -15,8 +15,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.binding.ConverterRegistry;
-import com.bc.ceres.binding.converters.EnumConverter;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
@@ -55,7 +53,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     @Parameter(defaultValue = "5", interval = "[1, 62]")
     private Integer neighborBandCount;
 
-    @Parameter(defaultValue = "FOUR", valueSet = {"FOUR", "EIGHT"})
+    @Parameter(defaultValue = "N4", valueSet = {"N4", "N8"})
     private DropoutCorrection.Neigborhood neighborhood;
 
     private DropoutCorrection dropoutCorrection;
@@ -253,12 +251,6 @@ public class DropoutCorrectionOp extends AbstractOperator {
 
         public Spi() {
             super(DropoutCorrectionOp.class, "DropoutCorrection");
-
-            final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
-            final Class<DropoutCorrection.Neigborhood> type = DropoutCorrection.Neigborhood.class;
-            if (converterRegistry.getConverter(type) == null) {
-                converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Neigborhood>(type));
-            }
         }
     }
 
