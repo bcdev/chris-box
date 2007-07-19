@@ -38,7 +38,7 @@
         </sources>
         <parameters>
             <neighborBandCount>5</neighborBandCount>
-            <neighborhood>FOUR</neighborhood>
+            <neighborhood>N4</neighborhood>
         </parameters>
     </node>
 
