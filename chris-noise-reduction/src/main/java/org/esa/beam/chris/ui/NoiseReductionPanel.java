@@ -11,7 +11,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.CellEditorListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -21,66 +23,97 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.EventObject;
 
 /**
+ * Panel for the CHRIS Noise Reduction dialog.
+ *
  * @author Marco Peters
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
 class NoiseReductionPanel extends JPanel {
 
-    private JTable aquisitionImageTable;
+    private JTable aquisitionSetTable;
+    private JTable metadataTable;
+
     private JButton addButton;
     private JButton removeButton;
-
-    private JTable metadataTable;
 
     private JButton advancedSettingsButton;
 
     /**
      * Creates new form NRPanel
      */
-    public NoiseReductionPanel(NoiseReductionPresenter nrPresenter) {
+    public NoiseReductionPanel(NoiseReductionPresenter presenter) {
         initComponents();
-        bindComponents(nrPresenter);
+        bindComponents(presenter);
     }
 
-    private void bindComponents(NoiseReductionPresenter nrPresenter) {
-        aquisitionImageTable.setModel(nrPresenter.getProductsTableModel());
-        aquisitionImageTable.setSelectionModel(nrPresenter.getProductsTableSelectionModel());
+    private void bindComponents(NoiseReductionPresenter presenter) {
+        aquisitionSetTable.setModel(presenter.getProductTableModel());
+        aquisitionSetTable.setSelectionModel(presenter.getProductTableSelectionModel());
 
-        TableColumn firstTableColumn = aquisitionImageTable.getColumnModel().getColumn(0);
-        firstTableColumn.setCellRenderer(new BooleanCheckBoxCellRenderer());
-        firstTableColumn.setCellEditor(new BooleanCheckBoxCellEditor());
+        TableColumn column1 = aquisitionSetTable.getColumnModel().getColumn(0);
+        column1.setCellRenderer(new BooleanCheckBoxCellRenderer());
+        column1.setCellEditor(new BooleanCheckBoxCellEditor());
+        column1.setPreferredWidth(60);
+        column1.setMaxWidth(60);
 
-        firstTableColumn.setPreferredWidth(60);
-        firstTableColumn.setMaxWidth(60);
+        TableColumn column2 = aquisitionSetTable.getColumnModel().getColumn(1);
+        column2.setCellRenderer(
+                new DefaultTableCellRenderer() {
+                    @Override
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                                   boolean hasFocus, int row, int column) {
+                        final Component component = super.getTableCellRendererComponent(table, value, isSelected,
+                                                                                        hasFocus, row, column);
+                        if (value instanceof Product) {
+                            ((JLabel) component).setText(((Product) value).getName());
+                        }
+                        return component;
+                    }
+                });
+        column2.setCellEditor(
+                new TableCellEditor() {
+                    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
+                                                                 int row, int column) {
+                        return null;
+                    }
 
-        TableColumn secondTableColumn = aquisitionImageTable.getColumnModel().getColumn(1);
-        secondTableColumn.setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                           boolean hasFocus,
-                                                           int row, int column) {
-                Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
-                                                                          column);
-                if (component instanceof JLabel && value instanceof Product) {
-                    JLabel label = (JLabel) component;
-                    Product product = (Product) value;
-                    label.setText(product.getName());
-                    return label;
+                    public Object getCellEditorValue() {
+                        return null;
+                    }
+
+                    public boolean isCellEditable(EventObject e) {
+                        return false;
+                    }
+
+                    public boolean shouldSelectCell(EventObject e) {
+                        return false;
+                    }
+
+                    public boolean stopCellEditing() {
+                        return false;
+                    }
+
+                    public void cancelCellEditing() {
+                    }
+
+                    public void addCellEditorListener(CellEditorListener l) {
+                    }
+
+                    public void removeCellEditorListener(CellEditorListener l) {
+                    }
                 }
-                return component;
+        );
 
-            }
+        metadataTable.setModel(presenter.getMetadataTableModel());
+        metadataTable.setEnabled(false);
 
-        });
-
-        metadataTable.setModel(nrPresenter.getMetadataTableModel());
-
-        addButton.setAction(nrPresenter.getAddProductAction());
-        removeButton.setAction(nrPresenter.getRemoveProductAction());
-        advancedSettingsButton.setAction(nrPresenter.getSettingsAction());
+        addButton.setAction(presenter.getAddProductAction());
+        removeButton.setAction(presenter.getRemoveProductAction());
+        advancedSettingsButton.setAction(presenter.getSettingsAction());
     }
 
     /**
@@ -94,8 +127,8 @@ class NoiseReductionPanel extends JPanel {
 
         JPanel dataPanel = new JPanel();
         JPanel aquisitionSetPanel = new JPanel();
-        JScrollPane aqusitionScrollPane = new JScrollPane();
-        aquisitionImageTable = new JTable();
+        JScrollPane acquisitionScrollPane = new JScrollPane();
+        aquisitionSetTable = new JTable();
         addButton = new JButton();
         removeButton = new JButton();
         JPanel metadataPanel = new JPanel();
@@ -114,10 +147,10 @@ class NoiseReductionPanel extends JPanel {
                                                                       new Font("Tahoma", 0, 11),
                                                                       new Color(0, 70, 213)));
         aquisitionSetPanel.setPreferredSize(new Dimension(450, 200));
-        aqusitionScrollPane.setPreferredSize(new Dimension(300, 150));
-        aquisitionImageTable.setPreferredSize(new Dimension(300, 150));
-        aquisitionImageTable.setFillsViewportHeight(true);
-        aqusitionScrollPane.setViewportView(aquisitionImageTable);
+        acquisitionScrollPane.setPreferredSize(new Dimension(300, 150));
+        aquisitionSetTable.setPreferredSize(new Dimension(300, 150));
+        aquisitionSetTable.setFillsViewportHeight(true);
+        acquisitionScrollPane.setViewportView(aquisitionSetTable);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -127,7 +160,7 @@ class NoiseReductionPanel extends JPanel {
         gridBagConstraints.anchor = GridBagConstraints.NORTH;
         gridBagConstraints.weightx = 0.8;
         gridBagConstraints.weighty = 1.0;
-        aquisitionSetPanel.add(aqusitionScrollPane, gridBagConstraints);
+        aquisitionSetPanel.add(acquisitionScrollPane, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -173,6 +206,5 @@ class NoiseReductionPanel extends JPanel {
         settingsButtonPanel.add(advancedSettingsButton, gridBagConstraints);
         add(settingsButtonPanel, BorderLayout.SOUTH);
     }
-
 
 }

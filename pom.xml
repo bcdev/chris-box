@@ -78,27 +78,32 @@
             <dependency>
                 <groupId>javax.media.jai</groupId>
                 <artifactId>jai-core</artifactId>
-                <version>1.1.2-01</version>
+                <version>1.1.2_01</version>
             </dependency>
             <dependency>
                 <groupId>javax.media.jai</groupId>
                 <artifactId>jai-codec</artifactId>
-                <version>1.1.2-01</version>
+                <version>1.1.2_01</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.media.jai</groupId>
+                <artifactId>jai-imageio</artifactId>
+                <version>1.1.2_01</version>
             </dependency>
             <dependency>
                 <groupId>javax.media.jai</groupId>
                 <artifactId>mlibwrapper-jai</artifactId>
-                <version>1.1.2-01</version>
+                <version>1.1.2_01</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.media</groupId>
-                <artifactId>jai_imageio</artifactId>
-                <version>1.0-01</version>
+                <artifactId>jai-imageio</artifactId>
+                <version>1.0_01</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.media</groupId>
                 <artifactId>clibwrapper-jiio</artifactId>
-                <version>1.0-01</version>
+                <version>1.0_01</version>
             </dependency>
 
             <!-- Java Help Library ############################################# -->
@@ -131,27 +136,27 @@
             <dependency>
                 <groupId>com.jidesoft</groupId>
                 <artifactId>jide-dock</artifactId>
-                <version>1.9.3.04</version>
+                <version>1.9.5.04</version>
             </dependency>
             <dependency>
                 <groupId>com.jidesoft</groupId>
                 <artifactId>jide-action</artifactId>
-                <version>1.9.3.04</version>
+                <version>1.9.5.04</version>
             </dependency>
             <dependency>
                 <groupId>com.jidesoft</groupId>
                 <artifactId>jide-grids</artifactId>
-                <version>1.9.3.04</version>
+                <version>1.9.5.04</version>
             </dependency>
             <dependency>
                 <groupId>com.jidesoft</groupId>
                 <artifactId>jide-components</artifactId>
-                <version>1.9.3.04</version>
+                <version>1.9.5.04</version>
             </dependency>
             <dependency>
                 <groupId>com.jidesoft</groupId>
                 <artifactId>jide-common</artifactId>
-                <version>1.9.3.04</version>
+                <version>1.9.5.04</version>
             </dependency>
 
             <!-- XStream Libraries ############################################# -->

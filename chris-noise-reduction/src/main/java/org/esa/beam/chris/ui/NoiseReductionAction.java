@@ -15,6 +15,7 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import com.bc.ceres.swing.progress.DialogProgressMonitor;
 import org.esa.beam.framework.dataio.ProductIO;
@@ -32,10 +33,20 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Level;
 
+/**
+ * Noise reduction action.
+ *
+ * @author Marco Peters
+ * @author Ralf Quast
+ * @version $Revision:$ $Date:$
+ */
 public class NoiseReductionAction extends ExecCommand {
 
     static List<String> CHRIS_TYPES;
@@ -47,116 +58,131 @@ public class NoiseReductionAction extends ExecCommand {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        showNoiseReductionDialog();
+        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
+        final Product[] acquisitionSet = getAcquisitionSet(selectedProduct);
+
+        final NoiseReductionPresenter presenter = new NoiseReductionPresenter(acquisitionSet,
+                                                                              new AdvancedSettingsPresenter());
+        final ModalDialog dialog = new ModalDialog(VisatApp.getApp().getMainFrame(),
+                                                   "CHRIS Noise Reduction",
+                                                   ModalDialog.ID_OK_CANCEL_HELP,
+                                                   "chrisNoiseReductionTool");
+        dialog.setContent(new NoiseReductionPanel(presenter));
+
+        if (dialog.show() == ModalDialog.ID_OK) {
+            final DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
+                                                                       "CHRIS Noise Reduction",
+                                                                       Dialog.ModalityType.APPLICATION_MODAL);
+
+            try {
+                performNoiseReduction(presenter, pm);
+            } catch (OperatorException e) {
+                for (final Product product : acquisitionSet) {
+                    if (!VisatApp.getApp().getProductManager().contains(product)) {
+                        product.dispose();
+                    }
+                }
+
+                dialog.showErrorDialog(e.getMessage());
+                VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
+            }
+        } else {
+            for (final Product product : acquisitionSet) {
+                if (!VisatApp.getApp().getProductManager().contains(product)) {
+                    product.dispose();
+                }
+            }
+        }
     }
 
     @Override
     public void updateState() {
-        final Product product = VisatApp.getApp().getSelectedProduct();
-        setEnabled(product != null && CHRIS_TYPES.contains(product.getProductType()));
+        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
+        final boolean enabled = selectedProduct != null && CHRIS_TYPES.contains(selectedProduct.getProductType());
+        setEnabled(enabled);
     }
 
-    private static void showNoiseReductionDialog() {
-        Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        List<Product> consideredProductList = new ArrayList<Product>();
-        collectProductsFromVisat(selectedProduct, consideredProductList);
-
-        // we must hold these seperately, because we have to close them later
-        List<Product> productListFromFileLocation = new ArrayList<Product>();
-        collectProductsFromFilelocation(selectedProduct, productListFromFileLocation);
-        consideredProductList.addAll(productListFromFileLocation);
-
-        Product[] consideredProducts = consideredProductList.toArray(new Product[consideredProductList.size()]);
-        NoiseReductionPresenter presenter = new NoiseReductionPresenter(consideredProducts,
-                                                                        new AdvancedSettingsPresenter());
-        ModalDialog modalDialog = new ModalDialog(VisatApp.getApp().getMainFrame(),
-                                                  "CHRIS Noise Reduction",
-                                                  ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionTool");
-        modalDialog.setContent(new NoiseReductionPanel(presenter));
-        if (ModalDialog.ID_OK != modalDialog.show()) {
-            for (Product product : productListFromFileLocation) {
-                product.dispose();
-            }
-            return;
-        }
-
-        AdvancedSettingsPresenter settingsPresenter = presenter.getAdvancedSettingsPresenter();
-        DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
-                                                             "CHRIS Noise Reduction",
-                                                             Dialog.ModalityType.APPLICATION_MODAL);
-
-        pm.beginTask("Reducing Noise", 100);
+    private static void performNoiseReduction(NoiseReductionPresenter presenter, ProgressMonitor pm)
+            throws OperatorException {
         try {
-            Product product1 = presenter.getProducts()[0];
-            Product product2 = GPF.createProduct("DestripingFactors",
-                                                 settingsPresenter.getDestripingParameter(),
-                                                 product1, new SubProgressMonitor(pm, 40));
-            HashMap<String, Product> productsMap = new HashMap<String, Product>(2);
-            productsMap.put("sourceProduct", product1);
-            productsMap.put("factorProduct", product2);
-            Product product3 = GPF.createProduct("Destriping", new HashMap<String, Object>(0), productsMap,
-                                                 new SubProgressMonitor(pm, 30));
-            Product product4 = GPF.createProduct("DropoutCorrection", settingsPresenter.getDropOutCorrectionParameter(),
-                                                 product3, new SubProgressMonitor(pm, 30));
-            VisatApp.getApp().addProduct(product4);
-        } catch (OperatorException e) {
-            modalDialog.showErrorDialog(e.getMessage());
-            VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
+            pm.beginTask("Performing CHRIS noise reduction", 20 * presenter.getProductsToBeCorrected().length + 10);
+            final Product factors =
+                    GPF.createProduct("DestripingFactors",
+                                      presenter.getDestripingParameterMap(),
+                                      presenter.getProducts(),
+                                      new SubProgressMonitor(pm, 10));
+
+            final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
+            productsMap.put("factors", factors);
+
+            for (final Product sourceProduct : presenter.getProductsToBeCorrected()) {
+                productsMap.put("input", sourceProduct);
+
+                final Product destriped =
+                        GPF.createProduct("Destriping",
+                                          new HashMap<String, Object>(0),
+                                          productsMap,
+                                          new SubProgressMonitor(pm, 10));
+
+                final Product targetProduct =
+                        GPF.createProduct("DropoutCorrection",
+                                          presenter.getDropoutCorrectionParameterMap(),
+                                          destriped,
+                                          new SubProgressMonitor(pm, 10));
+
+                VisatApp.getApp().addProduct(targetProduct);
+            }
         } finally {
             pm.done();
         }
     }
 
-    private static void collectProductsFromFilelocation(final Product selectedProduct,
-                                                        List<Product> productList) {
-        final File productLocation = selectedProduct.getFileLocation();
-        if (productLocation == null) {
-            return;
-        }
-        final File parentFile = productLocation.getParentFile();
-        if (parentFile == null || !parentFile.isDirectory()) {
-            return;
-        }
+    private static Product[] getAcquisitionSet(Product selectedProduct) {
+        final SortedSet<Product> acquisitionSet = new TreeSet<Product>(
+                new Comparator<Product>() {
+                    public final int compare(Product p, Product q) {
+                        return p.getName().compareTo(q.getName());
+                    }
+                });
 
-        final File[] files = parentFile.listFiles(new FileFilter() {
-            public boolean accept(File pathname) {
-                return NoiseReductionPresenter.belongsToSameAquisitionSet(productLocation, pathname);
+        final Product[] visatProducts = VisatApp.getApp().getProductManager().getProducts();
+        for (final Product product : visatProducts) {
+            if (NoiseReductionPresenter.areFromSameAcquisition(selectedProduct, product)) {
+                acquisitionSet.add(product);
             }
-        });
+        }
 
-        for (final File file : files) {
-            try {
-                if (!containsProduct(productList, file)) {
-                    final Product product = ProductIO.readProduct(file, null);
-                    if (product.getProductType().equals(selectedProduct.getProductType())) {
-                        productList.add(product);
+        final File selectedFile = selectedProduct.getFileLocation();
+        if (selectedFile != null) {
+            final File parent = selectedFile.getParentFile();
+            if (parent != null && parent.isDirectory()) {
+                final File[] files = parent.listFiles(
+                        new FileFilter() {
+                            public boolean accept(File file) {
+                                return NoiseReductionPresenter.areFromSameAcquisition(selectedFile, file);
+                            }
+                        });
+
+                acquire:
+                for (final File file : files) {
+                    try {
+                        for (final Product product : acquisitionSet) {
+                            if (file.equals(product.getFileLocation())) {
+                                continue acquire;
+                            }
+                        }
+                        final Product product = ProductIO.readProduct(file, null);
+                        if (product.getProductType().equals(selectedProduct.getProductType())) {
+                            acquisitionSet.add(product);
+                        }
+                    } catch (IOException e) {
+                        // ignore - we acquire products silently
                     }
                 }
-            } catch (IOException e) {
-                // ignore - no message to user, we add products silently
             }
         }
-    }
 
-    private static void collectProductsFromVisat(Product selectedProduct, List<Product> productList) {
-        final Product[] allProducts = VisatApp.getApp().getProductManager().getProducts();
-        productList.add(selectedProduct);
-        for (final Product product : allProducts) {
-            if (selectedProduct != product && NoiseReductionPresenter.shouldConsiderProduct(selectedProduct, product)) {
-                if (!containsProduct(productList, product.getFileLocation())) {
-                    productList.add(product);
-                }
-            }
-        }
-    }
-
-    private static boolean containsProduct(List<Product> consideredProductList, File fileLocation) {
-        for (Product currentProduct : consideredProductList) {
-            if (currentProduct.getFileLocation().equals(fileLocation)) {
-                return true;
-            }
-        }
-        return false;
+        return acquisitionSet.toArray(new Product[acquisitionSet.size()]);
     }
 
 }

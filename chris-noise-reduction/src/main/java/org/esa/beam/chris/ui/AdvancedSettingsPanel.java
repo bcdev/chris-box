@@ -35,10 +35,10 @@ class AdvancedSettingsPanel extends JPanel {
     }
 
     private void bindComponents(AdvancedSettingsPresenter presenter) {
-        SwingBindingContext destripingBinding = new SwingBindingContext(presenter.getDestripingContainer());
+        SwingBindingContext destripingBinding = new SwingBindingContext(presenter.getDestripingValueContainer());
         destripingBinding.bind(slitCorrectionCheckBox, "slitCorrection");
         destripingBinding.bind(smoothingOrderSpinner, "smoothingOrder");
-        SwingBindingContext dropoutCorrectionBinding = new SwingBindingContext(presenter.getDropOutCorrectionContainer());
+        SwingBindingContext dropoutCorrectionBinding = new SwingBindingContext(presenter.getDropoutCorrectionValueContainer());
         dropoutCorrectionBinding.bind(neighborBandCountComboBox, "neighborBandCount");
         dropoutCorrectionBinding.bind(neighborhoodComboBox, "neighborhood");
         neighborhoodComboBox.setRenderer(new DefaultListCellRenderer() {
@@ -70,7 +70,7 @@ class AdvancedSettingsPanel extends JPanel {
         JPanel verticalStripingPanel = new JPanel(new GridBagLayout());
 
         verticalStripingPanel.setBorder(BorderFactory.createTitledBorder(null,
-                                                                         "Vertical Striping Correction",
+                                                                         "Destriping",
                                                                          TitledBorder.DEFAULT_JUSTIFICATION,
                                                                          TitledBorder.DEFAULT_POSITION,
                                                                          new Font("Tahoma", 0, 11),

@@ -25,18 +25,22 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Vector;
 
 /**
  * Created by Marco Peters.
  *
  * @author Marco Peters
+ * @author Ralf Quast
  * @version $Revision:$ $Date:$
  */
 class NoiseReductionPresenter {
 
-    private DefaultTableModel productsTableModel;
-    private ListSelectionModel productsTableSelectionModel;
+    private DefaultTableModel productTableModel;
+    private ListSelectionModel productTableSelectionModel;
 
     private DefaultTableModel metadataTableModel;
 
@@ -52,15 +56,15 @@ class NoiseReductionPresenter {
         Object[][] productsData = new Object[products.length][2];
         if (products.length > 0) {
             for (int i = 0; i < productsData.length; i++) {
-                productsData[i][0] = Boolean.TRUE;
+                productsData[i][0] = true;
                 productsData[i][1] = products[i];
             }
         }
 
-        productsTableModel = new DefaultTableModel(productsData, new String[]{"Output", "Product Name"});
-        productsTableSelectionModel = new DefaultListSelectionModel();
-        productsTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        productsTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
+        productTableModel = new DefaultTableModel(productsData, new String[]{"Correct", "Product Name"});
+        productTableSelectionModel = new DefaultListSelectionModel();
+        productTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        productTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 updateMetadata();
             }
@@ -80,17 +84,24 @@ class NoiseReductionPresenter {
 
         this.advancedSettingsPresenter = advancedSettingsPresenter;
         if (products.length > 0) {
-            productsTableSelectionModel.setSelectionInterval(0, 0);
+            productTableSelectionModel.setSelectionInterval(0, 0);
         }
-
     }
 
-    public DefaultTableModel getProductsTableModel() {
-        return productsTableModel;
+    public HashMap<String, Object> getDestripingParameterMap() {
+        return advancedSettingsPresenter.getDestripingParameterMap();
     }
 
-    public ListSelectionModel getProductsTableSelectionModel() {
-        return productsTableSelectionModel;
+    public HashMap<String, Object> getDropoutCorrectionParameterMap() {
+        return advancedSettingsPresenter.getDropoutCorrectionParameterMap();
+    }
+
+    public DefaultTableModel getProductTableModel() {
+        return productTableModel;
+    }
+
+    public ListSelectionModel getProductTableSelectionModel() {
+        return productTableSelectionModel;
     }
 
     public DefaultTableModel getMetadataTableModel() {
@@ -110,7 +121,7 @@ class NoiseReductionPresenter {
     }
 
     public AdvancedSettingsPresenter getAdvancedSettingsPresenter() {
-        return advancedSettingsPresenter;
+        return new AdvancedSettingsPresenter();
     }
 
     public void setAdvancedSettingsPresenter(AdvancedSettingsPresenter advancedSettingsPresenter) {
@@ -126,29 +137,42 @@ class NoiseReductionPresenter {
     }
 
     public Product[] getProducts() {
-        Vector productVector = getProductsTableModel().getDataVector();
+        Vector productVector = getProductTableModel().getDataVector();
         Product[] products = new Product[productVector.size()];
         for (int i = 0; i < productVector.size(); i++) {
-            products[i] = (Product) ((Vector) productVector.elementAt(i)).get(1);
+            products[i] = (Product) ((Vector) productVector.get(i)).get(1);
         }
         return products;
     }
 
+    public Product[] getProductsToBeCorrected() {
+        final DefaultTableModel tableModel = getProductTableModel();
+        final List<Product> productList = new ArrayList<Product>();
+
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if ((Boolean) tableModel.getValueAt(i, 0)) {
+                productList.add((Product) tableModel.getValueAt(i, 1));
+            }
+        }
+
+        return productList.toArray(new Product[productList.size()]);
+    }
+
     void setProductAsOutput(Product product, boolean output) {
-        for (int i = 0; i < getProductsTableModel().getRowCount(); i++) {
-            Product current = (Product) getProductsTableModel().getValueAt(i, 1);
+        for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
+            Product current = (Product) getProductTableModel().getValueAt(i, 1);
             if (current.equals(product)) {
-                getProductsTableModel().setValueAt(output, i, 0);
+                getProductTableModel().setValueAt(output, i, 0);
                 return;
             }
         }
     }
 
     boolean isProductAsOutputSet(Product product) {
-        for (int i = 0; i < getProductsTableModel().getRowCount(); i++) {
-            Product current = (Product) getProductsTableModel().getValueAt(i, 1);
+        for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
+            Product current = (Product) getProductTableModel().getValueAt(i, 1);
             if (current.equals(product)) {
-                Object isOutput = getProductsTableModel().getValueAt(i, 0);
+                Object isOutput = getProductTableModel().getValueAt(i, 0);
                 if (isOutput != null) {
                     return (Boolean) isOutput;
                 }
@@ -157,13 +181,12 @@ class NoiseReductionPresenter {
         return false;
     }
 
-
     void addProduct(Product product) throws NoiseReductionValidationException {
         Product[] products = getProducts();
         if (products.length >= 5) {
             throw new NoiseReductionValidationException("Acquisition set already contains five products.");
         }
-        if (products.length != 0 && !shouldConsiderProduct(products[0], product)) {
+        if (products.length != 0 && !areFromSameAcquisition(products[0], product)) {
             throw new NoiseReductionValidationException("Product does not belong to the acquisition set.");
         }
         if (containsProduct(products, product)) {
@@ -179,28 +202,29 @@ class NoiseReductionPresenter {
                     sb.append(", ");
                 }
             }
-            throw new NoiseReductionValidationException("Product type '" + product.getProductType() + "'is not valid .\n" +
-                                                        "Must be one of " + sb + "\n");
+            throw new NoiseReductionValidationException(
+                    "Product type '" + product.getProductType() + "'is not valid .\n" +
+                    "Must be one of " + sb + "\n");
         }
-        DefaultTableModel tableModel = getProductsTableModel();
+        DefaultTableModel tableModel = getProductTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
         updateSelection(tableModel.getRowCount() - 1);
     }
 
     void removeSelectedProduct() {
-        getProductsTableModel().removeRow(getProductsTableSelectionModel().getLeadSelectionIndex());
-        int newSelectionIndex = getProductsTableSelectionModel().getLeadSelectionIndex() - 1;
-        updateSelection(newSelectionIndex);
+        int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
+        getProductTableModel().removeRow(selectionIndex);
+        updateSelection(selectionIndex);
     }
 
-    private void updateSelection(int newSelectionIndex) {
-        if (newSelectionIndex < getProductsTableModel().getRowCount() - 1) {
-            newSelectionIndex++;
+    private void updateSelection(int selectionIndex) {
+        if (selectionIndex == getProductTableModel().getRowCount()) {
+            --selectionIndex;
         }
-        if (newSelectionIndex == -1) {
-            getProductsTableSelectionModel().clearSelection();
+        if (selectionIndex != -1) {
+            getProductTableSelectionModel().setSelectionInterval(selectionIndex, selectionIndex);
         } else {
-            getProductsTableSelectionModel().setSelectionInterval(newSelectionIndex, newSelectionIndex);
+            getProductTableSelectionModel().clearSelection();
         }
     }
 
@@ -213,21 +237,21 @@ class NoiseReductionPresenter {
         return false;
     }
 
-    static boolean shouldConsiderProduct(Product referenceProduct, Product product) {
+    static boolean areFromSameAcquisition(Product referenceProduct, Product product) {
         return product.getProductType().equals(referenceProduct.getProductType()) &&
-               belongsToSameAquisitionSet(referenceProduct.getFileLocation(), product.getFileLocation());
+               areFromSameAcquisition(referenceProduct.getFileLocation(), product.getFileLocation());
     }
 
-    static boolean belongsToSameAquisitionSet(File referenceProductFile, File currentProductFile) {
-        if (referenceProductFile != null && currentProductFile != null) {
-            String[] expectedParts = referenceProductFile.getName().split("_", 5);
-            String[] actualParts = currentProductFile.getName().split("_", 5);
-            if(expectedParts.length == 5 && expectedParts.length == actualParts.length) {
-            return expectedParts[0].equals(actualParts[0])
-                   && expectedParts[1].equals(actualParts[1])
-                   && expectedParts[2].equals(actualParts[2])
-                   // actualParts[3] should be different
-                   && expectedParts[4].equals(actualParts[4]);
+    static boolean areFromSameAcquisition(File referenceFile, File file) {
+        if (referenceFile != null && file != null) {
+            String[] expectedParts = referenceFile.getName().split("_", 5);
+            String[] actualParts = file.getName().split("_", 5);
+            if (expectedParts.length == 5 && expectedParts.length == actualParts.length) {
+                return expectedParts[0].equals(actualParts[0])
+                       && expectedParts[1].equals(actualParts[1])
+                       && expectedParts[2].equals(actualParts[2])
+                       // actualParts[3] should be different
+                       && expectedParts[4].equals(actualParts[4]);
             }
         }
         return false;
@@ -329,11 +353,10 @@ class NoiseReductionPresenter {
     private void updateMetadata() {
         final String na = "Not available";
         Product selectedProduct;
-        if (productsTableSelectionModel.getMaxSelectionIndex() == -1) {
+        if (productTableSelectionModel.getMaxSelectionIndex() == -1) {
             return;
         }
-        selectedProduct = (Product) productsTableModel.getValueAt(productsTableSelectionModel.getMaxSelectionIndex(),
-                                                                  1);
+        selectedProduct = (Product) productTableModel.getValueAt(productTableSelectionModel.getMaxSelectionIndex(), 1);
 
         MetadataElement root = selectedProduct.getMetadataRoot();
         if (root == null) {
@@ -369,5 +392,6 @@ class NoiseReductionPresenter {
 
         return str;
     }
+
 
 }

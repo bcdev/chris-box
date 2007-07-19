@@ -2,9 +2,12 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.binding.Factory;
 import com.bc.ceres.binding.ValueContainer;
+import com.bc.ceres.binding.ConverterRegistry;
+import com.bc.ceres.binding.converters.EnumConverter;
 import org.esa.beam.chris.operators.DestripingFactorsOp;
 import org.esa.beam.chris.operators.DropoutCorrectionOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDefinitionFactory;
+import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 
 import java.util.HashMap;
 
@@ -12,50 +15,66 @@ import java.util.HashMap;
  * Created by Marco Peters.
  *
  * @author Marco Peters
+ * @author Ralf Quast
  * @version $Revision:$ $Date:$
  */
 class AdvancedSettingsPresenter {
-    private HashMap<String,Object> destripingParameter;
-    private ValueContainer destripingContainer;
-    private HashMap<String,Object> dropOutCorrectionParameter;
-    private ValueContainer dropOutCorrectionContainer;
+
+    static {
+        final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
+        final Class<DropoutCorrection.Neigborhood> type = DropoutCorrection.Neigborhood.class;
+        if (converterRegistry.getConverter(type) == null) {
+            converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Neigborhood>(type));
+        }
+    }
+
+    private HashMap<String, Object> destripingParameterMap;
+    private HashMap<String, Object> dropoutCorrectionParameterMap;
+    private ValueContainer destripingValueContainer;
+    private ValueContainer dropoutCorrectionValueContainer;
 
     public AdvancedSettingsPresenter() {
-        destripingParameter = new HashMap<String, Object>();
-        dropOutCorrectionParameter = new HashMap<String, Object>();
+        destripingParameterMap = new HashMap<String, Object>();
+        dropoutCorrectionParameterMap = new HashMap<String, Object>();
+
         initValueContainers();
     }
 
-    private AdvancedSettingsPresenter(HashMap<String, Object> destripingParameter,
-                                      HashMap<String, Object> dropOutCorrectionParameter) {
-        this.destripingParameter = new HashMap<String, Object>(destripingParameter);
-        this.dropOutCorrectionParameter = new HashMap<String, Object>(dropOutCorrectionParameter);
+    private AdvancedSettingsPresenter(HashMap<String, Object> destripingParameterMap,
+                                      HashMap<String, Object> dropoutCorrectionParameterMap) {
+        this.destripingParameterMap = new HashMap<String, Object>(destripingParameterMap);
+        this.dropoutCorrectionParameterMap = new HashMap<String, Object>(dropoutCorrectionParameterMap);
+
         initValueContainers();
     }
 
     private void initValueContainers() {
-        Factory factory = new Factory(new ParameterDefinitionFactory());
-        destripingContainer = factory.createMapBackedValueContainer(DestripingFactorsOp.class, destripingParameter);
-        dropOutCorrectionContainer = factory.createMapBackedValueContainer(DropoutCorrectionOp.class, dropOutCorrectionParameter);
+        final Factory factory = new Factory(new ParameterDefinitionFactory());
+        destripingValueContainer =
+                factory.createMapBackedValueContainer(DestripingFactorsOp.class, destripingParameterMap);
+        dropoutCorrectionValueContainer =
+                factory.createMapBackedValueContainer(DropoutCorrectionOp.class, dropoutCorrectionParameterMap);
     }
 
-    public ValueContainer getDestripingContainer() {
-        return destripingContainer;
+    public ValueContainer getDestripingValueContainer() {
+        return destripingValueContainer;
     }
 
-    public HashMap<String, Object> getDestripingParameter() {
-        return destripingParameter;
+    public HashMap<String, Object> getDestripingParameterMap() {
+        return destripingParameterMap;
     }
 
-    public HashMap<String, Object> getDropOutCorrectionParameter() {
-        return dropOutCorrectionParameter;
+    public HashMap<String, Object> getDropoutCorrectionParameterMap() {
+        return dropoutCorrectionParameterMap;
     }
 
-    public ValueContainer getDropOutCorrectionContainer() {
-        return dropOutCorrectionContainer;
+    public ValueContainer getDropoutCorrectionValueContainer() {
+        return dropoutCorrectionValueContainer;
     }
 
+    // todo - replace with clone()
     public AdvancedSettingsPresenter createCopy() {
-        return new AdvancedSettingsPresenter(this.getDestripingParameter(), this.getDropOutCorrectionParameter());
+        return new AdvancedSettingsPresenter(destripingParameterMap, dropoutCorrectionParameterMap);
     }
+
 }

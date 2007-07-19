@@ -54,7 +54,7 @@ public class NoiseReductionPresenterTest extends TestCase {
             assertSame(expectedProducts[i], actualProducts[i]);
         }
 
-        int selectionIndex = nrp.getProductsTableSelectionModel().getMaxSelectionIndex();
+        int selectionIndex = nrp.getProductTableSelectionModel().getMaxSelectionIndex();
         assertEquals(0, selectionIndex);
         assertSame(first, nrp.getProducts()[selectionIndex]);
 
@@ -67,7 +67,7 @@ public class NoiseReductionPresenterTest extends TestCase {
         DefaultTableModel metadata = nrp.getMetadataTableModel();
         assertEquals(5, metadata.getRowCount());
         for (int i = 0; i < metadata.getRowCount(); i++) {
-            assertEquals(nrp.getMetadataTableModel().getValueAt(i,1), null);
+            assertEquals(nrp.getMetadataTableModel().getValueAt(i, 1), null);
         }
     }
 
@@ -78,45 +78,44 @@ public class NoiseReductionPresenterTest extends TestCase {
         nrp.addProduct(fourth);
         assertEquals(4, nrp.getProducts().length);
         assertSame(fourth, nrp.getProducts()[3]);
-        ListSelectionModel selectionModel = nrp.getProductsTableSelectionModel();
+        ListSelectionModel selectionModel = nrp.getProductTableSelectionModel();
         assertEquals(3, selectionModel.getMaxSelectionIndex());
 
-        nrp.getProductsTableSelectionModel().setSelectionInterval(2,2);
+        nrp.getProductTableSelectionModel().setSelectionInterval(2, 2);
 
         nrp.removeSelectedProduct();
         assertEquals(3, nrp.getProducts().length);
         assertSame(first, nrp.getProducts()[0]);
         assertSame(second, nrp.getProducts()[1]);
         assertSame(fourth, nrp.getProducts()[2]);
-        assertEquals(2, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
-
+        assertEquals(2, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
         assertEquals(2, nrp.getProducts().length);
         assertSame(first, nrp.getProducts()[0]);
         assertSame(second, nrp.getProducts()[1]);
-        assertEquals(1, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
+        assertEquals(1, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
-        assertEquals(0, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
+        assertEquals(0, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
         assertSame(first, nrp.getProducts()[0]);
 
         nrp.removeSelectedProduct();
         assertEquals(0, nrp.getProducts().length);
-        assertEquals(-1, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
+        assertEquals(-1, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.addProduct(fourth);
-        assertEquals(0, nrp.getProductsTableSelectionModel().getMaxSelectionIndex());
+        assertEquals(0, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
     }
 
     public void testSelectionChange() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
 
-        nrp.getProductsTableSelectionModel().setSelectionInterval(2,2);
+        nrp.getProductTableSelectionModel().setSelectionInterval(2, 2);
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode3", "DummyTarget3");
 
-        nrp.getProductsTableSelectionModel().setSelectionInterval(1,1);
+        nrp.getProductTableSelectionModel().setSelectionInterval(1, 1);
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode2", "DummyTarget2");
     }
 
@@ -164,15 +163,15 @@ public class NoiseReductionPresenterTest extends TestCase {
         }
 
         assertEquals(2, metaData.getColumnCount());
-        assertEquals(mode, metaData.getValueAt(0,1));
-        assertEquals(target, metaData.getValueAt(1,1));
+        assertEquals(mode, metaData.getValueAt(0, 1));
+        assertEquals(target, metaData.getValueAt(1, 1));
 
         GeoPos expectedGeoPos = new GeoPos(45.32f, 10.8f);
         String expectedGeoPosString = expectedGeoPos.getLatString() + ", " + expectedGeoPos.getLonString();
-        assertEquals(expectedGeoPosString, metaData.getValueAt(2,1));
+        assertEquals(expectedGeoPosString, metaData.getValueAt(2, 1));
 
-        assertEquals("Not available", metaData.getValueAt(3,1));
-        assertEquals("Not available", metaData.getValueAt(4,1));
+        assertEquals("Not available", metaData.getValueAt(3, 1));
+        assertEquals("Not available", metaData.getValueAt(4, 1));
     }
 
 }
