@@ -98,7 +98,10 @@ public class NoiseReductionAction extends ExecCommand {
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct != null && CHRIS_TYPES.contains(selectedProduct.getProductType());
+        final boolean enabled = selectedProduct != null
+                                && !(selectedProduct.getProductReader().getInput() instanceof Product)
+                                && !(selectedProduct.getProductReader().getInput() instanceof Product[])
+                                && CHRIS_TYPES.contains(selectedProduct.getProductType());
         setEnabled(enabled);
     }
 
