@@ -544,7 +544,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             throw new OperatorException(MessageFormat.format("resource {0} not found", name));
         }
         try {
-            return new FileImageInputStream(new File(url.toURI()));
+            return new FileImageInputStream(new File(url.toURI().getPath()));
         } catch (Exception e) {
             throw new OperatorException(MessageFormat.format(
                     "could not create image input stream for resource {0}", name), e);
