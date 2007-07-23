@@ -12,8 +12,8 @@
     <packaging>jar</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
-    <artifactId>chris-noise-reduction</artifactId>
-    <name>CHRIS Noise Reduction</name>
+    <artifactId>chris-cloud-screening</artifactId>
+    <name>CHRIS Cloud Screening</name>
     <version>1.0-SNAPSHOT</version>
     <description></description>
 

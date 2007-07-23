@@ -1,3 +1,1 @@
-org.esa.beam.chris.operators.DestripingFactorsOp$Spi
-org.esa.beam.chris.operators.DestripingOp$Spi
-org.esa.beam.chris.operators.DropoutCorrectionOp$Spi
+org.esa.beam.chris.operators.DummyOp$Spi
