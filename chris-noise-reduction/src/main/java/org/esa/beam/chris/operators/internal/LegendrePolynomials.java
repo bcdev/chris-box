@@ -13,30 +13,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.ui;
-
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.ui.command.CommandEvent;
-import org.esa.beam.framework.ui.command.ExecCommand;
-import org.esa.beam.visat.VisatApp;
+package org.esa.beam.chris.operators.internal;
 
 /**
- * Cloud screening action.
+ * Class for calculating Legendre polynomials.
  *
  * @author Ralf Quast
- * @version $Revision:$ $Date:$
+ * @version $Revision: $ $Date: $
  */
-public class CloudScreeningAction extends ExecCommand {
+final public class LegendrePolynomials implements Functions {
 
-    @Override
-    public void actionPerformed(CommandEvent commandEvent) {
-    }
+    public void calculate(double x, double[] y) {
+        if (y.length > 0) {
+            double l1 = 1.0;
+            double l2 = 0.0;
+            double l3;
 
-    @Override
-    public void updateState() {
-        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct != null;
-        setEnabled(enabled);
+            y[0] = 1.0;
+
+            for (int i = 1; i < y.length; ++i) {
+                l3 = l2;
+                l2 = l1;
+                l1 = ((2 * i - 1) * x * l2 - (i - 1) * l3) / i;
+
+                y[i] = l1;
+            }
+        }
     }
 
 }

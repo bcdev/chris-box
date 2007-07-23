@@ -1,9 +1,9 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
-    <symbolicName>chris-cloud-screening</symbolicName>
+    <symbolicName>chris-noise-reduction</symbolicName>
     <version>1.0-SNAPSHOT</version>
-    <name>chris-cloud-screening</name>
-    <description>CHRIS Cloud Screening Module</description>
+    <name>chris-noise-reduction</name>
+    <description>BEAM CHRIS Noise Reduction Module</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -26,13 +26,13 @@
 
     <extension point="beam-visat:actions">
         <action>
-            <id>chrisCloudScreening</id>
-            <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
-            <text>Cloud Screening (CHRIS)....</text>
-            <shortDescr>Invoke the CHRIS Cloud Screening Tool.</shortDescr>
+            <id>chrisNoiseReduction</id>
+            <class>org.esa.beam.chris.ui.NoiseReductionAction</class>
+            <text>Noise Reduction (CHRIS)....</text>
+            <shortDescr>Invoke the BEAM CHRIS Noise Reduction Tool.</shortDescr>
             <mnemonic></mnemonic>
             <parent>tools</parent>
-            <helpID>chrisCloudScreeningTool</helpID>
+            <helpID>chrisNoiseReductionTool</helpID>
             <placeAfter></placeAfter>
         </action>
     </extension>
@@ -40,7 +40,7 @@
     <extension point="beam-ui:helpSets">
         <helpSet>
             <parent>beam-help</parent>
-            <path>doc/help/cloudscreening.hs</path>
+            <path>doc/help/noisereduction.hs</path>
         </helpSet>
     </extension>
 

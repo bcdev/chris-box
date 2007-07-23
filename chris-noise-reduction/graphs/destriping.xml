@@ -1,0 +1,80 @@
+<graph>
+    <id>destriping</id>
+
+    <node>
+        <id>load1</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile1}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load2</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile2}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load3</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile3}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load4</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile4}</filePath>
+        </parameters>
+    </node>
+    
+    <node>
+        <id>load5</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
+        <parameters>
+            <filePath>${inputFile5}</filePath>
+        </parameters>
+    </node>
+
+    <node>
+        <id>destriping-factors</id>
+        <operator>org.esa.beam.chris.operators.VsCorrectionFactorsOperator$Spi</operator>
+        <sources>
+            <input1>load1</input1>
+            <input2>load2</input2>
+            <input3>load3</input3>
+            <input4>load4</input4>
+            <input5>load5</input5>
+        </sources>
+        <parameters>
+            <smoothingOrder>27</smoothingOrder>
+        </parameters>
+    </node>
+
+    <node>
+        <id>destriping</id>
+        <operator>org.esa.beam.chris.operators.VsRemovalOperator$Spi</operator>
+        <sources>
+            <input>load1</input>
+            <factors>destriping-factors</factors>
+        </sources>
+    </node>
+
+    <node>
+        <id>write</id>
+        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
+        <sources>
+            <input>destriping</input>
+        </sources>
+        <parameters>
+            <filePath>${outputFile1}</filePath>
+        </parameters>
+    </node>
+
+</graph>
+        
