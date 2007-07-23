@@ -3,7 +3,7 @@
     <symbolicName>chris-noise-reduction</symbolicName>
     <version>1.0-SNAPSHOT</version>
     <name>chris-noise-reduction</name>
-    <description>BEAM CHRIS Noise Reduction Module</description>
+    <description>CHRIS Noise Reduction Module</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -29,7 +29,7 @@
             <id>chrisNoiseReduction</id>
             <class>org.esa.beam.chris.ui.NoiseReductionAction</class>
             <text>Noise Reduction (CHRIS)....</text>
-            <shortDescr>Invoke the BEAM CHRIS Noise Reduction Tool.</shortDescr>
+            <shortDescr>Invoke the CHRIS Noise Reduction Tool</shortDescr>
             <mnemonic></mnemonic>
             <parent>tools</parent>
             <helpID>chrisNoiseReductionTool</helpID>
