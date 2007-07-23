@@ -35,13 +35,12 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
-import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.Rectangle;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import static java.lang.Math.*;
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -538,13 +537,13 @@ public class DestripingFactorsOp extends AbstractOperator {
      *                           image input stream could not be created.
      */
     private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final URL url = DestripingFactorsOp.class.getResource(name);
+        final InputStream is = DestripingFactorsOp.class.getResourceAsStream(name);
 
-        if (url == null) {
+        if (is == null) {
             throw new OperatorException(MessageFormat.format("resource {0} not found", name));
         }
         try {
-            return new FileImageInputStream(new File(url.toURI().getPath()));
+            return new FileCacheImageInputStream(is, null);
         } catch (Exception e) {
             throw new OperatorException(MessageFormat.format(
                     "could not create image input stream for resource {0}", name), e);
