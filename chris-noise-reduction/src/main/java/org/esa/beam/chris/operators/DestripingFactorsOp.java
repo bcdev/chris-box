@@ -81,7 +81,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     private transient Band[][] sourceMaskBands;
     private transient Band[] targetBands;
     private transient Panorama panorama;
-    private boolean[][] edge;
+    private boolean[][] edgeMask;
     private double[] slitNoiseFactors;
 
     /**
@@ -164,10 +164,10 @@ public class DestripingFactorsOp extends AbstractOperator {
         final int work = panorama.height + 5;
 
         try {
-            if (edge == null) {
+            if (edgeMask == null) {
                 final int edgeMaskWork = spectralBandCount + panorama.width + 2;
                 pm.beginTask("computing correction factors...", work + edgeMaskWork);
-                edge = createEdgeMask(new SubProgressMonitor(pm, edgeMaskWork));
+                edgeMask = createEdgeMask(new SubProgressMonitor(pm, edgeMaskWork));
             } else {
                 pm.beginTask("computing correction factors...", work);
             }
@@ -189,7 +189,8 @@ public class DestripingFactorsOp extends AbstractOperator {
         targetBands = null;
         panorama = null;
         smoother = null;
-        edge = null;
+        edgeMask = null;
+        slitNoiseFactors = null;
     }
 
     /**
@@ -220,7 +221,7 @@ public class DestripingFactorsOp extends AbstractOperator {
                     for (int x = 1; x < rci.getWidth(); ++x) {
                         final double r2 = getDouble(rci, x, y);
 
-                        if (!edge[panorama.getY(j, y)][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
+                        if (!edgeMask[panorama.getY(j, y)][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
                             p[x] += log(r2 / r1);
                             ++count[x];
                         }
@@ -381,17 +382,17 @@ public class DestripingFactorsOp extends AbstractOperator {
             final double threshold = min(max(getEdgeDetectionThreshold(sourceProducts[0]), minThreshold), maxThreshold);
 
             // 4. Create the edge mask
-            final boolean[][] edge = new boolean[panorama.height][panorama.width];
+            final boolean[][] edgeMask = new boolean[panorama.height][panorama.width];
             for (int y = 0; y < panorama.height; ++ y) {
                 for (int x = 1; x < panorama.width; ++x) {
                     if (sad[x][y] > threshold) {
-                        edge[y][x] = true;
+                        edgeMask[y][x] = true;
                     }
                 }
             }
             pm.worked(1);
 
-            return edge;
+            return edgeMask;
         } finally {
             pm.done();
         }
