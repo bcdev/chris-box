@@ -59,11 +59,15 @@ class AdvancedSettingsPanel extends JPanel {
         setLayout(new BorderLayout(5, 5));
 
         slitCorrectionCheckBox = new JCheckBox();
+        slitCorrectionCheckBox.setName("slitCorrectionCheckBox");
 
         smoothingOrderSpinner = new JSpinner();
+        smoothingOrderSpinner.setName("smoothingOrderSpinner");
         neighborBandCountComboBox = new JSpinner();
+        neighborBandCountComboBox.setName("neighborBandCountComboBox");
         JLabel neighbourhoodLabel = new JLabel();
         neighborhoodComboBox = new JComboBox();
+        neighborhoodComboBox.setName("neighborhoodComboBox");
 
         JPanel advancedSettingsPanel = new JPanel(new GridBagLayout());
 
