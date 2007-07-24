@@ -129,11 +129,16 @@ class NoiseReductionPanel extends JPanel {
         JPanel aquisitionSetPanel = new JPanel();
         JScrollPane acquisitionScrollPane = new JScrollPane();
         aquisitionSetTable = new JTable();
+        aquisitionSetTable.setName("aquisitionSetTable");
         addButton = new JButton();
+        addButton.setName("addButton");
         removeButton = new JButton();
+        removeButton.setName("removeButton");
         JPanel metadataPanel = new JPanel();
         metadataTable = new JTable();
+        metadataTable.setName("metadataTable");
         advancedSettingsButton = new JButton();
+        advancedSettingsButton.setName("advancedSettingsButton");
 
         setLayout(new BorderLayout(5, 5));
 
