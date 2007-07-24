@@ -19,7 +19,7 @@ import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.dataio.chris.internal.Sort;
+import org.esa.beam.dataio.chris.internal.Algorithm;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
@@ -374,8 +374,8 @@ public class DestripingFactorsOp extends AbstractOperator {
             // 3. Adjust the edge-detection threshold
             for (int x = 1; x < panorama.width; ++x) {
                 final double[] values = Arrays.copyOf(sad[x], panorama.height);
-                minThreshold = max(minThreshold, Sort.nthElement(values, minIndex));
-                maxThreshold = max(maxThreshold, Sort.nthElement(values, maxIndex, minIndex + 1, values.length - 1));
+                minThreshold = max(minThreshold, Algorithm.nthElement(values, minIndex));
+                maxThreshold = max(maxThreshold, Algorithm.nthElement(values, maxIndex));
 
                 pm.worked(1);
             }
