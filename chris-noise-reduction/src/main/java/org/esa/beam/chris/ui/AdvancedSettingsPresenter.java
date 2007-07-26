@@ -10,6 +10,7 @@ import org.esa.beam.framework.gpf.annotations.ParameterDefinitionFactory;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Marco Peters.
@@ -28,8 +29,8 @@ class AdvancedSettingsPresenter {
         }
     }
 
-    private HashMap<String, Object> destripingParameterMap;
-    private HashMap<String, Object> dropoutCorrectionParameterMap;
+    private Map<String, Object> destripingParameterMap;
+    private Map<String, Object> dropoutCorrectionParameterMap;
     private ValueContainer destripingValueContainer;
     private ValueContainer dropoutCorrectionValueContainer;
 
@@ -40,8 +41,8 @@ class AdvancedSettingsPresenter {
         initValueContainers();
     }
 
-    private AdvancedSettingsPresenter(HashMap<String, Object> destripingParameterMap,
-                                      HashMap<String, Object> dropoutCorrectionParameterMap) {
+    private AdvancedSettingsPresenter(Map<String, Object> destripingParameterMap,
+                                      Map<String, Object> dropoutCorrectionParameterMap) {
         this.destripingParameterMap = new HashMap<String, Object>(destripingParameterMap);
         this.dropoutCorrectionParameterMap = new HashMap<String, Object>(dropoutCorrectionParameterMap);
 
@@ -60,11 +61,11 @@ class AdvancedSettingsPresenter {
         return destripingValueContainer;
     }
 
-    public HashMap<String, Object> getDestripingParameterMap() {
+    public Map<String, Object> getDestripingParameterMap() {
         return destripingParameterMap;
     }
 
-    public HashMap<String, Object> getDropoutCorrectionParameterMap() {
+    public Map<String, Object> getDropoutCorrectionParameterMap() {
         return dropoutCorrectionParameterMap;
     }
 

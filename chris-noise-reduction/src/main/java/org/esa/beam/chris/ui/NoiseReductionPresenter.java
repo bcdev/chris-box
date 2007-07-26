@@ -26,8 +26,8 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 /**
@@ -88,11 +88,11 @@ class NoiseReductionPresenter {
         }
     }
 
-    public HashMap<String, Object> getDestripingParameterMap() {
+    public Map<String, Object> getDestripingParameterMap() {
         return advancedSettingsPresenter.getDestripingParameterMap();
     }
 
-    public HashMap<String, Object> getDropoutCorrectionParameterMap() {
+    public Map<String, Object> getDropoutCorrectionParameterMap() {
         return advancedSettingsPresenter.getDropoutCorrectionParameterMap();
     }
 
