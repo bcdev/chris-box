@@ -113,7 +113,7 @@ public class NoiseReductionAction extends ExecCommand {
                     GPF.createProduct("DestripingFactors",
                                       presenter.getDestripingParameterMap(),
                                       presenter.getProducts(),
-                                      new SubProgressMonitor(pm, 10));
+                                      SubProgressMonitor.create(pm, 10));
 
             final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
             productsMap.put("factors", factors);
@@ -125,13 +125,13 @@ public class NoiseReductionAction extends ExecCommand {
                         GPF.createProduct("Destriping",
                                           new HashMap<String, Object>(0),
                                           productsMap,
-                                          new SubProgressMonitor(pm, 10));
+                                          SubProgressMonitor.create(pm, 10));
 
                 final Product targetProduct =
                         GPF.createProduct("DropoutCorrection",
                                           presenter.getDropoutCorrectionParameterMap(),
                                           destriped,
-                                          new SubProgressMonitor(pm, 10));
+                                          SubProgressMonitor.create(pm, 10));
 
                 VisatApp.getApp().addProduct(targetProduct);
             }

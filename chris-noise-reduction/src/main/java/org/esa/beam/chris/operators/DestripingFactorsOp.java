@@ -167,13 +167,13 @@ public class DestripingFactorsOp extends AbstractOperator {
             if (edgeMask == null) {
                 final int edgeMaskWork = spectralBandCount + panorama.width + 2;
                 pm.beginTask("computing correction factors...", work + edgeMaskWork);
-                edgeMask = createEdgeMask(new SubProgressMonitor(pm, edgeMaskWork));
+                edgeMask = createEdgeMask(SubProgressMonitor.create(pm, edgeMaskWork));
             } else {
                 pm.beginTask("computing correction factors...", work);
             }
             for (int i = 0; i < targetBands.length; ++i) {
                 if (targetBands[i].equals(targetNode)) {
-                    computeCorrectionFactors(i, targetRaster, new SubProgressMonitor(pm, work));
+                    computeCorrectionFactors(i, targetRaster, SubProgressMonitor.create(pm, work));
                     return;
                 }
             }
