@@ -120,9 +120,8 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        final Band targetBand = (Band) targetRaster.getRasterDataNode();
-        final int bandIndex = targetBand.getSpectralBandIndex();
+    public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        final int bandIndex = band.getSpectralBandIndex();
 
         final int minBandIndex = max(bandIndex - neighborBandCount, 0);
         final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
@@ -149,7 +148,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
 
             final int[] targetRciData;
             final short[] targetMaskData;
-            if (targetBand.equals(targetRciBands[bandIndex])) {
+            if (band.equals(targetRciBands[bandIndex])) {
                 targetRciData = (int[]) targetRaster.getDataBuffer().getElems();
                 targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
             } else {

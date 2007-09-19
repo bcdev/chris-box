@@ -61,7 +61,8 @@ public class DestripingOp extends AbstractOperator {
         super(spi);
     }
 
-    protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    @Override
+	protected Product initialize(ProgressMonitor pm) throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType() + "_NR",
@@ -92,8 +93,8 @@ public class DestripingOp extends AbstractOperator {
     }
 
     @Override
-    public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        final String name = targetRaster.getRasterDataNode().getName();
+    public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        final String name = band.getName();
 
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetRaster, pm);

@@ -25,7 +25,6 @@ import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.datamodel.RasterDataNode;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -93,7 +92,8 @@ public class DestripingFactorsOp extends AbstractOperator {
         super(spi);
     }
 
-    protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    @Override
+	protected Product initialize(ProgressMonitor pm) throws OperatorException {
         for (Product sourceProduct : sourceProducts) {
             assertValidity(sourceProduct);
         }
@@ -159,8 +159,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     @Override
-    public void computeBand(Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        final RasterDataNode targetNode = targetRaster.getRasterDataNode();
+    public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
         final int work = panorama.height + 5;
 
         try {
@@ -172,7 +171,7 @@ public class DestripingFactorsOp extends AbstractOperator {
                 pm.beginTask("computing correction factors...", work);
             }
             for (int i = 0; i < targetBands.length; ++i) {
-                if (targetBands[i].equals(targetNode)) {
+                if (targetBands[i].equals(band)) {
                     computeCorrectionFactors(i, targetRaster, SubProgressMonitor.create(pm, work));
                     return;
                 }
