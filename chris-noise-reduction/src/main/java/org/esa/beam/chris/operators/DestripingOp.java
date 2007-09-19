@@ -96,29 +96,51 @@ public class DestripingOp extends AbstractOperator {
         final String name = targetRaster.getRasterDataNode().getName();
 
         if (name.startsWith("radiance")) {
-            try {
-                pm.beginTask("removing vertical striping artifacts", targetRaster.getHeight());
-
-                final Band sourceBand = sourceProduct.getBand(name);
-                final Band factorBand = factorProduct.getBand(name.replace("radiance", "vs_corr"));
-
-                final Rectangle sourceRectangle = targetRaster.getRectangle();
-                final Rectangle factorRectangle = new Rectangle(0, 0, factorBand.getSceneRasterWidth(), 1);
-                final Raster sourceRaster = getRaster(sourceBand, sourceRectangle);
-                final Raster factorRaster = getRaster(factorBand, factorRectangle);
-
-                for (int y = sourceRectangle.y; y < sourceRectangle.y + sourceRectangle.height; ++y) {
-                    for (int x = sourceRectangle.x; x < sourceRectangle.x + sourceRectangle.width; ++x) {
-                        final int value = (int) (sourceRaster.getInt(x, y) * factorRaster.getDouble(x, 0) + 0.5);
-                        targetRaster.setInt(x, y, value);
-                    }
-                    pm.worked(1);
-                }
-            } finally {
-                pm.done();
-            }
+            computeRciBand(name, targetRaster, pm);
         } else {
-            getRaster(sourceProduct.getBand(name), targetRaster.getRectangle(), targetRaster.getDataBuffer());
+            computeMaskBand(name, targetRaster, pm);
+        }
+    }
+
+    private void computeRciBand(String name, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        try {
+            pm.beginTask("removing vertical striping artifacts", targetRaster.getHeight());
+
+            final Band sourceBand = sourceProduct.getBand(name);
+            final Band factorBand = factorProduct.getBand(name.replace("radiance", "vs_corr"));
+
+            final Rectangle targetRectangle = targetRaster.getRectangle();
+            final Rectangle factorRectangle = new Rectangle(0, 0, factorBand.getSceneRasterWidth(), 1);
+            final Raster sourceRaster = getRaster(sourceBand, targetRectangle);
+            final Raster factorRaster = getRaster(factorBand, factorRectangle);
+
+            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
+                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                    final int value = (int) (sourceRaster.getInt(x, y) * factorRaster.getDouble(x, 0) + 0.5);
+                    targetRaster.setInt(x, y, value);
+                }
+                pm.worked(1);
+            }
+        } finally {
+            pm.done();
+        }
+    }
+
+    private void computeMaskBand(String name, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        try {
+            pm.beginTask("copying mask band", targetRaster.getHeight());
+
+            final Rectangle targetRectangle = targetRaster.getRectangle();
+            final Raster sourceRaster = getRaster(sourceProduct.getBand(name), targetRaster.getRectangle());
+
+            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
+                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                    targetRaster.setInt(x, y, sourceRaster.getInt(x, y));
+                }
+                pm.worked(1);
+            }
+        } finally {
+            pm.done();
         }
     }
 

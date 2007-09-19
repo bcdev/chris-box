@@ -34,10 +34,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 /**
@@ -134,6 +134,7 @@ public class NoiseReductionAction extends ExecCommand {
                                           SubProgressMonitor.create(pm, 10));
 
                 VisatApp.getApp().addProduct(targetProduct);
+//                VisatApp.getApp().addProduct(destriped);
             }
         } finally {
             pm.done();

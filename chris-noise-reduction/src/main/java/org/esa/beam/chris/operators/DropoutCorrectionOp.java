@@ -54,7 +54,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     private Integer neighborBandCount;
 
     @Parameter(defaultValue = "N4", valueSet = {"N4", "N8"})
-    private DropoutCorrection.Neigborhood neighborhood;
+    private DropoutCorrection.Type neighborhoodType;
 
     private DropoutCorrection dropoutCorrection;
     private int spectralBandCount;
@@ -114,7 +114,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
-        dropoutCorrection = new DropoutCorrection(neighborhood);
+        dropoutCorrection = new DropoutCorrection(neighborhoodType);
 
         return targetProduct;
     }

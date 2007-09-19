@@ -40,7 +40,7 @@ class AdvancedSettingsPanel extends JPanel {
         destripingBinding.bind(smoothingOrderSpinner, "smoothingOrder");
         SwingBindingContext dropoutCorrectionBinding = new SwingBindingContext(presenter.getDropoutCorrectionValueContainer());
         dropoutCorrectionBinding.bind(neighborBandCountComboBox, "neighborBandCount");
-        dropoutCorrectionBinding.bind(neighborhoodComboBox, "neighborhood");
+        dropoutCorrectionBinding.bind(neighborhoodComboBox, "neighborhoodType");
         neighborhoodComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
@@ -65,12 +65,11 @@ class AdvancedSettingsPanel extends JPanel {
         smoothingOrderSpinner.setName("smoothingOrderSpinner");
         neighborBandCountComboBox = new JSpinner();
         neighborBandCountComboBox.setName("neighborBandCountComboBox");
-        JLabel neighbourhoodLabel = new JLabel();
+        JLabel neighborhoodLabel = new JLabel();
         neighborhoodComboBox = new JComboBox();
         neighborhoodComboBox.setName("neighborhoodComboBox");
 
         JPanel advancedSettingsPanel = new JPanel(new GridBagLayout());
-
         JPanel verticalStripingPanel = new JPanel(new GridBagLayout());
 
         verticalStripingPanel.setBorder(BorderFactory.createTitledBorder(null,
@@ -132,7 +131,7 @@ class AdvancedSettingsPanel extends JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new Insets(0, 3, 3, 10);
-        dropoutPanel.add(new JLabel("Number of Spectral Bands:"), gridBagConstraints);
+        dropoutPanel.add(new JLabel("Number of Neighbor Bands:"), gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -142,12 +141,12 @@ class AdvancedSettingsPanel extends JPanel {
         gridBagConstraints.insets = new Insets(0, 0, 3, 3);
         dropoutPanel.add(neighborBandCountComboBox, gridBagConstraints);
 
-        neighbourhoodLabel.setText("Neighborhood:");
+        neighborhoodLabel.setText("Neighborhood Type:");
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new Insets(0, 3, 0, 10);
-        dropoutPanel.add(neighbourhoodLabel, gridBagConstraints);
+        dropoutPanel.add(neighborhoodLabel, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
