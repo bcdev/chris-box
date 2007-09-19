@@ -111,7 +111,7 @@ public class DestripingOp extends AbstractOperator {
             final Band factorBand = factorProduct.getBand(name.replace("radiance", "vs_corr"));
 
             final Rectangle targetRectangle = targetRaster.getRectangle();
-            final Rectangle factorRectangle = new Rectangle(0, 0, factorBand.getSceneRasterWidth(), 1);
+            final Rectangle factorRectangle = new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1);
             final Raster sourceRaster = getRaster(sourceBand, targetRectangle);
             final Raster factorRaster = getRaster(factorBand, factorRectangle);
 

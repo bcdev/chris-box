@@ -150,10 +150,12 @@ public class DropoutCorrectionOp extends AbstractOperator {
             final short[] targetMaskData;
             if (band.equals(targetRciBands[bandIndex])) {
                 targetRciData = (int[]) targetRaster.getDataBuffer().getElems();
-                targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
+//                targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
+                targetMaskData = new short[targetRciData.length];
             } else {
-                targetRciData = (int[]) getRasterData(targetRciBands[bandIndex], targetRectangle);
+//                targetRciData = (int[]) getRasterData(targetRciBands[bandIndex], targetRectangle);
                 targetMaskData = (short[]) targetRaster.getDataBuffer().getElems();
+                targetRciData = new int[targetMaskData.length];
             }
 
             dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
