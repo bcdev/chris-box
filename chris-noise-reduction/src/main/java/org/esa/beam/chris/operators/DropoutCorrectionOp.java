@@ -36,6 +36,7 @@ import java.awt.Rectangle;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import java.text.MessageFormat;
+import java.util.Map;
 
 /**
  * Operator for computing the CHRIS dropout correction.
@@ -119,6 +120,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
         return targetProduct;
     }
 
+    /*
     @Override
     public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
         final int bandIndex = band.getSpectralBandIndex();
@@ -168,6 +170,27 @@ public class DropoutCorrectionOp extends AbstractOperator {
             pm.done();
         }
     }
+    */
+
+    @Override
+    public void computeAllBands(Map<Band, Raster> targetRasterMap, Rectangle targetRectangle, ProgressMonitor pm)
+            throws OperatorException {
+        System.out.println("DropoutCorrection.computeAllBands()");
+        try {
+            pm.beginTask("computing dropout correction", spectralBandCount);
+            final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
+            final Rectangle sourceRoi = new Rectangle(targetRectangle.x - sourceRectangle.x,
+                                                      targetRectangle.y - sourceRectangle.y,
+                                                      targetRectangle.width, targetRectangle.height);
+
+            for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {
+                computeDropoutCorrection(bandIndex, targetRasterMap, targetRectangle, sourceRectangle, sourceRoi);
+                pm.worked(1);
+            }
+        } finally {
+            pm.done();
+        }
+    }
 
     @Override
     public void dispose() {
@@ -176,6 +199,33 @@ public class DropoutCorrectionOp extends AbstractOperator {
         sourceMaskBands = null;
         targetRciBands = null;
         targetMaskBands = null;
+    }
+
+    private void computeDropoutCorrection(int bandIndex, Map<Band, Raster> targetRasterMap, Rectangle targetRectangle,
+                                          Rectangle sourceRectangle, Rectangle sourceRoi) throws OperatorException {
+        final int minBandIndex = max(bandIndex - neighborBandCount, 0);
+        final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
+        final int bandCount = maxBandIndex - minBandIndex + 1;
+
+        final int[][] sourceRciData = new int[bandCount][];
+        final short[][] sourceMaskData = new short[bandCount][];
+
+        for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
+            if (i != bandIndex) {
+                sourceRciData[j] = getRasterDataInt(sourceRciBands[i], sourceRectangle);
+                sourceMaskData[j] = getRasterDataShort(sourceMaskBands[i], sourceRectangle);
+                ++j;
+            } else {
+                sourceRciData[0] = getRasterDataInt(sourceRciBands[i], sourceRectangle);
+                sourceMaskData[0] = getRasterDataShort(sourceMaskBands[i], sourceRectangle);
+            }
+        }
+
+        final int[] targetRciData = getRasterDataInt(targetRasterMap, targetRciBands[bandIndex]);
+        final short[] targetMaskData = getRasterDataShort(targetRasterMap, targetMaskBands[bandIndex]);
+
+        dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
+                                  sourceRoi, targetRciData, targetMaskData, 0, 0, targetRectangle.width);
     }
 
     private Rectangle createSourceRectangle(Rectangle targetRectangle) {
@@ -202,8 +252,20 @@ public class DropoutCorrectionOp extends AbstractOperator {
         return new Rectangle(x, y, width, height);
     }
 
-    private Object getRasterData(Band band, Rectangle rectangle) throws OperatorException {
-        return getRaster(band, rectangle).getDataBuffer().getElems();
+    private int[] getRasterDataInt(Map<Band, Raster> rasterMap, Band band) {
+        return (int[]) rasterMap.get(band).getDataBuffer().getElems();
+    }
+
+    private int[] getRasterDataInt(Band band, Rectangle rectangle) throws OperatorException {
+        return (int[]) getRaster(band, rectangle).getDataBuffer().getElems();
+    }
+
+    private short[] getRasterDataShort(Map<Band, Raster> rasterMap, Band band) {
+        return (short[]) rasterMap.get(band).getDataBuffer().getElems();
+    }
+
+    private short[] getRasterDataShort(Band band, Rectangle rectangle) throws OperatorException {
+        return (short[]) getRaster(band, rectangle).getDataBuffer().getElems();
     }
 
     private static void assertValidity(Product product) throws OperatorException {

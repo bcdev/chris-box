@@ -160,6 +160,7 @@ public class DestripingFactorsOp extends AbstractOperator {
 
     @Override
     public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+        System.out.println("DestripingFactors: " + band.getName());
         final int work = panorama.height + 5;
 
         try {

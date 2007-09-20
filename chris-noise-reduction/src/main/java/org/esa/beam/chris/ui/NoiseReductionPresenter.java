@@ -1,11 +1,15 @@
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.binding.Factory;
+import com.bc.ceres.binding.ValueContainer;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.ChrisProductReaderPlugIn;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.annotations.Parameter;
+import org.esa.beam.framework.gpf.annotations.ParameterDefinitionFactory;
 import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.util.SystemUtils;
 import org.esa.beam.util.io.BeamFileChooser;
@@ -26,6 +30,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -50,7 +55,11 @@ class NoiseReductionPresenter {
 
     private Window window;
 
+    @Parameter(defaultValue = "true")
+    private Boolean writeToFile;
+
     private AdvancedSettingsPresenter advancedSettingsPresenter;
+    private ValueContainer writeValueContainer;
 
     public NoiseReductionPresenter(Product[] products, AdvancedSettingsPresenter advancedSettingsPresenter) {
         Object[][] productsData = new Object[products.length][2];
@@ -86,6 +95,10 @@ class NoiseReductionPresenter {
         if (products.length > 0) {
             productTableSelectionModel.setSelectionInterval(0, 0);
         }
+
+        final Factory factory = new Factory(new ParameterDefinitionFactory());
+        writeValueContainer = factory.createMapBackedValueContainer(getClass(), new HashMap<String, Object>());
+
     }
 
     public Map<String, Object> getDestripingParameterMap() {
@@ -134,6 +147,18 @@ class NoiseReductionPresenter {
 
     public Window getWindow() {
         return window;
+    }
+
+    public boolean isWriteToFile() {
+        return (Boolean) writeValueContainer.getValue("writeToFile");
+    }
+
+    public void setWriteToFile(boolean writeToFile) {
+        this.writeToFile = writeToFile;
+    }
+
+    public ValueContainer getWriteValueContainer() {
+        return writeValueContainer;
     }
 
     public Product[] getProducts() {
@@ -261,6 +286,7 @@ class NoiseReductionPresenter {
     private static class AddProductAction extends AbstractAction {
 
         private static String LAST_OPEN_DIR_KEY = "chris.ui.file.lastOpenDir";
+
         private static String CHRIS_IMPORT_DIR_KEY = "user." + ChrisConstants.FORMAT_NAME.toLowerCase() + ".import.dir";
 
         private NoiseReductionPresenter presenter;
@@ -310,6 +336,7 @@ class NoiseReductionPresenter {
             }
 
         }
+
     }
 
     private class RemoveProductAction extends AbstractAction {
@@ -324,6 +351,7 @@ class NoiseReductionPresenter {
         public void actionPerformed(ActionEvent e) {
             presenter.removeSelectedProduct();
         }
+
     }
 
     private class AdvancedSettingsAction extends AbstractAction {
@@ -347,6 +375,7 @@ class NoiseReductionPresenter {
                 presenter.setAdvancedSettingsPresenter(workingCopy);
             }
         }
+
     }
 
 

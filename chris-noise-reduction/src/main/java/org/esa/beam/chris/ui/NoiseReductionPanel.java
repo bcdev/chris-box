@@ -1,11 +1,14 @@
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.binding.ValueContainer;
+import com.bc.ceres.binding.swing.SwingBindingContext;
 import com.jidesoft.grid.BooleanCheckBoxCellEditor;
 import com.jidesoft.grid.BooleanCheckBoxCellRenderer;
 import org.esa.beam.framework.datamodel.Product;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -34,13 +37,15 @@ import java.util.EventObject;
  */
 class NoiseReductionPanel extends JPanel {
 
-    private JTable aquisitionSetTable;
+    private JTable acquisitionSetTable;
     private JTable metadataTable;
+    private JCheckBox writeToFileCheckBox;
 
     private JButton addButton;
     private JButton removeButton;
 
     private JButton advancedSettingsButton;
+    private ValueContainer writeToFileValueContainer;
 
     /**
      * Creates new form NRPanel
@@ -51,16 +56,16 @@ class NoiseReductionPanel extends JPanel {
     }
 
     private void bindComponents(NoiseReductionPresenter presenter) {
-        aquisitionSetTable.setModel(presenter.getProductTableModel());
-        aquisitionSetTable.setSelectionModel(presenter.getProductTableSelectionModel());
+        acquisitionSetTable.setModel(presenter.getProductTableModel());
+        acquisitionSetTable.setSelectionModel(presenter.getProductTableSelectionModel());
 
-        TableColumn column1 = aquisitionSetTable.getColumnModel().getColumn(0);
+        TableColumn column1 = acquisitionSetTable.getColumnModel().getColumn(0);
         column1.setCellRenderer(new BooleanCheckBoxCellRenderer());
         column1.setCellEditor(new BooleanCheckBoxCellEditor());
         column1.setPreferredWidth(60);
         column1.setMaxWidth(60);
 
-        TableColumn column2 = aquisitionSetTable.getColumnModel().getColumn(1);
+        TableColumn column2 = acquisitionSetTable.getColumnModel().getColumn(1);
         column2.setCellRenderer(
                 new DefaultTableCellRenderer() {
                     @Override
@@ -114,6 +119,9 @@ class NoiseReductionPanel extends JPanel {
         addButton.setAction(presenter.getAddProductAction());
         removeButton.setAction(presenter.getRemoveProductAction());
         advancedSettingsButton.setAction(presenter.getSettingsAction());
+
+        new SwingBindingContext(presenter.getWriteValueContainer(), null).bind(writeToFileCheckBox, "writeToFile");
+
     }
 
     /**
@@ -126,10 +134,10 @@ class NoiseReductionPanel extends JPanel {
         GridBagConstraints gridBagConstraints;
 
         JPanel dataPanel = new JPanel();
-        JPanel aquisitionSetPanel = new JPanel();
+        JPanel acquisitionSetPanel = new JPanel();
         JScrollPane acquisitionScrollPane = new JScrollPane();
-        aquisitionSetTable = new JTable();
-        aquisitionSetTable.setName("aquisitionSetTable");
+        acquisitionSetTable = new JTable();
+        acquisitionSetTable.setName("acquisitionSetTable");
         addButton = new JButton();
         addButton.setName("addButton");
         removeButton = new JButton();
@@ -139,23 +147,24 @@ class NoiseReductionPanel extends JPanel {
         metadataTable.setName("metadataTable");
         advancedSettingsButton = new JButton();
         advancedSettingsButton.setName("advancedSettingsButton");
+        writeToFileCheckBox = new JCheckBox("Write output to source folder");
 
         setLayout(new BorderLayout(5, 5));
 
         dataPanel.setLayout(new BorderLayout());
 
-        aquisitionSetPanel.setLayout(new GridBagLayout());
+        acquisitionSetPanel.setLayout(new GridBagLayout());
 
-        aquisitionSetPanel.setBorder(BorderFactory.createTitledBorder(null, "Acquisition Set",
+        acquisitionSetPanel.setBorder(BorderFactory.createTitledBorder(null, "Acquisition Set",
                                                                       TitledBorder.DEFAULT_JUSTIFICATION,
                                                                       TitledBorder.DEFAULT_POSITION,
                                                                       new Font("Tahoma", 0, 11),
                                                                       new Color(0, 70, 213)));
-        aquisitionSetPanel.setPreferredSize(new Dimension(450, 200));
+        acquisitionSetPanel.setPreferredSize(new Dimension(450, 200));
         acquisitionScrollPane.setPreferredSize(new Dimension(300, 150));
-        aquisitionSetTable.setPreferredSize(new Dimension(300, 150));
-        aquisitionSetTable.setFillsViewportHeight(true);
-        acquisitionScrollPane.setViewportView(aquisitionSetTable);
+        acquisitionSetTable.setPreferredSize(new Dimension(300, 150));
+        acquisitionSetTable.setFillsViewportHeight(true);
+        acquisitionScrollPane.setViewportView(acquisitionSetTable);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -165,22 +174,28 @@ class NoiseReductionPanel extends JPanel {
         gridBagConstraints.anchor = GridBagConstraints.NORTH;
         gridBagConstraints.weightx = 0.8;
         gridBagConstraints.weighty = 1.0;
-        aquisitionSetPanel.add(acquisitionScrollPane, gridBagConstraints);
+        acquisitionSetPanel.add(acquisitionScrollPane, gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        aquisitionSetPanel.add(addButton, gridBagConstraints);
+        acquisitionSetPanel.add(addButton, gridBagConstraints);
 
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        aquisitionSetPanel.add(removeButton, gridBagConstraints);
+        acquisitionSetPanel.add(removeButton, gridBagConstraints);
 
-        dataPanel.add(aquisitionSetPanel, BorderLayout.CENTER);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        acquisitionSetPanel.add(writeToFileCheckBox, gridBagConstraints);
+
+        dataPanel.add(acquisitionSetPanel, BorderLayout.CENTER);
 
         metadataPanel.setLayout(new GridBagLayout());
 
