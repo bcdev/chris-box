@@ -120,62 +120,9 @@ public class DropoutCorrectionOp extends AbstractOperator {
         return targetProduct;
     }
 
-    /*
-    @Override
-    public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        final int bandIndex = band.getSpectralBandIndex();
-
-        final int minBandIndex = max(bandIndex - neighborBandCount, 0);
-        final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
-        final int bandCount = maxBandIndex - minBandIndex + 1;
-
-        final Rectangle targetRectangle = targetRaster.getRectangle();
-        final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
-        final int[][] sourceRciData = new int[bandCount][];
-        final short[][] sourceMaskData = new short[bandCount][];
-
-        try {
-            pm.beginTask("computing dropout correction", bandCount + 1);
-            for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
-                if (i != bandIndex) {
-                    sourceRciData[j] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
-                    sourceMaskData[j] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
-                    ++j;
-                } else {
-                    sourceRciData[0] = (int[]) getRasterData(sourceRciBands[i], sourceRectangle);
-                    sourceMaskData[0] = (short[]) getRasterData(sourceMaskBands[i], sourceRectangle);
-                }
-                pm.worked(1);
-            }
-
-            final int[] targetRciData;
-            final short[] targetMaskData;
-            if (band.equals(targetRciBands[bandIndex])) {
-                targetRciData = (int[]) targetRaster.getDataBuffer().getElems();
-//                targetMaskData = (short[]) getRasterData(targetMaskBands[bandIndex], targetRectangle);
-                targetMaskData = new short[targetRciData.length];
-            } else {
-//                targetRciData = (int[]) getRasterData(targetRciBands[bandIndex], targetRectangle);
-                targetMaskData = (short[]) targetRaster.getDataBuffer().getElems();
-                targetRciData = new int[targetMaskData.length];
-            }
-
-            dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
-                                      new Rectangle(targetRectangle.x - sourceRectangle.x,
-                                                    targetRectangle.y - sourceRectangle.y,
-                                                    targetRectangle.width, targetRectangle.height),
-                                      targetRciData, targetMaskData, 0, 0, targetRectangle.width);
-            pm.worked(1);
-        } finally {
-            pm.done();
-        }
-    }
-    */
-
     @Override
     public void computeAllBands(Map<Band, Raster> targetRasterMap, Rectangle targetRectangle, ProgressMonitor pm)
             throws OperatorException {
-        System.out.println("DropoutCorrection.computeAllBands()");
         try {
             pm.beginTask("computing dropout correction", spectralBandCount);
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
