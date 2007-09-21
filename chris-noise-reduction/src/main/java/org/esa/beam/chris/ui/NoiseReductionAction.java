@@ -61,13 +61,14 @@ public class NoiseReductionAction extends ExecCommand {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         final Product[] acquisitionSet = getAcquisitionSet(selectedProduct);
 
-        final NoiseReductionPresenter presenter = new NoiseReductionPresenter(acquisitionSet,
-                                                                              new AdvancedSettingsPresenter());
-        final ModalDialog dialog = new ModalDialog(VisatApp.getApp().getMainFrame(),
-                                                   "CHRIS Noise Reduction",
-                                                   ModalDialog.ID_OK_CANCEL_HELP,
-                                                   "chrisNoiseReductionTool");
-        dialog.setContent(new NoiseReductionPanel(presenter));
+        final NoiseReductionPresenter presenter =
+                new NoiseReductionPresenter(acquisitionSet, new AdvancedSettingsPresenter());
+        final ModalDialog dialog =
+                new ModalDialog(VisatApp.getApp().getMainFrame(),
+                                "CHRIS Noise Reduction",
+                                ModalDialog.ID_OK_CANCEL_HELP,
+                                "chrisNoiseReductionTool");
+        dialog.setContent(new NoiseReductionForm(presenter));
 
         if (dialog.show() == ModalDialog.ID_OK) {
             final DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
@@ -77,21 +78,13 @@ public class NoiseReductionAction extends ExecCommand {
             try {
                 performNoiseReduction(presenter, pm);
             } catch (OperatorException e) {
-                for (final Product product : acquisitionSet) {
-                    if (!VisatApp.getApp().getProductManager().contains(product)) {
-                        product.dispose();
-                    }
-                }
+                disposeIntermediateProducts(acquisitionSet);
 
                 dialog.showErrorDialog(e.getMessage());
                 VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
             }
         } else {
-            for (final Product product : acquisitionSet) {
-                if (!VisatApp.getApp().getProductManager().contains(product)) {
-                    product.dispose();
-                }
-            }
+            disposeIntermediateProducts(acquisitionSet);
         }
     }
 
@@ -105,20 +98,28 @@ public class NoiseReductionAction extends ExecCommand {
         setEnabled(enabled);
     }
 
+    private static void disposeIntermediateProducts(Product[] products) {
+        for (final Product product : products) {
+            if (!VisatApp.getApp().getProductManager().contains(product)) {
+                product.dispose();
+            }
+        }
+    }
+
     private static void performNoiseReduction(NoiseReductionPresenter presenter, ProgressMonitor pm)
             throws OperatorException {
         try {
-            pm.beginTask("Performing CHRIS noise reduction", 20 * presenter.getProductsToBeCorrected().length + 10);
+            pm.beginTask("Performing CHRIS noise reduction", 20 * presenter.getCheckedProducts().length + 10);
             final Product factors =
                     GPF.createProduct("DestripingFactors",
                                       presenter.getDestripingParameterMap(),
-                                      presenter.getProducts(),
+                                      presenter.getListedProducts(),
                                       SubProgressMonitor.create(pm, 10));
 
             final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
             productsMap.put("factors", factors);
 
-            for (final Product sourceProduct : presenter.getProductsToBeCorrected()) {
+            for (final Product sourceProduct : presenter.getCheckedProducts()) {
                 productsMap.put("input", sourceProduct);
 
                 final Product destriped =
@@ -133,12 +134,6 @@ public class NoiseReductionAction extends ExecCommand {
                                           destriped,
                                           SubProgressMonitor.create(pm, 10));
 
-
-//                if (presenter.isWriteToFile()) {
-//                    final File targetFile = new File(sourceProduct.getFileLocation().getParentFile(),
-//                                                     targetProduct.getName());
-//                    VisatApp.getApp().writeProduct(targetProduct, targetFile, ProductIO.DEFAULT_FORMAT_NAME);
-//                }
                 VisatApp.getApp().addProduct(targetProduct);
             }
         } finally {

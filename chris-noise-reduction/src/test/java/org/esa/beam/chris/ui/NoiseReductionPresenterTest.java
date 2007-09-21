@@ -46,7 +46,7 @@ public class NoiseReductionPresenterTest extends TestCase {
     public void testConstuctor() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
-        Product[] actualProducts = nrp.getProducts();
+        Product[] actualProducts = nrp.getListedProducts();
         assertNotNull(actualProducts);
         assertEquals(3, actualProducts.length);
 
@@ -56,7 +56,7 @@ public class NoiseReductionPresenterTest extends TestCase {
 
         int selectionIndex = nrp.getProductTableSelectionModel().getMaxSelectionIndex();
         assertEquals(0, selectionIndex);
-        assertSame(first, nrp.getProducts()[selectionIndex]);
+        assertSame(first, nrp.getListedProducts()[selectionIndex]);
 
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
     }
@@ -76,32 +76,32 @@ public class NoiseReductionPresenterTest extends TestCase {
 
         Product fourth = createChrisDummyProduct("fourth", "chris", "DummyTarget4");
         nrp.addProduct(fourth);
-        assertEquals(4, nrp.getProducts().length);
-        assertSame(fourth, nrp.getProducts()[3]);
+        assertEquals(4, nrp.getListedProducts().length);
+        assertSame(fourth, nrp.getListedProducts()[3]);
         ListSelectionModel selectionModel = nrp.getProductTableSelectionModel();
         assertEquals(3, selectionModel.getMaxSelectionIndex());
 
         nrp.getProductTableSelectionModel().setSelectionInterval(2, 2);
 
         nrp.removeSelectedProduct();
-        assertEquals(3, nrp.getProducts().length);
-        assertSame(first, nrp.getProducts()[0]);
-        assertSame(second, nrp.getProducts()[1]);
-        assertSame(fourth, nrp.getProducts()[2]);
+        assertEquals(3, nrp.getListedProducts().length);
+        assertSame(first, nrp.getListedProducts()[0]);
+        assertSame(second, nrp.getListedProducts()[1]);
+        assertSame(fourth, nrp.getListedProducts()[2]);
         assertEquals(2, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
-        assertEquals(2, nrp.getProducts().length);
-        assertSame(first, nrp.getProducts()[0]);
-        assertSame(second, nrp.getProducts()[1]);
+        assertEquals(2, nrp.getListedProducts().length);
+        assertSame(first, nrp.getListedProducts()[0]);
+        assertSame(second, nrp.getListedProducts()[1]);
         assertEquals(1, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
         assertEquals(0, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
-        assertSame(first, nrp.getProducts()[0]);
+        assertSame(first, nrp.getListedProducts()[0]);
 
         nrp.removeSelectedProduct();
-        assertEquals(0, nrp.getProducts().length);
+        assertEquals(0, nrp.getListedProducts().length);
         assertEquals(-1, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.addProduct(fourth);
@@ -122,15 +122,15 @@ public class NoiseReductionPresenterTest extends TestCase {
     public void testProductAsOutput() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
-        assertTrue(nrp.isProductAsOutputSet(first));
-        assertTrue(nrp.isProductAsOutputSet(second));
-        assertTrue(nrp.isProductAsOutputSet(third));
+        assertTrue(nrp.isChecked(first));
+        assertTrue(nrp.isChecked(second));
+        assertTrue(nrp.isChecked(third));
 
-        nrp.setProductAsOutput(second, false);
+        nrp.setCheckedState(second, false);
 
-        assertTrue(nrp.isProductAsOutputSet(first));
-        assertFalse(nrp.isProductAsOutputSet(second));
-        assertTrue(nrp.isProductAsOutputSet(third));
+        assertTrue(nrp.isChecked(first));
+        assertFalse(nrp.isChecked(second));
+        assertTrue(nrp.isChecked(third));
     }
 
     private static Product createChrisDummyProduct(String name, String mode, String targetName) {

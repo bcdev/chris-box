@@ -95,7 +95,7 @@ public class DestripingOp extends AbstractOperator {
     @Override
     public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
         final String name = band.getName();
-        System.out.println("DestripingOp: " + band.getName());
+
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetRaster, pm);
         } else {

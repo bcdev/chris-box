@@ -1,14 +1,11 @@
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.ValueContainer;
-import com.bc.ceres.binding.swing.SwingBindingContext;
 import com.jidesoft.grid.BooleanCheckBoxCellEditor;
 import com.jidesoft.grid.BooleanCheckBoxCellRenderer;
 import org.esa.beam.framework.datamodel.Product;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -29,28 +26,26 @@ import java.awt.Insets;
 import java.util.EventObject;
 
 /**
- * Panel for the CHRIS Noise Reduction dialog.
+ * Form for the CHRIS Noise Reduction dialog.
  *
  * @author Marco Peters
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-class NoiseReductionPanel extends JPanel {
+class NoiseReductionForm extends JPanel {
 
     private JTable acquisitionSetTable;
     private JTable metadataTable;
-    private JCheckBox writeToFileCheckBox;
 
     private JButton addButton;
     private JButton removeButton;
 
     private JButton advancedSettingsButton;
-    private ValueContainer writeToFileValueContainer;
 
     /**
      * Creates new form NRPanel
      */
-    public NoiseReductionPanel(NoiseReductionPresenter presenter) {
+    public NoiseReductionForm(NoiseReductionPresenter presenter) {
         initComponents();
         bindComponents(presenter);
     }
@@ -119,9 +114,6 @@ class NoiseReductionPanel extends JPanel {
         addButton.setAction(presenter.getAddProductAction());
         removeButton.setAction(presenter.getRemoveProductAction());
         advancedSettingsButton.setAction(presenter.getSettingsAction());
-
-        new SwingBindingContext(presenter.getWriteValueContainer(), null).bind(writeToFileCheckBox, "writeToFile");
-
     }
 
     /**
@@ -147,7 +139,6 @@ class NoiseReductionPanel extends JPanel {
         metadataTable.setName("metadataTable");
         advancedSettingsButton = new JButton();
         advancedSettingsButton.setName("advancedSettingsButton");
-        writeToFileCheckBox = new JCheckBox("Write output to source folder");
 
         setLayout(new BorderLayout(5, 5));
 
@@ -193,7 +184,6 @@ class NoiseReductionPanel extends JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        acquisitionSetPanel.add(writeToFileCheckBox, gridBagConstraints);
 
         dataPanel.add(acquisitionSetPanel, BorderLayout.CENTER);
 

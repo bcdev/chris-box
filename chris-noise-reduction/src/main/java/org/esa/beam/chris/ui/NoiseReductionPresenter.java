@@ -1,15 +1,11 @@
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.Factory;
-import com.bc.ceres.binding.ValueContainer;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.ChrisProductReaderPlugIn;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.annotations.Parameter;
-import org.esa.beam.framework.gpf.annotations.ParameterDefinitionFactory;
 import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.util.SystemUtils;
 import org.esa.beam.util.io.BeamFileChooser;
@@ -25,12 +21,10 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.Component;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -53,13 +47,7 @@ class NoiseReductionPresenter {
     private Action removeProductAction;
     private Action settingsAction;
 
-    private Window window;
-
-    @Parameter(defaultValue = "true")
-    private Boolean writeToFile;
-
     private AdvancedSettingsPresenter advancedSettingsPresenter;
-    private ValueContainer writeValueContainer;
 
     public NoiseReductionPresenter(Product[] products, AdvancedSettingsPresenter advancedSettingsPresenter) {
         Object[][] productsData = new Object[products.length][2];
@@ -70,7 +58,7 @@ class NoiseReductionPresenter {
             }
         }
 
-        productTableModel = new DefaultTableModel(productsData, new String[]{"Apply", "Product Name"});
+        productTableModel = new DefaultTableModel(productsData, new String[]{"Reduce", "Product Name"});
         productTableSelectionModel = new DefaultListSelectionModel();
         productTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         productTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
@@ -95,10 +83,6 @@ class NoiseReductionPresenter {
         if (products.length > 0) {
             productTableSelectionModel.setSelectionInterval(0, 0);
         }
-
-        final Factory factory = new Factory(new ParameterDefinitionFactory());
-        writeValueContainer = factory.createMapBackedValueContainer(getClass(), new HashMap<String, Object>());
-
     }
 
     public Map<String, Object> getDestripingParameterMap() {
@@ -141,27 +125,7 @@ class NoiseReductionPresenter {
         this.advancedSettingsPresenter = advancedSettingsPresenter;
     }
 
-    public void setWindow(Window window) {
-        this.window = window;
-    }
-
-    public Window getWindow() {
-        return window;
-    }
-
-    public boolean isWriteToFile() {
-        return (Boolean) writeValueContainer.getValue("writeToFile");
-    }
-
-    public void setWriteToFile(boolean writeToFile) {
-        this.writeToFile = writeToFile;
-    }
-
-    public ValueContainer getWriteValueContainer() {
-        return writeValueContainer;
-    }
-
-    public Product[] getProducts() {
+    public Product[] getListedProducts() {
         Vector productVector = getProductTableModel().getDataVector();
         Product[] products = new Product[productVector.size()];
         for (int i = 0; i < productVector.size(); i++) {
@@ -170,7 +134,7 @@ class NoiseReductionPresenter {
         return products;
     }
 
-    public Product[] getProductsToBeCorrected() {
+    public Product[] getCheckedProducts() {
         final DefaultTableModel tableModel = getProductTableModel();
         final List<Product> productList = new ArrayList<Product>();
 
@@ -183,17 +147,17 @@ class NoiseReductionPresenter {
         return productList.toArray(new Product[productList.size()]);
     }
 
-    void setProductAsOutput(Product product, boolean output) {
+    void setCheckedState(Product product, boolean checked) {
         for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
             Product current = (Product) getProductTableModel().getValueAt(i, 1);
             if (current.equals(product)) {
-                getProductTableModel().setValueAt(output, i, 0);
+                getProductTableModel().setValueAt(checked, i, 0);
                 return;
             }
         }
     }
 
-    boolean isProductAsOutputSet(Product product) {
+    boolean isChecked(Product product) {
         for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
             Product current = (Product) getProductTableModel().getValueAt(i, 1);
             if (current.equals(product)) {
@@ -207,7 +171,7 @@ class NoiseReductionPresenter {
     }
 
     void addProduct(Product product) throws NoiseReductionValidationException {
-        Product[] products = getProducts();
+        Product[] products = getListedProducts();
         if (products.length >= 5) {
             throw new NoiseReductionValidationException("Acquisition set already contains five products.");
         }
@@ -238,6 +202,11 @@ class NoiseReductionPresenter {
 
     void removeSelectedProduct() {
         int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
+        final Product product = (Product) getProductTableModel().getValueAt(selectionIndex, 1);
+        if (!VisatApp.getApp().getProductManager().contains(product)) {
+            product.dispose();
+        }
+
         getProductTableModel().removeRow(selectionIndex);
         updateSelection(selectionIndex);
     }
@@ -298,7 +267,7 @@ class NoiseReductionPresenter {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (presenter.getProducts().length == 5) {
+            if (presenter.getListedProducts().length == 5) {
                 JOptionPane.showMessageDialog((Component) e.getSource(), "You cannot select more than five products.");
                 return;
             }
@@ -313,7 +282,7 @@ class NoiseReductionPresenter {
             fileChooser.setFileFilter(fileFilter);
             fileChooser.setCurrentDirectory(new File(lastDir));
 
-            if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(presenter.getWindow())) {
+            if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(null)) {
                 File[] selectedFiles = fileChooser.getSelectedFiles();
                 for (File file : selectedFiles) {
                     Product product = null;
@@ -364,7 +333,7 @@ class NoiseReductionPresenter {
         }
 
         public void actionPerformed(ActionEvent e) {
-            ModalDialog dialog = new ModalDialog(presenter.getWindow(),
+            ModalDialog dialog = new ModalDialog(null,
                                                  "Advanced Settings",
                                                  ModalDialog.ID_OK_CANCEL_HELP,
                                                  "chrisNoiseReductionAdvancedSettings");

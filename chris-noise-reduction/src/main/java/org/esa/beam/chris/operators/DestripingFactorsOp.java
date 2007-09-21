@@ -93,7 +93,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     @Override
-	protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    protected Product initialize(ProgressMonitor pm) throws OperatorException {
         for (Product sourceProduct : sourceProducts) {
             assertValidity(sourceProduct);
         }
@@ -135,7 +135,6 @@ public class DestripingFactorsOp extends AbstractOperator {
                     "Vertical striping correction factors for radiance band {0}", i + 1));
             targetBands[i].setSpectralBandwidth(sourceRciBands[i][0].getSpectralBandwidth());
             targetBands[i].setSpectralWavelength(sourceRciBands[i][0].getSpectralWavelength());
-            pm.worked(1);
         }
 
         final StringBuilder sb = new StringBuilder();
@@ -151,8 +150,15 @@ public class DestripingFactorsOp extends AbstractOperator {
 
         panorama = new Panorama(sourceProducts);
         smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
-        if (slitCorrection) {
-            slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
+        try {
+//            pm.beginTask("computing edge mask...", 10);
+            if (slitCorrection) {
+                slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
+            }
+//            pm.worked(1);
+//            edgeMask = createEdgeMask(ProgressMonitor.NULL);
+        } finally {
+//            pm.done();
         }
 
         return targetProduct;
@@ -160,20 +166,16 @@ public class DestripingFactorsOp extends AbstractOperator {
 
     @Override
     public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
-        System.out.println("DestripingFactors: " + band.getName());
-        final int work = panorama.height + 5;
-
         try {
             if (edgeMask == null) {
-                final int edgeMaskWork = spectralBandCount + panorama.width + 2;
-                pm.beginTask("computing correction factors...", work + edgeMaskWork);
-                edgeMask = createEdgeMask(SubProgressMonitor.create(pm, edgeMaskWork));
+                pm.beginTask("computing correction factors...", 100);
+                edgeMask = createEdgeMask(SubProgressMonitor.create(pm, 90));
             } else {
-                pm.beginTask("computing correction factors...", work);
+                pm.beginTask("computing correction factors...", 10);
             }
             for (int i = 0; i < targetBands.length; ++i) {
                 if (targetBands[i].equals(band)) {
-                    computeCorrectionFactors(i, targetRaster, SubProgressMonitor.create(pm, work));
+                    computeCorrectionFactors(i, targetRaster, SubProgressMonitor.create(pm, 10));
                     return;
                 }
             }

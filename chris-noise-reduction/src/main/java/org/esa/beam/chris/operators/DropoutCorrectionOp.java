@@ -70,7 +70,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    protected Product initialize(ProgressMonitor progressMonitor) throws OperatorException {
+    protected Product initialize(ProgressMonitor pm) throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
