@@ -49,7 +49,8 @@ class NoiseReductionPresenter {
 
     private AdvancedSettingsPresenter advancedSettingsPresenter;
 
-    public NoiseReductionPresenter(Product[] products, AdvancedSettingsPresenter advancedSettingsPresenter) {
+    public NoiseReductionPresenter(Product[] products,
+                                   AdvancedSettingsPresenter advancedSettingsPresenter) {
         Object[][] productsData = new Object[products.length][2];
         if (products.length > 0) {
             for (int i = 0; i < productsData.length; i++) {
@@ -147,6 +148,19 @@ class NoiseReductionPresenter {
         return productList.toArray(new Product[productList.size()]);
     }
 
+    public Product[] getUncheckedProducts() {
+        final DefaultTableModel tableModel = getProductTableModel();
+        final List<Product> productList = new ArrayList<Product>();
+
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            if (!(Boolean) tableModel.getValueAt(i, 0)) {
+                productList.add((Product) tableModel.getValueAt(i, 1));
+            }
+        }
+
+        return productList.toArray(new Product[productList.size()]);
+    }
+
     void setCheckedState(Product product, boolean checked) {
         for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
             Product current = (Product) getProductTableModel().getValueAt(i, 1);
@@ -202,10 +216,6 @@ class NoiseReductionPresenter {
 
     void removeSelectedProduct() {
         int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
-        final Product product = (Product) getProductTableModel().getValueAt(selectionIndex, 1);
-        if (!VisatApp.getApp().getProductManager().contains(product)) {
-            product.dispose();
-        }
 
         getProductTableModel().removeRow(selectionIndex);
         updateSelection(selectionIndex);
@@ -346,7 +356,6 @@ class NoiseReductionPresenter {
         }
 
     }
-
 
     private void updateMetadata() {
         final String na = "Not available";

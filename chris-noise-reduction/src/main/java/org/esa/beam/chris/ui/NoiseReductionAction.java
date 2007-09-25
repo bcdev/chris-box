@@ -16,7 +16,6 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
 import com.bc.ceres.swing.progress.DialogProgressMonitor;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Product;
@@ -71,6 +70,11 @@ public class NoiseReductionAction extends ExecCommand {
         dialog.setContent(new NoiseReductionForm(presenter));
 
         if (dialog.show() == ModalDialog.ID_OK) {
+            for (final Product product : acquisitionSet) {
+                if (!presenter.isChecked(product)) {
+                    product.dispose();
+                }
+            }
             final DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
                                                                        "CHRIS Noise Reduction",
                                                                        Dialog.ModalityType.APPLICATION_MODAL);
@@ -78,13 +82,12 @@ public class NoiseReductionAction extends ExecCommand {
             try {
                 performNoiseReduction(presenter, pm);
             } catch (OperatorException e) {
-                disposeIntermediateProducts(acquisitionSet);
-
+                disposeProducts(acquisitionSet);
                 dialog.showErrorDialog(e.getMessage());
                 VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
             }
         } else {
-            disposeIntermediateProducts(acquisitionSet);
+            disposeProducts(acquisitionSet);
         }
     }
 
@@ -98,7 +101,7 @@ public class NoiseReductionAction extends ExecCommand {
         setEnabled(enabled);
     }
 
-    private static void disposeIntermediateProducts(Product[] products) {
+    private static void disposeProducts(Product[] products) {
         for (final Product product : products) {
             if (!VisatApp.getApp().getProductManager().contains(product)) {
                 product.dispose();
@@ -109,12 +112,12 @@ public class NoiseReductionAction extends ExecCommand {
     private static void performNoiseReduction(NoiseReductionPresenter presenter, ProgressMonitor pm)
             throws OperatorException {
         try {
-            pm.beginTask("Performing CHRIS noise reduction", 20 * presenter.getCheckedProducts().length + 10);
+//            pm.beginTask("Performing CHRIS noise reduction", 2 * presenter.getCheckedProducts().length + 1);
             final Product factors =
                     GPF.createProduct("DestripingFactors",
                                       presenter.getDestripingParameterMap(),
-                                      presenter.getListedProducts(),
-                                      SubProgressMonitor.create(pm, 10));
+                                      presenter.getListedProducts(), ProgressMonitor.NULL);
+//            pm.worked(1);
 
             final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
             productsMap.put("factors", factors);
@@ -125,19 +128,18 @@ public class NoiseReductionAction extends ExecCommand {
                 final Product destriped =
                         GPF.createProduct("Destriping",
                                           new HashMap<String, Object>(0),
-                                          productsMap,
-                                          SubProgressMonitor.create(pm, 10));
+                                          productsMap, ProgressMonitor.NULL);
+//                pm.worked(1);
 
                 final Product targetProduct =
                         GPF.createProduct("DropoutCorrection",
                                           presenter.getDropoutCorrectionParameterMap(),
-                                          destriped,
-                                          SubProgressMonitor.create(pm, 10));
-
+                                          destriped, ProgressMonitor.NULL);
+//                pm.worked(1);
                 VisatApp.getApp().addProduct(targetProduct);
             }
         } finally {
-            pm.done();
+//            pm.done();
         }
     }
 
