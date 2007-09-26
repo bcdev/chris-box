@@ -40,7 +40,7 @@ import java.text.MessageFormat;
  * the {@link DestripingFactorsOp}.
  *
  * @author Ralf Quast
- * @author Marco Zühlke
+ * @author Marco Zï¿½hlke
  * @version $Revision$ $Date$
  */
 public class DestripingOp extends AbstractOperator {
@@ -75,7 +75,6 @@ public class DestripingOp extends AbstractOperator {
 
         for (final Band sourceBand : sourceProduct.getBands()) {
             final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-            targetBand.setValidPixelExpression(sourceBand.getValidPixelExpression());
 
             final FlagCoding flagCoding = sourceBand.getFlagCoding();
             if (flagCoding != null) {

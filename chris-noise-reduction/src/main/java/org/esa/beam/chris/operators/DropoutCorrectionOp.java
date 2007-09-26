@@ -98,7 +98,6 @@ public class DropoutCorrectionOp extends AbstractOperator {
                 throw new OperatorException(MessageFormat.format("could not find band {0}", bandName));
             }
             targetRciBands[i] = ProductUtils.copyBand(bandName, sourceProduct, targetProduct);
-            targetRciBands[i].setValidPixelExpression(sourceRciBands[i].getValidPixelExpression());
         }
         for (int i = 0; i < spectralBandCount; ++i) {
             final String bandName = new StringBuilder("mask_").append(i + 1).toString();
