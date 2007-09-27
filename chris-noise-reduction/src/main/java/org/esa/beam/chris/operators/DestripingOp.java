@@ -27,7 +27,7 @@ import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Raster;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
@@ -51,15 +51,6 @@ public class DestripingOp extends AbstractOperator {
     Product factorProduct;
     @TargetProduct
     Product targetProduct;
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param spi the operator service provider interface.
-     */
-    public DestripingOp(OperatorSpi spi) {
-        super(spi);
-    }
 
     @Override
 	protected Product initialize(ProgressMonitor pm) throws OperatorException {
@@ -92,32 +83,32 @@ public class DestripingOp extends AbstractOperator {
     }
 
     @Override
-    public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+    public void computeTile(Band band, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         final String name = band.getName();
 
         if (name.startsWith("radiance")) {
-            computeRciBand(name, targetRaster, pm);
+            computeRciBand(name, targetTile, pm);
         } else {
-            computeMaskBand(name, targetRaster, pm);
+            computeMaskBand(name, targetTile, pm);
         }
     }
 
-    private void computeRciBand(String name, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+    private void computeRciBand(String name, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         try {
-            pm.beginTask("removing vertical striping artifacts", targetRaster.getHeight());
+            pm.beginTask("removing vertical striping artifacts", targetTile.getHeight());
 
             final Band sourceBand = sourceProduct.getBand(name);
             final Band factorBand = factorProduct.getBand(name.replace("radiance", "vs_corr"));
 
-            final Rectangle targetRectangle = targetRaster.getRectangle();
+            final Rectangle targetRectangle = targetTile.getRectangle();
             final Rectangle factorRectangle = new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1);
-            final Raster sourceRaster = getRaster(sourceBand, targetRectangle);
-            final Raster factorRaster = getRaster(factorBand, factorRectangle);
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle);
+            final Tile factorTile = getSourceTile(factorBand, factorRectangle);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    final int value = (int) (sourceRaster.getInt(x, y) * factorRaster.getDouble(x, 0) + 0.5);
-                    targetRaster.setInt(x, y, value);
+                    final int value = (int) (sourceTile.getSampleInt(x, y) * factorTile.getSampleDouble(x, 0) + 0.5);
+                    targetTile.setSample(x, y, value);
                 }
                 pm.worked(1);
             }
@@ -126,16 +117,16 @@ public class DestripingOp extends AbstractOperator {
         }
     }
 
-    private void computeMaskBand(String name, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+    private void computeMaskBand(String name, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         try {
-            pm.beginTask("copying mask band", targetRaster.getHeight());
+            pm.beginTask("copying mask band", targetTile.getHeight());
 
-            final Rectangle targetRectangle = targetRaster.getRectangle();
-            final Raster sourceRaster = getRaster(sourceProduct.getBand(name), targetRaster.getRectangle());
+            final Rectangle targetRectangle = targetTile.getRectangle();
+            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle());
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    targetRaster.setInt(x, y, sourceRaster.getInt(x, y));
+                    targetTile.setSample(x, y, sourceTile.getSampleInt(x, y));
                 }
                 pm.worked(1);
             }

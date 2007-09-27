@@ -26,7 +26,7 @@ import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Raster;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -64,10 +64,6 @@ public class DropoutCorrectionOp extends AbstractOperator {
     private Band[] sourceMaskBands;
     private Band[] targetRciBands;
     private Band[] targetMaskBands;
-
-    public DropoutCorrectionOp(OperatorSpi operatorSpi) {
-        super(operatorSpi);
-    }
 
     @Override
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
@@ -120,7 +116,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    public void computeAllBands(Map<Band, Raster> targetRasterMap, Rectangle targetRectangle, ProgressMonitor pm)
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm)
             throws OperatorException {
         try {
             pm.beginTask("computing dropout correction", spectralBandCount);
@@ -130,7 +126,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
                                                       targetRectangle.width, targetRectangle.height);
 
             for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {
-                computeDropoutCorrection(bandIndex, targetRasterMap, targetRectangle, sourceRectangle, sourceRoi);
+                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle, sourceRoi);
                 pm.worked(1);
             }
         } finally {
@@ -147,7 +143,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
         targetMaskBands = null;
     }
 
-    private void computeDropoutCorrection(int bandIndex, Map<Band, Raster> targetRasterMap, Rectangle targetRectangle,
+    private void computeDropoutCorrection(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                           Rectangle sourceRectangle, Rectangle sourceRoi) throws OperatorException {
         final int minBandIndex = max(bandIndex - neighborBandCount, 0);
         final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
@@ -167,8 +163,8 @@ public class DropoutCorrectionOp extends AbstractOperator {
             }
         }
 
-        final int[] targetRciData = getRasterDataInt(targetRasterMap, targetRciBands[bandIndex]);
-        final short[] targetMaskData = getRasterDataShort(targetRasterMap, targetMaskBands[bandIndex]);
+        final int[] targetRciData = getTileDataInt(targetTileMap, targetRciBands[bandIndex]);
+        final short[] targetMaskData = getTileDataShort(targetTileMap, targetMaskBands[bandIndex]);
 
         dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
                                   sourceRoi, targetRciData, targetMaskData, 0, 0, targetRectangle.width);
@@ -198,20 +194,20 @@ public class DropoutCorrectionOp extends AbstractOperator {
         return new Rectangle(x, y, width, height);
     }
 
-    private int[] getRasterDataInt(Map<Band, Raster> rasterMap, Band band) {
-        return (int[]) rasterMap.get(band).getDataBuffer().getElems();
+    private int[] getTileDataInt(Map<Band, Tile> tileMap, Band band) {
+        return (int[]) tileMap.get(band).getRawSampleData().getElems();
     }
 
     private int[] getRasterDataInt(Band band, Rectangle rectangle) throws OperatorException {
-        return (int[]) getRaster(band, rectangle).getDataBuffer().getElems();
+        return (int[]) getSourceTile(band, rectangle).getRawSampleData().getElems();
     }
 
-    private short[] getRasterDataShort(Map<Band, Raster> rasterMap, Band band) {
-        return (short[]) rasterMap.get(band).getDataBuffer().getElems();
+    private short[] getTileDataShort(Map<Band, Tile> tileMap, Band band) {
+        return (short[]) tileMap.get(band).getRawSampleData().getElems();
     }
 
     private short[] getRasterDataShort(Band band, Rectangle rectangle) throws OperatorException {
-        return (short[]) getRaster(band, rectangle).getDataBuffer().getElems();
+        return (short[]) getSourceTile(band, rectangle).getRawSampleData().getElems();
     }
 
     private static void assertValidity(Product product) throws OperatorException {

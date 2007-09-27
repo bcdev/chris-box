@@ -29,7 +29,7 @@ import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Raster;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -83,14 +83,6 @@ public class DestripingFactorsOp extends AbstractOperator {
     private boolean[][] edgeMask;
     private double[] slitNoiseFactors;
 
-    /**
-     * Creates an instance of this class.
-     *
-     * @param spi the operator service provider interface.
-     */
-    public DestripingFactorsOp(OperatorSpi spi) {
-        super(spi);
-    }
 
     @Override
     protected Product initialize(ProgressMonitor pm) throws OperatorException {
@@ -165,7 +157,7 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     @Override
-    public void computeBand(Band band, Raster targetRaster, ProgressMonitor pm) throws OperatorException {
+    public void computeTile(Band band, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         try {
             if (edgeMask == null) {
                 pm.beginTask("computing correction factors...", 100);
@@ -175,7 +167,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
             for (int i = 0; i < targetBands.length; ++i) {
                 if (targetBands[i].equals(band)) {
-                    computeCorrectionFactors(i, targetRaster, SubProgressMonitor.create(pm, 10));
+                    computeCorrectionFactors(i, targetTile, SubProgressMonitor.create(pm, 10));
                     return;
                 }
             }
@@ -199,12 +191,12 @@ public class DestripingFactorsOp extends AbstractOperator {
      * Computes the vertical striping correction factors for a single target band.
      *
      * @param bandIndex    the band index.
-     * @param targetRaster the target raster.
+     * @param targetTile the target raster.
      * @param pm           the {@link ProgressMonitor}.
      *
      * @throws OperatorException
      */
-    private void computeCorrectionFactors(int bandIndex, Raster targetRaster, ProgressMonitor pm)
+    private void computeCorrectionFactors(int bandIndex, Tile targetTile, ProgressMonitor pm)
             throws OperatorException {
         try {
             pm.beginTask("computing corection factors", panorama.height + 5);
@@ -214,8 +206,8 @@ public class DestripingFactorsOp extends AbstractOperator {
             final int[] count = new int[panorama.width];
 
             for (int j = 0; j < sourceProducts.length; ++j) {
-                final Raster rci = getSceneRaster(sourceRciBands[bandIndex][j]);
-                final Raster mask = getSceneRaster(sourceMaskBands[bandIndex][j]);
+                final Tile rci = getSceneTile(sourceRciBands[bandIndex][j]);
+                final Tile mask = getSceneTile(sourceMaskBands[bandIndex][j]);
 
                 for (int y = 0; y < rci.getHeight(); ++y) {
                     double r1 = getDouble(rci, 0, y);
@@ -223,7 +215,7 @@ public class DestripingFactorsOp extends AbstractOperator {
                     for (int x = 1; x < rci.getWidth(); ++x) {
                         final double r2 = getDouble(rci, x, y);
 
-                        if (!edgeMask[panorama.getY(j, y)][x] && mask.getInt(x, y) == 0 && mask.getInt(x - 1, y) == 0) {
+                        if (!edgeMask[panorama.getY(j, y)][x] && mask.getSampleInt(x, y) == 0 && mask.getSampleInt(x - 1, y) == 0) {
                             p[x] += log(r2 / r1);
                             ++count[x];
                         }
@@ -262,8 +254,8 @@ public class DestripingFactorsOp extends AbstractOperator {
             }
             pm.worked(1);
             // 6. Compute the correction factors
-            for (int x = targetRaster.getOffsetX(); x < targetRaster.getOffsetX() + targetRaster.getWidth(); ++x) {
-                setDouble(targetRaster, x, 0, exp(-p[x]));
+            for (int x = targetTile.getMinX(); x < targetTile.getMinX() + targetTile.getWidth(); ++x) {
+                setDouble(targetTile, x, 0, exp(-p[x]));
             }
             pm.worked(1);
         } finally {
@@ -336,7 +328,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             // 1. Compute the squares and across-track scalar products of the spectral vectors
             for (final Band[] bands : sourceRciBands) {
                 for (int i = 0; i < bands.length; i++) {
-                    final Raster data = getSceneRaster(bands[i]);
+                    final Tile data = getSceneTile(bands[i]);
 
                     for (int y = 0; y < data.getHeight(); ++y) {
                         double r1 = getDouble(data, 0, y);
@@ -400,24 +392,24 @@ public class DestripingFactorsOp extends AbstractOperator {
         }
     }
 
-    private double getDouble(Raster raster, int x, int y) {
+    private double getDouble(Tile tile, int x, int y) {
         if (slitCorrection) {
-            return raster.getDouble(x, y) / slitNoiseFactors[x];
+            return tile.getSampleDouble(x, y) / slitNoiseFactors[x];
         } else {
-            return raster.getDouble(x, y);
+            return tile.getSampleDouble(x, y);
         }
     }
 
-    private void setDouble(Raster raster, int x, int y, double v) {
+    private void setDouble(Tile tile, int x, int y, double v) {
         if (slitCorrection) {
-            raster.setDouble(x, y, v / slitNoiseFactors[x]);
+            tile.setSample(x, y, v / slitNoiseFactors[x]);
         } else {
-            raster.setDouble(x, y, v);
+            tile.setSample(x, y, v);
         }
     }
 
-    private Raster getSceneRaster(Band band) throws OperatorException {
-        return getRaster(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()));
+    private Tile getSceneTile(Band band) throws OperatorException {
+        return getSourceTile(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()));
     }
 
     private static double getEdgeDetectionThreshold(Product product) throws OperatorException {
