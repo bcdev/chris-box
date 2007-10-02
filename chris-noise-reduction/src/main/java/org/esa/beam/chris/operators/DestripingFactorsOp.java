@@ -21,14 +21,12 @@ import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.Sorter;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
-import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
@@ -129,7 +127,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             targetBands[i].setSpectralWavelength(sourceRciBands[i][0].getSpectralWavelength());
         }
 
-        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder("Applied with ");
         for (int i = 0; i < sourceProducts.length; ++i) {
             if (i > 0) {
                 sb.append(", ");
@@ -137,7 +135,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             sb.append(getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
             sb.append("°");
         }
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET, sb.toString());
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION, sb.toString());
         // todo -- consider writing the sources metadata to the SPH
 
         panorama = new Panorama(sourceProducts);
@@ -491,11 +489,7 @@ public class DestripingFactorsOp extends AbstractOperator {
             element = new MetadataElement(ChrisConstants.MPH_NAME);
             product.getMetadataRoot().addElement(element);
         }
-        if (element.containsAttribute(name)) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not set CHRIS annotation ''{0}'' because it already exists", name));
-        }
-        element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
+        element.setAttributeString(name, value);
     }
 
     private static double[][] readReferenceSlitVsProfile() throws OperatorException {

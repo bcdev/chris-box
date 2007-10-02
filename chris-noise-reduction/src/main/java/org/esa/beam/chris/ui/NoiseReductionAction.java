@@ -71,7 +71,7 @@ public class NoiseReductionAction extends ExecCommand {
 
         if (dialog.show() == ModalDialog.ID_OK) {
             for (final Product product : acquisitionSet) {
-                if (!presenter.isChecked(product)) {
+                if (!(VisatApp.getApp().getProductManager().contains(product) || presenter.isChecked(product))) {
                     product.dispose();
                 }
             }

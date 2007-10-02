@@ -19,14 +19,11 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
-import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
-import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -53,7 +50,7 @@ public class DestripingOp extends AbstractOperator {
     Product targetProduct;
 
     @Override
-	protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    protected Product initialize(ProgressMonitor pm) throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType() + "_NR",
@@ -75,9 +72,8 @@ public class DestripingOp extends AbstractOperator {
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
 
         ProductUtils.copyElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_APPLIED, "Yes");
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET,
-                            getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NR_ACQUISITION_SET));
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
+                            getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
 
         return targetProduct;
     }
@@ -139,6 +135,11 @@ public class DestripingOp extends AbstractOperator {
         try {
             getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
             getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
+            final String string = getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION);
+            if (!string.equalsIgnoreCase("none")) {
+                throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' already is noise-corrected", product.getName()));
+            }
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not a CHRIS product", product.getName()));
@@ -172,11 +173,7 @@ public class DestripingOp extends AbstractOperator {
             element = new MetadataElement(ChrisConstants.MPH_NAME);
             product.getMetadataRoot().addElement(element);
         }
-        if (element.containsAttribute(name)) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not set CHRIS annotation ''{0}'' because it already exists", name));
-        }
-        element.addAttribute(new MetadataAttribute(name, ProductData.createInstance(value), true));
+        element.setAttributeString(name, value);
     }
 
 
