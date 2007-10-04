@@ -15,18 +15,6 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.swing.progress.DialogProgressMonitor;
-import org.esa.beam.framework.dataio.ProductIO;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.OperatorException;
-import org.esa.beam.framework.ui.ModalDialog;
-import org.esa.beam.framework.ui.command.CommandEvent;
-import org.esa.beam.framework.ui.command.ExecCommand;
-import org.esa.beam.visat.VisatApp;
-
-import java.awt.Dialog;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -38,6 +26,15 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Level;
+
+import org.esa.beam.framework.dataio.ProductIO;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.GPF;
+import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.ui.ModalDialog;
+import org.esa.beam.framework.ui.command.CommandEvent;
+import org.esa.beam.framework.ui.command.ExecCommand;
+import org.esa.beam.visat.VisatApp;
 
 /**
  * Noise reduction action.
@@ -75,12 +72,9 @@ public class NoiseReductionAction extends ExecCommand {
                     product.dispose();
                 }
             }
-            final DialogProgressMonitor pm = new DialogProgressMonitor(VisatApp.getApp().getMainFrame(),
-                                                                       "CHRIS Noise Reduction",
-                                                                       Dialog.ModalityType.APPLICATION_MODAL);
 
             try {
-                performNoiseReduction(presenter, pm);
+                performNoiseReduction(presenter);
             } catch (OperatorException e) {
                 disposeProducts(acquisitionSet);
                 dialog.showErrorDialog(e.getMessage());
@@ -109,15 +103,12 @@ public class NoiseReductionAction extends ExecCommand {
         }
     }
 
-    private static void performNoiseReduction(NoiseReductionPresenter presenter, ProgressMonitor pm)
+    private static void performNoiseReduction(NoiseReductionPresenter presenter)
             throws OperatorException {
-        try {
-//            pm.beginTask("Performing CHRIS noise reduction", 2 * presenter.getCheckedProducts().length + 1);
             final Product factors =
                     GPF.createProduct("DestripingFactors",
                                       presenter.getDestripingParameterMap(),
-                                      presenter.getListedProducts(), ProgressMonitor.NULL);
-//            pm.worked(1);
+                                      presenter.getListedProducts());
 
             final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
             productsMap.put("factors", factors);
@@ -128,19 +119,14 @@ public class NoiseReductionAction extends ExecCommand {
                 final Product destriped =
                         GPF.createProduct("Destriping",
                                           new HashMap<String, Object>(0),
-                                          productsMap, ProgressMonitor.NULL);
-//                pm.worked(1);
+                                          productsMap);
 
                 final Product targetProduct =
                         GPF.createProduct("DropoutCorrection",
                                           presenter.getDropoutCorrectionParameterMap(),
-                                          destriped, ProgressMonitor.NULL);
-//                pm.worked(1);
+                                          destriped);
                 VisatApp.getApp().addProduct(targetProduct);
             }
-        } finally {
-//            pm.done();
-        }
     }
 
     private static Product[] getAcquisitionSet(Product selectedProduct) {
