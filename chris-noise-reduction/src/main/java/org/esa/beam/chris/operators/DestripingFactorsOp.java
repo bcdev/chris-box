@@ -15,8 +15,24 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
+import static java.lang.Math.acos;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
+
+import java.awt.Rectangle;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.imageio.stream.FileCacheImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+
 import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.Sorter;
@@ -32,16 +48,8 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
-import javax.imageio.stream.FileCacheImageInputStream;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.Rectangle;
-import java.io.IOException;
-import java.io.InputStream;
-import static java.lang.Math.*;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 
 /**
  * Operator for calculating the vertical striping correction factors for noise
@@ -83,7 +91,7 @@ public class DestripingFactorsOp extends AbstractOperator {
 
 
     @Override
-    protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    protected Product initialize() throws OperatorException {
         for (Product sourceProduct : sourceProducts) {
             assertValidity(sourceProduct);
         }
@@ -155,7 +163,8 @@ public class DestripingFactorsOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTile(Band band, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+    public void computeTile(Band band, Tile targetTile) throws OperatorException {
+        ProgressMonitor pm = createProgressMonitor();
         try {
             if (edgeMask == null) {
                 pm.beginTask("computing correction factors...", 100);

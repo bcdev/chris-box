@@ -15,7 +15,13 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
+import java.awt.Rectangle;
+import java.text.MessageFormat;
+import java.util.Map;
+
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.datamodel.Band;
@@ -25,18 +31,13 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.OperatorException;
-import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.Rectangle;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import java.text.MessageFormat;
-import java.util.Map;
+import com.bc.ceres.core.ProgressMonitor;
 
 /**
  * Operator for computing the CHRIS dropout correction.
@@ -66,7 +67,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     private Band[] targetMaskBands;
 
     @Override
-    protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    protected Product initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
@@ -116,8 +117,9 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm)
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle)
             throws OperatorException {
+        ProgressMonitor pm = createProgressMonitor();
         try {
             pm.beginTask("computing dropout correction", spectralBandCount);
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);

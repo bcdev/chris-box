@@ -50,7 +50,7 @@ public class DestripingOp extends AbstractOperator {
     Product targetProduct;
 
     @Override
-    protected Product initialize(ProgressMonitor pm) throws OperatorException {
+    protected Product initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType() + "_NR",
@@ -79,9 +79,9 @@ public class DestripingOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTile(Band band, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+    public void computeTile(Band band, Tile targetTile) throws OperatorException {
         final String name = band.getName();
-
+        ProgressMonitor pm = createProgressMonitor();
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetTile, pm);
         } else {
