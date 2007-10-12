@@ -184,6 +184,16 @@ class NoiseReductionPresenter {
         return false;
     }
 
+    boolean isListed(Product product) {
+        for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
+            Product current = (Product) getProductTableModel().getValueAt(i, 1);
+            if (current.equals(product)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void addProduct(Product product) throws NoiseReductionValidationException {
         Product[] products = getListedProducts();
         if (products.length >= 5) {

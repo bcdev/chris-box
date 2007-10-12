@@ -15,21 +15,15 @@
  */
 package org.esa.beam.chris.operators;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
-import java.awt.Rectangle;
-import java.text.MessageFormat;
-import java.util.Map;
-
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
+import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
@@ -37,7 +31,11 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import com.bc.ceres.core.ProgressMonitor;
+import java.awt.Rectangle;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import java.text.MessageFormat;
+import java.util.Map;
 
 /**
  * Operator for computing the CHRIS dropout correction.
@@ -45,7 +43,7 @@ import com.bc.ceres.core.ProgressMonitor;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class DropoutCorrectionOp extends AbstractOperator {
+public class DropoutCorrectionOp extends Operator {
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -67,7 +65,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     private Band[] targetMaskBands;
 
     @Override
-    protected Product initialize() throws OperatorException {
+    public Product initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
@@ -117,18 +115,14 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle)
-            throws OperatorException {
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle) throws OperatorException {
         ProgressMonitor pm = createProgressMonitor();
         try {
             pm.beginTask("computing dropout correction", spectralBandCount);
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
-            final Rectangle sourceRoi = new Rectangle(targetRectangle.x - sourceRectangle.x,
-                                                      targetRectangle.y - sourceRectangle.y,
-                                                      targetRectangle.width, targetRectangle.height);
 
             for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {
-                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle, sourceRoi);
+                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle);
                 pm.worked(1);
             }
         } finally {
@@ -146,7 +140,7 @@ public class DropoutCorrectionOp extends AbstractOperator {
     }
 
     private void computeDropoutCorrection(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                          Rectangle sourceRectangle, Rectangle sourceRoi) throws OperatorException {
+                                          Rectangle sourceRectangle) throws OperatorException {
         final int minBandIndex = max(bandIndex - neighborBandCount, 0);
         final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
         final int bandCount = maxBandIndex - minBandIndex + 1;
@@ -154,22 +148,37 @@ public class DropoutCorrectionOp extends AbstractOperator {
         final int[][] sourceRciData = new int[bandCount][];
         final short[][] sourceMaskData = new short[bandCount][];
 
+        int sourceScanlineOffset = 0;
+        int sourceScanlineStride = 0;
+
         for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
             if (i != bandIndex) {
-                sourceRciData[j] = getRasterDataInt(sourceRciBands[i], sourceRectangle);
-                sourceMaskData[j] = getRasterDataShort(sourceMaskBands[i], sourceRectangle);
+                sourceRciData[j] = getSourceTile(sourceRciBands[i], sourceRectangle).getDataBufferInt();
+                sourceMaskData[j] = getSourceTile(sourceMaskBands[i], sourceRectangle).getDataBufferShort();
                 ++j;
             } else {
-                sourceRciData[0] = getRasterDataInt(sourceRciBands[i], sourceRectangle);
-                sourceMaskData[0] = getRasterDataShort(sourceMaskBands[i], sourceRectangle);
+                final Tile sourceTile = getSourceTile(sourceRciBands[i], sourceRectangle);
+
+                sourceRciData[0] = sourceTile.getDataBufferInt();
+                sourceMaskData[0] = getSourceTile(sourceMaskBands[i], sourceRectangle).getDataBufferShort();
+
+                sourceScanlineOffset = sourceTile.getScanlineOffset();
+                sourceScanlineStride = sourceTile.getScanlineStride();
             }
         }
 
-        final int[] targetRciData = getTileDataInt(targetTileMap, targetRciBands[bandIndex]);
-        final short[] targetMaskData = getTileDataShort(targetTileMap, targetMaskBands[bandIndex]);
+        final Tile targetTile = targetTileMap.get(targetRciBands[bandIndex]);
 
-        dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle.width, sourceRectangle.height,
-                                  sourceRoi, targetRciData, targetMaskData, 0, 0, targetRectangle.width);
+        final int[] targetRciData = targetTile.getDataBufferInt();
+        final short[] targetMaskData = targetTileMap.get(targetMaskBands[bandIndex]).getDataBufferShort();
+
+        final int targetScanlineOffset = targetTile.getScanlineOffset();
+        final int targetScanlineStride = targetTile.getScanlineStride();
+
+        dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle, sourceScanlineOffset,
+                                  sourceScanlineStride,
+                                  targetRciData, targetMaskData, targetRectangle, targetScanlineOffset,
+                                  targetScanlineStride);
     }
 
     private Rectangle createSourceRectangle(Rectangle targetRectangle) {
@@ -194,22 +203,6 @@ public class DropoutCorrectionOp extends AbstractOperator {
         }
 
         return new Rectangle(x, y, width, height);
-    }
-
-    private int[] getTileDataInt(Map<Band, Tile> tileMap, Band band) {
-        return (int[]) tileMap.get(band).getRawSampleData().getElems();
-    }
-
-    private int[] getRasterDataInt(Band band, Rectangle rectangle) throws OperatorException {
-        return (int[]) getSourceTile(band, rectangle).getRawSampleData().getElems();
-    }
-
-    private short[] getTileDataShort(Map<Band, Tile> tileMap, Band band) {
-        return (short[]) tileMap.get(band).getRawSampleData().getElems();
-    }
-
-    private short[] getRasterDataShort(Band band, Rectangle rectangle) throws OperatorException {
-        return (short[]) getSourceTile(band, rectangle).getRawSampleData().getElems();
     }
 
     private static void assertValidity(Product product) throws OperatorException {

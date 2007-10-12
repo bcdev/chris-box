@@ -21,8 +21,8 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
+import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
@@ -40,7 +40,7 @@ import java.text.MessageFormat;
  * @author Marco Z�hlke
  * @version $Revision$ $Date$
  */
-public class DestripingOp extends AbstractOperator {
+public class DestripingOp extends Operator {
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -50,7 +50,7 @@ public class DestripingOp extends AbstractOperator {
     Product targetProduct;
 
     @Override
-    protected Product initialize() throws OperatorException {
+    public Product initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType() + "_NR",

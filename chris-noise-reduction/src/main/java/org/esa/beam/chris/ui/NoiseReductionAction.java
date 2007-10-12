@@ -15,6 +15,15 @@
  */
 package org.esa.beam.chris.ui;
 
+import org.esa.beam.framework.dataio.ProductIO;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.GPF;
+import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.ui.ModalDialog;
+import org.esa.beam.framework.ui.command.CommandEvent;
+import org.esa.beam.framework.ui.command.ExecCommand;
+import org.esa.beam.visat.VisatApp;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -26,15 +35,6 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Level;
-
-import org.esa.beam.framework.dataio.ProductIO;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.OperatorException;
-import org.esa.beam.framework.ui.ModalDialog;
-import org.esa.beam.framework.ui.command.CommandEvent;
-import org.esa.beam.framework.ui.command.ExecCommand;
-import org.esa.beam.visat.VisatApp;
 
 /**
  * Noise reduction action.
@@ -68,7 +68,7 @@ public class NoiseReductionAction extends ExecCommand {
 
         if (dialog.show() == ModalDialog.ID_OK) {
             for (final Product product : acquisitionSet) {
-                if (!(VisatApp.getApp().getProductManager().contains(product) || presenter.isChecked(product))) {
+                if (!(VisatApp.getApp().getProductManager().contains(product) || presenter.isListed(product))) {
                     product.dispose();
                 }
             }
@@ -105,28 +105,28 @@ public class NoiseReductionAction extends ExecCommand {
 
     private static void performNoiseReduction(NoiseReductionPresenter presenter)
             throws OperatorException {
-            final Product factors =
-                    GPF.createProduct("DestripingFactors",
-                                      presenter.getDestripingParameterMap(),
-                                      presenter.getListedProducts());
+        final Product factors =
+                GPF.createProduct("DestripingFactors",
+                                  presenter.getDestripingParameterMap(),
+                                  presenter.getListedProducts());
 
-            final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
-            productsMap.put("factors", factors);
+        final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
+        productsMap.put("factors", factors);
 
-            for (final Product sourceProduct : presenter.getCheckedProducts()) {
-                productsMap.put("input", sourceProduct);
+        for (final Product sourceProduct : presenter.getCheckedProducts()) {
+            productsMap.put("input", sourceProduct);
 
-                final Product destriped =
-                        GPF.createProduct("Destriping",
-                                          new HashMap<String, Object>(0),
-                                          productsMap);
+            final Product destriped =
+                    GPF.createProduct("Destriping",
+                                      new HashMap<String, Object>(0),
+                                      productsMap);
 
-                final Product targetProduct =
-                        GPF.createProduct("DropoutCorrection",
-                                          presenter.getDropoutCorrectionParameterMap(),
-                                          destriped);
-                VisatApp.getApp().addProduct(targetProduct);
-            }
+            final Product targetProduct =
+                    GPF.createProduct("DropoutCorrection",
+                                      presenter.getDropoutCorrectionParameterMap(),
+                                      destriped);
+            VisatApp.getApp().addProduct(targetProduct);
+        }
     }
 
     private static Product[] getAcquisitionSet(Product selectedProduct) {

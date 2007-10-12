@@ -15,24 +15,8 @@
  */
 package org.esa.beam.chris.operators;
 
-import static java.lang.Math.acos;
-import static java.lang.Math.exp;
-import static java.lang.Math.log;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.sqrt;
-
-import java.awt.Rectangle;
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.imageio.stream.FileCacheImageInputStream;
-import javax.imageio.stream.ImageInputStream;
-
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.Sorter;
@@ -40,16 +24,24 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.gpf.AbstractOperator;
 import org.esa.beam.framework.gpf.AbstractOperatorSpi;
+import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
-import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
+import javax.imageio.stream.FileCacheImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.Rectangle;
+import java.io.IOException;
+import java.io.InputStream;
+import static java.lang.Math.*;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Operator for calculating the vertical striping correction factors for noise
@@ -59,7 +51,7 @@ import com.bc.ceres.core.SubProgressMonitor;
  * @author Marco Zühlke
  * @version $Revision: $ $Date: $
  */
-public class DestripingFactorsOp extends AbstractOperator {
+public class DestripingFactorsOp extends Operator {
 
     // todo -- operator parameters?
     private static final double G1 = 0.13045510094294;
@@ -91,7 +83,7 @@ public class DestripingFactorsOp extends AbstractOperator {
 
 
     @Override
-    protected Product initialize() throws OperatorException {
+    public Product initialize() throws OperatorException {
         for (Product sourceProduct : sourceProducts) {
             assertValidity(sourceProduct);
         }
