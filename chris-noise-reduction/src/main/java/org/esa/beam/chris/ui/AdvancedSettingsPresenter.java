@@ -2,12 +2,9 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.binding.Factory;
 import com.bc.ceres.binding.ValueContainer;
-import com.bc.ceres.binding.ConverterRegistry;
-import com.bc.ceres.binding.converters.EnumConverter;
 import org.esa.beam.chris.operators.DestripingFactorsOp;
 import org.esa.beam.chris.operators.DropoutCorrectionOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDefinitionFactory;
-import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,13 +18,13 @@ import java.util.Map;
  */
 class AdvancedSettingsPresenter {
 
-    static {
-        final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
-        final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
-        if (converterRegistry.getConverter(type) == null) {
-            converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
-        }
-    }
+//    static {
+//        final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
+//        final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
+//        if (converterRegistry.getConverter(type) == null) {
+//            converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
+//        }
+//    }
 
     private Map<String, Object> destripingParameterMap;
     private Map<String, Object> dropoutCorrectionParameterMap;

@@ -16,15 +16,17 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.binding.ConverterRegistry;
+import com.bc.ceres.binding.converters.EnumConverter;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
@@ -148,32 +150,45 @@ public class DropoutCorrectionOp extends Operator {
         final int[][] sourceRciData = new int[bandCount][];
         final short[][] sourceMaskData = new short[bandCount][];
 
-        int sourceScanlineOffset = 0;
-        int sourceScanlineStride = 0;
+        final Tile sourceTile1 = getSourceTile(sourceRciBands[bandIndex], sourceRectangle);
+        final Tile sourceTile2 = getSourceTile(sourceMaskBands[bandIndex], sourceRectangle);
+
+        final int sourceScanlineOffset = sourceTile1.getScanlineOffset();
+        final int sourceScanlineStride = sourceTile1.getScanlineStride();
+
+        assert(sourceScanlineOffset == sourceTile2.getScanlineOffset());
+        assert(sourceScanlineStride == sourceTile2.getScanlineStride());
+
+        sourceRciData[0] = sourceTile1.getDataBufferInt();
+        sourceMaskData[0] = sourceTile2.getDataBufferShort();
 
         for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
             if (i != bandIndex) {
-                sourceRciData[j] = getSourceTile(sourceRciBands[i], sourceRectangle).getDataBufferInt();
-                sourceMaskData[j] = getSourceTile(sourceMaskBands[i], sourceRectangle).getDataBufferShort();
+                final Tile tile1 = getSourceTile(sourceRciBands[i], sourceRectangle);
+                final Tile tile2 = getSourceTile(sourceMaskBands[i], sourceRectangle);
+
+                assert(sourceScanlineOffset == tile1.getScanlineOffset());
+                assert(sourceScanlineStride == tile1.getScanlineStride());
+                assert(sourceScanlineOffset == tile2.getScanlineOffset());
+                assert(sourceScanlineStride == tile2.getScanlineStride());
+
+                sourceRciData[j] = tile1.getDataBufferInt();
+                sourceMaskData[j] = tile2.getDataBufferShort();
                 ++j;
-            } else {
-                final Tile sourceTile = getSourceTile(sourceRciBands[i], sourceRectangle);
-
-                sourceRciData[0] = sourceTile.getDataBufferInt();
-                sourceMaskData[0] = getSourceTile(sourceMaskBands[i], sourceRectangle).getDataBufferShort();
-
-                sourceScanlineOffset = sourceTile.getScanlineOffset();
-                sourceScanlineStride = sourceTile.getScanlineStride();
             }
         }
 
-        final Tile targetTile = targetTileMap.get(targetRciBands[bandIndex]);
+        final Tile targetTile1 = targetTileMap.get(targetRciBands[bandIndex]);
+        final Tile targetTile2 = targetTileMap.get(targetMaskBands[bandIndex]);
 
-        final int[] targetRciData = targetTile.getDataBufferInt();
-        final short[] targetMaskData = targetTileMap.get(targetMaskBands[bandIndex]).getDataBufferShort();
+        final int targetScanlineStride = targetTile1.getScanlineStride();
+        final int targetScanlineOffset = targetTile1.getScanlineOffset();
 
-        final int targetScanlineOffset = targetTile.getScanlineOffset();
-        final int targetScanlineStride = targetTile.getScanlineStride();
+        assert(targetScanlineOffset == targetTile2.getScanlineOffset());
+        assert(targetScanlineStride == targetTile2.getScanlineStride());
+
+        final int[] targetRciData = targetTile1.getDataBufferInt();
+        final short[] targetMaskData = targetTile2.getDataBufferShort();
 
         dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle, sourceScanlineOffset,
                                   sourceScanlineStride,
@@ -247,8 +262,16 @@ public class DropoutCorrectionOp extends Operator {
     }
 
 
-    public static class Spi extends AbstractOperatorSpi {
+    public static class Spi extends OperatorSpi {
 
+        static {
+            final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
+            final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
+            if (converterRegistry.getConverter(type) == null) {
+                converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
+            }
+        }
+        
         public Spi() {
             super(DropoutCorrectionOp.class, "DropoutCorrection");
         }

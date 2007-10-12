@@ -96,7 +96,7 @@ public class LocalRegressionSmoother {
      *
      * @return the number of robust regression iterations.
      */
-    public final  int getRobustRegressionCount() {
+    public final int getRobustRegressionCount() {
         return iter;
     }
 
@@ -230,9 +230,9 @@ public class LocalRegressionSmoother {
         return a[values.length / 2];
     }
 
-    private static void fit(double[] y, int from, double[] w, double[] c, double[][]p) {
-        assert(w.length == p.length);
-        assert(w.length >= c.length);
+    private static void fit(double[] y, int from, double[] w, double[] c, double[][] p) {
+        assert (w.length == p.length);
+        assert (w.length >= c.length);
 
         try {
             fastFit(y, from, w, c, p);

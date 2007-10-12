@@ -21,9 +21,9 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
@@ -37,7 +37,7 @@ import java.text.MessageFormat;
  * the {@link DestripingFactorsOp}.
  *
  * @author Ralf Quast
- * @author Marco Z�hlke
+ * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
 public class DestripingOp extends Operator {
@@ -138,7 +138,7 @@ public class DestripingOp extends Operator {
             final String string = getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION);
             if (!string.equalsIgnoreCase("none")) {
                 throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' already is noise-corrected", product.getName()));
+                        "product ''{0}'' already is noise-corrected", product.getName()));
             }
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
@@ -177,7 +177,7 @@ public class DestripingOp extends Operator {
     }
 
 
-    public static class Spi extends AbstractOperatorSpi {
+    public static class Spi extends OperatorSpi {
 
         public Spi() {
             super(DestripingOp.class, "Destriping");

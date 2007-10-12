@@ -110,6 +110,8 @@ public class NoiseReductionAction extends ExecCommand {
                                   presenter.getDestripingParameterMap(),
                                   presenter.getListedProducts());
 
+        VisatApp.getApp().addProduct(factors);
+
         final HashMap<String, Product> productsMap = new HashMap<String, Product>(5);
         productsMap.put("factors", factors);
 
@@ -125,6 +127,13 @@ public class NoiseReductionAction extends ExecCommand {
                     GPF.createProduct("DropoutCorrection",
                                       presenter.getDropoutCorrectionParameterMap(),
                                       destriped);
+
+//            try {
+//                ProductIO.writeProduct(targetProduct, sourceProduct.getFileLocation().getParent() + sourceProduct.getName(),
+//                                       ProductIO.DEFAULT_FORMAT_NAME);
+//            } catch (IOException e) {
+//                // ignore
+//            }
             VisatApp.getApp().addProduct(targetProduct);
         }
     }

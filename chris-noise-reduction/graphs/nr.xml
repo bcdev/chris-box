@@ -8,9 +8,9 @@
             <filePath>${inputFile1}</filePath>
         </parameters>
     </node>
-    <!--
+
     <node>
-        <id>destriping-factors</id>
+        <id>factors</id>
         <operator>org.esa.beam.chris.operators.DestripingFactorsOp$Spi</operator>
         <sources>
             <input>load</input>
@@ -20,35 +20,33 @@
             <slitCorrection>true</slitCorrection>
         </parameters>
     </node>
-    -->
-    <!--
+
     <node>
         <id>destriping</id>
         <operator>org.esa.beam.chris.operators.DestripingOp$Spi</operator>
         <sources>
             <input>load</input>
-            <factors>destriping-factors</factors>
+            <factors>factors</factors>
         </sources>
     </node>
 
     <node>
-        <id>dropout-correction</id>
+        <id>dropout</id>
         <operator>org.esa.beam.chris.operators.DropoutCorrectionOp$Spi</operator>
         <sources>
             <input>destriping</input>
         </sources>
         <parameters>
             <neighborBandCount>5</neighborBandCount>
-            <neighborhood>N4</neighborhood>
+            <neighborhoodType>N4</neighborhoodType>
         </parameters>
     </node>
-    -->
 
     <node>
         <id>write</id>
         <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
         <sources>
-            <input>load</input>
+            <input>dropout</input>
         </sources>
         <parameters>
             <filePath>${outputFile1}</filePath>

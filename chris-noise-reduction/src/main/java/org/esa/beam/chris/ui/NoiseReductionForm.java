@@ -216,5 +216,4 @@ class NoiseReductionForm extends JPanel {
         settingsButtonPanel.add(advancedSettingsButton, gridBagConstraints);
         add(settingsButtonPanel, BorderLayout.SOUTH);
     }
-
 }

@@ -24,9 +24,9 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.gpf.AbstractOperatorSpi;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
@@ -114,6 +114,8 @@ public class DestripingFactorsOp extends Operator {
         // set up target product and bands
         targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC",
                                     sourceProducts[0].getSceneRasterWidth(), 1);
+        targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 1);
+
         targetBands = new Band[spectralBandCount];
 
         for (int i = 0; i < spectralBandCount; ++i) {
@@ -140,15 +142,8 @@ public class DestripingFactorsOp extends Operator {
 
         panorama = new Panorama(sourceProducts);
         smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
-        try {
-//            pm.beginTask("computing edge mask...", 10);
-            if (slitCorrection) {
-                slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
-            }
-//            pm.worked(1);
-//            edgeMask = createEdgeMask(ProgressMonitor.NULL);
-        } finally {
-//            pm.done();
+        if (slitCorrection) {
+            slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
         }
 
         return targetProduct;
@@ -158,11 +153,13 @@ public class DestripingFactorsOp extends Operator {
     public void computeTile(Band band, Tile targetTile) throws OperatorException {
         ProgressMonitor pm = createProgressMonitor();
         try {
-            if (edgeMask == null) {
-                pm.beginTask("computing correction factors...", 100);
-                edgeMask = createEdgeMask(SubProgressMonitor.create(pm, 90));
-            } else {
-                pm.beginTask("computing correction factors...", 10);
+            synchronized (this) {
+                if (edgeMask == null) {
+                    pm.beginTask("computing correction factors...", 100);
+                    edgeMask = createEdgeMask(SubProgressMonitor.create(pm, 90));
+                } else {
+                    pm.beginTask("computing correction factors...", 10);
+                }
             }
             for (int i = 0; i < targetBands.length; ++i) {
                 if (targetBands[i].equals(band)) {
@@ -189,9 +186,9 @@ public class DestripingFactorsOp extends Operator {
     /**
      * Computes the vertical striping correction factors for a single target band.
      *
-     * @param bandIndex    the band index.
+     * @param bandIndex  the band index.
      * @param targetTile the target raster.
-     * @param pm           the {@link ProgressMonitor}.
+     * @param pm         the {@link ProgressMonitor}.
      *
      * @throws OperatorException
      */
@@ -214,7 +211,8 @@ public class DestripingFactorsOp extends Operator {
                     for (int x = 1; x < rci.getWidth(); ++x) {
                         final double r2 = getDouble(rci, x, y);
 
-                        if (!edgeMask[panorama.getY(j, y)][x] && mask.getSampleInt(x, y) == 0 && mask.getSampleInt(x - 1, y) == 0) {
+                        if (!edgeMask[panorama.getY(j, y)][x] && mask.getSampleInt(x, y) == 0 && mask.getSampleInt(
+                                x - 1, y) == 0) {
                             p[x] += log(r2 / r1);
                             ++count[x];
                         }
@@ -376,7 +374,7 @@ public class DestripingFactorsOp extends Operator {
 
             // 4. Create the edge mask
             final boolean[][] edgeMask = new boolean[panorama.height][panorama.width];
-            for (int y = 0; y < panorama.height; ++ y) {
+            for (int y = 0; y < panorama.height; ++y) {
                 for (int x = 1; x < panorama.width; ++x) {
                     if (sad[x][y] > threshold) {
                         edgeMask[y][x] = true;
@@ -541,7 +539,7 @@ public class DestripingFactorsOp extends Operator {
     }
 
 
-    public static class Spi extends AbstractOperatorSpi {
+    public static class Spi extends OperatorSpi {
 
         public Spi() {
             super(DestripingFactorsOp.class, "DestripingFactors");
