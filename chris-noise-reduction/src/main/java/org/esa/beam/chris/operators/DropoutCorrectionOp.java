@@ -16,8 +16,6 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.binding.ConverterRegistry;
-import com.bc.ceres.binding.converters.EnumConverter;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.datamodel.Band;
@@ -264,13 +262,13 @@ public class DropoutCorrectionOp extends Operator {
 
     public static class Spi extends OperatorSpi {
 
-        static {
-            final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
-            final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
-            if (converterRegistry.getConverter(type) == null) {
-                converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
-            }
-        }
+//        static {
+//            final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
+//            final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
+//            if (converterRegistry.getConverter(type) == null) {
+//                converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
+//            }
+//        }
         
         public Spi() {
             super(DropoutCorrectionOp.class, "DropoutCorrection");
