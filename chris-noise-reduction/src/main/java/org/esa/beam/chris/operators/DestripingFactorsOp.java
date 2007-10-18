@@ -150,8 +150,7 @@ public class DestripingFactorsOp extends Operator {
     }
 
     @Override
-    public void computeTile(Band band, Tile targetTile) throws OperatorException {
-        ProgressMonitor pm = createProgressMonitor();
+    public void computeTile(Band band, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         try {
             synchronized (this) {
                 if (edgeMask == null) {
@@ -202,8 +201,8 @@ public class DestripingFactorsOp extends Operator {
             final int[] count = new int[panorama.width];
 
             for (int j = 0; j < sourceProducts.length; ++j) {
-                final Tile rci = getSceneTile(sourceRciBands[bandIndex][j]);
-                final Tile mask = getSceneTile(sourceMaskBands[bandIndex][j]);
+                final Tile rci = getSceneTile(sourceRciBands[bandIndex][j], pm);
+                final Tile mask = getSceneTile(sourceMaskBands[bandIndex][j], pm);
 
                 for (int y = 0; y < rci.getHeight(); ++y) {
                     double r1 = getDouble(rci, 0, y);
@@ -325,7 +324,7 @@ public class DestripingFactorsOp extends Operator {
             // 1. Compute the squares and across-track scalar products of the spectral vectors
             for (final Band[] bands : sourceRciBands) {
                 for (int i = 0; i < bands.length; i++) {
-                    final Tile data = getSceneTile(bands[i]);
+                    final Tile data = getSceneTile(bands[i], pm);
 
                     for (int y = 0; y < data.getHeight(); ++y) {
                         double r1 = getDouble(data, 0, y);
@@ -405,8 +404,8 @@ public class DestripingFactorsOp extends Operator {
         }
     }
 
-    private Tile getSceneTile(Band band) throws OperatorException {
-        return getSourceTile(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()));
+    private Tile getSceneTile(Band band, ProgressMonitor pm) throws OperatorException {
+        return getSourceTile(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()), pm);
     }
 
     private static double getEdgeDetectionThreshold(Product product) throws OperatorException {

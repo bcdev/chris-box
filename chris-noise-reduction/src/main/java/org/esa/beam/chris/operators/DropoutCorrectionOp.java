@@ -115,14 +115,13 @@ public class DropoutCorrectionOp extends Operator {
     }
 
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle) throws OperatorException {
-        ProgressMonitor pm = createProgressMonitor();
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
         try {
             pm.beginTask("computing dropout correction", spectralBandCount);
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
 
             for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {
-                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle);
+                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle, pm);
                 pm.worked(1);
             }
         } finally {
@@ -140,7 +139,7 @@ public class DropoutCorrectionOp extends Operator {
     }
 
     private void computeDropoutCorrection(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                          Rectangle sourceRectangle) throws OperatorException {
+                                          Rectangle sourceRectangle, ProgressMonitor pm) throws OperatorException {
         final int minBandIndex = max(bandIndex - neighborBandCount, 0);
         final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
         final int bandCount = maxBandIndex - minBandIndex + 1;
@@ -148,8 +147,8 @@ public class DropoutCorrectionOp extends Operator {
         final int[][] sourceRciData = new int[bandCount][];
         final short[][] sourceMaskData = new short[bandCount][];
 
-        final Tile sourceTile1 = getSourceTile(sourceRciBands[bandIndex], sourceRectangle);
-        final Tile sourceTile2 = getSourceTile(sourceMaskBands[bandIndex], sourceRectangle);
+        final Tile sourceTile1 = getSourceTile(sourceRciBands[bandIndex], sourceRectangle, pm);
+        final Tile sourceTile2 = getSourceTile(sourceMaskBands[bandIndex], sourceRectangle, pm);
 
         final int sourceScanlineOffset = sourceTile1.getScanlineOffset();
         final int sourceScanlineStride = sourceTile1.getScanlineStride();
@@ -162,8 +161,8 @@ public class DropoutCorrectionOp extends Operator {
 
         for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
             if (i != bandIndex) {
-                final Tile tile1 = getSourceTile(sourceRciBands[i], sourceRectangle);
-                final Tile tile2 = getSourceTile(sourceMaskBands[i], sourceRectangle);
+                final Tile tile1 = getSourceTile(sourceRciBands[i], sourceRectangle, pm);
+                final Tile tile2 = getSourceTile(sourceMaskBands[i], sourceRectangle, pm);
 
                 assert(sourceScanlineOffset == tile1.getScanlineOffset());
                 assert(sourceScanlineStride == tile1.getScanlineStride());

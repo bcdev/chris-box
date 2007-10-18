@@ -79,9 +79,8 @@ public class DestripingOp extends Operator {
     }
 
     @Override
-    public void computeTile(Band band, Tile targetTile) throws OperatorException {
+    public void computeTile(Band band, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         final String name = band.getName();
-        ProgressMonitor pm = createProgressMonitor();
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetTile, pm);
         } else {
@@ -98,8 +97,8 @@ public class DestripingOp extends Operator {
 
             final Rectangle targetRectangle = targetTile.getRectangle();
             final Rectangle factorRectangle = new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1);
-            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle);
-            final Tile factorTile = getSourceTile(factorBand, factorRectangle);
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
+            final Tile factorTile = getSourceTile(factorBand, factorRectangle, pm);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
@@ -118,7 +117,7 @@ public class DestripingOp extends Operator {
             pm.beginTask("copying mask band", targetTile.getHeight());
 
             final Rectangle targetRectangle = targetTile.getRectangle();
-            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle());
+            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle(), pm);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
