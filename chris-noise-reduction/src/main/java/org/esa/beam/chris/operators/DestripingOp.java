@@ -71,7 +71,7 @@ public class DestripingOp extends Operator {
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
 
-        ProductUtils.copyElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
                             getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
 

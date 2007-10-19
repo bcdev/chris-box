@@ -76,7 +76,7 @@ public class DropoutCorrectionOp extends Operator {
         targetProduct.setEndTime(sourceProduct.getEndTime());
 
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-        ProductUtils.copyElementsAndAttributes(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
         spectralBandCount = getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
