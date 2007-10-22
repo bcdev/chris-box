@@ -210,8 +210,7 @@ public class DestripingFactorsOp extends Operator {
                     for (int x = 1; x < rci.getWidth(); ++x) {
                         final double r2 = getDouble(rci, x, y);
 
-                        if (!edgeMask[panorama.getY(j, y)][x] && mask.getSampleInt(x, y) == 0 && mask.getSampleInt(
-                                x - 1, y) == 0) {
+                        if (!edgeMask[panorama.getY(j, y)][x] && isValid(mask, x, y) && isValid(mask, x, y)) {
                             p[x] += log(r2 / r1);
                             ++count[x];
                         }
@@ -257,6 +256,10 @@ public class DestripingFactorsOp extends Operator {
         } finally {
             pm.done();
         }
+    }
+
+    private static boolean isValid(Tile mask, int x, int y) {
+        return mask.getSampleInt(x, y) == 0;
     }
 
     private static double[] getSlitNoiseFactors(Product product) throws OperatorException {
@@ -390,6 +393,7 @@ public class DestripingFactorsOp extends Operator {
 
     private double getDouble(Tile tile, int x, int y) {
         if (slitCorrection) {
+            // return the slit-corrected value
             return tile.getSampleDouble(x, y) / slitNoiseFactors[x];
         } else {
             return tile.getSampleDouble(x, y);
@@ -398,6 +402,7 @@ public class DestripingFactorsOp extends Operator {
 
     private void setDouble(Tile tile, int x, int y, double v) {
         if (slitCorrection) {
+            // combine slit and vertical striping correction into a single correction factor
             tile.setSample(x, y, v / slitNoiseFactors[x]);
         } else {
             tile.setSample(x, y, v);
