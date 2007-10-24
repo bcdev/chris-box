@@ -6,7 +6,7 @@ import java.util.Map;
 import org.esa.beam.chris.operators.DestripingFactorsOp;
 import org.esa.beam.chris.operators.DropoutCorrectionOp;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
-import org.esa.beam.framework.gpf.annotations.ParameterDefinitionFactory;
+import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
 
 import com.bc.ceres.binding.ConverterRegistry;
 import com.bc.ceres.binding.ValueContainer;
@@ -51,7 +51,7 @@ class AdvancedSettingsPresenter {
     }
 
     private void initValueContainers() {
-        final ValueContainerFactory factory = new ValueContainerFactory(new ParameterDefinitionFactory());
+        final ValueContainerFactory factory = new ValueContainerFactory(new ParameterDescriptorFactory());
         destripingValueContainer =
                 factory.createMapBackedValueContainer(DestripingFactorsOp.class, destripingParameterMap);
         dropoutCorrectionValueContainer =
