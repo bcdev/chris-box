@@ -65,7 +65,7 @@ public class DropoutCorrectionOp extends Operator {
     private Band[] targetMaskBands;
 
     @Override
-    public Product initialize() throws OperatorException {
+    public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(),
@@ -110,8 +110,6 @@ public class DropoutCorrectionOp extends Operator {
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         dropoutCorrection = new DropoutCorrection(neighborhoodType);
-
-        return targetProduct;
     }
 
     @Override

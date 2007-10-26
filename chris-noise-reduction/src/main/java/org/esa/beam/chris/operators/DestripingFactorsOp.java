@@ -83,7 +83,7 @@ public class DestripingFactorsOp extends Operator {
 
 
     @Override
-    public Product initialize() throws OperatorException {
+    public void initialize() throws OperatorException {
         for (Product sourceProduct : sourceProducts) {
             assertValidity(sourceProduct);
         }
@@ -145,8 +145,6 @@ public class DestripingFactorsOp extends Operator {
         if (slitCorrection) {
             slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
         }
-
-        return targetProduct;
     }
 
     @Override

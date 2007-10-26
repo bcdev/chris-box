@@ -50,7 +50,7 @@ public class DestripingOp extends Operator {
     Product targetProduct;
 
     @Override
-    public Product initialize() throws OperatorException {
+    public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
         targetProduct = new Product(sourceProduct.getName() + "_NR", sourceProduct.getProductType() + "_NR",
@@ -74,8 +74,6 @@ public class DestripingOp extends Operator {
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
                             getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
-
-        return targetProduct;
     }
 
     @Override
