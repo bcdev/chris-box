@@ -26,7 +26,7 @@ class AdvancedSettingsPresenter {
         final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
         final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
         if (converterRegistry.getConverter(type) == null) {
-            converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
+            converterRegistry.setConverter(type, new EnumConverter(type));
         }
     }
 
