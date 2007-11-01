@@ -1,4 +1,5 @@
-/* $Id: $
+/* $Id$
+ * $URL$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
