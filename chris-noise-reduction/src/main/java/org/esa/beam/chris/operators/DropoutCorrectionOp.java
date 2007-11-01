@@ -1,4 +1,4 @@
-/* $Id: $
+/* $Id$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
@@ -114,8 +114,8 @@ public class DropoutCorrectionOp extends Operator {
 
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("computing dropout correction", spectralBandCount);
         try {
-            pm.beginTask("computing dropout correction", spectralBandCount);
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
 
             for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {

@@ -1,4 +1,4 @@
-/* $Id: $
+/* $Id$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
@@ -21,7 +21,7 @@ package org.esa.beam.chris.operators.internal;
  * recursion, for example Hermite or Legendre polynomials.
  *
  * @author Ralf Quast
- * @version $Revision: $ $Date: $
+ * @version $Revision$ $Date$
  */
 public interface Functions {
 

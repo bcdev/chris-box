@@ -1,4 +1,4 @@
-/* $Id: $
+/* $Id$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
@@ -19,7 +19,7 @@ package org.esa.beam.chris.operators.internal;
  * Class for calculating Legendre polynomials.
  *
  * @author Ralf Quast
- * @version $Revision: $ $Date: $
+ * @version $Revision$ $Date$
  */
 final public class LegendrePolynomials implements Functions {
 

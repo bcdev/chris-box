@@ -1,4 +1,4 @@
-/* $Id: $
+/* $Id$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
@@ -21,7 +21,7 @@ import junit.framework.TestCase;
  * Tests for class {@link LocalRegressionSmoother}.
  *
  * @author Ralf Quast
- * @version $Revision: $ $Date: $
+ * @version $Revision$ $Date$
  */
 public class LocalRegressionSmootherTest extends TestCase {
 

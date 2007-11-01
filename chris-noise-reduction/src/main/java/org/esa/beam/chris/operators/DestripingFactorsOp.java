@@ -1,4 +1,4 @@
-/* $Id: $
+/* $Id$
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
@@ -49,7 +49,7 @@ import java.util.Map;
  *
  * @author Ralf Quast
  * @author Marco Zühlke
- * @version $Revision: $ $Date: $
+ * @version $Revision$ $Date$
  */
 public class DestripingFactorsOp extends Operator {
 
