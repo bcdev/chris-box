@@ -11,7 +11,7 @@
 
     <node>
         <id>factors</id>
-        <operator>org.esa.beam.chris.operators.DestripingFactorsOp$Spi</operator>
+        <operator>org.esa.beam.chris.operators.ComputeDestripingFactorsOp$Spi</operator>
         <sources>
             <input>load</input>
         </sources>
@@ -23,7 +23,7 @@
 
     <node>
         <id>destriping</id>
-        <operator>org.esa.beam.chris.operators.DestripingOp$Spi</operator>
+        <operator>org.esa.beam.chris.operators.ApplyDestripingFactorsOp$Spi</operator>
         <sources>
             <input>load</input>
             <factors>factors</factors>
@@ -32,7 +32,7 @@
 
     <node>
         <id>dropout</id>
-        <operator>org.esa.beam.chris.operators.DropoutCorrectionOp$Spi</operator>
+        <operator>org.esa.beam.chris.operators.ComputeDropoutCorrectionOp$Spi</operator>
         <sources>
             <input>destriping</input>
         </sources>

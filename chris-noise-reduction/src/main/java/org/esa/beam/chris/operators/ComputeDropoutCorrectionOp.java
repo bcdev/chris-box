@@ -43,7 +43,7 @@ import java.util.Map;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class DropoutCorrectionOp extends Operator {
+public class ComputeDropoutCorrectionOp extends Operator {
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -119,6 +119,7 @@ public class DropoutCorrectionOp extends Operator {
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
 
             for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {
+                checkForCancelation(pm);
                 computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle, pm);
                 pm.worked(1);
             }
@@ -258,17 +259,9 @@ public class DropoutCorrectionOp extends Operator {
 
 
     public static class Spi extends OperatorSpi {
-
-//        static {
-//            final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
-//            final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
-//            if (converterRegistry.getConverter(type) == null) {
-//                converterRegistry.setConverter(type, new EnumConverter<DropoutCorrection.Type>(type));
-//            }
-//        }
         
         public Spi() {
-            super(DropoutCorrectionOp.class, "DropoutCorrection");
+            super(ComputeDropoutCorrectionOp.class, "ComputeDropoutCorrection");
         }
     }
 

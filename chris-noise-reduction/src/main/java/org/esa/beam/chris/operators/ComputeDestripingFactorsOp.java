@@ -34,7 +34,7 @@ import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import static java.lang.Math.*;
@@ -51,7 +51,7 @@ import java.util.Map;
  * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
-public class DestripingFactorsOp extends Operator {
+public class ComputeDestripingFactorsOp extends Operator {
 
     // todo -- operator parameters?
     private static final double G1 = 0.13045510094294;
@@ -186,14 +186,12 @@ public class DestripingFactorsOp extends Operator {
      * @param bandIndex  the band index.
      * @param targetTile the target raster.
      * @param pm         the {@link ProgressMonitor}.
-     *
-     * @throws OperatorException
+     * @throws OperatorException if an error occurred.
      */
     private void computeCorrectionFactors(int bandIndex, Tile targetTile, ProgressMonitor pm)
             throws OperatorException {
+        pm.beginTask("computing correction factors", panorama.height + 5);
         try {
-            pm.beginTask("computing corection factors", panorama.height + 5);
-
             // 1. Accumulate the across-track spatial derivative profile
             final double[] p = new double[panorama.width];
             final int[] count = new int[panorama.width];
@@ -203,6 +201,7 @@ public class DestripingFactorsOp extends Operator {
                 final Tile mask = getSceneTile(sourceMaskBands[bandIndex][j], pm);
 
                 for (int y = 0; y < rci.getHeight(); ++y) {
+                    checkForCancelation(pm);
                     double r1 = getDouble(rci, 0, y);
 
                     for (int x = 1; x < rci.getWidth(); ++x) {
@@ -309,15 +308,13 @@ public class DestripingFactorsOp extends Operator {
      * Creates the spatio-spectral edge mask for a hyperspectral image.
      *
      * @param pm the {@link ProgressMonitor}.
-     *
      * @return the edge mask. The value {@code true} indicates changes in the surface
      *         texture or coverage.
-     *
-     * @throws OperatorException
+     * @throws OperatorException if an error occurred.
      */
     private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("creating edge mask", spectralBandCount + panorama.width + 2);
         try {
-            pm.beginTask("creating edge mask", spectralBandCount + panorama.width + 2);
 
             final double[][] sad = new double[panorama.width][panorama.height];
             final double[][] sca = new double[panorama.width][panorama.height];
@@ -328,6 +325,7 @@ public class DestripingFactorsOp extends Operator {
                     final Tile data = getSceneTile(bands[i], pm);
 
                     for (int y = 0; y < data.getHeight(); ++y) {
+                        checkForCancelation(pm);
                         double r1 = getDouble(data, 0, y);
                         sad[0][panorama.getY(i, y)] += r1 * r1;
 
@@ -344,6 +342,7 @@ public class DestripingFactorsOp extends Operator {
             }
             // 2. Compute the across-track spectral angle differences
             for (int y = 0; y < panorama.height; ++y) {
+                checkForCancelation(pm);
                 double norm1 = sqrt(sad[0][y]);
                 sad[0][y] = 0.0;
 
@@ -375,6 +374,7 @@ public class DestripingFactorsOp extends Operator {
             // 4. Create the edge mask
             final boolean[][] edgeMask = new boolean[panorama.height][panorama.width];
             for (int y = 0; y < panorama.height; ++y) {
+                checkForCancelation(pm);
                 for (int x = 1; x < panorama.width; ++x) {
                     if (sad[x][y] > threshold) {
                         edgeMask[y][x] = true;
@@ -468,9 +468,7 @@ public class DestripingFactorsOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
-     *
      * @return the annotation or {@code null} if the annotation could not be found.
-     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move
@@ -520,14 +518,12 @@ public class DestripingFactorsOp extends Operator {
      * Returns an {@link ImageInputStream} for a resource file of interest.
      *
      * @param name the name of the resource file of interest.
-     *
      * @return the image input stream.
-     *
      * @throws OperatorException if the resource could not be found or the
      *                           image input stream could not be created.
      */
     private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final InputStream is = DestripingFactorsOp.class.getResourceAsStream(name);
+        final InputStream is = ComputeDestripingFactorsOp.class.getResourceAsStream(name);
 
         if (is == null) {
             throw new OperatorException(MessageFormat.format("resource {0} not found", name));
@@ -544,7 +540,7 @@ public class DestripingFactorsOp extends Operator {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(DestripingFactorsOp.class, "DestripingFactors");
+            super(ComputeDestripingFactorsOp.class, "ComputeDestripingFactors");
             // todo -- set description etc.
         }
     }

@@ -41,7 +41,7 @@ import java.util.logging.Level;
  *
  * @author Marco Peters
  * @author Ralf Quast
- * @version $Revision:$ $Date:$
+ * @version $Revision$ $Date$
  */
 public class NoiseReductionAction extends ExecCommand {
 
@@ -106,7 +106,7 @@ public class NoiseReductionAction extends ExecCommand {
     private static void performNoiseReduction(NoiseReductionPresenter presenter)
             throws OperatorException {
         final Product factors =
-                GPF.createProduct("DestripingFactors",
+                GPF.createProduct("ComputeDestripingFactors",
                                   presenter.getDestripingParameterMap(),
                                   presenter.getListedProducts());
 
@@ -119,21 +119,14 @@ public class NoiseReductionAction extends ExecCommand {
             productsMap.put("input", sourceProduct);
 
             final Product destriped =
-                    GPF.createProduct("Destriping",
+                    GPF.createProduct("ApplyDestripingFactors",
                                       new HashMap<String, Object>(0),
                                       productsMap);
 
             final Product targetProduct =
-                    GPF.createProduct("DropoutCorrection",
+                    GPF.createProduct("ComputeDropoutCorrection",
                                       presenter.getDropoutCorrectionParameterMap(),
                                       destriped);
-
-//            try {
-//                ProductIO.writeProduct(targetProduct, sourceProduct.getFileLocation().getParent() + sourceProduct.getName(),
-//                                       ProductIO.DEFAULT_FORMAT_NAME);
-//            } catch (IOException e) {
-//                // ignore
-//            }
             VisatApp.getApp().addProduct(targetProduct);
         }
     }

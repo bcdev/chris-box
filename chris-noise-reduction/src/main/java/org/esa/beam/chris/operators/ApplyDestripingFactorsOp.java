@@ -29,18 +29,18 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.Rectangle;
+import java.awt.*;
 import java.text.MessageFormat;
 
 /**
  * Operator for applying the vertical striping (VS) correction factors calculated by
- * the {@link DestripingFactorsOp}.
+ * the {@link ComputeDestripingFactorsOp}.
  *
  * @author Ralf Quast
  * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
-public class DestripingOp extends Operator {
+public class ApplyDestripingFactorsOp extends Operator {
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -82,46 +82,46 @@ public class DestripingOp extends Operator {
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetTile, pm);
         } else {
-            computeMaskBand(name, targetTile, pm);
+            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle(), pm);
+            targetTile.getRasterDataNode().setImage(sourceTile.getRasterDataNode().getImage());
         }
     }
 
     private void computeRciBand(String name, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("removing vertical striping artifacts", targetTile.getHeight());
         try {
-            pm.beginTask("removing vertical striping artifacts", targetTile.getHeight());
-
             final Band sourceBand = sourceProduct.getBand(name);
             final Band factorBand = factorProduct.getBand(name.replace("radiance", "vs_corr"));
 
             final Rectangle targetRectangle = targetTile.getRectangle();
             final Rectangle factorRectangle = new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1);
+
             final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
             final Tile factorTile = getSourceTile(factorBand, factorRectangle, pm);
 
-            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
-                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    final int value = (int) (sourceTile.getSampleInt(x, y) * factorTile.getSampleDouble(x, 0) + 0.5);
-                    targetTile.setSample(x, y, value);
+            final int[] sourceSamples = sourceTile.getDataBufferInt();
+            final int[] targetSamples = targetTile.getDataBufferInt();
+            final double[] factorSamples = factorTile.getDataBufferDouble();
+
+            assert (sourceTile.getScanlineOffset() == targetTile.getScanlineOffset());
+            assert (sourceTile.getScanlineStride() == targetTile.getScanlineStride());
+
+            int sourceOffset = sourceTile.getScanlineOffset();
+            int targetOffset = targetTile.getScanlineOffset();
+            int factorOffset = factorTile.getScanlineOffset();
+
+            for (int y = 0; y < targetTile.getHeight(); ++y) {
+                int sourceIndex = sourceOffset;
+                int targetIndex = targetOffset;
+                int factorIndex = factorOffset;
+                for (int x = 0; x < targetTile.getWidth(); ++x) {
+                    targetSamples[targetIndex] = (int) (sourceSamples[sourceIndex] * factorSamples[factorIndex] + 0.5);
+                    ++sourceIndex;
+                    ++targetIndex;
+                    ++factorIndex;
                 }
-                pm.worked(1);
-            }
-        } finally {
-            pm.done();
-        }
-    }
-
-    private void computeMaskBand(String name, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        try {
-            pm.beginTask("copying mask band", targetTile.getHeight());
-
-            final Rectangle targetRectangle = targetTile.getRectangle();
-            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle(), pm);
-
-            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
-                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    targetTile.setSample(x, y, sourceTile.getSampleInt(x, y));
-                }
-                pm.worked(1);
+                sourceOffset += sourceTile.getScanlineStride();
+                targetOffset += targetTile.getScanlineStride();
             }
         } finally {
             pm.done();
@@ -148,9 +148,7 @@ public class DestripingOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
-     *
      * @return the annotation or {@code null} if the annotation could not be found.
-     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move
@@ -177,7 +175,7 @@ public class DestripingOp extends Operator {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(DestripingOp.class, "Destriping");
+            super(ApplyDestripingFactorsOp.class, "ApplyDestripingFactors");
             // todo -- set description etc.
         }
     }

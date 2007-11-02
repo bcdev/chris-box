@@ -3,8 +3,8 @@ package org.esa.beam.chris.ui;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.esa.beam.chris.operators.DestripingFactorsOp;
-import org.esa.beam.chris.operators.DropoutCorrectionOp;
+import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
+import org.esa.beam.chris.operators.ComputeDropoutCorrectionOp;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
 
@@ -18,17 +18,9 @@ import com.bc.ceres.binding.converters.EnumConverter;
  *
  * @author Marco Peters
  * @author Ralf Quast
- * @version $Revision:$ $Date:$
+ * @version $Revision$ $Date$
  */
 class AdvancedSettingsPresenter {
-
-    static {
-        final ConverterRegistry converterRegistry = ConverterRegistry.getInstance();
-        final Class<DropoutCorrection.Type> type = DropoutCorrection.Type.class;
-        if (converterRegistry.getConverter(type) == null) {
-            converterRegistry.setConverter(type, new EnumConverter(type));
-        }
-    }
 
     private Map<String, Object> destripingParameterMap;
     private Map<String, Object> dropoutCorrectionParameterMap;
@@ -53,9 +45,9 @@ class AdvancedSettingsPresenter {
     private void initValueContainers() {
         final ValueContainerFactory factory = new ValueContainerFactory(new ParameterDescriptorFactory());
         destripingValueContainer =
-                factory.createMapBackedValueContainer(DestripingFactorsOp.class, destripingParameterMap);
+                factory.createMapBackedValueContainer(ComputeDestripingFactorsOp.class, destripingParameterMap);
         dropoutCorrectionValueContainer =
-                factory.createMapBackedValueContainer(DropoutCorrectionOp.class, dropoutCorrectionParameterMap);
+                factory.createMapBackedValueContainer(ComputeDropoutCorrectionOp.class, dropoutCorrectionParameterMap);
     }
 
     public ValueContainer getDestripingValueContainer() {
