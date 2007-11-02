@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-noise-reduction</artifactId>
     <name>CHRIS Noise Reduction</name>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <description>CHRIS Noise Reduction</description>
 
     <dependencies>
