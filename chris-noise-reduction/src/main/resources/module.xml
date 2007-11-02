@@ -2,8 +2,8 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-noise-reduction</symbolicName>
     <version>1.0</version>
-    <name>chris-noise-reduction</name>
-    <description>CHRIS Noise Reduction Tool</description>
+    <name>CHRIS/Proba Noise Reduction Tool</name>
+    <description>CHRIS/Proba Noise Reduction Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
