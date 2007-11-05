@@ -31,6 +31,7 @@ import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
@@ -129,6 +130,10 @@ public class ComputeDestripingFactorsOp extends Operator {
             targetBands[i].setSpectralWavelength(sourceRciBands[i][0].getSpectralWavelength());
         }
 
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE,
+                            getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE));
+        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE,
+                            getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
         final StringBuilder sb = new StringBuilder("Applied with ");
         for (int i = 0; i < sourceProducts.length; ++i) {
             if (i > 0) {
@@ -138,7 +143,10 @@ public class ComputeDestripingFactorsOp extends Operator {
             sb.append("°");
         }
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION, sb.toString());
-        // todo -- consider writing the sources metadata to the SPH
+        final MetadataElement targetBandInfo = new MetadataElement(ChrisConstants.BAND_INFORMATION_NAME);
+        ProductUtils.copyMetadata(sourceProducts[0].getMetadataRoot().getElement(ChrisConstants.BAND_INFORMATION_NAME),
+                                  targetBandInfo);
+        targetProduct.getMetadataRoot().addElement(targetBandInfo);
 
         panorama = new Panorama(sourceProducts);
         smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
