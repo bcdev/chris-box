@@ -31,7 +31,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.Rectangle;
+import java.awt.*;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import java.text.MessageFormat;
@@ -152,8 +152,8 @@ public class ComputeDropoutCorrectionOp extends Operator {
         final int sourceScanlineOffset = sourceTile1.getScanlineOffset();
         final int sourceScanlineStride = sourceTile1.getScanlineStride();
 
-        assert(sourceScanlineOffset == sourceTile2.getScanlineOffset());
-        assert(sourceScanlineStride == sourceTile2.getScanlineStride());
+        assert (sourceScanlineOffset == sourceTile2.getScanlineOffset());
+        assert (sourceScanlineStride == sourceTile2.getScanlineStride());
 
         sourceRciData[0] = sourceTile1.getDataBufferInt();
         sourceMaskData[0] = sourceTile2.getDataBufferShort();
@@ -163,10 +163,10 @@ public class ComputeDropoutCorrectionOp extends Operator {
                 final Tile tile1 = getSourceTile(sourceRciBands[i], sourceRectangle, pm);
                 final Tile tile2 = getSourceTile(sourceMaskBands[i], sourceRectangle, pm);
 
-                assert(sourceScanlineOffset == tile1.getScanlineOffset());
-                assert(sourceScanlineStride == tile1.getScanlineStride());
-                assert(sourceScanlineOffset == tile2.getScanlineOffset());
-                assert(sourceScanlineStride == tile2.getScanlineStride());
+                assert (sourceScanlineOffset == tile1.getScanlineOffset());
+                assert (sourceScanlineStride == tile1.getScanlineStride());
+                assert (sourceScanlineOffset == tile2.getScanlineOffset());
+                assert (sourceScanlineStride == tile2.getScanlineStride());
 
                 sourceRciData[j] = tile1.getDataBufferInt();
                 sourceMaskData[j] = tile2.getDataBufferShort();
@@ -180,8 +180,8 @@ public class ComputeDropoutCorrectionOp extends Operator {
         final int targetScanlineStride = targetTile1.getScanlineStride();
         final int targetScanlineOffset = targetTile1.getScanlineOffset();
 
-        assert(targetScanlineOffset == targetTile2.getScanlineOffset());
-        assert(targetScanlineStride == targetTile2.getScanlineStride());
+        assert (targetScanlineOffset == targetTile2.getScanlineOffset());
+        assert (targetScanlineStride == targetTile2.getScanlineStride());
 
         final int[] targetRciData = targetTile1.getDataBufferInt();
         final short[] targetMaskData = targetTile2.getDataBufferShort();
@@ -231,9 +231,7 @@ public class ComputeDropoutCorrectionOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
-     *
      * @return the annotation or {@code null} if the annotation could not be found.
-     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move
@@ -259,7 +257,7 @@ public class ComputeDropoutCorrectionOp extends Operator {
 
 
     public static class Spi extends OperatorSpi {
-        
+
         public Spi() {
             super(ComputeDropoutCorrectionOp.class, "ComputeDropoutCorrection");
         }

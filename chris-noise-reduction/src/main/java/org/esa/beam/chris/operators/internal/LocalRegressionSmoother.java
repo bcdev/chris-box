@@ -41,7 +41,6 @@ public class LocalRegressionSmoother {
      *
      * @param degree the polynomial degree
      * @param span   the span, must be greater than {@code degree + 2}.
-     *
      * @throws IllegalArgumentException if the polynomial degree is a negative nnumber.
      * @throws IllegalArgumentException if the span is not a positive number.
      * @throws IllegalArgumentException if the span is not greater than {@code degree + 2}.
@@ -56,7 +55,6 @@ public class LocalRegressionSmoother {
      * @param degree the polynomial degree
      * @param span   the span, must be greater than {@code degree + 2}.
      * @param iter   the number of robust regression iterations performed.
-     *
      * @throws IllegalArgumentException if the polynomial degree is a negative number.
      * @throws IllegalArgumentException if the span is not a positive number.
      * @throws IllegalArgumentException if the span is not greater than {@code degree + 2}.
@@ -105,7 +103,6 @@ public class LocalRegressionSmoother {
      *
      * @param y the response values.
      * @param z the smoothed response values.
-     *
      * @throws IllegalArgumentException if the lengths of {@code y} and {@code z} are
      *                                  different.
      * @throws IllegalArgumentException if the lengths of {@code y} and {@code z} are
@@ -252,7 +249,6 @@ public class LocalRegressionSmoother {
      *             to the multiplying coefficients of the design matrix.
      * @param c    the linear coefficients.
      * @param p    the values of the basis functions for all points considered.
-     *
      * @throws ArithmeticException if the design matrix multiplied by its transpose
      *                             is not positive definite.
      */
