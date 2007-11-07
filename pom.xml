@@ -12,6 +12,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>chris-cloud-screening</module>
         <module>chris-noise-reduction</module>
     </modules>
 
