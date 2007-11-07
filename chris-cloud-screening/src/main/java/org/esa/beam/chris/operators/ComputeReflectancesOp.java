@@ -1,29 +1,259 @@
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.dataio.chris.ChrisConstants;
+import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Tile;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.util.ProductUtils;
 
-import javax.imageio.stream.FileImageOutputStream;
-import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.FileCacheImageInputStream;
-import java.io.File;
-import java.io.InputStream;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.io.InputStream;
+import static java.lang.Math.*;
 import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * New class.
+ * Operator for computing TOA reflectances from CHRIS response corrected
+ * images.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
+@OperatorMetadata(alias = "chris.ComputeReflectances",
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2007 by Brockmann Consult",
+                  description = "Computes TOA reflectances from a CHRIS RCI.")
 public class ComputeReflectancesOp extends Operator {
 
+    @SourceProduct(alias = "input")
+    Product sourceProduct;
+    @TargetProduct
+    Product targetProduct;
+
+    private transient Map<Band, Band> sourceBandMap;
+    private transient Map<Band, Double> conversionFactorMap;
+
     public void initialize() throws OperatorException {
-        //To change body of implemented methods use File | Settings | File Templates.
+        assertValidity(sourceProduct);
+
+        sourceBandMap = new HashMap<Band, Band>();
+        conversionFactorMap = new HashMap<Band, Double>();
+
+        final double[][] table = readThuillierTable();
+        final int day = getAcquisitionDay(sourceProduct);
+        computeSolarIrradianceTable(table, day);
+        final double solarZenithAngle = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+
+        // todo - product type and name
+        targetProduct = new Product(sourceProduct.getName() + "_REFL", sourceProduct.getProductType() + "_REFL",
+                                    sourceProduct.getSceneRasterWidth(),
+                                    sourceProduct.getSceneRasterHeight());
+
+        targetProduct.setStartTime(sourceProduct.getStartTime());
+        targetProduct.setEndTime(sourceProduct.getEndTime());
+        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (sourceBand.getName().startsWith("radiance_")) {
+                final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+                sourceBandMap.put(targetBand, sourceBand);
+            }
+        }
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (sourceBand.getName().startsWith("radiance_")) {
+                final Band targetBand = new Band(sourceBand.getName().replaceFirst("radiance", "reflectance"),
+                                                 ProductData.TYPE_INT16,
+                                                 sourceBand.getSceneRasterWidth(),
+                                                 sourceBand.getSceneRasterHeight());
+
+                targetBand.setDescription(MessageFormat.format(
+                        "Reflectance for spectral band {0}", sourceBand.getSpectralBandIndex() + 1));
+                targetBand.setUnit("dl");
+                targetBand.setScalingFactor(1.0E-4);
+                targetBand.setValidPixelExpression(sourceBand.getValidPixelExpression());
+                targetBand.setSpectralBandIndex(sourceBand.getSpectralBandIndex());
+                targetBand.setSpectralWavelength(sourceBand.getSpectralWavelength());
+                targetBand.setSpectralBandwidth(sourceBand.getSpectralBandwidth());
+
+                targetProduct.addBand(targetBand);
+                sourceBandMap.put(targetBand, sourceBand);
+
+                final double solarIrradiance = getConvolutedSolarIrradiance(table,
+                                                                            sourceBand.getSpectralWavelength(),
+                                                                            sourceBand.getSpectralBandwidth());
+                final double conversionFactor = PI / (cos(toRadians(solarZenithAngle)) * 1000.0 * solarIrradiance);
+                conversionFactorMap.put(targetBand, conversionFactor);
+            }
+        }
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (sourceBand.getName().startsWith("mask")) {
+                final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+
+                final FlagCoding flagCoding = sourceBand.getFlagCoding();
+                if (flagCoding != null) {
+                    targetBand.setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
+                }
+
+                sourceBandMap.put(targetBand, sourceBand);
+            }
+        }
+
+        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+    }
+
+    @Override
+    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        if (targetBand.getName().startsWith("reflectance")) {
+            computeReflectances(targetBand, targetTile, pm);
+        } else {
+            final Band sourceBand = sourceBandMap.get(targetBand);
+            final Tile sourceTile = getSourceTile(sourceBand, targetTile.getRectangle(), pm);
+
+            targetTile.setRawSamples(sourceTile.getRawSamples());
+        }
+    }
+
+    @Override
+    public void dispose() {
+        sourceBandMap.clear();
+        sourceBandMap = null;
+
+        conversionFactorMap.clear();
+        conversionFactorMap = null;
+    }
+
+    private void computeReflectances(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("computing reflectances...", targetTile.getHeight());
+        try {
+            final Band sourceBand = sourceBandMap.get(targetBand);
+            final Rectangle targetRectangle = targetTile.getRectangle();
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
+
+            final int[] sourceSamples = sourceTile.getDataBufferInt();
+            final short[] targetSamples = targetTile.getDataBufferShort();
+
+            final double conversionFactor = conversionFactorMap.get(targetBand);
+
+            assert (sourceTile.getScanlineOffset() == targetTile.getScanlineOffset());
+            assert (sourceTile.getScanlineStride() == targetTile.getScanlineStride());
+
+            int offset = targetTile.getScanlineOffset();
+            int stride = targetTile.getScanlineStride();
+
+            for (int y = 0; y < targetTile.getHeight(); ++y) {
+                int index = offset;
+                for (int x = 0; x < targetTile.getWidth(); ++x) {
+                    targetSamples[index] = (short) (10000.0 * sourceSamples[index] * conversionFactor + 0.5);
+                    ++index;
+                }
+                offset += stride;
+            }
+        } finally {
+            pm.done();
+        }
+    }
+
+    private static void assertValidity(Product product) {
+        try {
+            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        } catch (OperatorException e) {
+            throw new OperatorException(MessageFormat.format(
+                    "product ''{0}'' is not a CHRIS product", product.getName()), e);
+        }
+        // todo - add further validation criteria
+    }
+
+    /**
+     * Returns a CHRIS annotation for a product of interest.
+     *
+     * @param product the product of interest.
+     * @param name    the name of the CHRIS annotation.
+     * @return the annotation or {@code null} if the annotation could not be found.
+     * @throws OperatorException if the annotation could not be read.
+     */
+    // todo -- move
+    private static String getAnnotationString(Product product, String name) throws OperatorException {
+        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
+
+        if (element == null) {
+            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
+        }
+        return element.getAttributeString(name, null);
+    }
+
+    // todo -- move
+    private static double getAnnotationDouble(Product product, String name) throws OperatorException {
+        final String string = getAnnotationString(product, name);
+
+        try {
+            return Double.parseDouble(string);
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
+        }
+    }
+
+    private static double getConvolutedSolarIrradiance(double[][] table, double centralWavelength, double bandwidth) {
+        final double[] wavelengths = table[0];
+        final double[] irradiances = table[1];
+
+        double ws = 0.0;
+        double is = 0.0;
+
+        for (int i = 0; i < table[0].length; ++i) {
+            if (wavelengths[i] > centralWavelength + bandwidth) {
+                break;
+            }
+            if (wavelengths[i] > centralWavelength - bandwidth) {
+                final double w = 1.0 / pow(1.0 + abs(2.0 * (wavelengths[i] - centralWavelength) / bandwidth), 4.0);
+
+                is += irradiances[i] * w;
+                ws += w;
+            }
+        }
+
+        return is / ws;
+    }
+
+    /**
+     * Computes the solar irradiance for a given acquisition day.
+     *
+     * @param table the nominal solar irradiance table. On output contains the
+     *              solar irradiance for the given acquisition day.
+     * @param day   the acquisition day number.
+     */
+    private static void computeSolarIrradianceTable(double[][] table, int day) {
+        final double[] irradiances = table[1];
+
+        final double e = 0.01673;
+        final double factor = 1.0 / sqr(1.0 - e * cos(toRadians(0.9856 * (day - 4))));
+
+        for (int i = 0; i < irradiances.length; ++i) {
+            irradiances[i] *= factor;
+        }
+    }
+
+    private static int getAcquisitionDay(Product product) {
+        final ProductData.UTC utc = product.getStartTime();
+
+        if (utc != null) {
+            return utc.getAsCalendar().get(Calendar.DAY_OF_YEAR);
+        } else {
+            throw new OperatorException(MessageFormat.format(
+                    "no date for product ''{0}''", product.getName()));
+        }
     }
 
     static double[][] readThuillierTable() throws OperatorException {
@@ -71,12 +301,15 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
+    private static double sqr(double x) {
+        return x == 0.0 ? 0.0 : x * x;
+    }
+
 
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(ComputeReflectancesOp.class, "ComputeReflectances");
-            // todo -- set description etc.
+            super(ComputeReflectancesOp.class);
         }
     }
 }
