@@ -35,7 +35,7 @@
         <action>
             <id>chrisNoiseReduction</id>
             <class>org.esa.beam.chris.ui.NoiseReductionAction</class>
-            <text>Noise Reduction (CHRIS)....</text>
+            <text>Noise Reduction (CHRIS)...</text>
             <shortDescr>Invoke the CHRIS Noise Reduction Tool</shortDescr>
             <mnemonic></mnemonic>
             <parent>tools</parent>
