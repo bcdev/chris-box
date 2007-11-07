@@ -26,10 +26,10 @@ import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.util.ProductUtils;
 
 import java.awt.*;
@@ -48,7 +48,7 @@ import java.util.Map;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Carries out the dropout correction for a given CHRIS image.")
+                  description = "Carries out the dropout correction for a CHRIS RCI.")
 public class CorrectDropoutsOp extends Operator {
 
     @SourceProduct(alias = "input")
@@ -225,11 +225,11 @@ public class CorrectDropoutsOp extends Operator {
     private static void assertValidity(Product product) throws OperatorException {
         try {
             getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not a CHRIS product", product.getName()));
+                    "product ''{0}'' is not a CHRIS product", product.getName()), e);
         }
+        // todo - add further validation criteria
     }
 
     /**

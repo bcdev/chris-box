@@ -25,9 +25,9 @@ import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.util.ProductUtils;
 
 import java.awt.*;
@@ -45,7 +45,7 @@ import java.text.MessageFormat;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Applies a precomputed set of destriping factors to a given CHRIS image.")
+                  description = "Applies a precomputed set of destriping factors to a CHRIS RCI.")
 public class ApplyDestripingFactorsOp extends Operator {
 
     @SourceProduct(alias = "input")
@@ -89,7 +89,7 @@ public class ApplyDestripingFactorsOp extends Operator {
             computeRciBand(name, targetTile, pm);
         } else {
             final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle(), pm);
-            targetTile.getRasterDataNode().setImage(sourceTile.getRasterDataNode().getImage());
+            targetTile.setRawSamples(sourceTile.getRawSamples());
         }
     }
 
@@ -137,16 +137,11 @@ public class ApplyDestripingFactorsOp extends Operator {
     private static void assertValidity(Product product) throws OperatorException {
         try {
             getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
-            final String string = getAnnotationString(product, ChrisConstants.ATTR_NAME_NOISE_REDUCTION);
-            if (!string.equalsIgnoreCase("none")) {
-                throw new OperatorException(MessageFormat.format(
-                        "product ''{0}'' already is noise-corrected", product.getName()));
-            }
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not a CHRIS product", product.getName()));
+                    "product ''{0}'' is not a CHRIS product", product.getName()), e);
         }
+        // todo - add further validation criteria
     }
 
     /**

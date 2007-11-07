@@ -57,7 +57,7 @@ import java.util.Map;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Computes the destriping factors for the given CHRIS images.")
+                  description = "Computes the destriping factors for the given CHRIS RCIs.")
 public class ComputeDestripingFactorsOp extends Operator {
 
     // todo -- operator parameters?
@@ -448,11 +448,11 @@ public class ComputeDestripingFactorsOp extends Operator {
     private static void assertValidity(Product product) throws OperatorException {
         try {
             getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not a CHRIS product", product.getName()));
+                    "product ''{0}'' is not a CHRIS product", product.getName()), e);
         }
+        // todo - add further validation criteria
     }
 
     // todo -- move
