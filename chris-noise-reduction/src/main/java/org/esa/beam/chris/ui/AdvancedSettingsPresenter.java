@@ -4,14 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
-import org.esa.beam.chris.operators.ComputeDropoutCorrectionOp;
-import org.esa.beam.dataio.chris.internal.DropoutCorrection;
+import org.esa.beam.chris.operators.CorrectDropoutsOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
 
-import com.bc.ceres.binding.ConverterRegistry;
 import com.bc.ceres.binding.ValueContainer;
 import com.bc.ceres.binding.ValueContainerFactory;
-import com.bc.ceres.binding.converters.EnumConverter;
 
 /**
  * Created by Marco Peters.
@@ -47,7 +44,7 @@ class AdvancedSettingsPresenter {
         destripingValueContainer =
                 factory.createMapBackedValueContainer(ComputeDestripingFactorsOp.class, destripingParameterMap);
         dropoutCorrectionValueContainer =
-                factory.createMapBackedValueContainer(ComputeDropoutCorrectionOp.class, dropoutCorrectionParameterMap);
+                factory.createMapBackedValueContainer(CorrectDropoutsOp.class, dropoutCorrectionParameterMap);
     }
 
     public ValueContainer getDestripingValueContainer() {

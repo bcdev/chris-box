@@ -32,7 +32,7 @@
 
     <node>
         <id>dropout</id>
-        <operator>org.esa.beam.chris.operators.ComputeDropoutCorrectionOp$Spi</operator>
+        <operator>org.esa.beam.chris.operators.CorrectDropoutsOp$Spi</operator>
         <sources>
             <input>destriping</input>
         </sources>

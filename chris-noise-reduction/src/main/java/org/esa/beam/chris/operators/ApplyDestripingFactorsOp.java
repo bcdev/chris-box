@@ -27,6 +27,7 @@ import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.util.ProductUtils;
 
 import java.awt.*;
@@ -40,6 +41,11 @@ import java.text.MessageFormat;
  * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
+@OperatorMetadata(alias = "chris.ApplyDestripingFactors",
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2007 by Brockmann Consult",
+                  description = "Applies a precomputed set of destriping factors to a given CHRIS image.")
 public class ApplyDestripingFactorsOp extends Operator {
 
     @SourceProduct(alias = "input")
@@ -175,9 +181,7 @@ public class ApplyDestripingFactorsOp extends Operator {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(ApplyDestripingFactorsOp.class, "ApplyDestripingFactors");
-            // todo -- set description etc.
+            super(ApplyDestripingFactorsOp.class);
         }
     }
-
 }

@@ -29,6 +29,7 @@ import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.util.ProductUtils;
 
 import java.awt.*;
@@ -43,7 +44,12 @@ import java.util.Map;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class ComputeDropoutCorrectionOp extends Operator {
+@OperatorMetadata(alias = "chris.CorrectDropouts",
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2007 by Brockmann Consult",
+                  description = "Carries out the dropout correction for a given CHRIS image.")
+public class CorrectDropoutsOp extends Operator {
 
     @SourceProduct(alias = "input")
     Product sourceProduct;
@@ -114,7 +120,7 @@ public class ComputeDropoutCorrectionOp extends Operator {
 
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("computing dropout correction", spectralBandCount);
+        pm.beginTask("computing dropout correction...", spectralBandCount);
         try {
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
 
@@ -259,8 +265,7 @@ public class ComputeDropoutCorrectionOp extends Operator {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(ComputeDropoutCorrectionOp.class, "ComputeDropoutCorrection");
+            super(CorrectDropoutsOp.class);
         }
     }
-
 }
