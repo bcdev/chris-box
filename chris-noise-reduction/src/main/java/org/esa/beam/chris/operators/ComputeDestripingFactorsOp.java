@@ -268,7 +268,7 @@ public class ComputeDestripingFactorsOp extends Operator {
     }
 
     private static double[] getSlitNoiseFactors(Product product) throws OperatorException {
-        final double[][] table = readReferenceSlitVsProfile();
+        final double[][] table = readSlitVsProfileTable();
 
         final double[] x = table[0];
         final double[] y = table[1];
@@ -499,7 +499,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         element.setAttributeString(name, value);
     }
 
-    private static double[][] readReferenceSlitVsProfile() throws OperatorException {
+    static double[][] readSlitVsProfileTable() throws OperatorException {
         final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.img");
 
         try {
