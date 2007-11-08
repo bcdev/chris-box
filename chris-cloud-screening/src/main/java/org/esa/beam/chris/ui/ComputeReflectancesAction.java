@@ -26,12 +26,12 @@ public class ComputeReflectancesAction extends ExecCommand {
     static {
         CHRIS_TYPES = new ArrayList<String>();
         Collections.addAll(CHRIS_TYPES,
-                           "CHRIS_M1",
-                           "CHRIS_M2",
-                           "CHRIS_M3",
-                           "CHRIS_M3A",
-                           "CHRIS_M4",
-                           "CHRIS_M5");
+                           "CHRIS_M1_NR",
+                           "CHRIS_M2_NR",
+                           "CHRIS_M3_NR",
+                           "CHRIS_M3A_NR",
+                           "CHRIS_M4_NR",
+                           "CHRIS_M5_NR");
     }
 
     @Override
@@ -50,16 +50,16 @@ public class ComputeReflectancesAction extends ExecCommand {
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         final boolean enabled = selectedProduct != null
-                && !(selectedProduct.getProductReader().getInput() instanceof Product)
-                && !(selectedProduct.getProductReader().getInput() instanceof Product[])
                 && CHRIS_TYPES.contains(selectedProduct.getProductType());
 
         setEnabled(enabled);
     }
 
     private static void performAction(Product sourceProduct) throws OperatorException {
+        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
+        parameterMap.put("copyRadianceBands", true);
         final Product targetProduct = GPF.createProduct("chris.ComputeReflectances",
-                                                        new HashMap<String, Object>(),
+                                                        parameterMap,
                                                         sourceProduct);
         VisatApp.getApp().addProduct(targetProduct);
     }

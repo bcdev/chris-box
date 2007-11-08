@@ -8,6 +8,7 @@ import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
@@ -41,6 +42,8 @@ public class ComputeReflectancesOp extends Operator {
     Product sourceProduct;
     @TargetProduct
     Product targetProduct;
+    @Parameter(defaultValue = "true")
+    boolean copyRadianceBands;
 
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
@@ -51,10 +54,10 @@ public class ComputeReflectancesOp extends Operator {
         sourceBandMap = new HashMap<Band, Band>();
         conversionFactorMap = new HashMap<Band, Double>();
 
+        final double solarZenithAngle = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         final double[][] table = readThuillierTable();
         final int day = getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
-        final double solarZenithAngle = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
 
         // todo - product type and name
         targetProduct = new Product(sourceProduct.getName() + "_REFL", sourceProduct.getProductType() + "_REFL",
@@ -65,14 +68,20 @@ public class ComputeReflectancesOp extends Operator {
         targetProduct.setEndTime(sourceProduct.getEndTime());
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
 
-        for (final Band sourceBand : sourceProduct.getBands()) {
-            if (sourceBand.getName().startsWith("radiance_")) {
-                final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-                sourceBandMap.put(targetBand, sourceBand);
+        if (copyRadianceBands) {
+            for (final Band sourceBand : sourceProduct.getBands()) {
+                if (sourceBand.getName().startsWith("radiance")) {
+                    final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+                    final double solarIrradiance = getAverageSolarIrradiance(table,
+                                                                             sourceBand.getSpectralWavelength(),
+                                                                             sourceBand.getSpectralBandwidth());
+                    targetBand.setSolarFlux((float) solarIrradiance);
+                    sourceBandMap.put(targetBand, sourceBand);
+                }
             }
         }
         for (final Band sourceBand : sourceProduct.getBands()) {
-            if (sourceBand.getName().startsWith("radiance_")) {
+            if (sourceBand.getName().startsWith("radiance")) {
                 final Band targetBand = new Band(sourceBand.getName().replaceFirst("radiance", "reflectance"),
                                                  ProductData.TYPE_INT16,
                                                  sourceBand.getSceneRasterWidth(),
@@ -86,13 +95,13 @@ public class ComputeReflectancesOp extends Operator {
                 targetBand.setSpectralBandIndex(sourceBand.getSpectralBandIndex());
                 targetBand.setSpectralWavelength(sourceBand.getSpectralWavelength());
                 targetBand.setSpectralBandwidth(sourceBand.getSpectralBandwidth());
-
+                final double solarIrradiance = getAverageSolarIrradiance(table,
+                                                                         sourceBand.getSpectralWavelength(),
+                                                                         sourceBand.getSpectralBandwidth());
+                targetBand.setSolarFlux((float) solarIrradiance);
                 targetProduct.addBand(targetBand);
                 sourceBandMap.put(targetBand, sourceBand);
 
-                final double solarIrradiance = getConvolutedSolarIrradiance(table,
-                                                                            sourceBand.getSpectralWavelength(),
-                                                                            sourceBand.getSpectralBandwidth());
                 final double conversionFactor = PI / (cos(toRadians(solarZenithAngle)) * 1000.0 * solarIrradiance);
                 conversionFactorMap.put(targetBand, conversionFactor);
             }
@@ -100,12 +109,14 @@ public class ComputeReflectancesOp extends Operator {
         for (final Band sourceBand : sourceProduct.getBands()) {
             if (sourceBand.getName().startsWith("mask")) {
                 final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-
+                final double solarIrradiance = getAverageSolarIrradiance(table,
+                                                                         sourceBand.getSpectralWavelength(),
+                                                                         sourceBand.getSpectralBandwidth());
+                targetBand.setSolarFlux((float) solarIrradiance);
                 final FlagCoding flagCoding = sourceBand.getFlagCoding();
                 if (flagCoding != null) {
                     targetBand.setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
                 }
-
                 sourceBandMap.put(targetBand, sourceBand);
             }
         }
@@ -147,19 +158,23 @@ public class ComputeReflectancesOp extends Operator {
 
             final double conversionFactor = conversionFactorMap.get(targetBand);
 
-            assert (sourceTile.getScanlineOffset() == targetTile.getScanlineOffset());
-            assert (sourceTile.getScanlineStride() == targetTile.getScanlineStride());
-
-            int offset = targetTile.getScanlineOffset();
-            int stride = targetTile.getScanlineStride();
+            int sourceOffset = sourceTile.getScanlineOffset();
+            int sourceStride = sourceTile.getScanlineStride();
+            int targetOffset = targetTile.getScanlineOffset();
+            int targetStride = targetTile.getScanlineStride();
 
             for (int y = 0; y < targetTile.getHeight(); ++y) {
-                int index = offset;
+                checkForCancelation(pm);
+                int sourceIndex = sourceOffset;
+                int targetIndex = targetOffset;
                 for (int x = 0; x < targetTile.getWidth(); ++x) {
-                    targetSamples[index] = (short) (10000.0 * sourceSamples[index] * conversionFactor + 0.5);
-                    ++index;
+                    targetSamples[targetIndex] = (short) (10000.0 * sourceSamples[sourceIndex] * conversionFactor + 0.5);
+                    ++sourceIndex;
+                    ++targetIndex;
                 }
-                offset += stride;
+                sourceOffset += sourceStride;
+                targetOffset += targetStride;
+                pm.worked(1);
             }
         } finally {
             pm.done();
@@ -205,7 +220,7 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
-    private static double getConvolutedSolarIrradiance(double[][] table, double centralWavelength, double bandwidth) {
+    private static double getAverageSolarIrradiance(double[][] table, double centralWavelength, double bandwidth) {
         final double[] wavelengths = table[0];
         final double[] irradiances = table[1];
 
@@ -226,6 +241,7 @@ public class ComputeReflectancesOp extends Operator {
 
         return is / ws;
     }
+
 
     /**
      * Computes the solar irradiance for a given acquisition day.
