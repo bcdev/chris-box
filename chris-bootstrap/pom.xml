@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>chris-box</artifactId>
+        <groupId>org.esa.beam.chris</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <packaging>jar</packaging>
+
+    <groupId>org.esa.beam.chris</groupId>
+    <artifactId>chris-bootstrap</artifactId>
+    <name>CHRIS Bootstrap Classpath</name>
+    <version>1.0-SNAPSHOT</version>
+    <description>Provides the bootstrap classpath to launch VISAT from your favourite IDE.</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.esa.beam.chris</groupId>
+            <artifactId>chris-cloud-screening</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.esa.beam.chris</groupId>
+            <artifactId>chris-noise-reduction</artifactId>
+            <version>1.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+</project>

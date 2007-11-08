@@ -12,6 +12,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>chris-bootstrap</module>
         <module>chris-cloud-screening</module>
         <module>chris-noise-reduction</module>
     </modules>
@@ -31,6 +32,12 @@
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-core</artifactId>
                 <version>0.6</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.bc.ceres</groupId>
+                <artifactId>ceres-binding</artifactId>
+                <version>0.6.1-SNAPSHOT</version>
             </dependency>
 
             <dependency>
