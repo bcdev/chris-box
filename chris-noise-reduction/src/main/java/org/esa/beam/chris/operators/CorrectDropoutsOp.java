@@ -15,6 +15,7 @@
  */
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.Assert;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
@@ -158,8 +159,8 @@ public class CorrectDropoutsOp extends Operator {
         final int sourceScanlineOffset = sourceTile1.getScanlineOffset();
         final int sourceScanlineStride = sourceTile1.getScanlineStride();
 
-        assert (sourceScanlineOffset == sourceTile2.getScanlineOffset());
-        assert (sourceScanlineStride == sourceTile2.getScanlineStride());
+        Assert.state(sourceScanlineOffset == sourceTile2.getScanlineOffset());
+        Assert.state(sourceScanlineStride == sourceTile2.getScanlineStride());
 
         sourceRciData[0] = sourceTile1.getDataBufferInt();
         sourceMaskData[0] = sourceTile2.getDataBufferShort();
@@ -169,10 +170,10 @@ public class CorrectDropoutsOp extends Operator {
                 final Tile tile1 = getSourceTile(sourceRciBands[i], sourceRectangle, pm);
                 final Tile tile2 = getSourceTile(sourceMaskBands[i], sourceRectangle, pm);
 
-                assert (sourceScanlineOffset == tile1.getScanlineOffset());
-                assert (sourceScanlineStride == tile1.getScanlineStride());
-                assert (sourceScanlineOffset == tile2.getScanlineOffset());
-                assert (sourceScanlineStride == tile2.getScanlineStride());
+                Assert.state(sourceScanlineOffset == tile1.getScanlineOffset());
+                Assert.state(sourceScanlineStride == tile1.getScanlineStride());
+                Assert.state(sourceScanlineOffset == tile2.getScanlineOffset());
+                Assert.state(sourceScanlineStride == tile2.getScanlineStride());
 
                 sourceRciData[j] = tile1.getDataBufferInt();
                 sourceMaskData[j] = tile2.getDataBufferShort();
@@ -186,8 +187,8 @@ public class CorrectDropoutsOp extends Operator {
         final int targetScanlineStride = targetTile1.getScanlineStride();
         final int targetScanlineOffset = targetTile1.getScanlineOffset();
 
-        assert (targetScanlineOffset == targetTile2.getScanlineOffset());
-        assert (targetScanlineStride == targetTile2.getScanlineStride());
+        Assert.state(targetScanlineOffset == targetTile2.getScanlineOffset());
+        Assert.state(targetScanlineStride == targetTile2.getScanlineStride());
 
         final int[] targetRciData = targetTile1.getDataBufferInt();
         final short[] targetMaskData = targetTile2.getDataBufferShort();

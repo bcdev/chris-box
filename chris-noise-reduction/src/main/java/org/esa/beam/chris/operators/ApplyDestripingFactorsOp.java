@@ -109,22 +109,19 @@ public class ApplyDestripingFactorsOp extends Operator {
             final int[] targetSamples = targetTile.getDataBufferInt();
             final double[] factorSamples = factorTile.getDataBufferDouble();
 
-            assert (sourceTile.getScanlineOffset() == targetTile.getScanlineOffset());
-            assert (sourceTile.getScanlineStride() == targetTile.getScanlineStride());
-
             int sourceOffset = sourceTile.getScanlineOffset();
-            int targetOffset = targetTile.getScanlineOffset();
             int factorOffset = factorTile.getScanlineOffset();
+            int targetOffset = targetTile.getScanlineOffset();
 
             for (int y = 0; y < targetTile.getHeight(); ++y) {
                 int sourceIndex = sourceOffset;
-                int targetIndex = targetOffset;
                 int factorIndex = factorOffset;
+                int targetIndex = targetOffset;
                 for (int x = 0; x < targetTile.getWidth(); ++x) {
                     targetSamples[targetIndex] = (int) (sourceSamples[sourceIndex] * factorSamples[factorIndex] + 0.5);
                     ++sourceIndex;
-                    ++targetIndex;
                     ++factorIndex;
+                    ++targetIndex;
                 }
                 sourceOffset += sourceTile.getScanlineStride();
                 targetOffset += targetTile.getScanlineStride();
