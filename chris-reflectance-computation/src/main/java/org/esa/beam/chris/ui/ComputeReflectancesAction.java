@@ -57,6 +57,15 @@ public class ComputeReflectancesAction extends ExecCommand {
 
     private static void performAction(Product sourceProduct) throws OperatorException {
         final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
+
+        final StringBuilder name = new StringBuilder(sourceProduct.getName());
+        final int pos = name.lastIndexOf("_NR");
+        if (pos != -1) {
+            name.replace(pos, pos + 3, "_REFL");
+        } else {
+            name.append("_REFL");
+        }
+        parameterMap.put("targetProductName", name.toString());
         parameterMap.put("copyRadianceBands", true);
         final Product targetProduct = GPF.createProduct("chris.ComputeReflectances",
                                                         parameterMap,

@@ -39,11 +39,13 @@ import java.util.Map;
 public class ComputeReflectancesOp extends Operator {
 
     @SourceProduct(alias = "input")
-    Product sourceProduct;
+    private Product sourceProduct;
     @TargetProduct
-    Product targetProduct;
+    private Product targetProduct;
+    @Parameter
+    private String targetProductName;
     @Parameter(defaultValue = "true")
-    boolean copyRadianceBands;
+    private boolean copyRadianceBands;
 
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
@@ -59,8 +61,8 @@ public class ComputeReflectancesOp extends Operator {
         final int day = getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
 
-        // todo - product type and name
-        targetProduct = new Product(sourceProduct.getName() + "_REFL", sourceProduct.getProductType() + "_REFL",
+        final String type = sourceProduct.getProductType().replace("_NR", "_REFL");
+        targetProduct = new Product(targetProductName, type,
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
@@ -181,14 +183,11 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
-    private static void assertValidity(Product product) {
-        try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
-        } catch (OperatorException e) {
+    static void assertValidity(Product product) {
+        if (!product.getProductType().matches("CHRIS_M[1-5]A?_NR")) {
             throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not a CHRIS product", product.getName()), e);
+                    "product ''{0}'' is not of appropriate type", product.getName()));
         }
-        // todo - add further validation criteria
     }
 
     /**

@@ -1,9 +1,9 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
-    <symbolicName>chris-cloud-screening</symbolicName>
+    <symbolicName>chris-reflectance-computation</symbolicName>
     <version>1.1-SNAPSHOT</version>
-    <name>CHRIS/Proba Cloud Screening Tools</name>
-    <description>CHRIS/Proba Cloud Screening Tools</description>
+    <name>CHRIS/Proba Reflectance Computation Tool</name>
+    <description>CHRIS/Proba Reflectance Computation Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -41,7 +41,7 @@
             <shortDescr>Compute TOA reflectances for the selected CHRIS product</shortDescr>
             <mnemonic></mnemonic>
             <parent>tools</parent>
-            <helpID>chrisCloudScreening</helpID>
+            <helpID>chrisReflectanceComputation</helpID>
             <placeAfter></placeAfter>
         </action>
     </extension>
@@ -49,7 +49,7 @@
     <extension point="beam-ui:helpSets">
         <helpSet>
             <parent>beam-help</parent>
-            <path>doc/help/cloudscreening.hs</path>
+            <path>doc/help/reflectancecomputation.hs</path>
         </helpSet>
     </extension>
 

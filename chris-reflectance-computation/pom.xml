@@ -12,10 +12,10 @@
     <packaging>jar</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
-    <artifactId>chris-cloud-screening</artifactId>
-    <name>CHRIS Cloud Screening Tools</name>
+    <artifactId>chris-reflectance-computation</artifactId>
+    <name>CHRIS Reflectance Computation Tool</name>
     <version>1.0-SNAPSHOT</version>
-    <description>CHRIS Cloud Screening Tools</description>
+    <description>CHRIS Reflectance Computation Tool</description>
 
     <dependencies>
         <dependency>
