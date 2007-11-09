@@ -1,9 +1,9 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
-    <symbolicName>chris-reflectance-computation</symbolicName>
+    <symbolicName>chris-cloud-screening</symbolicName>
     <version>1.0-SNAPSHOT</version>
-    <name>CHRIS/PROBA Reflectance Computation Tool</name>
-    <description>CHRIS/PROBA Reflectance Computation Tool</description>
+    <name>CHRIS/PROBA Cloud Screening Tools</name>
+    <description>CHRIS/PROBA Cloud Screening Tools</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -41,21 +41,21 @@
             <mnemonic/>
         </action>
         <action>
-            <id>chrisReflectanceComputation</id>
-            <class>org.esa.beam.chris.ui.ComputeReflectancesAction</class>
-            <text>Compute Reflectances</text>
-            <shortDescr>Compute TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
+            <id>chrisFeatueExtraction</id>
+            <class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
+            <text>Extract Features</text>
+            <shortDescr>Extract Features used for cloud screening</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisReflectanceComputation</helpID>
-            <placeAfter>chrisNoiseReduction</placeAfter>
+            <helpID>chrisCloudScreeningTools</helpID>
+            <placeAfter>chrisReflectanceComputation</placeAfter>
         </action>
     </extension>
 
     <extension point="beam-ui:helpSets">
         <helpSet>
             <parent>beam-help</parent>
-            <path>doc/help/reflectancecomputation.hs</path>
+            <path>doc/help/cloudscreening.hs</path>
         </helpSet>
     </extension>
 

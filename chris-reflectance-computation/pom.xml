@@ -13,9 +13,9 @@
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-reflectance-computation</artifactId>
-    <name>CHRIS Reflectance Computation Tool</name>
+    <name>CHRIS/PROBA Reflectance Computation Tool</name>
     <version>1.0-SNAPSHOT</version>
-    <description>CHRIS Reflectance Computation Tool</description>
+    <description>CHRIS/PROBA Reflectance Computation Tool</description>
 
     <dependencies>
         <dependency>

@@ -2,8 +2,8 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-noise-reduction</symbolicName>
     <version>1.1-SNAPSHOT</version>
-    <name>CHRIS/Proba Noise Reduction Tool</name>
-    <description>CHRIS/Proba Noise Reduction Tool</description>
+    <name>CHRIS/PROBA Noise Reduction Tool</name>
+    <description>CHRIS/PROBA Noise Reduction Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -33,12 +33,18 @@
 
     <extension point="beam-visat:actions">
         <action>
+            <id>chris</id>
+            <class>org.esa.beam.visat.actions.ActionGroup</class>
+            <text>CHRIS/PROBA Tools</text>
+            <mnemonic/>
+        </action>
+        <action>
             <id>chrisNoiseReduction</id>
             <class>org.esa.beam.chris.ui.NoiseReductionAction</class>
-            <text>Noise Reduction (CHRIS)...</text>
-            <shortDescr>Invoke the CHRIS Noise Reduction Tool</shortDescr>
+            <text>Noise Reduction...</text>
+            <shortDescr>Start the CHRIS/PROBA Noise Reduction Tool</shortDescr>
             <mnemonic></mnemonic>
-            <parent>tools</parent>
+            <parent>chris</parent>
             <helpID>chrisNoiseReductionTool</helpID>
             <placeAfter></placeAfter>
         </action>

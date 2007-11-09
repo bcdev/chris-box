@@ -5,8 +5,8 @@
 <toc version="2.0" categoryclosedimage="folder" categoryopenimage="folder" topicimage="doc">
 
     <tocitem text="Data Processors">
-        <tocitem text="CHRIS/PROBA Noise Reduction Tool" target="chrisNoiseReductionTool">
-            <tocitem text="Overview" target="chrisNoiseReductionTool"/>
+        <tocitem text="CHRIS/PROBA Cloud Screening Tools" target="chrisCloudScreeningTools">
+            <tocitem text="Overview" target="chrisCloudScreeningTools"/>
         </tocitem>
     </tocitem>
 </toc>
