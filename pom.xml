@@ -13,8 +13,8 @@
 
     <modules>
         <module>chris-bootstrap</module>
-        <module>chris-cloud-screening</module>
         <module>chris-noise-reduction</module>
+        <module>chris-reflectance-computation</module>
     </modules>
 
     <dependencyManagement>
