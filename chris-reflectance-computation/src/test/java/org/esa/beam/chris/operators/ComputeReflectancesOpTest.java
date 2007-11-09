@@ -84,6 +84,16 @@ public class ComputeReflectancesOpTest extends TestCase {
         assertEquals(rowCount, x.size());
         assertEquals(rowCount, y.size());
 
+//        final FileImageOutputStream ios = new FileImageOutputStream(new File("thuillier.img"));
+//        ios.writeInt(rowCount);
+//        for (final Double value : x) {
+//            ios.writeDouble(value);
+//        }
+//        for (final Double value : y) {
+//            ios.writeDouble(value);
+//        }
+//        ios.close();
+
         final double[][] table = ComputeReflectancesOp.readThuillierTable();
 
         assertEquals(rowCount, table[0].length);

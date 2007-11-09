@@ -35,7 +35,7 @@ import java.util.Map;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Computes TOA reflectances from a CHRIS RCI.")
+                  description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
 public class ComputeReflectancesOp extends Operator {
 
     @SourceProduct(alias = "input")
@@ -271,6 +271,7 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
+    // todo - move
     static double[][] readThuillierTable() throws OperatorException {
         final ImageInputStream iis = getResourceAsImageInputStream("thuillier.img");
 
@@ -294,6 +295,7 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
+    // todo - move
     /**
      * Returns an {@link ImageInputStream} for a resource file of interest.
      *

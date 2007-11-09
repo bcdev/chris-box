@@ -1,5 +1,5 @@
 <table>
-    <name>Extraterrestrial Solar Irradiance (Thuillier et. al 2003)</name>
+    <name>Vertical atmospheric transmittance</name>
     <dimension>
         <index>1</index>
         <variable>wavelength</variable>
@@ -7,7 +7,7 @@
     </dimension>
     <dimension>
         <index>2</index>
-        <variable>extraterrestrial solar irradiance</variable>
-        <unit>mW/m2/nm</unit>
+        <variable>vertical atmospheric transmittance</variable>
+        <unit>dl</unit>
     </dimension>
 </table>

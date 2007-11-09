@@ -3,11 +3,11 @@
     <dimension>
         <index>1</index>
         <variable>pixel position</variable>
-        <unit/>
+        <unit>dl</unit>
     </dimension>
     <dimension>
         <index>2</index>
         <variable>noise factor</variable>
-        <unit/>
+        <unit>dl</unit>
     </dimension>
 </table>

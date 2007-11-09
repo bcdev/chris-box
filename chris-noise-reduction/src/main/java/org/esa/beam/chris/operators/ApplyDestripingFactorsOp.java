@@ -45,7 +45,7 @@ import java.text.MessageFormat;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Applies a precomputed set of destriping factors to a CHRIS RCI.")
+                  description = "Applies a precomputed set of destriping factors to a CHRIS/PROBA RCI.")
 public class ApplyDestripingFactorsOp extends Operator {
 
     @SourceProduct(alias = "input")

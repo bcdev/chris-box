@@ -57,7 +57,7 @@ import java.util.Map;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Computes the destriping factors for the given CHRIS RCIs.")
+                  description = "Computes the destriping factors for the given CHRIS/PROBA RCIs.")
 public class ComputeDestripingFactorsOp extends Operator {
 
     // todo -- operator parameters?

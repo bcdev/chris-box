@@ -40,7 +40,7 @@ import java.text.MessageFormat;
 import java.util.Map;
 
 /**
- * Operator for computing the CHRIS dropout correction.
+ * Operator for computing the CHRIS/PROBA dropout correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -49,7 +49,7 @@ import java.util.Map;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Carries out the dropout correction for a CHRIS RCI.")
+                  description = "Carries out the dropout correction for a CHRIS RCI/PROBA.")
 public class CorrectDropoutsOp extends Operator {
 
     @SourceProduct(alias = "input")
