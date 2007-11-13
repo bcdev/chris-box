@@ -38,15 +38,17 @@ import java.util.Map;
                   description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
 public class ComputeReflectancesOp extends Operator {
 
+    private static final double INVERSE_SCALING_FACTOR = 10000.0;
+
     @SourceProduct(alias = "input")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
     @Parameter
     private String targetProductName;
+
     @Parameter(defaultValue = "true")
     private boolean copyRadianceBands;
-
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
 
@@ -92,7 +94,7 @@ public class ComputeReflectancesOp extends Operator {
                 targetBand.setDescription(MessageFormat.format(
                         "Reflectance for spectral band {0}", sourceBand.getSpectralBandIndex() + 1));
                 targetBand.setUnit("dl");
-                targetBand.setScalingFactor(1.0E-4);
+                targetBand.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
                 targetBand.setValidPixelExpression(sourceBand.getValidPixelExpression());
                 targetBand.setSpectralBandIndex(sourceBand.getSpectralBandIndex());
                 targetBand.setSpectralWavelength(sourceBand.getSpectralWavelength());
@@ -167,15 +169,18 @@ public class ComputeReflectancesOp extends Operator {
 
             for (int y = 0; y < targetTile.getHeight(); ++y) {
                 checkForCancelation(pm);
+
                 int sourceIndex = sourceOffset;
                 int targetIndex = targetOffset;
                 for (int x = 0; x < targetTile.getWidth(); ++x) {
-                    targetSamples[targetIndex] = (short) (10000.0 * sourceSamples[sourceIndex] * conversionFactor + 0.5);
+                    targetSamples[targetIndex] = (short) (INVERSE_SCALING_FACTOR * sourceSamples[sourceIndex]
+                            * conversionFactor + 0.5);
                     ++sourceIndex;
                     ++targetIndex;
                 }
                 sourceOffset += sourceStride;
                 targetOffset += targetStride;
+                
                 pm.worked(1);
             }
         } finally {

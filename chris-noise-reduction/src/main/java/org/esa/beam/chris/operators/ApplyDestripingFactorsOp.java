@@ -114,6 +114,8 @@ public class ApplyDestripingFactorsOp extends Operator {
             int targetOffset = targetTile.getScanlineOffset();
 
             for (int y = 0; y < targetTile.getHeight(); ++y) {
+                checkForCancelation(pm);
+
                 int sourceIndex = sourceOffset;
                 int factorIndex = factorOffset;
                 int targetIndex = targetOffset;
@@ -125,6 +127,8 @@ public class ApplyDestripingFactorsOp extends Operator {
                 }
                 sourceOffset += sourceTile.getScanlineStride();
                 targetOffset += targetTile.getScanlineStride();
+
+                pm.worked(1);
             }
         } finally {
             pm.done();

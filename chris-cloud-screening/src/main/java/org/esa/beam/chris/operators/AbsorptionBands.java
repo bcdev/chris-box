@@ -1,32 +1,30 @@
 package org.esa.beam.chris.operators;
 
 /**
- * New class.
+ * Atmospheric absorption bands.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
 enum AbsorptionBands {
-    LOW_1(590.0, 600.0, "Low atmospheric absorption"),
-    LOW_2(630.0, 636.0, "Low atmospheric absorption"),
-    LOW_3(648.0, 658.0, "Low atmospheric absorption"),
-    LOW_4(686.0, 709.0, "Low atmospheric absorption"),
-    LOW_5(716.0, 741.0, "Low atmospheric absorption"),
-    LOW_6(792.0, 799.0, "Low atmospheric absorption"),
-    OXYGEN(756.0, 775.0, "Oxygen"),
-    WATER_VAPOUR_1(808.0, 840.0, "Water vapour"),
-    WATER_VAPOUR_2(885.0, 985.0, "Water vapour"),
-    SENSOR_NOISE(400.0, 440.0, "Sensor noise"),
-    CALIBRATION_ERRORS(985.0, 1010.0, "Calibration errors");
+
+    BAND0(400.0, 440.0),
+    BAND1(590.0, 600.0),
+    BAND2(630.0, 636.0),
+    BAND3(648.0, 658.0),
+    BAND4(686.0, 709.0),
+    BAND5(792.0, 799.0),
+    BAND6(756.0, 775.0), // oxygen
+    BAND7(808.0, 840.0), // water vapour
+    BAND8(885.0, 985.0), // water vapour
+    BAND9(985.0, 1010.0);
 
     private double minWavelength;
     private double maxWavelength;
-    private String description;
 
-    private AbsorptionBands(double minWavelength, double maxWavelength, String description) {
+    private AbsorptionBands(double minWavelength, double maxWavelength) {
         this.minWavelength = minWavelength;
         this.maxWavelength = maxWavelength;
-        this.description = description;
     }
 
     public double getMinWavelength() {
@@ -37,7 +35,7 @@ enum AbsorptionBands {
         return maxWavelength;
     }
 
-    public String getDescription() {
-        return description;
+    public boolean contains(double wavelength) {
+        return wavelength > minWavelength && wavelength < maxWavelength;
     }
 }
