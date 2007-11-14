@@ -12,15 +12,11 @@ import org.esa.beam.util.io.BeamFileChooser;
 import org.esa.beam.util.io.BeamFileFilter;
 import org.esa.beam.visat.VisatApp;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.DefaultListSelectionModel;
-import javax.swing.JOptionPane;
-import javax.swing.ListSelectionModel;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import java.awt.Component;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +30,7 @@ import java.util.Vector;
  *
  * @author Marco Peters
  * @author Ralf Quast
- * @version $Revision:$ $Date:$
+ * @version $Revision$ $Date$
  */
 class NoiseReductionPresenter {
 
@@ -217,7 +213,7 @@ class NoiseReductionPresenter {
             }
             throw new NoiseReductionValidationException(
                     "Product type '" + product.getProductType() + "'is not valid .\n" +
-                    "Must be one of " + sb + "\n");
+                            "Must be one of " + sb + "\n");
         }
         DefaultTableModel tableModel = getProductTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
@@ -253,7 +249,7 @@ class NoiseReductionPresenter {
 
     static boolean areFromSameAcquisition(Product referenceProduct, Product product) {
         return product.getProductType().equals(referenceProduct.getProductType()) &&
-               areFromSameAcquisition(referenceProduct.getFileLocation(), product.getFileLocation());
+                areFromSameAcquisition(referenceProduct.getFileLocation(), product.getFileLocation());
     }
 
     static boolean areFromSameAcquisition(File referenceFile, File file) {
@@ -262,10 +258,10 @@ class NoiseReductionPresenter {
             String[] actualParts = file.getName().split("_", 5);
             if (expectedParts.length == 5 && expectedParts.length == actualParts.length) {
                 return expectedParts[0].equals(actualParts[0])
-                       && expectedParts[1].equals(actualParts[1])
-                       && expectedParts[2].equals(actualParts[2])
-                       // actualParts[3] should be different
-                       && expectedParts[4].equals(actualParts[4]);
+                        && expectedParts[1].equals(actualParts[1])
+                        && expectedParts[2].equals(actualParts[2])
+                        // actualParts[3] should be different
+                        && expectedParts[4].equals(actualParts[4]);
             }
         }
         return false;

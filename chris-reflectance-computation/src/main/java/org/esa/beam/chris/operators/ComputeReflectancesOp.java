@@ -76,9 +76,9 @@ public class ComputeReflectancesOp extends Operator {
             for (final Band sourceBand : sourceProduct.getBands()) {
                 if (sourceBand.getName().startsWith("radiance")) {
                     final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-                    final double solarIrradiance = getAverageSolarIrradiance(table,
-                                                                             sourceBand.getSpectralWavelength(),
-                                                                             sourceBand.getSpectralBandwidth());
+                    final double solarIrradiance = getAverageValue(table,
+                                                                   sourceBand.getSpectralWavelength(),
+                                                                   sourceBand.getSpectralBandwidth());
                     targetBand.setSolarFlux((float) solarIrradiance);
                     sourceBandMap.put(targetBand, sourceBand);
                 }
@@ -99,9 +99,9 @@ public class ComputeReflectancesOp extends Operator {
                 targetBand.setSpectralBandIndex(sourceBand.getSpectralBandIndex());
                 targetBand.setSpectralWavelength(sourceBand.getSpectralWavelength());
                 targetBand.setSpectralBandwidth(sourceBand.getSpectralBandwidth());
-                final double solarIrradiance = getAverageSolarIrradiance(table,
-                                                                         sourceBand.getSpectralWavelength(),
-                                                                         sourceBand.getSpectralBandwidth());
+                final double solarIrradiance = getAverageValue(table,
+                                                               sourceBand.getSpectralWavelength(),
+                                                               sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 targetProduct.addBand(targetBand);
                 sourceBandMap.put(targetBand, sourceBand);
@@ -113,9 +113,9 @@ public class ComputeReflectancesOp extends Operator {
         for (final Band sourceBand : sourceProduct.getBands()) {
             if (sourceBand.getName().startsWith("mask")) {
                 final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-                final double solarIrradiance = getAverageSolarIrradiance(table,
-                                                                         sourceBand.getSpectralWavelength(),
-                                                                         sourceBand.getSpectralBandwidth());
+                final double solarIrradiance = getAverageValue(table,
+                                                               sourceBand.getSpectralWavelength(),
+                                                               sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 final FlagCoding flagCoding = sourceBand.getFlagCoding();
                 if (flagCoding != null) {
@@ -180,7 +180,7 @@ public class ComputeReflectancesOp extends Operator {
                 }
                 sourceOffset += sourceStride;
                 targetOffset += targetStride;
-                
+
                 pm.worked(1);
             }
         } finally {
@@ -200,7 +200,9 @@ public class ComputeReflectancesOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
+     *
      * @return the annotation or {@code null} if the annotation could not be found.
+     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move
@@ -224,26 +226,27 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
-    private static double getAverageSolarIrradiance(double[][] table, double centralWavelength, double bandwidth) {
-        final double[] wavelengths = table[0];
-        final double[] irradiances = table[1];
+    // todo - move
+    private static double getAverageValue(double[][] table, double wavelength, double width) {
+        final double[] x = table[0];
+        final double[] y = table[1];
 
         double ws = 0.0;
-        double is = 0.0;
+        double ys = 0.0;
 
         for (int i = 0; i < table[0].length; ++i) {
-            if (wavelengths[i] > centralWavelength + bandwidth) {
+            if (x[i] > wavelength + width) {
                 break;
             }
-            if (wavelengths[i] > centralWavelength - bandwidth) {
-                final double w = 1.0 / pow(1.0 + abs(2.0 * (wavelengths[i] - centralWavelength) / bandwidth), 4.0);
+            if (x[i] > wavelength - width) {
+                final double w = 1.0 / pow(1.0 + abs(2.0 * (x[i] - wavelength) / width), 4.0);
 
-                is += irradiances[i] * w;
+                ys += y[i] * w;
                 ws += w;
             }
         }
 
-        return is / ws;
+        return ys / ws;
     }
 
 
@@ -305,7 +308,9 @@ public class ComputeReflectancesOp extends Operator {
      * Returns an {@link ImageInputStream} for a resource file of interest.
      *
      * @param name the name of the resource file of interest.
+     *
      * @return the image input stream.
+     *
      * @throws OperatorException if the resource could not be found or the
      *                           image input stream could not be created.
      */

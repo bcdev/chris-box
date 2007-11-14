@@ -32,6 +32,7 @@ public interface Functions {
      * @param y the calculated function values. The number of calculated
      *          values is defined by the length of this array.  No value
      *          is calculated if the array is empty.
+     *
      * @throws NullPointerException if {@code y} is {@code null}.
      */
     void calculate(double x, double[] y) throws NullPointerException;

@@ -4,25 +4,13 @@ import com.jidesoft.grid.BooleanCheckBoxCellEditor;
 import com.jidesoft.grid.BooleanCheckBoxCellRenderer;
 import org.esa.beam.framework.datamodel.Product;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
+import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.CellEditorListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.*;
 import java.util.EventObject;
 
 /**
@@ -147,10 +135,10 @@ class NoiseReductionForm extends JPanel {
         acquisitionSetPanel.setLayout(new GridBagLayout());
 
         acquisitionSetPanel.setBorder(BorderFactory.createTitledBorder(null, "Acquisition Set",
-                                                                      TitledBorder.DEFAULT_JUSTIFICATION,
-                                                                      TitledBorder.DEFAULT_POSITION,
-                                                                      new Font("Tahoma", 0, 11),
-                                                                      new Color(0, 70, 213)));
+                                                                       TitledBorder.DEFAULT_JUSTIFICATION,
+                                                                       TitledBorder.DEFAULT_POSITION,
+                                                                       new Font("Tahoma", 0, 11),
+                                                                       new Color(0, 70, 213)));
         acquisitionSetPanel.setPreferredSize(new Dimension(450, 200));
         acquisitionScrollPane.setPreferredSize(new Dimension(300, 150));
         acquisitionSetTable.setPreferredSize(new Dimension(300, 150));

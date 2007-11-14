@@ -27,13 +27,7 @@ import org.esa.beam.visat.VisatApp;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -89,9 +83,9 @@ public class NoiseReductionAction extends ExecCommand {
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         final boolean enabled = selectedProduct != null
-                                && !(selectedProduct.getProductReader().getInput() instanceof Product)
-                                && !(selectedProduct.getProductReader().getInput() instanceof Product[])
-                                && CHRIS_TYPES.contains(selectedProduct.getProductType());
+                && !(selectedProduct.getProductReader().getInput() instanceof Product)
+                && !(selectedProduct.getProductReader().getInput() instanceof Product[])
+                && CHRIS_TYPES.contains(selectedProduct.getProductType());
         setEnabled(enabled);
     }
 

@@ -238,7 +238,9 @@ public class CorrectDropoutsOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
+     *
      * @return the annotation or {@code null} if the annotation could not be found.
+     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move

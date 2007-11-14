@@ -1,14 +1,13 @@
 package org.esa.beam.chris.ui;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.bc.ceres.binding.ValueContainer;
+import com.bc.ceres.binding.ValueContainerFactory;
 import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
 import org.esa.beam.chris.operators.CorrectDropoutsOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
 
-import com.bc.ceres.binding.ValueContainer;
-import com.bc.ceres.binding.ValueContainerFactory;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Marco Peters.

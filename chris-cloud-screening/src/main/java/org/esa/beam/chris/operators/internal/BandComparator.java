@@ -1,4 +1,4 @@
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 import org.esa.beam.framework.datamodel.Band;
 
@@ -11,17 +11,18 @@ import java.util.Comparator;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-class BandComparator implements Comparator<Band> {
+public class BandComparator implements Comparator<Band> {
 
     /**
      * Compares its two arguments for order.  Returns a negative integer,
      * zero, or a positive integer as the first argument is less than, equal
-     * to, or greater than the second.<p>
+     * to, or greater than the second.
      * <p/>
      * Note: this comparator imposes orderings that are inconsistent with equals.
      *
      * @param b1 the first {@link Band} to be compared.
      * @param b2 the second {@link Band} to be compared.
+     *
      * @return a negative integer, zero, or a positive integer as the
      *         first argument is less than, equal to, or greater than the
      *         second.

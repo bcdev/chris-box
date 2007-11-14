@@ -200,6 +200,7 @@ public class ComputeDestripingFactorsOp extends Operator {
      * @param bandIndex  the band index.
      * @param targetTile the target raster.
      * @param pm         the {@link ProgressMonitor}.
+     *
      * @throws OperatorException if an error occurred.
      */
     private void computeCorrectionFactors(int bandIndex, Tile targetTile, ProgressMonitor pm)
@@ -322,8 +323,10 @@ public class ComputeDestripingFactorsOp extends Operator {
      * Creates the spatio-spectral edge mask for a hyperspectral image.
      *
      * @param pm the {@link ProgressMonitor}.
+     *
      * @return the edge mask. The value {@code true} indicates changes in the surface
      *         texture or coverage.
+     *
      * @throws OperatorException if an error occurred.
      */
     private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
@@ -482,7 +485,9 @@ public class ComputeDestripingFactorsOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
+     *
      * @return the annotation or {@code null} if the annotation could not be found.
+     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move
@@ -532,7 +537,9 @@ public class ComputeDestripingFactorsOp extends Operator {
      * Returns an {@link ImageInputStream} for a resource file of interest.
      *
      * @param name the name of the resource file of interest.
+     *
      * @return the image input stream.
+     *
      * @throws OperatorException if the resource could not be found or the
      *                           image input stream could not be created.
      */
