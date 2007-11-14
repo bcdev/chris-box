@@ -226,7 +226,7 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
-    // todo - move
+    // todo - move or make an averager class
     private static double getAverageValue(double[][] table, double wavelength, double width) {
         final double[] x = table[0];
         final double[] y = table[1];
@@ -279,7 +279,7 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
-    // todo - move
+    // todo - generalize
     static double[][] readThuillierTable() throws OperatorException {
         final ImageInputStream iis = getResourceAsImageInputStream("thuillier.img");
 

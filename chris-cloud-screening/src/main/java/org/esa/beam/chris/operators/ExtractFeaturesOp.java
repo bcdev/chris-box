@@ -207,6 +207,8 @@ public class ExtractFeaturesOp extends Operator {
         Arrays.sort(surBands, comparator);
         Arrays.sort(visBands, comparator);
         Arrays.sort(nirBands, comparator);
+
+        // todo - categorize atmospheric bands (see MATLAB code below)
     }
 
     void computeBrightnessAndWhiteness(Band targetBand1, Band targetBand2, Map<Band, Tile> targetTileMap,
@@ -277,6 +279,7 @@ public class ExtractFeaturesOp extends Operator {
 
     private void computeOpticalPath(Band targetBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle) {
 /*
+ todo - implement
  %Atmospheric absorptions
  % m=1/mu=1/cos(illum)+1/cos(obs): Optical mass
  if exist('ObservationZenithAngle'), mu=1/(1/cos(SolarZenithAngle/180*pi)+1/cos(ObservationZenithAngle/180*pi));
@@ -386,7 +389,7 @@ end
         }
     }
 
-    // todo - move
+    // todo - generalize
     static double[][] readTransmittanceTable() throws OperatorException {
         final ImageInputStream iis = getResourceAsImageInputStream("nir-transmittance.img");
 

@@ -510,6 +510,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         element.setAttributeString(name, value);
     }
 
+    // todo - generalize
     static double[][] readSlitVsProfileTable() throws OperatorException {
         final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.img");
 
