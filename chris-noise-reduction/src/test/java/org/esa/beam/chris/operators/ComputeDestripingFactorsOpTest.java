@@ -1,13 +1,9 @@
 package org.esa.beam.chris.operators;
 
 import junit.framework.TestCase;
-import org.esa.beam.framework.gpf.OperatorException;
 
-import javax.imageio.stream.FileCacheImageInputStream;
-import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Scanner;
