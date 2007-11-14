@@ -63,7 +63,7 @@ public class ExtractFeaturesOpTest extends TestCase {
     }
 
     private static void assertTransmittanceTableIntegrity() throws IOException {
-        final InputStream is = ExtractFeaturesOpTest.class.getResourceAsStream("toa-nir-transmittance.txt");
+        final InputStream is = ExtractFeaturesOpTest.class.getResourceAsStream("nir-transmittance.txt");
 
         final Scanner scanner = new Scanner(is);
         scanner.useLocale(Locale.ENGLISH);
@@ -84,7 +84,7 @@ public class ExtractFeaturesOpTest extends TestCase {
         assertEquals(rowCount, x.size());
         assertEquals(rowCount, y.size());
 
-//        final FileImageOutputStream ios = new FileImageOutputStream(new File("toa-nir-transmittance.img"));
+//        final FileImageOutputStream ios = new FileImageOutputStream(new File("nir-transmittance.img"));
 //        ios.writeInt(rowCount);
 //        for (final Double value : x) {
 //            ios.writeDouble(value);

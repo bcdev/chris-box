@@ -286,7 +286,7 @@ public class ExtractFeaturesOp extends Operator {
 
     // todo - move
     static double[][] readTransmittanceTable() throws OperatorException {
-        final ImageInputStream iis = getResourceAsImageInputStream("toa-nir-transmittance.img");
+        final ImageInputStream iis = getResourceAsImageInputStream("nir-transmittance.img");
 
         try {
             final int length = iis.readInt();
@@ -298,7 +298,7 @@ public class ExtractFeaturesOp extends Operator {
 
             return new double[][]{abscissas, ordinates};
         } catch (Exception e) {
-            throw new OperatorException("could not read extraterrestrial solar irradiance table", e);
+            throw new OperatorException("could not read NIR transmittance table", e);
         } finally {
             try {
                 iis.close();
