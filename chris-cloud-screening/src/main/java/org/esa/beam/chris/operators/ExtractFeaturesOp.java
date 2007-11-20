@@ -2,11 +2,10 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.operators.internal.BandComparator;
-import org.esa.beam.chris.operators.internal.BandFilter;
-import org.esa.beam.chris.operators.internal.InclusiveBandFilter;
-import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
+import org.esa.beam.chris.operators.internal.*;
+import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
@@ -24,8 +23,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
-import static java.lang.Math.abs;
-import static java.lang.Math.pow;
+import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +54,8 @@ public class ExtractFeaturesOp extends Operator {
     @Parameter
     private String targetProductName;
 
-    private transient Band surBr;
-    private transient Band surWh;
+    private transient Band br;
+    private transient Band wh;
     private transient Band visBr;
     private transient Band visWh;
     private transient Band nirBr;
@@ -65,13 +63,46 @@ public class ExtractFeaturesOp extends Operator {
     private transient Band o2;
     private transient Band wv;
 
-    private transient Band[] surBands;
+    private transient Band[] surfaceBands;
     private transient Band[] visBands;
     private transient Band[] nirBands;
 
+    private transient boolean computeAtmosphericFeatures;
+    private transient double trO2;
+    private transient double trWv;
+    private transient BandInterpolator interpolatorO2;
+    private transient BandInterpolator interpolatorWv;
+    private transient double mu;
+
     public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
-        categorizeReflectanceBands();
+        final List<Band> reflectanceBandList = new ArrayList<Band>();
+        for (final Band band : sourceProduct.getBands()) {
+            if (band.getName().startsWith("reflectance")) {
+                reflectanceBandList.add(band);
+            }
+        }
+        final Band[] reflectanceBands = reflectanceBandList.toArray(new Band[reflectanceBandList.size()]);
+        Arrays.sort(reflectanceBands, new BandComparator());
+        categorizeBands(reflectanceBands);
+
+        computeAtmosphericFeatures = sourceProduct.getProductType().matches("CHRIS_M[15]_REFL");
+
+        if (computeAtmosphericFeatures) {
+            interpolatorO2 = new BandInterpolator(reflectanceBands,
+                                                  new double[]{760.625, 755.0, 770.0, 738.0, 755.0, 770.0, 788.0});
+            interpolatorWv = new BandInterpolator(reflectanceBands,
+                                                  new double[]{944.376, 895.0, 960.0, 865.0, 890.0, 985.0, 1100.0});
+            final double[][] transmittanceTable = readTransmittanceTable();
+            trO2 = getAverageValue(transmittanceTable, interpolatorO2.getInnerWavelength(),
+                                   interpolatorO2.getInnerBandwidth());
+            trWv = getAverageValue(transmittanceTable, interpolatorWv.getInnerWavelength(),
+                                   interpolatorWv.getInnerBandwidth());
+
+            final double sza = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+            final double vza = getAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE, 0.0);
+            mu = 1.0 / (1.0 / cos(toRadians(sza)) + 1.0 / cos(toRadians(vza)));
+        }
 
         final String type = sourceProduct.getProductType().replace("_REFL", "_FEAT");
         targetProduct = new Product(targetProductName, type,
@@ -81,10 +112,10 @@ public class ExtractFeaturesOp extends Operator {
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
 
-        surBr = targetProduct.addBand("brightness", ProductData.TYPE_INT16);
-        surBr.setDescription("Brightness for visual and NIR bands");
-        surBr.setUnit("dl");
-        surBr.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
+        br = targetProduct.addBand("brightness", ProductData.TYPE_INT16);
+        br.setDescription("Brightness for visual and NIR bands");
+        br.setUnit("dl");
+        br.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
         visBr = targetProduct.addBand("brightness_vis", ProductData.TYPE_INT16);
         visBr.setDescription("Brightness for visual bands");
@@ -96,30 +127,32 @@ public class ExtractFeaturesOp extends Operator {
         nirBr.setUnit("dl");
         nirBr.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
-        surWh = targetProduct.addBand("whiteness", ProductData.TYPE_INT16);
-        surWh.setDescription("Whiteness for visual and NIR bands");
-        surWh.setUnit("dl");
-        surWh.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
+        wh = targetProduct.addBand("whiteness", ProductData.TYPE_INT16);
+        wh.setDescription("Whiteness for visual and NIR bands");
+        wh.setUnit("dl");
+        wh.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
         visWh = targetProduct.addBand("whiteness_vis", ProductData.TYPE_INT16);
         visWh.setDescription("Whiteness for visual bands");
         visWh.setUnit("dl");
-        visBr.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
+        visWh.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
         nirWh = targetProduct.addBand("whiteness_nir", ProductData.TYPE_INT16);
         nirWh.setDescription("Whiteness for NIR bands");
         nirWh.setUnit("dl");
         nirWh.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
-        o2 = targetProduct.addBand("o2", ProductData.TYPE_INT16);
-        o2.setDescription("Oxygen-A absorption");
-        o2.setUnit("dl");
-        o2.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
+        if (computeAtmosphericFeatures) {
+            o2 = targetProduct.addBand("o2", ProductData.TYPE_INT16);
+            o2.setDescription("Atmospheric oxygen absorption");
+            o2.setUnit("dl");
+            o2.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
-        wv = targetProduct.addBand("wv", ProductData.TYPE_INT16);
-        wv.setDescription("Water vapour absorption");
-        wv.setUnit("dl");
-        wv.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
+            wv = targetProduct.addBand("wv", ProductData.TYPE_INT16);
+            wv.setDescription("Atmospheric water vapour absorption");
+            wv.setUnit("dl");
+            wv.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
+        }
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
     }
@@ -127,15 +160,24 @@ public class ExtractFeaturesOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm)
             throws OperatorException {
-        pm.beginTask("computing bands...", 6);
+        if (computeAtmosphericFeatures) {
+            pm.beginTask("computing bands...", 8);
+        } else {
+            pm.beginTask("computing bands...", 6);
+        }
         try {
-            computeBrightnessAndWhiteness(surBr, surWh, targetTileMap, targetRectangle, surBands,
+            computeBrightnessAndWhiteness(br, wh, targetTileMap, targetRectangle, surfaceBands,
                                           SubProgressMonitor.create(pm, 2));
             computeBrightnessAndWhiteness(visBr, visWh, targetTileMap, targetRectangle, visBands,
                                           SubProgressMonitor.create(pm, 2));
             computeBrightnessAndWhiteness(nirBr, nirWh, targetTileMap, targetRectangle, nirBands,
                                           SubProgressMonitor.create(pm, 2));
-            // todo - atmospheric features
+            if (computeAtmosphericFeatures) {
+                computeOpticalPath(o2, targetTileMap, targetRectangle, interpolatorO2, trO2,
+                                   SubProgressMonitor.create(pm, 1));
+                computeOpticalPath(wv, targetTileMap, targetRectangle, interpolatorWv, trWv,
+                                   SubProgressMonitor.create(pm, 1));
+            }
         } finally {
             pm.done();
         }
@@ -143,8 +185,8 @@ public class ExtractFeaturesOp extends Operator {
 
     @Override
     public void dispose() {
-        surBr = null;
-        surWh = null;
+        br = null;
+        wh = null;
         visBr = null;
         visWh = null;
         nirBr = null;
@@ -152,13 +194,16 @@ public class ExtractFeaturesOp extends Operator {
         o2 = null;
         wv = null;
 
-        surBands = null;
+        surfaceBands = null;
         visBands = null;
         nirBands = null;
+
+        interpolatorO2 = null;
+        interpolatorWv = null;
     }
 
-    private void categorizeReflectanceBands() {
-        final List<Band> surBandList = new ArrayList<Band>();
+    private void categorizeBands(Band[] bands) {
+        final List<Band> surfaceBandList = new ArrayList<Band>();
         final List<Band> visBandList = new ArrayList<Band>();
         final List<Band> nirBandList = new ArrayList<Band>();
 
@@ -175,21 +220,19 @@ public class ExtractFeaturesOp extends Operator {
                 {885.0, 985.0},
                 {985.0, 1010.0}});
 
-        for (final Band sourceBand : sourceProduct.getBands()) {
-            if (sourceBand.getName().startsWith("reflectance")) {
-                if (absBandFilter.accept(sourceBand)) {
-                    continue;
-                }
-                surBandList.add(sourceBand);
-                if (visBandFilter.accept(sourceBand)) {
-                    visBandList.add(sourceBand);
-                } else {
-                    nirBandList.add(sourceBand);
-                }
+        for (final Band band : bands) {
+            if (absBandFilter.accept(band)) {
+                continue;
+            }
+            surfaceBandList.add(band);
+            if (visBandFilter.accept(band)) {
+                visBandList.add(band);
+            } else {
+                nirBandList.add(band);
             }
         }
 
-        if (surBandList.isEmpty()) {
+        if (surfaceBandList.isEmpty()) {
             throw new OperatorException("no absorption-free bands found");
         }
         if (visBandList.isEmpty()) {
@@ -199,76 +242,36 @@ public class ExtractFeaturesOp extends Operator {
             throw new OperatorException("no absorption-free NIR bands found");
         }
 
-        surBands = surBandList.toArray(new Band[surBandList.size()]);
+        surfaceBands = surfaceBandList.toArray(new Band[surfaceBandList.size()]);
         visBands = visBandList.toArray(new Band[visBandList.size()]);
         nirBands = nirBandList.toArray(new Band[nirBandList.size()]);
-
-        final BandComparator comparator = new BandComparator();
-        Arrays.sort(surBands, comparator);
-        Arrays.sort(visBands, comparator);
-        Arrays.sort(nirBands, comparator);
-
-        // todo - categorize atmospheric bands (see MATLAB code below)
     }
 
-    void computeBrightnessAndWhiteness(Band targetBand1, Band targetBand2, Map<Band, Tile> targetTileMap,
+    void computeBrightnessAndWhiteness(Band brBand, Band whBand, Map<Band, Tile> targetTileMap,
                                        Rectangle targetRectangle, Band[] sourceBands, ProgressMonitor pm) {
         pm.beginTask("computing brightness and whiteness...", targetRectangle.height);
         try {
-            final short[][] sourceSamples = new short[sourceBands.length][];
-
-            final int[] sourceOffsets = new int[sourceBands.length];
-            final int[] sourceStrides = new int[sourceBands.length];
-            final int[] sourceIndexes = new int[sourceBands.length];
-
+            final Tile[] sourceTiles = new Tile[sourceBands.length];
             final double[] wavelengths = new double[sourceBands.length];
 
             for (int i = 0; i < sourceBands.length; ++i) {
-                final Tile sourceTile = getSourceTile(sourceBands[i], targetRectangle, pm);
-
-                sourceSamples[i] = sourceTile.getDataBufferShort();
-                sourceOffsets[i] = sourceTile.getScanlineOffset();
-                sourceStrides[i] = sourceTile.getScanlineStride();
-
+                sourceTiles[i] = getSourceTile(sourceBands[i], targetRectangle, pm);
                 wavelengths[i] = sourceBands[i].getSpectralWavelength();
             }
 
-            final Tile targetTile1 = targetTileMap.get(targetBand1);
-            final Tile targetTile2 = targetTileMap.get(targetBand2);
+            final Tile brTile = targetTileMap.get(brBand);
+            final Tile whTile = targetTileMap.get(whBand);
 
-            final short[] targetSamples1 = targetTile1.getDataBufferShort();
-            final short[] targetSamples2 = targetTile2.getDataBufferShort();
-
-            int targetOffset1 = targetTile1.getScanlineOffset();
-            int targetOffset2 = targetTile2.getScanlineOffset();
-
-            final int targetStride1 = targetTile1.getScanlineStride();
-            final int targetStride2 = targetTile2.getScanlineStride();
-
-            for (int y = 0; y < targetRectangle.height; ++y) {
+            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 checkForCancelation(pm);
 
-                System.arraycopy(sourceOffsets, 0, sourceIndexes, 0, sourceBands.length);
-                int targetIndex1 = targetOffset1;
-                int targetIndex2 = targetOffset2;
-                for (int x = 0; x < targetRectangle.width; ++x) {
-                    final double b = brightness(sourceSamples, sourceIndexes, wavelengths);
-                    final double w = whiteness(sourceSamples, sourceIndexes, wavelengths, b);
+                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                    final double b = brightness(x, y, sourceTiles, wavelengths);
+                    final double w = whiteness(x, y, sourceTiles, wavelengths, b);
 
-                    targetSamples1[targetIndex1] = (short) (b + 0.5);
-                    targetSamples2[targetIndex2] = (short) (w + 0.5);
-
-                    for (int i = 0; i < sourceBands.length; i++) {
-                        ++sourceIndexes[i];
-                    }
-                    ++targetIndex1;
-                    ++targetIndex2;
+                    brTile.setSample(x, y, b);
+                    whTile.setSample(x, y, w);
                 }
-                for (int i = 0; i < sourceBands.length; i++) {
-                    sourceOffsets[i] += sourceStrides[i];
-                }
-                targetOffset1 += targetStride1;
-                targetOffset2 += targetStride2;
 
                 pm.worked(1);
             }
@@ -277,58 +280,55 @@ public class ExtractFeaturesOp extends Operator {
         }
     }
 
-    private void computeOpticalPath(Band targetBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle) {
-/*
- todo - implement
- %Atmospheric absorptions
- % m=1/mu=1/cos(illum)+1/cos(obs): Optical mass
- if exist('ObservationZenithAngle'), mu=1/(1/cos(SolarZenithAngle/180*pi)+1/cos(ObservationZenithAngle/180*pi));
- else, mu=1/(1/cos(SolarZenithAngle/180*pi)); end
- %O2 atmospheric absorption
- W_out_inf=[738 755]; W_in=[755 770]; W_out_sup=[770 788];  W_max=[760.625]; %O2
- OP_O2=mu*optical_path(X,WlMid,BWidth,W_out_inf,W_in,W_out_sup,W_max);
- %H2O atmospheric absorption
- W_out_inf=[865 890]; W_in=[895 960]; W_out_sup=[985 1100]; W_max=[944.376]; %H2O
- OP_H2O=mu*optical_path(X,WlMid,BWidth,W_out_inf,W_in,W_out_sup,W_max);
- */
+    private void computeOpticalPath(Band targetBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                    BandInterpolator bandInterpolator, double transmittance, ProgressMonitor pm) {
+        pm.beginTask("computing optical path...", targetRectangle.height);
+        try {
+            final Band sourceBand = bandInterpolator.getInnerBand();
+            final Band[] infBands = bandInterpolator.getInfBands();
+            final Band[] supBands = bandInterpolator.getSupBands();
 
-/*
-function OP=optical_path(X,WlMid,BWidth,W_out_inf,W_in,W_out_sup,W_max)
-% Estimation of the optical path from an atmospheric absorption band.
-% Note: contribution of illumination and observation geometries is not normalized (OP=mu*OP)
-% Inputs:
-%   - X: CHRIS image values
-%   - WlMid,BWidth: wavelength and bandwidth of CHRIS channels
-%   - W_out_inf,W_in,W_out_sup,W_max: spectral channels located at the absorption band
-%                                     (outside and inside the absorption)
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
+            final Tile targetTile = targetTileMap.get(targetBand);
 
-b_out_inf = find((WlMid-BWidth/2)>=W_out_inf(1) & (WlMid+BWidth/2)<=W_out_inf(2));
-b_in      = find((WlMid-BWidth/2)>W_in(1) & (WlMid+BWidth/2)<W_in(2));
-b_out_sup = find((WlMid-BWidth/2)>=W_out_sup(1) & (WlMid+BWidth/2)<=W_out_sup(2));
-if ~isempty(b_in)
-  b_in=find( abs(WlMid-W_max) == min(abs(WlMid(b_in)-W_max)) );
+            final Tile[] infTiles = new Tile[infBands.length];
+            final Tile[] supTiles = new Tile[supBands.length];
 
-  %Effective atmospheric vertical transmittance, exp(-tau) estimated from a high resolution curve
-  [ATM_w_hr,ATM_trans_hr]=textread('TOA_trans_NIR_hi.txt','%f %f','headerlines',1);
-  ATM_trans=conv_spectral_channels(ATM_w_hr,ATM_trans_hr,WlMid(b_in),BWidth(b_in));
+            for (int i = 0; i < infBands.length; i++) {
+                infTiles[i] = getSourceTile(supBands[i], targetRectangle, pm);
+            }
+            for (int i = 0; i < supBands.length; i++) {
+                supTiles[i] = getSourceTile(supBands[i], targetRectangle, pm);
+            }
 
-  %Interpolated spectrum at the absorption band is estimated from nearby channels
-  if ~isempty(b_out_inf) & ~isempty(b_out_sup)
-   L_out_inf=mean(X(:,:,b_out_inf),3); w_out_inf=mean(WlMid(b_out_inf));
-   L_out_sup=mean(X(:,:,b_out_sup),3); w_out_sup=mean(WlMid(b_out_sup));
-   L0=L_out_inf+((WlMid(b_in)-w_out_inf)/(w_out_sup-w_out_inf))*(L_out_sup-L_out_inf);
-  elseif ~isempty(b_out_inf)
-    L0=mean(X(:,:,b_out_inf),3);
-  elseif ~isempty(b_out_sup)
-    L0=mean(X(:,:,b_out_sup),3);
-  end
-  %Estimation of the optical path from an atmospheric absorption band.
-  %note: contribution of illumination and observation geometries is not normalized
-  OP=1/log(ATM_trans)*log(X(:,:,b_in)./L0);
-else
-  OP=zeros(size(X(:,:,1)));
-end
-*/
+            final double factor = mu / log(transmittance);
+            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
+                checkForCancelation(pm);
+
+                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                    final double a = getMean(x, y, infTiles);
+                    final double b = getMean(x, y, supTiles);
+
+                    final double value = factor * log(sourceTile.getSampleDouble(x, y) /
+                            bandInterpolator.getInterpolatedValue(a, b));
+                    targetTile.setSample(x, y, value);
+                }
+
+                pm.worked(1);
+            }
+        } finally {
+            pm.done();
+        }
+    }
+
+    private static double getMean(int x, int y, Tile[] tiles) {
+        double sum = 0.0;
+
+        for (final Tile tile : tiles) {
+            sum += tile.getSampleDouble(x, y);
+        }
+
+        return sum / tiles.length;
     }
 
     // todo - move or make an averager class
@@ -354,12 +354,12 @@ end
         return ys / ws;
     }
 
-    private static double brightness(short[][] samples, int[] indexes, double[] wavelengths) {
+    private static double brightness(int x, int y, Tile[] tiles, double[] wavelengths) {
         double sum = 0.0;
 
-        double value1 = samples[0][indexes[0]];
-        for (int i = 1; i < samples.length; ++i) {
-            final double value2 = samples[i][indexes[i]];
+        double value1 = tiles[0].getSampleDouble(x, y);
+        for (int i = 1; i < tiles.length; ++i) {
+            final double value2 = tiles[i].getSampleDouble(x, y);
 
             sum += 0.5 * (value2 + value1) * (wavelengths[i] - wavelengths[i - 1]);
             value1 = value2;
@@ -368,12 +368,12 @@ end
         return sum / (wavelengths[wavelengths.length - 1] - wavelengths[0]);
     }
 
-    private static double whiteness(short[][] samples, int[] indexes, double[] wavelengths, double brightness) {
+    private static double whiteness(int x, int y, Tile[] tiles, double[] wavelengths, double brightness) {
         double sum = 0.0;
 
-        double value1 = Math.abs(samples[0][indexes[0]] - brightness);
-        for (int i = 1; i < samples.length; ++i) {
-            final double value2 = Math.abs(samples[i][indexes[i]] - brightness);
+        double value1 = Math.abs(tiles[0].getSampleDouble(x, y) - brightness);
+        for (int i = 1; i < tiles.length; ++i) {
+            final double value2 = Math.abs(tiles[i].getSampleDouble(x, y) - brightness);
 
             sum += 0.5 * (value2 + value1) * (wavelengths[i] - wavelengths[i - 1]);
             value1 = value2;
@@ -386,6 +386,55 @@ end
         if (!product.getProductType().matches("CHRIS_M[1-5]A?_REFL")) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not of appropriate type", product.getName()));
+        }
+    }
+
+    /**
+     * Returns a CHRIS annotation for a product of interest.
+     *
+     * @param product the product of interest.
+     * @param name    the name of the CHRIS annotation.
+     *
+     * @return the annotation or {@code null} if the annotation could not be found.
+     *
+     * @throws OperatorException if the annotation could not be read.
+     */
+    // todo -- move
+    private static String getAnnotationString(Product product, String name) throws OperatorException {
+        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
+
+        if (element == null) {
+            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
+        }
+        return element.getAttributeString(name, null);
+    }
+
+    // todo -- move
+    private static double getAnnotationDouble(Product product, String name) throws OperatorException {
+        final String string = getAnnotationString(product, name);
+
+        try {
+            return Double.parseDouble(string);
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
+        }
+    }
+
+    // todo -- move
+    private static double getAnnotation(Product product, String name, double defaultValue) {
+        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
+
+        if (element == null) {
+            return defaultValue;
+        }
+        final String string = element.getAttributeString(name, null);
+        if (string == null) {
+            return defaultValue;
+        }
+        try {
+            return Double.parseDouble(string);
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
@@ -443,6 +492,108 @@ end
 
         public Spi() {
             super(ExtractFeaturesOp.class);
+        }
+    }
+
+
+    private static class BandInterpolator {
+
+        private final Band innerBand;
+        private final Band[] infBands;
+        private final Band[] supBands;
+
+        private final double interpolationWeight;
+
+        public BandInterpolator(Band[] bands, double[] wavelengths) {
+            innerBand = findProximateBand(bands, wavelengths[0], new ExclusiveBandFilter(wavelengths[1],
+                                                                                         wavelengths[2]));
+
+            infBands = findBands(bands, new ExclusiveBandFilter(wavelengths[3], wavelengths[4]));
+            supBands = findBands(bands, new ExclusiveBandFilter(wavelengths[5], wavelengths[6]));
+
+            if (innerBand == null) {
+                throw new OperatorException(MessageFormat.format(
+                        "no absorption band found for wavelength {0} nm", wavelengths[0]));
+            }
+            if (infBands.length == 0 && supBands.length == 0) {
+                throw new OperatorException(MessageFormat.format(
+                        "no interpolation bands found for wavelength {0} nm", wavelengths[0]));
+            }
+            final double a = meanWavelength(infBands);
+            final double b = meanWavelength(supBands);
+
+            interpolationWeight = (innerBand.getSpectralWavelength() - a) / (b - a);
+        }
+
+        public final Band getInnerBand() {
+            return innerBand;
+        }
+
+        public double getInnerWavelength() {
+            return innerBand.getSpectralWavelength();
+        }
+
+        public double getInnerBandwidth() {
+            return innerBand.getSpectralBandwidth();
+        }
+
+        public final Band[] getInfBands() {
+            return infBands;
+        }
+
+        public final Band[] getSupBands() {
+            return supBands;
+        }
+
+        public double getInterpolatedValue(double a, double b) {
+            if (infBands.length == 0) {
+                return b;
+            }
+            if (supBands.length == 0) {
+                return a;
+            }
+
+            return (1.0 - interpolationWeight) * a + interpolationWeight * b;
+        }
+
+        private static Band[] findBands(Band[] bands, BandFilter bandFilter) {
+            final List<Band> bandList = new ArrayList<Band>();
+
+            for (final Band band : bands) {
+                if (bandFilter.accept(band)) {
+                    bandList.add(band);
+                }
+            }
+
+            return bandList.toArray(new Band[bandList.size()]);
+        }
+
+        private static Band findProximateBand(Band[] bands, double wavelength, BandFilter bandFilter) {
+            Band proximateBand = null;
+
+            for (final Band band : bands) {
+                if (bandFilter.accept(band)) {
+                    if (proximateBand == null || dist(proximateBand, wavelength) > dist(band, wavelength)) {
+                        proximateBand = band;
+                    }
+                }
+            }
+
+            return proximateBand;
+        }
+
+        private static double dist(Band band, double wavelength) {
+            return Math.abs(band.getSpectralWavelength() - wavelength);
+        }
+
+        private static double meanWavelength(Band[] bands) {
+            double sum = 0.0;
+
+            for (final Band band : bands) {
+                sum += band.getSpectralWavelength();
+            }
+
+            return sum / bands.length;
         }
     }
 }
