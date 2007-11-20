@@ -67,7 +67,7 @@ public class ExtractFeaturesOp extends Operator {
     private transient Band[] visBands;
     private transient Band[] nirBands;
 
-    private transient boolean computeAtmosphericFeatures;
+    private transient boolean canComputeAtmosphericFeatures;
     private transient double trO2;
     private transient double trWv;
     private transient BandInterpolator interpolatorO2;
@@ -86,9 +86,9 @@ public class ExtractFeaturesOp extends Operator {
         Arrays.sort(reflectanceBands, new BandComparator());
         categorizeBands(reflectanceBands);
 
-        computeAtmosphericFeatures = sourceProduct.getProductType().matches("CHRIS_M[15]_REFL");
+        canComputeAtmosphericFeatures = sourceProduct.getProductType().matches("CHRIS_M[15]_REFL");
 
-        if (computeAtmosphericFeatures) {
+        if (canComputeAtmosphericFeatures) {
             interpolatorO2 = new BandInterpolator(reflectanceBands,
                                                   new double[]{760.625, 755.0, 770.0, 738.0, 755.0, 770.0, 788.0});
             interpolatorWv = new BandInterpolator(reflectanceBands,
@@ -142,7 +142,7 @@ public class ExtractFeaturesOp extends Operator {
         nirWh.setUnit("dl");
         nirWh.setScalingFactor(1.0 / INVERSE_SCALING_FACTOR);
 
-        if (computeAtmosphericFeatures) {
+        if (canComputeAtmosphericFeatures) {
             o2 = targetProduct.addBand("o2", ProductData.TYPE_INT16);
             o2.setDescription("Atmospheric oxygen absorption");
             o2.setUnit("dl");
@@ -160,7 +160,7 @@ public class ExtractFeaturesOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm)
             throws OperatorException {
-        if (computeAtmosphericFeatures) {
+        if (canComputeAtmosphericFeatures) {
             pm.beginTask("computing bands...", 8);
         } else {
             pm.beginTask("computing bands...", 6);
@@ -172,7 +172,7 @@ public class ExtractFeaturesOp extends Operator {
                                           SubProgressMonitor.create(pm, 2));
             computeBrightnessAndWhiteness(nirBr, nirWh, targetTileMap, targetRectangle, nirBands,
                                           SubProgressMonitor.create(pm, 2));
-            if (computeAtmosphericFeatures) {
+            if (canComputeAtmosphericFeatures) {
                 computeOpticalPath(o2, targetTileMap, targetRectangle, interpolatorO2, trO2,
                                    SubProgressMonitor.create(pm, 1));
                 computeOpticalPath(wv, targetTileMap, targetRectangle, interpolatorWv, trWv,
