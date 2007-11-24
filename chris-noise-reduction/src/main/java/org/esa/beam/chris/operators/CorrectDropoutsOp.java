@@ -67,9 +67,9 @@ public class CorrectDropoutsOp extends Operator {
     private int spectralBandCount;
 
     private Band[] sourceRciBands;
-    private Band[] sourceMaskBands;
+    private Band[] sourceMskBands;
     private Band[] targetRciBands;
-    private Band[] targetMaskBands;
+    private Band[] targetMskBands;
 
     @Override
     public void initialize() throws OperatorException {
@@ -88,9 +88,9 @@ public class CorrectDropoutsOp extends Operator {
         spectralBandCount = getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         sourceRciBands = new Band[spectralBandCount];
-        sourceMaskBands = new Band[spectralBandCount];
+        sourceMskBands = new Band[spectralBandCount];
         targetRciBands = new Band[spectralBandCount];
-        targetMaskBands = new Band[spectralBandCount];
+        targetMskBands = new Band[spectralBandCount];
 
         for (int i = 0; i < spectralBandCount; ++i) {
             final String bandName = new StringBuilder("radiance_").append(i + 1).toString();
@@ -103,16 +103,16 @@ public class CorrectDropoutsOp extends Operator {
         }
         for (int i = 0; i < spectralBandCount; ++i) {
             final String bandName = new StringBuilder("mask_").append(i + 1).toString();
-            sourceMaskBands[i] = sourceProduct.getBand(bandName);
+            sourceMskBands[i] = sourceProduct.getBand(bandName);
 
-            if (sourceMaskBands[i] == null) {
+            if (sourceMskBands[i] == null) {
                 throw new OperatorException(MessageFormat.format("could not find band {0}", bandName));
             }
-            targetMaskBands[i] = ProductUtils.copyBand(bandName, sourceProduct, targetProduct);
+            targetMskBands[i] = ProductUtils.copyBand(bandName, sourceProduct, targetProduct);
 
-            final FlagCoding flagCoding = sourceMaskBands[i].getFlagCoding();
+            final FlagCoding flagCoding = sourceMskBands[i].getFlagCoding();
             if (flagCoding != null) {
-                targetMaskBands[i].setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
+                targetMskBands[i].setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
@@ -139,9 +139,9 @@ public class CorrectDropoutsOp extends Operator {
     public void dispose() {
         dropoutCorrection = null;
         sourceRciBands = null;
-        sourceMaskBands = null;
+        sourceMskBands = null;
         targetRciBands = null;
-        targetMaskBands = null;
+        targetMskBands = null;
     }
 
     private void computeDropoutCorrection(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
@@ -151,51 +151,51 @@ public class CorrectDropoutsOp extends Operator {
         final int bandCount = maxBandIndex - minBandIndex + 1;
 
         final int[][] sourceRciData = new int[bandCount][];
-        final short[][] sourceMaskData = new short[bandCount][];
+        final short[][] sourceMskData = new short[bandCount][];
 
-        final Tile sourceTile1 = getSourceTile(sourceRciBands[bandIndex], sourceRectangle, pm);
-        final Tile sourceTile2 = getSourceTile(sourceMaskBands[bandIndex], sourceRectangle, pm);
+        final Tile sourceRciTile = getSourceTile(sourceRciBands[bandIndex], sourceRectangle, pm);
+        final Tile sourceMskTile = getSourceTile(sourceMskBands[bandIndex], sourceRectangle, pm);
 
-        final int sourceScanlineOffset = sourceTile1.getScanlineOffset();
-        final int sourceScanlineStride = sourceTile1.getScanlineStride();
+        final int sourceScanlineOffset = sourceRciTile.getScanlineOffset();
+        final int sourceScanlineStride = sourceRciTile.getScanlineStride();
 
-        Assert.state(sourceScanlineOffset == sourceTile2.getScanlineOffset());
-        Assert.state(sourceScanlineStride == sourceTile2.getScanlineStride());
+        Assert.state(sourceScanlineOffset == sourceMskTile.getScanlineOffset());
+        Assert.state(sourceScanlineStride == sourceMskTile.getScanlineStride());
 
-        sourceRciData[0] = sourceTile1.getDataBufferInt();
-        sourceMaskData[0] = sourceTile2.getDataBufferShort();
+        sourceRciData[0] = sourceRciTile.getDataBufferInt();
+        sourceMskData[0] = sourceMskTile.getDataBufferShort();
 
         for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
             if (i != bandIndex) {
-                final Tile tile1 = getSourceTile(sourceRciBands[i], sourceRectangle, pm);
-                final Tile tile2 = getSourceTile(sourceMaskBands[i], sourceRectangle, pm);
+                final Tile neighborRciTile = getSourceTile(sourceRciBands[i], sourceRectangle, pm);
+                final Tile neighborMskTile = getSourceTile(sourceMskBands[i], sourceRectangle, pm);
 
-                Assert.state(sourceScanlineOffset == tile1.getScanlineOffset());
-                Assert.state(sourceScanlineStride == tile1.getScanlineStride());
-                Assert.state(sourceScanlineOffset == tile2.getScanlineOffset());
-                Assert.state(sourceScanlineStride == tile2.getScanlineStride());
+                Assert.state(sourceScanlineOffset == neighborRciTile.getScanlineOffset());
+                Assert.state(sourceScanlineStride == neighborRciTile.getScanlineStride());
+                Assert.state(sourceScanlineOffset == neighborMskTile.getScanlineOffset());
+                Assert.state(sourceScanlineStride == neighborMskTile.getScanlineStride());
 
-                sourceRciData[j] = tile1.getDataBufferInt();
-                sourceMaskData[j] = tile2.getDataBufferShort();
+                sourceRciData[j] = neighborRciTile.getDataBufferInt();
+                sourceMskData[j] = neighborMskTile.getDataBufferShort();
                 ++j;
             }
         }
 
-        final Tile targetTile1 = targetTileMap.get(targetRciBands[bandIndex]);
-        final Tile targetTile2 = targetTileMap.get(targetMaskBands[bandIndex]);
+        final Tile targetRciTile = targetTileMap.get(targetRciBands[bandIndex]);
+        final Tile targetMskTile = targetTileMap.get(targetMskBands[bandIndex]);
 
-        final int targetScanlineStride = targetTile1.getScanlineStride();
-        final int targetScanlineOffset = targetTile1.getScanlineOffset();
+        final int targetScanlineStride = targetRciTile.getScanlineStride();
+        final int targetScanlineOffset = targetRciTile.getScanlineOffset();
 
-        Assert.state(targetScanlineOffset == targetTile2.getScanlineOffset());
-        Assert.state(targetScanlineStride == targetTile2.getScanlineStride());
+        Assert.state(targetScanlineOffset == targetMskTile.getScanlineOffset());
+        Assert.state(targetScanlineStride == targetMskTile.getScanlineStride());
 
-        final int[] targetRciData = targetTile1.getDataBufferInt();
-        final short[] targetMaskData = targetTile2.getDataBufferShort();
+        final int[] targetRciData = targetRciTile.getDataBufferInt();
+        final short[] targetMskData = targetMskTile.getDataBufferShort();
 
-        dropoutCorrection.compute(sourceRciData, sourceMaskData, sourceRectangle, sourceScanlineOffset,
+        dropoutCorrection.compute(sourceRciData, sourceMskData, sourceRectangle, sourceScanlineOffset,
                                   sourceScanlineStride,
-                                  targetRciData, targetMaskData, targetRectangle, targetScanlineOffset,
+                                  targetRciData, targetMskData, targetRectangle, targetScanlineOffset,
                                   targetScanlineStride);
     }
 

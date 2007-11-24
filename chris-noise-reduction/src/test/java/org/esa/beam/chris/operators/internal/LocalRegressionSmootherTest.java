@@ -34,13 +34,6 @@ public class LocalRegressionSmootherTest extends TestCase {
         }
 
         try {
-            new LocalRegressionSmoother(2, 0);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertEquals("!(span > 0)", e.getMessage());
-        }
-
-        try {
             new LocalRegressionSmoother(2, 4);
             fail();
         } catch (IllegalArgumentException e) {
@@ -159,7 +152,7 @@ public class LocalRegressionSmootherTest extends TestCase {
             new LocalRegressionSmoother(0, 7).smooth(y, y);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("y.equals(z)", e.getMessage());
+            assertEquals("y == z", e.getMessage());
         }
     }
 

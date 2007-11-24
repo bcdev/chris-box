@@ -42,9 +42,8 @@ public class LocalRegressionSmoother {
      * @param degree the polynomial degree
      * @param span   the span, must be greater than {@code degree + 2}.
      *
-     * @throws IllegalArgumentException if the polynomial degree is a negative nnumber.
-     * @throws IllegalArgumentException if the span is not a positive number.
-     * @throws IllegalArgumentException if the span is not greater than {@code degree + 2}.
+     * @throws IllegalArgumentException if the polynomial degree is a negative number,
+     *                                  or if the span is less than {@code degree + 3}.
      */
     public LocalRegressionSmoother(int degree, int span) {
         this(degree, span, 0);
@@ -55,16 +54,14 @@ public class LocalRegressionSmoother {
      *
      * @param degree the polynomial degree
      * @param span   the span, must be greater than {@code degree + 2}.
-     * @param iter   the number of robust regression iterations performed.
+     * @param iter   the number of robust regression iterations being performed.
      *
-     * @throws IllegalArgumentException if the polynomial degree is a negative number.
-     * @throws IllegalArgumentException if the span is not a positive number.
-     * @throws IllegalArgumentException if the span is not greater than {@code degree + 2}.
-     * @throws IllegalArgumentException if the number of robust regression is negative.
+     * @throws IllegalArgumentException if the polynomial degree is a negative number,
+     *                                  if the span is less than {@code degree + 3}, or
+     *                                  if the number of robust regression is negative.
      */
     public LocalRegressionSmoother(int degree, int span, int iter) {
         Assert.argument(degree >= 0, "!(degree >= 0)");
-        Assert.argument(span > 0, "!(span > 0)");
         Assert.argument(span > degree + 2, "!(span > degree + 2)");
         Assert.argument(iter >= 0, "!(iter >= 0)");
 
@@ -107,16 +104,16 @@ public class LocalRegressionSmoother {
      * @param z the smoothed response values.
      *
      * @throws IllegalArgumentException if the lengths of {@code y} and {@code z} are
-     *                                  different.
-     * @throws IllegalArgumentException if the lengths of {@code y} and {@code z} are
-     *                                  less than the span.
-     * @throws IllegalArgumentException if {@code y} and {@code z} are references to
+     *                                  different,
+     *                                  if the lengths of {@code y} and {@code z} are
+     *                                  less than the span, or
+     *                                  if {@code y} and {@code z} are references to
      *                                  the same instance.
      */
     public void smooth(double[] y, double[] z) {
         Assert.argument(y.length == z.length, "!(y.length == z.length)");
         Assert.argument(y.length >= span, "!(y.length >= span)");
-        Assert.argument(!y.equals(z), "y.equals(z)");
+        Assert.argument(y != z, "y == z");
 
         final int m = y.length;
         final int n = degree + 1;
@@ -350,5 +347,4 @@ public class LocalRegressionSmoother {
             }
         }
     }
-
 }

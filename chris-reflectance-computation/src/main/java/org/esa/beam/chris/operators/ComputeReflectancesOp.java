@@ -168,11 +168,12 @@ public class ComputeReflectancesOp extends Operator {
             int targetStride = targetTile.getScanlineStride();
 
             for (int y = 0; y < targetTile.getHeight(); ++y) {
-                checkForCancelation(pm);
-
                 int sourceIndex = sourceOffset;
                 int targetIndex = targetOffset;
+                
                 for (int x = 0; x < targetTile.getWidth(); ++x) {
+                    checkForCancelation(pm);
+
                     targetSamples[targetIndex] = (short) (INVERSE_SCALING_FACTOR * sourceSamples[sourceIndex]
                             * conversionFactor + 0.5);
                     ++sourceIndex;

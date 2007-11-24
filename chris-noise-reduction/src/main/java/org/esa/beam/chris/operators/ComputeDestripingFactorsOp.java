@@ -82,7 +82,7 @@ public class ComputeDestripingFactorsOp extends Operator {
     private transient LocalRegressionSmoother smoother;
 
     private transient Band[][] sourceRciBands;
-    private transient Band[][] sourceMaskBands;
+    private transient Band[][] sourceMskBands;
     private transient Band[] targetBands;
     private transient Panorama panorama;
     private boolean[][] edgeMask;
@@ -99,7 +99,7 @@ public class ComputeDestripingFactorsOp extends Operator {
 
         // set up source bands
         sourceRciBands = new Band[spectralBandCount][sourceProducts.length];
-        sourceMaskBands = new Band[spectralBandCount][sourceProducts.length];
+        sourceMskBands = new Band[spectralBandCount][sourceProducts.length];
 
         for (int i = 0; i < spectralBandCount; ++i) {
             final String rciBandName = new StringBuilder("radiance_").append(i + 1).toString();
@@ -107,12 +107,12 @@ public class ComputeDestripingFactorsOp extends Operator {
 
             for (int j = 0; j < sourceProducts.length; ++j) {
                 sourceRciBands[i][j] = sourceProducts[j].getBand(rciBandName);
-                sourceMaskBands[i][j] = sourceProducts[j].getBand(maskBandName);
+                sourceMskBands[i][j] = sourceProducts[j].getBand(maskBandName);
 
                 if (sourceRciBands[i][j] == null) {
                     throw new OperatorException(MessageFormat.format("could not find band {0}", rciBandName));
                 }
-                if (sourceMaskBands[i][j] == null) {
+                if (sourceMskBands[i][j] == null) {
                     throw new OperatorException(MessageFormat.format("could not find band {0}", maskBandName));
                 }
             }
@@ -186,7 +186,7 @@ public class ComputeDestripingFactorsOp extends Operator {
     @Override
     public void dispose() {
         sourceRciBands = null;
-        sourceMaskBands = null;
+        sourceMskBands = null;
         targetBands = null;
         panorama = null;
         smoother = null;
@@ -213,7 +213,7 @@ public class ComputeDestripingFactorsOp extends Operator {
 
             for (int j = 0; j < sourceProducts.length; ++j) {
                 final Tile rci = getSceneTile(sourceRciBands[bandIndex][j], pm);
-                final Tile mask = getSceneTile(sourceMaskBands[bandIndex][j], pm);
+                final Tile mask = getSceneTile(sourceMskBands[bandIndex][j], pm);
 
                 for (int y = 0; y < rci.getHeight(); ++y) {
                     checkForCancelation(pm);

@@ -20,7 +20,7 @@ import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
-import java.awt.*;
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.InputStream;
 import static java.lang.Math.*;
@@ -76,14 +76,8 @@ public class ExtractFeaturesOp extends Operator {
 
     public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
-        final List<Band> reflectanceBandList = new ArrayList<Band>();
-        for (final Band band : sourceProduct.getBands()) {
-            if (band.getName().startsWith("reflectance")) {
-                reflectanceBandList.add(band);
-            }
-        }
-        final Band[] reflectanceBands = reflectanceBandList.toArray(new Band[reflectanceBandList.size()]);
-        Arrays.sort(reflectanceBands, new BandComparator());
+        
+        final Band[] reflectanceBands = getReflectanceBands(sourceProduct.getBands());
         categorizeBands(reflectanceBands);
 
         canComputeAtmosphericFeatures = sourceProduct.getProductType().matches("CHRIS_M[15]_REFL");
@@ -157,6 +151,19 @@ public class ExtractFeaturesOp extends Operator {
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
     }
 
+    private static Band[] getReflectanceBands(Band[] bands) {
+        final List<Band> reflectanceBandList = new ArrayList<Band>();
+        for (final Band band : bands) {
+            if (band.getName().startsWith("reflectance")) {
+                reflectanceBandList.add(band);
+            }
+        }
+        final Band[] reflectanceBands = reflectanceBandList.toArray(new Band[reflectanceBandList.size()]);
+        Arrays.sort(reflectanceBands, new BandComparator());
+
+        return reflectanceBands;
+    }
+
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm)
             throws OperatorException {
@@ -166,17 +173,17 @@ public class ExtractFeaturesOp extends Operator {
             pm.beginTask("computing bands...", 6);
         }
         try {
-            computeBrightnessAndWhiteness(br, wh, targetTileMap, targetRectangle, surfaceBands,
-                                          SubProgressMonitor.create(pm, 2));
-            computeBrightnessAndWhiteness(visBr, visWh, targetTileMap, targetRectangle, visBands,
-                                          SubProgressMonitor.create(pm, 2));
-            computeBrightnessAndWhiteness(nirBr, nirWh, targetTileMap, targetRectangle, nirBands,
-                                          SubProgressMonitor.create(pm, 2));
+            computeSurfaceFeatures(br, wh, targetTileMap, targetRectangle, surfaceBands,
+                                   SubProgressMonitor.create(pm, 2));
+            computeSurfaceFeatures(visBr, visWh, targetTileMap, targetRectangle, visBands,
+                                   SubProgressMonitor.create(pm, 2));
+            computeSurfaceFeatures(nirBr, nirWh, targetTileMap, targetRectangle, nirBands,
+                                   SubProgressMonitor.create(pm, 2));
             if (canComputeAtmosphericFeatures) {
-                computeOpticalPath(o2, targetTileMap, targetRectangle, interpolatorO2, trO2,
-                                   SubProgressMonitor.create(pm, 1));
-                computeOpticalPath(wv, targetTileMap, targetRectangle, interpolatorWv, trWv,
-                                   SubProgressMonitor.create(pm, 1));
+                computeAtmosphericFeature(o2, targetTileMap, targetRectangle, interpolatorO2, trO2,
+                                          SubProgressMonitor.create(pm, 1));
+                computeAtmosphericFeature(wv, targetTileMap, targetRectangle, interpolatorWv, trWv,
+                                          SubProgressMonitor.create(pm, 1));
             }
         } finally {
             pm.done();
@@ -247,30 +254,26 @@ public class ExtractFeaturesOp extends Operator {
         nirBands = nirBandList.toArray(new Band[nirBandList.size()]);
     }
 
-    void computeBrightnessAndWhiteness(Band brBand, Band whBand, Map<Band, Tile> targetTileMap,
-                                       Rectangle targetRectangle, Band[] sourceBands, ProgressMonitor pm) {
-        pm.beginTask("computing brightness and whiteness...", targetRectangle.height);
+    void computeSurfaceFeatures(Band bBand, Band wBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                Band[] sourceBands, ProgressMonitor pm) {
+        pm.beginTask("computing surface features...", targetRectangle.height);
         try {
-            final Tile[] sourceTiles = new Tile[sourceBands.length];
-            final double[] wavelengths = new double[sourceBands.length];
+            final double[] wavelengths = getSpectralWavelengths(sourceBands);
+            final Tile[] sourceTiles = getSourceTiles(sourceBands, targetRectangle, pm);
 
-            for (int i = 0; i < sourceBands.length; ++i) {
-                sourceTiles[i] = getSourceTile(sourceBands[i], targetRectangle, pm);
-                wavelengths[i] = sourceBands[i].getSpectralWavelength();
-            }
-
-            final Tile brTile = targetTileMap.get(brBand);
-            final Tile whTile = targetTileMap.get(whBand);
+            final Tile bTile = targetTileMap.get(bBand);
+            final Tile wTile = targetTileMap.get(wBand);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
-                checkForCancelation(pm);
-
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    final double b = brightness(x, y, sourceTiles, wavelengths);
-                    final double w = whiteness(x, y, sourceTiles, wavelengths, b);
+                    checkForCancelation(pm);
 
-                    brTile.setSample(x, y, b);
-                    whTile.setSample(x, y, w);
+                    final double[] reflectances = getSamples(x, y, sourceTiles);
+                    final double b = brightness(wavelengths, reflectances);
+                    final double w = whiteness(wavelengths, reflectances, b);
+
+                    bTile.setSample(x, y, b);
+                    wTile.setSample(x, y, w);
                 }
 
                 pm.worked(1);
@@ -280,8 +283,26 @@ public class ExtractFeaturesOp extends Operator {
         }
     }
 
-    private void computeOpticalPath(Band targetBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                    BandInterpolator bandInterpolator, double transmittance, ProgressMonitor pm) {
+    private Tile[] getSourceTiles(Band[] bands, Rectangle targetRectangle, ProgressMonitor pm) {
+        final Tile[] sourceTiles = new Tile[bands.length];
+
+        for (int i = 0; i < bands.length; ++i) {
+            sourceTiles[i] = getSourceTile(bands[i], targetRectangle, pm);
+        }
+        return sourceTiles;
+    }
+
+    private static double[] getSpectralWavelengths(Band[] bands) {
+        final double[] wavelengths = new double[bands.length];
+
+        for (int i = 0; i < bands.length; ++i) {
+            wavelengths[i] = bands[i].getSpectralWavelength();
+        }
+        return wavelengths;
+    }
+
+    private void computeAtmosphericFeature(Band targetBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                           BandInterpolator bandInterpolator, double transmittance, ProgressMonitor pm) {
         pm.beginTask("computing optical path...", targetRectangle.height);
         try {
             final Band sourceBand = bandInterpolator.getInnerBand();
@@ -291,27 +312,20 @@ public class ExtractFeaturesOp extends Operator {
             final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
             final Tile targetTile = targetTileMap.get(targetBand);
 
-            final Tile[] infTiles = new Tile[infBands.length];
-            final Tile[] supTiles = new Tile[supBands.length];
+            final Tile[] infTiles = getSourceTiles(infBands, targetRectangle, pm);
+            final Tile[] supTiles = getSourceTiles(supBands, targetRectangle, pm);
 
-            for (int i = 0; i < infBands.length; i++) {
-                infTiles[i] = getSourceTile(supBands[i], targetRectangle, pm);
-            }
-            for (int i = 0; i < supBands.length; i++) {
-                supTiles[i] = getSourceTile(supBands[i], targetRectangle, pm);
-            }
+            final double c = mu / log(transmittance);
 
-            final double factor = mu / log(transmittance);
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
-                checkForCancelation(pm);
-
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
+                    checkForCancelation(pm);
+
                     final double a = getMean(x, y, infTiles);
                     final double b = getMean(x, y, supTiles);
+                    final double f = c * log(sourceTile.getSampleDouble(x, y) / bandInterpolator.getValue(a, b));
 
-                    final double value = factor * log(sourceTile.getSampleDouble(x, y) /
-                            bandInterpolator.getInterpolatedValue(a, b));
-                    targetTile.setSample(x, y, value);
+                    targetTile.setSample(x, y, f);
                 }
 
                 pm.worked(1);
@@ -319,6 +333,16 @@ public class ExtractFeaturesOp extends Operator {
         } finally {
             pm.done();
         }
+    }
+
+    private static double[] getSamples(int x, int y, Tile[] tiles) {
+        final double samples[] = new double[tiles.length];
+
+        for (int i = 0; i < samples.length; i++) {
+            samples[i] = tiles[i].getSampleDouble(x, y);
+        }
+
+        return samples;
     }
 
     private static double getMean(int x, int y, Tile[] tiles) {
@@ -354,29 +378,21 @@ public class ExtractFeaturesOp extends Operator {
         return ys / ws;
     }
 
-    private static double brightness(int x, int y, Tile[] tiles, double[] wavelengths) {
+    private static double brightness(double[] wavelengths, double[] reflectances) {
         double sum = 0.0;
 
-        double value1 = tiles[0].getSampleDouble(x, y);
-        for (int i = 1; i < tiles.length; ++i) {
-            final double value2 = tiles[i].getSampleDouble(x, y);
-
-            sum += 0.5 * (value2 + value1) * (wavelengths[i] - wavelengths[i - 1]);
-            value1 = value2;
+        for (int i = 1; i < reflectances.length; ++i) {
+            sum += 0.5 * (reflectances[i] + reflectances[i - 1]) * (wavelengths[i] - wavelengths[i - 1]);
         }
 
         return sum / (wavelengths[wavelengths.length - 1] - wavelengths[0]);
     }
 
-    private static double whiteness(int x, int y, Tile[] tiles, double[] wavelengths, double brightness) {
+    private static double whiteness(double[] wavelengths, double[] reflectances, double brightness) {
         double sum = 0.0;
 
-        double value1 = Math.abs(tiles[0].getSampleDouble(x, y) - brightness);
-        for (int i = 1; i < tiles.length; ++i) {
-            final double value2 = Math.abs(tiles[i].getSampleDouble(x, y) - brightness);
-
-            sum += 0.5 * (value2 + value1) * (wavelengths[i] - wavelengths[i - 1]);
-            value1 = value2;
+        for (int i = 1; i < reflectances.length; ++i) {
+            sum += 0.5 * (abs(reflectances[i] - brightness) + abs(reflectances[i - 1] - brightness)) * (wavelengths[i] - wavelengths[i - 1]);
         }
 
         return sum / (wavelengths[wavelengths.length - 1] - wavelengths[0]);
@@ -545,7 +561,7 @@ public class ExtractFeaturesOp extends Operator {
             return supBands;
         }
 
-        public double getInterpolatedValue(double a, double b) {
+        public double getValue(double a, double b) {
             if (infBands.length == 0) {
                 return b;
             }
@@ -583,7 +599,7 @@ public class ExtractFeaturesOp extends Operator {
         }
 
         private static double dist(Band band, double wavelength) {
-            return Math.abs(band.getSpectralWavelength() - wavelength);
+            return abs(band.getSpectralWavelength() - wavelength);
         }
 
         private static double meanWavelength(Band[] bands) {
