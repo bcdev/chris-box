@@ -65,7 +65,7 @@ public class FindClustersAction extends ExecCommand {
             name.append("_CLU");
         }
 //        parameterMap.put("targetProductName", name.toString());
-        final String[] features = {"brightness_vis", "brightness_nir", "whiteness_vis", "whiteness_nir"};
+        final String[] features = {"brightness_vis", "brightness_nir", "whiteness_vis", "whiteness_nir", "o2", "wv"};
         parameterMap.put("features", features);
         parameterMap.put("clusterCount", 14);
         final Product targetProduct = GPF.createProduct("chris.FindClusters",

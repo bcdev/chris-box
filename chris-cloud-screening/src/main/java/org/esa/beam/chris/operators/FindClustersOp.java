@@ -76,9 +76,9 @@ public class FindClustersOp extends Operator {
 
         targetBands = new Band[clusterCount];
         for (int i = 0; i < clusterCount; ++i) {
-            final Band targetBand = targetProduct.addBand("likelihood_" + i, ProductData.TYPE_FLOAT64);
+            final Band targetBand = targetProduct.addBand("probability" + i, ProductData.TYPE_FLOAT64);
             targetBand.setUnit("dl");
-            targetBand.setDescription("Cluster membership likelihood");
+            targetBand.setDescription("Cluster posterior probabilities");
 
             targetBands[i] = targetBand;
         }

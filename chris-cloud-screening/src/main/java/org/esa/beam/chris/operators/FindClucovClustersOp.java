@@ -3,9 +3,6 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.ProgressMonitor;
 import de.gkss.hs.datev2004.Clucov;
 import de.gkss.hs.datev2004.DataSet;
-import org.apache.commons.math.MathException;
-import org.apache.commons.math.distribution.ChiSquaredDistribution;
-import org.apache.commons.math.distribution.DistributionFactory;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -78,9 +75,9 @@ public class FindClucovClustersOp extends Operator {
         clusterCount = clucov.clusterMap.keySet().size();
         likelihoodBandMap = new HashMap<Short, Band>(clusterCount);
         for (short i : clucov.clusterMap.keySet()) {
-            final Band targetBand = targetProduct.addBand("likelihood_" + i, ProductData.TYPE_FLOAT64);
+            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT64);
             targetBand.setUnit("dl");
-            targetBand.setDescription("Cluster membership likelihood");
+            targetBand.setDescription("Cluster probability");
 
             likelihoodBandMap.put(i, targetBand);
         }
@@ -89,10 +86,6 @@ public class FindClucovClustersOp extends Operator {
         groupBand = targetProduct.addBand("group", ProductData.TYPE_UINT8);
         groupBand.setUnit("dl");
         groupBand.setDescription("Cluster group");
-
-        sumBand = targetProduct.addBand("sum", ProductData.TYPE_FLOAT64);
-        sumBand.setUnit("dl");
-        sumBand.setDescription("Cluster sum");
     }
 
     @Override
@@ -103,9 +96,9 @@ public class FindClucovClustersOp extends Operator {
                 clusterCount = clucov.clusterMap.keySet().size();
                 likelihoodBandMap = new HashMap<Short, Band>(clusterCount);
                 for (short i : clucov.clusterMap.keySet()) {
-                    final Band band = targetProduct.addBand("likelihood_" + i, ProductData.TYPE_FLOAT64);
+                    final Band band = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT64);
                     targetBand.setUnit("dl");
-                    targetBand.setDescription("Cluster membership likelihood");
+                    targetBand.setDescription("Cluster probability");
 
                     likelihoodBandMap.put(i, band);
                 }
@@ -120,50 +113,51 @@ public class FindClucovClustersOp extends Operator {
             Rectangle rectangle = targetTile.getRectangle();
             final int sourceWidth = sourceProduct.getSceneRasterWidth();
             DataSet ds = clucov.ds;
+//            for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
+//                for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
+//                    int dsIndex = y * sourceWidth + x;
+//                    targetTile.setSample(x, y, ds.group[dsIndex]);
+//                }
+//            }
             for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
                 for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
                     int dsIndex = y * sourceWidth + x;
-                    targetTile.setSample(x, y, ds.group[dsIndex]);
-                }
-            }
-        } else if (targetBand == sumBand) {
-            final ChiSquaredDistribution dist = DistributionFactory.newInstance().createChiSquareDistribution(sourceBands.length);
-            Rectangle rectangle = targetTile.getRectangle();
-            final int sourceWidth = sourceProduct.getSceneRasterWidth();
-            DataSet ds = clucov.ds;
-            for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
-                for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
-                    int dsIndex = y * sourceWidth + x;
-                    double v = 0.0;
-                    try {
-                      for (Clucov.Cluster cluster : clucov.clusterMap.values()) {
-                        v += 1.0 - dist.cumulativeProbability(cluster.gauss.distancesqu(ds.pt[dsIndex]));
-                      }
-                    } catch (MathException e) {
-                        throw new OperatorException(e);
+                    Clucov.Cluster bestCluster = null;
+                    double bestDensity = 0.0;
+                    for (Clucov.Cluster actualCluster : clucov.clusterMap.values()) {
+                        final double actualDensity = actualCluster.gauss.density(ds.pt[dsIndex]);
+                        if (bestCluster != null) {
+                            if (bestDensity < actualDensity) {
+                                bestDensity = actualDensity;
+                                bestCluster = actualCluster;
+                            }
+                        } else {
+                            bestCluster = actualCluster;
+                            bestDensity = actualDensity;
+                        }
                     }
-                    targetTile.setSample(x, y, v);
+                    targetTile.setSample(x, y, bestCluster.group);
                 }
             }
         } else {
-            final ChiSquaredDistribution dist = DistributionFactory.newInstance().createChiSquareDistribution(sourceBands.length);
-
             for (short i : clucov.clusterMap.keySet()) {
                 if (targetBand == likelihoodBandMap.get(i)) {
-                    final Clucov.Cluster cluster = clucov.clusterMap.get(i);
+                    final Clucov.Cluster actualCluster = clucov.clusterMap.get(i);
                     Rectangle rectangle = targetTile.getRectangle();
                     final int sourceWidth = sourceProduct.getSceneRasterWidth();
                     DataSet ds = clucov.ds;
                     for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
                         for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
                             int dsIndex = y * sourceWidth + x;
-                            final double v;
-                            try {
-                                v = 1.0 - dist.cumulativeProbability(cluster.gauss.distancesqu(ds.pt[dsIndex]));
-                            } catch (MathException e) {
-                                throw new OperatorException(e);
+                            double p = actualCluster.gauss.density(ds.pt[dsIndex]);
+                            double sum = 0.0;
+                            for (Clucov.Cluster cluster : clucov.clusterMap.values()) {
+                                sum += cluster.gauss.density(ds.pt[dsIndex]);
                             }
-                            targetTile.setSample(x, y, v);
+                            if (sum > 0.0) {
+                                p /= sum;
+                            }
+                            targetTile.setSample(x, y, p);
                         }
                     }
                 }
@@ -196,6 +190,13 @@ public class FindClucovClustersOp extends Operator {
         double[] scanLine = new double[width];
         double[][] dsVectors = new double[width][sourceBands.length];
 
+        double[] min = new double[sourceBands.length];
+        double[] max = new double[sourceBands.length];
+
+        for (int i = 0; i < sourceBands.length; ++i) {
+            min[i] = Double.POSITIVE_INFINITY;
+            max[i] = Double.NEGATIVE_INFINITY;
+        }
         // todo - handle valid expression!
         DataSet ds = new DataSet(width * height, sourceBands.length);
         for (int y = 0; y < height; y++) {
@@ -206,12 +207,24 @@ public class FindClucovClustersOp extends Operator {
                 // todo - handle no-data!
                 for (int x = 0; x < width; x++) {
                     dsVectors[x][i] = scanLine[x];
+                    if (scanLine[x] < min[i]) {
+                        min[i] = scanLine[x];
+                    }
+                    if (scanLine[x] > max[i]) {
+                        max[i] = scanLine[x];
+                    }
                 }
             }
             for (int x = 0; x < width; x++) {
                 ds.add(dsVectors[x]);
             }
         }
+        for (int j = 0; j < ds.pt.length; ++j) {
+            for (int i = 0; i < sourceBands.length; ++i) {
+                ds.pt[j][i] = (ds.pt[j][i] - min[i]) / (max[i] - min[i]);
+            }
+        }
+
         BeamLogManager.configureSystemLogger(BeamLogManager.createFormatter("clucov", "1.0", "BC"), true);
         clucov = new Clucov(ds, BeamLogManager.getSystemLogger());
         //clucov.

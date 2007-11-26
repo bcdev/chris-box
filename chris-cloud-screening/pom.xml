@@ -18,13 +18,13 @@
     <description>CHRIS/PROBA Cloud Screening Tools</description>
 
     <dependencies>
+        <!--<dependency>-->
+            <!--<groupId>commons-math</groupId>-->
+            <!--<artifactId>commons-math</artifactId>-->
+            <!--<version>1.1</version>-->
+        <!--</dependency>-->
         <dependency>
-            <groupId>commons-math</groupId>
-            <artifactId>commons-math</artifactId>
-            <version>1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.bc.math</groupId>
+            <groupId>com.bc.bcmath</groupId>
             <artifactId>bcmath</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>

@@ -38,8 +38,6 @@ public class Clusterer {
     private double[][] means;
     private double[][][] covariances;
 
-    private final IndexedDouble[] sortedMixtureCoefficients;
-
     /**
      * Constructs a new instance of this class.
      *
@@ -74,7 +72,7 @@ public class Clusterer {
         h = new double[clusterCount][pointCount];
         mixtureCoefficients = new double[clusterCount];
 
-        initialize(seed, 7);
+        initialize(seed, 1);
 
         do {
             System.out.println("iterationCount = " + iterationCount);
@@ -85,9 +83,6 @@ public class Clusterer {
             estimate();
             maximize();
         } while (iterationCount-- > 0);
-
-        sortedMixtureCoefficients = IndexedDouble.createArray(mixtureCoefficients);
-        Arrays.sort(sortedMixtureCoefficients, new Lt<IndexedDouble>());
 
         for (int k = 0; k < clusterCount; ++k) {
             System.out.println("class probability of cluster " + k + ": " + getMixtureCoefficient(k));
@@ -102,7 +97,7 @@ public class Clusterer {
      * @return the kth cluster distribution.
      */
     public MultinormalDistribution getClusterDistribution(int k) {
-        return dists[actualIndex(k)];
+        return dists[k];
     }
 
     /**
@@ -113,7 +108,7 @@ public class Clusterer {
      * @return the posterior probabilities for the kth cluster.
      */
     public double[] getPosteriorProbabilities(int k) {
-        return h[actualIndex(k)];
+        return h[k];
     }
 
     /**
@@ -124,7 +119,7 @@ public class Clusterer {
      * @return the mixture coefficient of the kth cluster.
      */
     public double getMixtureCoefficient(int k) {
-        return mixtureCoefficients[actualIndex(k)];
+        return mixtureCoefficients[k];
     }
 
     /**
@@ -140,21 +135,10 @@ public class Clusterer {
             for (int k = 0; k < clusterCount; ++k) {
                 d[k] = h[k][i];
             }
-            mask[i] = actualIndex(indexMax(d));
+            mask[i] = indexMax(d);
         }
 
         return mask;
-    }
-
-    /**
-     * Returns the actual index of for a given cluster index.
-     *
-     * @param k the cluster index.
-     *
-     * @return the actual index.
-     */
-    private int actualIndex(int k) {
-        return sortedMixtureCoefficients[k].index;
     }
 
     /**
