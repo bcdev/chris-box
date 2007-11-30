@@ -3,15 +3,16 @@ package org.esa.beam.chris.ui;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
+import org.esa.beam.framework.gpf.ui.SingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
-import org.esa.beam.framework.ui.command.ExecCommand;
 import org.esa.beam.visat.VisatApp;
+import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * Action for computing reflectances.
@@ -19,7 +20,7 @@ import java.util.logging.Level;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class ComputeReflectancesAction extends ExecCommand {
+public class ComputeReflectancesAction extends AbstractVisatAction {
 
     private static List<String> CHRIS_TYPES;
 
@@ -36,14 +37,22 @@ public class ComputeReflectancesAction extends ExecCommand {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-
-        try {
-            performAction(selectedProduct);
-        } catch (OperatorException e) {
-            VisatApp.getApp().showErrorDialog(e.getMessage());
-            VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
-        }
+        final SingleTargetProductDialog dialog =
+                new DefaultSingleTargetProductDialog("chris.ComputeReflectances",
+                                                     getAppContext(),
+                                                     "Reflectance Computation", 
+                                                     "chrisReflectanceComputation");
+        dialog.show();
+//
+//
+//        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
+//
+//        try {
+//            performAction(selectedProduct);
+//        } catch (OperatorException e) {
+//            VisatApp.getApp().showErrorDialog(e.getMessage());
+//            VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
+//        }
     }
 
     @Override

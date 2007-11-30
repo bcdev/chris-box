@@ -2,18 +2,10 @@
     <id>nr</id>
 
     <node>
-        <id>load</id>
-        <operator>org.esa.beam.framework.gpf.operators.common.ReadProductOp$Spi</operator>
-        <parameters>
-            <filePath>${inputFile1}</filePath>
-        </parameters>
-    </node>
-
-    <node>
         <id>factors</id>
         <operator>org.esa.beam.chris.operators.ComputeDestripingFactorsOp$Spi</operator>
         <sources>
-            <input>load</input>
+            <input>${input}</input>
         </sources>
         <parameters>
             <smoothingOrder>27</smoothingOrder>
@@ -25,7 +17,7 @@
         <id>destriping</id>
         <operator>org.esa.beam.chris.operators.ApplyDestripingFactorsOp$Spi</operator>
         <sources>
-            <input>load</input>
+            <input>${input}</input>
             <factors>factors</factors>
         </sources>
     </node>
@@ -39,17 +31,6 @@
         <parameters>
             <neighborBandCount>5</neighborBandCount>
             <neighborhoodType>N4</neighborhoodType>
-        </parameters>
-    </node>
-
-    <node>
-        <id>write</id>
-        <operator>org.esa.beam.framework.gpf.operators.common.WriteProductOp$Spi</operator>
-        <sources>
-            <input>dropout</input>
-        </sources>
-        <parameters>
-            <filePath>${outputFile1}</filePath>
         </parameters>
     </node>
 

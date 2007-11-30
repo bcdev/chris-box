@@ -51,9 +51,6 @@ public class ExtractFeaturesOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
-    @Parameter
-    private String targetProductName;
-
     private transient Band br;
     private transient Band wh;
     private transient Band visBr;
@@ -98,8 +95,9 @@ public class ExtractFeaturesOp extends Operator {
             mu = 1.0 / (1.0 / cos(toRadians(sza)) + 1.0 / cos(toRadians(vza)));
         }
 
+        final String name = sourceProduct.getName().replace("_REFL", "_FEAT");
         final String type = sourceProduct.getProductType().replace("_REFL", "_FEAT");
-        targetProduct = new Product(targetProductName, type,
+        targetProduct = new Product(name, type,
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 

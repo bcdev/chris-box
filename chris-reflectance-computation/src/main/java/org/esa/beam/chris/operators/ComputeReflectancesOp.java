@@ -44,8 +44,6 @@ public class ComputeReflectancesOp extends Operator {
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
-    @Parameter
-    private String targetProductName;
 
     @Parameter(defaultValue = "true")
     private boolean copyRadianceBands;
@@ -63,8 +61,9 @@ public class ComputeReflectancesOp extends Operator {
         final int day = getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
 
+        final String name = sourceProduct.getName().replace("_NR", "_REFL");
         final String type = sourceProduct.getProductType().replace("_NR", "_REFL");
-        targetProduct = new Product(targetProductName, type,
+        targetProduct = new Product(name, type,
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 

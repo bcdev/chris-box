@@ -47,11 +47,11 @@ public class FindClustersOp extends Operator {
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
-    @Parameter(alias = "features")
+    @Parameter(alias = "features", defaultValue="brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
     private String[] sourceBandNames;
-    @Parameter
+    @Parameter(label = "ROI expression", defaultValue = "")
     private String roiExpression;
-    @Parameter
+    @Parameter(label = "Number of clusters", defaultValue = "14")
     private int clusterCount;
 
     private transient Band[] sourceBands;
@@ -71,12 +71,14 @@ public class FindClustersOp extends Operator {
 
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
-        targetProduct = new Product("clusterer", "clusterer", width, height);
+        final String name = sourceProduct.getName().replace("_REFL", "_FEAT");
+        final String type = sourceProduct.getProductType().replace("_FEAT", "_CLU");
+        targetProduct = new Product(name, type, width, height);
         targetProduct.setPreferredTileSize(width, height);
 
         targetBands = new Band[clusterCount];
         for (int i = 0; i < clusterCount; ++i) {
-            final Band targetBand = targetProduct.addBand("probability" + i, ProductData.TYPE_FLOAT64);
+            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT64);
             targetBand.setUnit("dl");
             targetBand.setDescription("Cluster posterior probabilities");
 
