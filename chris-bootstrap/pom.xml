@@ -10,7 +10,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-bootstrap</artifactId>
