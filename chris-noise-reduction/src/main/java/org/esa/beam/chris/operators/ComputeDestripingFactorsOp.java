@@ -434,6 +434,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         thresholdMap.put("1", 0.08);
         thresholdMap.put("2", 0.05);
         thresholdMap.put("3", 0.08);
+        thresholdMap.put("30", 0.08);
         thresholdMap.put("3A", 0.08);
         thresholdMap.put("4", 0.08);
         thresholdMap.put("5", 0.08);

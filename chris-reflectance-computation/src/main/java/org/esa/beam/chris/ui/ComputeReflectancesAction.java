@@ -37,11 +37,13 @@ public class ComputeReflectancesAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
+        final String sourceProductName = VisatApp.getApp().getSelectedProduct().getName();
         final SingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ComputeReflectances",
                                                      getAppContext(),
-                                                     "Reflectance Computation", 
+                                                     "Reflectance Computation",
                                                      "chrisReflectanceComputation");
+        dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_NR", "_REFL"));
         dialog.show();
 //
 //

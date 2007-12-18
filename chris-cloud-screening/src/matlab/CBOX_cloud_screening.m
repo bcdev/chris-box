@@ -152,11 +152,11 @@ function CBOX_cloud_screening(archivo)
 
  % Selection of features (can be selected by the user or using default sets for each CHRIS Mode)
  switch Mode
-  case '1', xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:),OP_H2O(:)]; %samples in rows; features in columns
-  case '2', xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:)]; %samples in rows; features in columns
-  case '3', xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:)]; %samples in rows; features in columns
-  case '4', xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:)]; %samples in rows; features in columns
-  case '5', xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:),OP_H2O(:)]; %samples in rows; features in columns
+  case '1', varsrgb=[23 13 3]; xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:),OP_H2O(:)]; %samples in rows; features in columns
+  case '2', varsrgb=[10 6 2]; xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:)]; %samples in rows; features in columns
+  case '3', varsrgb=[7 4 1]; xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:)]; %samples in rows; features in columns
+  case '4', varsrgb=[3 2 1]; xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:)]; %samples in rows; features in columns
+  case '5', varsrgb=[7 4 1]; xx=[IntensVIS(:),DerivVIS(:),IntensNIR(:),DerivNIR(:),OP_H2O(:)]; %samples in rows; features in columns
  end
 
  % Region of Interest selection
@@ -179,22 +179,22 @@ function CBOX_cloud_screening(archivo)
   xx(:,f) = ( xx(:,f) - norm_off ) ./ norm_fac; 
  end   
     
- %EM-Gaussian Maximum Likelihood (already implemented)
  Nclus=14; %Number of clusters
- gmm_mix = gmm(Nfeat, Nclus,'full');
- options(1)  = 0; options(14) = 30; options(5) = 1;
- gmm_mix = gmminit(gmm_mix, xx, options);
- gmm_mix = gmm_em(gmm_mix, xx, options);
+
+ %EM-Gaussian Maximum Likelihood (already implemented)
+ gmm_mix=CBOX_em_clustering(xx,Nclus,15,30);
  %Posterior probabilities
- post_prob = gmmpost(gmm_mix, xx);
- %Each pixel is assigned to the cluster with maximum posterior probability (pixels outide the ROI assigned to 0)
+ post_prob = CBOX_gmmpost(gmm_mix, xx);
+ 
+ %Each pixel is assigned to the cluster with maximum posterior probability (pixels outside the ROI assigned to 0)
  [valor,w_k] = max(post_prob,[],2);
  W_k=zeros(1,Nrow*Ncol); 
  W_k(pos_ok)=w_k;
  ImClas=reshape(W_k,Nrow,Ncol);
  clusterlabel=unique(w_k)';
 
- figure; imagesc(ImClas); colorbar, title('Cluster Map'), 
+ clustercolor=jet(Nclus+1);
+ figure; imagesc(ImClas); colormap(clustercolor); colorbar, title('Cluster Map'), 
 
  %Save Cluster Map (intermediate product)
  if 1
@@ -249,13 +249,30 @@ function CBOX_cloud_screening(archivo)
 % Implementation of this interactive tool should take advantage of VISAT Tools: image view, pins, spectrum, etc 
 % (To be discussed in next meeting)
 %
-% ONLY IS NECESARY TO DISTINGUISH BETWEEN 'CLOUD' AND 'CLOUD-FREE', but offering more detailed class labels 
-% can be useful for the user in further processing steps.
+% ONLY IS NECESARY TO DISTINGUISH BETWEEN 'CLOUD', 'CLOUD-FREE' and 'DISCARDED' (mixed clusters to be rejected), 
+% but offering more detailed class labels can be useful for the user in further processing steps.
    
+ %classlabel={'Cloud','Cloud-Free','Discarded'};
  classlabel={'background','bright clouds','clouds','cirrus','shadows','vegetation','soil','water','ice/snow'};
  Nlabels=length(classlabel); 
+
+ %Iterative labeling of clusters (GUI: RGB image, map with clusters, plot with the spectra, list of labels)
+ %answer = inputdlg(classlabel,'Assign each cluster number to a cover type',ones(Nlabels,1));  
+ h=figure; set(h,'Position',[10 40 1000 650]);
+ subplot(221), imagesc(equalizar(X(:,:,varsrgb))), 
+ [tmp,orden]=sort(esp_centres(:,1),'descend');
+ answer(1:Nclus)={''};
+ for i=orden'
+   clustercolor_i=clustercolor;
+   clustercolor_i(i+1,:)=[1 1 1];
+   subplot(222),image(uint8(ImClas)); colormap(clustercolor_i);  %axis equal, axis off,
+   subplot(212), hold off, plot(WlMid,esp_centres,'b'), hold on, plot(WlMid,esp_centres(i,:),'r','LineWidth',2), xlabel('wavelength (nm)'),
+   [Selection,ok] = listdlg('ListString',classlabel); 
+   answer{Selection}=[answer{Selection},' ',num2str(i)];
+ end     
+
+ %Relations between class labels and clusters (and vice versa)
  clusterclass=zeros(1,Nclus);
- answer = inputdlg(classlabel,'Assign each cluster number to a cover type',ones(Nlabels,1));  
  clusterclass(str2num(char(answer(1))))=0; %background
  for i=2:Nlabels, 
    classclusters{i-1}=str2num(char(answer(i))); 

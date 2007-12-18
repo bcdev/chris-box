@@ -43,7 +43,8 @@ public class NoiseReductionAction extends ExecCommand {
 
     static {
         CHRIS_TYPES = new ArrayList<String>();
-        Collections.addAll(CHRIS_TYPES, "CHRIS_M1", "CHRIS_M2", "CHRIS_M3", "CHRIS_M3A", "CHRIS_M4", "CHRIS_M5");
+        Collections.addAll(CHRIS_TYPES, "CHRIS_M1", "CHRIS_M2", "CHRIS_M3", "CHRIS_M30", "CHRIS_M3A", "CHRIS_M4",
+                "CHRIS_M5");
     }
 
     @Override
@@ -55,9 +56,9 @@ public class NoiseReductionAction extends ExecCommand {
                 new NoiseReductionPresenter(acquisitionSet, new AdvancedSettingsPresenter());
         final ModalDialog dialog =
                 new ModalDialog(VisatApp.getApp().getMainFrame(),
-                                "CHRIS Noise Reduction",
-                                ModalDialog.ID_OK_CANCEL_HELP,
-                                "chrisNoiseReductionTool");
+                        "CHRIS Noise Reduction",
+                        ModalDialog.ID_OK_CANCEL_HELP,
+                        "chrisNoiseReductionTool");
         dialog.setContent(new NoiseReductionForm(presenter));
 
         if (dialog.show() == ModalDialog.ID_OK) {
@@ -101,8 +102,8 @@ public class NoiseReductionAction extends ExecCommand {
             throws OperatorException {
         final Product factors =
                 GPF.createProduct("chris.ComputeDestripingFactors",
-                                  presenter.getDestripingParameterMap(),
-                                  presenter.getListedProducts());
+                        presenter.getDestripingParameterMap(),
+                        presenter.getListedProducts());
 
         VisatApp.getApp().addProduct(factors);
 
@@ -114,13 +115,13 @@ public class NoiseReductionAction extends ExecCommand {
 
             final Product destriped =
                     GPF.createProduct("chris.ApplyDestripingFactors",
-                                      new HashMap<String, Object>(0),
-                                      productsMap);
+                            new HashMap<String, Object>(0),
+                            productsMap);
 
             final Product targetProduct =
                     GPF.createProduct("chris.CorrectDropouts",
-                                      presenter.getDropoutCorrectionParameterMap(),
-                                      destriped);
+                            presenter.getDropoutCorrectionParameterMap(),
+                            destriped);
             VisatApp.getApp().addProduct(targetProduct);
         }
     }

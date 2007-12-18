@@ -212,8 +212,7 @@ class NoiseReductionPresenter {
                 }
             }
             throw new NoiseReductionValidationException(
-                    "Product type '" + product.getProductType() + "'is not valid .\n" +
-                            "Must be one of " + sb + "\n");
+                    "Product type '" + product.getProductType() + "'is not valid.");
         }
         DefaultTableModel tableModel = getProductTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
