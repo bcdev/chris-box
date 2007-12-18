@@ -15,7 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.internal.Clusterer;
+import com.bc.neptune.Clusterer;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -56,7 +56,7 @@ public class FindClustersOp extends Operator {
 
     private transient Band[] sourceBands;
     private transient Band[] targetBands;
-    private transient Clusterer clusterer;
+    private transient Clusterer.Cluster[] clusters;
     private transient Band membershipBand;
 
     public void initialize() throws OperatorException {
@@ -91,7 +91,7 @@ public class FindClustersOp extends Operator {
 
     @Override
     public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        if (clusterer == null) {
+        if (clusters == null) {
             try {
                 findClusters();
             } catch (IOException e) {
@@ -104,7 +104,7 @@ public class FindClustersOp extends Operator {
 
         for (int i = 0; i < clusterCount; ++i) {
             if (targetBand == targetBands[i]) {
-                final double[] probabilities = clusterer.getPosteriorProbabilities(i);
+                final double[] probabilities = clusters[i].getPosteriorProbabilities();
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                     for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
@@ -114,7 +114,7 @@ public class FindClustersOp extends Operator {
             }
         }
         if (targetBand == membershipBand) {
-            final int[] mask = clusterer.createMembershipMask();
+            final int[] mask = createMembershipMask(clusters);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
@@ -126,7 +126,33 @@ public class FindClustersOp extends Operator {
 
     @Override
     public void dispose() {
-        clusterer = null;
+        clusters = null;
+    }
+
+    // todo - make a 'cluster collection' object from the clusters[] array
+    private static int[] createMembershipMask(Clusterer.Cluster[] clusters) {
+        final int[] mask = new int[clusters[0].getPoints().length];
+
+        for (int i = 0; i < mask.length; ++i) {
+            final double[] d = new double[clusters.length];
+            for (int k = 0; k < clusters.length; ++k) {
+                d[k] = clusters[k].getPosteriorProbabilities()[i];
+            }
+            mask[i] = indexMax(d);
+        }
+
+        return mask;
+    }
+
+    private static int indexMax(double[] values) {
+        int index = 0;
+        for (int i = 1; i < values.length; ++i) {
+            if (values[i] > values[index]) {
+                index = i;
+            }
+        }
+
+        return index;
     }
 
     private void findClusters() throws IOException {
@@ -162,7 +188,7 @@ public class FindClustersOp extends Operator {
                 points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
             }
         }
-        clusterer = new Clusterer(points, clusterCount, 20);
+        clusters = Clusterer.findClusters(points, clusterCount, 20);
     }
 
 

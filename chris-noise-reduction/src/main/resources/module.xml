@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-noise-reduction</symbolicName>
-    <version>1.0.1</version>
+    <version>1.1-SNAPSHOT</version>
     <name>CHRIS/PROBA Noise Reduction Tool</name>
     <description>CHRIS/PROBA Noise Reduction Tool</description>
 
@@ -13,7 +13,7 @@
 
     <changelog>
         <![CDATA[
-        <p>Changes in Version 1.0.1
+        <p>Changes in Version 1.1
         <ul>
         <li>[CBOX-45] Support of Mode 30</li>
         </ul>
@@ -25,7 +25,6 @@
     </dependency>
     <dependency>
         <module>beam-chris-reader</module>
-        <version>1.3.2</version>
     </dependency>
     <dependency>
         <module>beam-visat</module>
