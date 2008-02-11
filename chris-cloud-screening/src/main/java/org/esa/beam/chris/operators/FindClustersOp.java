@@ -15,7 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.neptune.Clusterer;
+import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -28,7 +28,7 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
-import java.awt.*;
+import java.awt.Rectangle;
 import java.io.IOException;
 
 /**
@@ -38,16 +38,16 @@ import java.io.IOException;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.FindClusters",
-                  version = "1.0",
-                  authors = "Ralf Quast",
-                  copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Finds clusters for features extracted from TOA reflectances.")
+        version = "1.0",
+        authors = "Ralf Quast",
+        copyright = "(c) 2007 by Brockmann Consult",
+        description = "Finds clusters for features extracted from TOA reflectances.")
 public class FindClustersOp extends Operator {
     @SourceProduct
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
-    @Parameter(alias = "features", defaultValue="brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
+    @Parameter(alias = "features", defaultValue = "brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
     private String[] sourceBandNames;
     @Parameter(label = "ROI expression", defaultValue = "")
     private String roiExpression;
