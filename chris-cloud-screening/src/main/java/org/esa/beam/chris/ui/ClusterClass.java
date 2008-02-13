@@ -8,7 +8,7 @@ import java.awt.Color;
  * @author Marco Peters
  * @version $Revision:$ $Date:$
  */
-public class CloudClass {
+public class ClusterClass {
 
     private String name;
     private Color colour;
@@ -19,7 +19,7 @@ public class CloudClass {
 
     private final double initialProbability;
 
-    public CloudClass(String name, Color colour, double initialProbability) {
+    public ClusterClass(String name, Color colour, double initialProbability) {
         this.name = name;
         this.colour = colour;
         this.initialProbability = initialProbability;

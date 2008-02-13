@@ -65,15 +65,15 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
         });
     }
 
-    private static final CloudClass[] DEMO_CLOUD_CLASSES = new CloudClass[]{
-            new CloudClass("Class 1", Color.RED, 0.12),
-            new CloudClass("Class 2", Color.BLUE, 0.3),
-            new CloudClass("Class 3", Color.ORANGE, 0.7),
-            new CloudClass("Class 4", Color.YELLOW, 0.22),
-            new CloudClass("Class 5", Color.GREEN, 0.6),
-            new CloudClass("Class 6", Color.CYAN, 0.14),
-            new CloudClass("Class 7", Color.MAGENTA, 0.16),
-            new CloudClass("Class 8", Color.PINK, 0.20),
+    private static final ClusterClass[] DEMO_CLUSTER_CLASSES = new ClusterClass[]{
+            new ClusterClass("Class 1", Color.RED, 0.12),
+            new ClusterClass("Class 2", Color.BLUE, 0.3),
+            new ClusterClass("Class 3", Color.ORANGE, 0.7),
+            new ClusterClass("Class 4", Color.YELLOW, 0.22),
+            new ClusterClass("Class 5", Color.GREEN, 0.6),
+            new ClusterClass("Class 6", Color.CYAN, 0.14),
+            new ClusterClass("Class 7", Color.MAGENTA, 0.16),
+            new ClusterClass("Class 8", Color.PINK, 0.20),
     };
 
 
@@ -93,7 +93,7 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
         tableLayout.setRowFill(1, TableLayout.Fill.VERTICAL);
         tableLayout.setRowWeightX(1, 1.0);
         final JPanel control = new JPanel(tableLayout);
-        final JTable jTable = new JTable(new CloudMaskLabelingModel(DEMO_CLOUD_CLASSES));
+        final JTable jTable = new JTable(new CloudMaskLabelingModel(DEMO_CLUSTER_CLASSES));
         jTable.setDefaultRenderer(Double.class, new PercentageRenderer());
         final ColorCellRenderer colorCellRenderer = new ColorCellRenderer();
         colorCellRenderer.setColorValueVisible(false);
@@ -118,7 +118,7 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
         tableLayout.setRowFill(1, TableLayout.Fill.VERTICAL);
         tableLayout.setRowWeightX(1, 1.0);
         final JPanel control = new JPanel(tableLayout);
-        final JTable jTable = new JTable(new CloudMaskLabelingModelWithDropDown(DEMO_CLOUD_CLASSES));
+        final JTable jTable = new JTable(new CloudMaskLabelingModelWithDropDown(DEMO_CLUSTER_CLASSES));
         jTable.setDefaultRenderer(Double.class, new PercentageRenderer());
         final ColorCellRenderer colorCellRenderer = new ColorCellRenderer();
         colorCellRenderer.setColorValueVisible(false);

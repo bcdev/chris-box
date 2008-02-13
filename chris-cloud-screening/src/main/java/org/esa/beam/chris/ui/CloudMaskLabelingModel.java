@@ -26,11 +26,11 @@ class CloudMaskLabelingModel extends DefaultTableModel {
             Double.class,
             Double.class
     };
-    private final CloudClass[] cloudClasses;
+    private final ClusterClass[] clusterClasses;
 
-    public CloudMaskLabelingModel(CloudClass[] cloudClasses) {
-        super(columnNames, cloudClasses.length);
-        this.cloudClasses = cloudClasses;
+    public CloudMaskLabelingModel(ClusterClass[] clusterClasses) {
+        super(columnNames, clusterClasses.length);
+        this.clusterClasses = clusterClasses;
     }
 
     @Override
@@ -46,20 +46,20 @@ class CloudMaskLabelingModel extends DefaultTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        final CloudClass cloudClass = cloudClasses[rowIndex];
+        final ClusterClass clusterClass = clusterClasses[rowIndex];
         switch(columnIndex) {
         case 0:
-            return cloudClass.getName();
+            return clusterClass.getName();
         case 1:
-            return cloudClass.getColour();
+            return clusterClass.getColour();
         case 2:
-            return cloudClass.isCloud();
+            return clusterClass.isCloud();
         case 3:
-            return cloudClass.isBackground();
+            return clusterClass.isBackground();
         case 4:
-            return cloudClass.getCurrentProbability();
+            return clusterClass.getCurrentProbability();
         case 5:
-            return cloudClass.getInitialProbability();
+            return clusterClass.getInitialProbability();
         default:
             return null;
         }
@@ -67,19 +67,19 @@ class CloudMaskLabelingModel extends DefaultTableModel {
 
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
-        final CloudClass cloudClass = cloudClasses[rowIndex];
+        final ClusterClass clusterClass = clusterClasses[rowIndex];
         switch(columnIndex) {
             case 0:
-                cloudClass.setName((String)value);
+                clusterClass.setName((String)value);
                 break;
             case 1:
-                cloudClass.setColour((Color) value);
+                clusterClass.setColour((Color) value);
                 break;
             case 2:
-                cloudClass.setCloud((Boolean)value);
+                clusterClass.setCloud((Boolean)value);
                 break;
             case 3:
-                cloudClass.setBackground((Boolean)value);
+                clusterClass.setBackground((Boolean)value);
                 break;
             default:
                 return;

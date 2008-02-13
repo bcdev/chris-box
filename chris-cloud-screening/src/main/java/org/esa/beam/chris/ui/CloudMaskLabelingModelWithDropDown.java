@@ -22,11 +22,11 @@ class CloudMaskLabelingModelWithDropDown extends DefaultTableModel {
             Double.class,
             Double.class
     };
-    private final CloudClass[] cloudClasses;
+    private final ClusterClass[] clusterClasses;
 
-    public CloudMaskLabelingModelWithDropDown(CloudClass[] cloudClasses) {
-        super(columnNames, cloudClasses.length);
-        this.cloudClasses = cloudClasses;
+    public CloudMaskLabelingModelWithDropDown(ClusterClass[] clusterClasses) {
+        super(columnNames, clusterClasses.length);
+        this.clusterClasses = clusterClasses;
     }
 
     @Override
@@ -44,13 +44,13 @@ class CloudMaskLabelingModelWithDropDown extends DefaultTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         switch(columnIndex) {
         case 0:
-            return cloudClasses[rowIndex].getName();
+            return clusterClasses[rowIndex].getName();
         case 1:
-            return cloudClasses[rowIndex].getColour();
+            return clusterClasses[rowIndex].getColour();
         case 2:
-            return cloudClasses[rowIndex].getCurrentProbability();
+            return clusterClasses[rowIndex].getCurrentProbability();
         case 3:
-            return cloudClasses[rowIndex].getInitialProbability();
+            return clusterClasses[rowIndex].getInitialProbability();
         default:
             return null;
         }
@@ -60,10 +60,10 @@ class CloudMaskLabelingModelWithDropDown extends DefaultTableModel {
     public void setValueAt(Object value, int rowIndex, int columnIndex) {     
         switch(columnIndex) {
             case 0:
-                cloudClasses[rowIndex].setName((String)value);
+                clusterClasses[rowIndex].setName((String)value);
                 break;
             case 1:
-                cloudClasses[rowIndex].setColour((Color) value);
+                clusterClasses[rowIndex].setColour((Color) value);
                 break;
             default:
                 return;
