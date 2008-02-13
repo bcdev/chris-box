@@ -1,45 +1,46 @@
 <module>
-    <manifestVersion>1.0.0</manifestVersion>
-    <symbolicName>chris-cloud-screening</symbolicName>
-    <version>1.0-SNAPSHOT</version>
-    <name>CHRIS/PROBA Cloud Screening Tools</name>
-    <description>CHRIS/PROBA Cloud Screening Tools</description>
+	<manifestVersion>1.0.0</manifestVersion>
+	<symbolicName>chris-cloud-screening</symbolicName>
+	<version>1.0-SNAPSHOT</version>
+	<name>CHRIS/PROBA Cloud Screening Tools</name>
+	<description>CHRIS/PROBA Cloud Screening Tools</description>
 
-    <vendor>Brockmann Consult GmbH</vendor>
-    <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
-    <copyright>(C) 2007 by Brockmann Consult GmbH</copyright>
-    <url>http://envisat.esa.int/beam</url>
-    <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
+	<vendor>Brockmann Consult GmbH</vendor>
+	<contactAddress>
+		Max Planck Str.2, 21502 Geesthacht (Germany)
+	</contactAddress>
+	<copyright>(C) 2007 by Brockmann Consult GmbH</copyright>
+	<url>http://envisat.esa.int/beam</url>
+	<licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
-    <changelog>
-        <!--
-        <![CDATA[
-        <p>Initial Release 1.0
-        </p>
-        ]]>
-        -->
-    </changelog>
+	<changelog>
+		<!--
+			<![CDATA[
+			<p>Initial Release 1.0
+			</p>
+			]]>
+		-->
+	</changelog>
 
-    <dependency>
-        <module>beam-gpf</module>
-    </dependency>
-    <dependency>
-        <module>beam-chris-reader</module>
-    </dependency>
-    <!--
-    <dependency>
-        <module>beam-cluster</module>
-    </dependency>
-    -->
-    <dependency>
-        <module>beam-visat</module>
-        <optional>true</optional>
-    </dependency>
+	<dependency>
+		<module>beam-gpf</module>
+	</dependency>
+	<dependency>
+		<module>beam-chris-reader</module>
+	</dependency>
+	<!--
+		<dependency>
+		<module>beam-cluster</module>
+		</dependency>
+	-->
+	<dependency>
+		<module>beam-visat</module>
+		<optional>true</optional>
+	</dependency>
 
-    <categories>Application,Processor,CHRIS</categories>
+	<categories>Application,Processor,CHRIS</categories>
 
     <extension point="beam-visat:toolViews">
-
         <toolView>
             <id>org.esa.beam.chris.ui.CloudMaskLabelingToolView</id>
             <class>org.esa.beam.chris.ui.CloudMaskLabelingToolView</class>
@@ -57,50 +58,72 @@
         </toolView>
     </extension>
 
-    <extension point="beam-visat:actions">
-        <action>
-            <id>chris</id>
-            <class>org.esa.beam.visat.actions.ActionGroup</class>
-            <text>CHRIS/PROBA Tools</text>
-            <mnemonic/>
-        </action>
-        <action>
-            <id>chrisExtractFeatures</id>
-            <class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
-            <text>Extract Features</text>
-            <shortDescr>Extract features from the selected CHRIS/PROBA product needed for cloud screening</shortDescr>
-            <mnemonic/>
-            <parent>chris</parent>
-            <helpID>chrisCloudScreeningTools</helpID>
-            <placeAfter>chrisComputeReflectances</placeAfter>
-        </action>
-        <action>
-            <id>chrisFindClusters</id>
-            <class>org.esa.beam.chris.ui.FindClustersAction</class>
-            <text>Find Clusters</text>
-            <shortDescr>Find clusters in the selected CHRIS/PROBA cloud screening feature product</shortDescr>
-            <mnemonic/>
-            <parent>chris</parent>
-            <helpID>chrisCloudScreeningTools</helpID>
-            <placeAfter>chrisExtractFeatures</placeAfter>
-        </action>
-        <action>
-            <id>chrisFindClucovClusters</id>
-            <class>org.esa.beam.chris.ui.FindClucovClustersAction</class>
-            <text>Find Clucov Clusters</text>
-            <shortDescr>Find clusters in the selected CHRIS/PROBA cloud screening feature product</shortDescr>
-            <mnemonic/>
-            <parent>chris</parent>
-            <helpID>chrisCloudScreeningTools</helpID>
-            <placeAfter>chrisFindClusters</placeAfter>
-        </action>
-    </extension>
 
-    <extension point="beam-ui:helpSets">
-        <helpSet>
-            <parent>beam-help</parent>
-            <path>doc/help/cloudscreening.hs</path>
-        </helpSet>
-    </extension>
+	<extension point="beam-visat:actions">
+		<action>
+			<id>chris</id>
+			<class>org.esa.beam.visat.actions.ActionGroup</class>
+			<text>CHRIS/PROBA Tools</text>
+			<mnemonic />
+		</action>
+		<action>
+			<id>chrisExtractFeatures</id>
+			<class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
+			<text>Extract Features</text>
+			<shortDescr>
+				Extract features from the selected CHRIS/PROBA product
+				needed for cloud screening
+			</shortDescr>
+			<mnemonic />
+			<parent>chris</parent>
+			<helpID>chrisCloudScreeningTools</helpID>
+			<placeAfter>chrisComputeReflectances</placeAfter>
+		</action>
+		<action>
+			<id>chrisFindClusters</id>
+			<class>org.esa.beam.chris.ui.FindClustersAction</class>
+			<text>Find Clusters</text>
+			<shortDescr>
+				Find clusters in the selected CHRIS/PROBA cloud
+				screening feature product
+			</shortDescr>
+			<mnemonic />
+			<parent>chris</parent>
+			<helpID>chrisCloudScreeningTools</helpID>
+			<placeAfter>chrisExtractFeatures</placeAfter>
+		</action>
+		<action>
+			<id>chrisFindClucovClusters</id>
+			<class>org.esa.beam.chris.ui.FindClucovClustersAction</class>
+			<text>Find Clucov Clusters</text>
+			<shortDescr>
+				Find clusters in the selected CHRIS/PROBA cloud
+				screening feature product
+			</shortDescr>
+			<mnemonic />
+			<parent>chris</parent>
+			<helpID>chrisCloudScreeningTools</helpID>
+			<placeAfter>chrisFindClusters</placeAfter>
+		</action>
+		<action>
+			<id>chrisCloudMask</id>
+			<parent>chris</parent>
+			<class>org.esa.beam.chris.ui.CloudMaskAction</class>
+			<text>Compute Cloud Mask</text>
+			<mnemonic>M</mnemonic>
+			<accelerator>ctrl alt M</accelerator>
+			<shortDescr>Computes a cloud mask.</shortDescr>
+			<helpId>chrisCloudScreeningTools</helpId>
+			<placeAfter>chrisFindClucovClusters</placeAfter>
+		</action>
+
+	</extension>
+
+	<extension point="beam-ui:helpSets">
+		<helpSet>
+			<parent>beam-help</parent>
+			<path>doc/help/cloudscreening.hs</path>
+		</helpSet>
+	</extension>
 
 </module>

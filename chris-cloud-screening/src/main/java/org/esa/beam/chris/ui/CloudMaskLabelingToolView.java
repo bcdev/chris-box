@@ -1,22 +1,29 @@
 package org.esa.beam.chris.ui;
 
-import com.jidesoft.grid.ColorCellEditor;
-import com.jidesoft.grid.ColorCellRenderer;
-import com.jidesoft.grid.ListComboBoxCellEditor;
-import org.esa.beam.framework.ui.TableLayout;
-import org.esa.beam.framework.ui.application.support.AbstractToolView;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 
+import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.MutableComboBoxModel;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
-import java.awt.Color;
-import java.text.NumberFormat;
+
+import org.esa.beam.framework.ui.TableLayout;
+import org.esa.beam.framework.ui.application.support.AbstractToolView;
+
+import com.jidesoft.grid.ColorCellEditor;
+import com.jidesoft.grid.ColorCellRenderer;
 
 /**
  * Created by Marco Peters.
@@ -40,31 +47,47 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
     };
 
     public static void main(String[] args) {
-        final JFrame jFrame1 = new JFrame("Version 1 - With Checkboxes");
-        final JFrame jFrame2a = new JFrame("Version 2.a - With Combobox");
-        final JFrame jFrame2b = new JFrame("Version 2.b - With Combobox");
+        final JFrame jFrame1 = new JFrame("VISAT");
         final CloudMaskLabelingToolView maskLabelingToolView = new CloudMaskLabelingToolView();
-        jFrame1.add(maskLabelingToolView.createCheckBoxTable());
-        jFrame2a.add(maskLabelingToolView.createDropdownTable(CLOUD_CLASSES));
-        jFrame2b.add(maskLabelingToolView.createDropdownTable(CHRIS_CLOUD_CLASSES));
+        jFrame1.add(maskLabelingToolView.createControl());
         jFrame1.pack();
-        jFrame2a.pack();
-        jFrame2b.pack();
-        jFrame2a.setLocation(jFrame1.getWidth() + 10, 0);
-        jFrame2b.setLocation(jFrame1.getWidth() + 10 + jFrame2a.getWidth() + 10, 0);
         jFrame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        jFrame2a.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        jFrame2b.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
                 jFrame1.setVisible(true);
-                jFrame2a.setVisible(true);
-                jFrame2b.setVisible(true);
             }
         });
     }
-
+    
+    @Override
+    protected JComponent createControl() {
+        setTitle("Cloud Mask");
+        JButton createButton1 = new JButton("Create Cloud Mask...");
+        createButton1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CreateCloudProductDialog createCloudProductDialog = new CreateCloudProductDialog();
+                createCloudProductDialog.setVisible(true);
+            }
+        });
+        
+        JButton createButton2 = new JButton("Create Cloud Mask...");
+        createButton2.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CreateCloudProductDialog createCloudProductDialog = new CreateCloudProductDialog();
+                createCloudProductDialog.setVisible(true);
+            }
+        });
+        
+        JTabbedPane tabbedPane = new JTabbedPane();
+        JComponent createCheckBoxTable = createCheckBoxTable();
+        JComponent createDropdownTable = createDropdownTable(CHRIS_CLOUD_CLASSES);
+        tabbedPane.add("Version 1", decorateWithButton(createCheckBoxTable, createButton1));
+        tabbedPane.add("Version 2", decorateWithButton(createDropdownTable, createButton2));
+        
+        return tabbedPane;
+    }
+    
     private static final ClusterClass[] DEMO_CLUSTER_CLASSES = new ClusterClass[]{
             new ClusterClass("Class 1", Color.RED, 0.12),
             new ClusterClass("Class 2", Color.BLUE, 0.3),
@@ -76,13 +99,7 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
             new ClusterClass("Class 8", Color.PINK, 0.20),
     };
 
-
-    @Override
-    protected JComponent createControl() {
-        return createCheckBoxTable();
-    }
-
-    private JComponent createCheckBoxTable() {
+    private JComponent decorateWithButton(JComponent tabbedPane, JButton button) {
         final TableLayout tableLayout = new TableLayout(1);
         tableLayout.setTablePadding(4, 4);
         tableLayout.setRowAnchor(0, TableLayout.Anchor.NORTHWEST);
@@ -93,6 +110,13 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
         tableLayout.setRowFill(1, TableLayout.Fill.VERTICAL);
         tableLayout.setRowWeightX(1, 1.0);
         final JPanel control = new JPanel(tableLayout);
+        
+        control.add(tabbedPane);
+        control.add(button);
+        return control;
+    }
+
+    private JComponent createCheckBoxTable() {
         final JTable jTable = new JTable(new CloudMaskLabelingModel(DEMO_CLUSTER_CLASSES));
         jTable.setDefaultRenderer(Double.class, new PercentageRenderer());
         final ColorCellRenderer colorCellRenderer = new ColorCellRenderer();
@@ -102,35 +126,65 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
         jTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         final JScrollPane tableScrollPane = new JScrollPane(jTable);
         tableScrollPane.getViewport().setPreferredSize(jTable.getPreferredSize());
-        control.add(tableScrollPane);
-        control.add(new JButton("Create..."));
-        return control;
+        return tableScrollPane;
     }
 
-    private JComponent createDropdownTable(String[] classNames) {
-        final TableLayout tableLayout = new TableLayout(1);
-        tableLayout.setTablePadding(4, 4);
-        tableLayout.setRowAnchor(0, TableLayout.Anchor.NORTHWEST);
-        tableLayout.setRowFill(0, TableLayout.Fill.BOTH);
-        tableLayout.setRowWeightX(0, 1.0);
-        tableLayout.setRowWeightY(0, 1.0);
-        tableLayout.setRowAnchor(1, TableLayout.Anchor.NORTHEAST);
-        tableLayout.setRowFill(1, TableLayout.Fill.VERTICAL);
-        tableLayout.setRowWeightX(1, 1.0);
-        final JPanel control = new JPanel(tableLayout);
+    private JComponent createDropdownTable(final String[] classNames) {
         final JTable jTable = new JTable(new CloudMaskLabelingModelWithDropDown(DEMO_CLUSTER_CLASSES));
         jTable.setDefaultRenderer(Double.class, new PercentageRenderer());
         final ColorCellRenderer colorCellRenderer = new ColorCellRenderer();
         colorCellRenderer.setColorValueVisible(false);
         jTable.setDefaultRenderer(Color.class, colorCellRenderer);
         jTable.setDefaultEditor(Color.class, new ColorCellEditor());
-        jTable.setDefaultEditor(String.class, new ListComboBoxCellEditor(classNames));
+        
+        // JIDE AutoCompletionComboBox
+//        AutoCompletionComboBox autoCompletionComboBoxNotStrict = new AutoCompletionComboBox(classNames);
+//        autoCompletionComboBoxNotStrict.setStrict(false);
+//        jTable.setDefaultEditor(String.class, new DefaultCellEditor(autoCompletionComboBoxNotStrict));
+        
+        // editable combox with addition
+        final JComboBox comboBox = new JComboBox(classNames);
+        comboBox.setEditable(true);
+        
+        comboBox.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(!"comboBoxEdited".equals(e.getActionCommand())) {
+                    return;
+                }
+                String selectedItem = (String) comboBox.getSelectedItem();
+                if (selectedItem.startsWith("Class ")) {
+                    return;
+                }
+                MutableComboBoxModel model = (MutableComboBoxModel) comboBox.getModel();
+                boolean contains = false;
+                for( int i = 0; i < model.getSize(); i++) {
+                    if(selectedItem.equalsIgnoreCase((String) model.getElementAt(i))) {
+                        contains = true;
+                        break;
+                    }
+                }
+                if (!contains) {
+                    model.addElement(selectedItem);
+                }
+            }
+        });
+//        comboBox.setKeySelectionManager(new MyKeySelectionManager());
+        jTable.setDefaultEditor(String.class, new DefaultCellEditor(comboBox));
+        
+        // JIDE IntelliHints
+//        TextFieldCellEditor textFieldCellEditor = new TextFieldCellEditor(String.class);
+//        JTextField textField = textFieldCellEditor.getTextField();
+//        ListDataIntelliHints listDataIntelliHints = new ListDataIntelliHints(textField, classNames);
+//        listDataIntelliHints.setCaseSensitive(false);
+//        listDataIntelliHints.setHintsEnabled(true);
+//        jTable.setDefaultEditor(String.class, textFieldCellEditor);
+
         jTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         final JScrollPane tableScrollPane = new JScrollPane(jTable);
         tableScrollPane.getViewport().setPreferredSize(jTable.getPreferredSize());
-        control.add(tableScrollPane);
-        control.add(new JButton("Create..."));
-        return control;
+        return tableScrollPane;
     }
 
     private static class PercentageRenderer extends DefaultTableCellRenderer {
@@ -149,5 +203,28 @@ public class CloudMaskLabelingToolView extends AbstractToolView {
             setText((value == null) ? "" : formatter.format(value));
         }
     }
+    
+//    private static class MyKeySelectionManager implements KeySelectionManager,
+//            Serializable {
+//        
+//        public int selectionForKey(char aKey, ComboBoxModel aModel) {
+//            System.out.println("key: "+aKey);
+//            final int modelSize = aModel.getSize();
+//            String selectedItem = (String) aModel.getSelectedItem();
+//            if (selectedItem != null) {
+//                selectedItem = selectedItem.toLowerCase();
+//                for (int i = 0; i < modelSize; i++) {
+//                    String element = (String) aModel.getElementAt(i);
+//                    element = element.toLowerCase();
+//                    if (element.startsWith(selectedItem)) {
+//                        System.out.println(i);
+//                        return i;
+//                    }
+//                }
+//            }
+//            System.out.println(-1);
+//            return -1;
+//        }
+//    }
 
 }
