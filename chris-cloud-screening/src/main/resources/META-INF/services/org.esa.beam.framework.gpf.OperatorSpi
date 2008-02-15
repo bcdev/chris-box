@@ -1,2 +1,3 @@
 org.esa.beam.chris.operators.ExtractFeaturesOp$Spi
 org.esa.beam.chris.operators.FindClustersOp$Spi
+org.esa.beam.chris.operators.CloudProbabilityOp$Spi
