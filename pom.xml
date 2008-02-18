@@ -11,6 +11,17 @@
 
     <packaging>pom</packaging>
 
+    <repositories>
+        <repository>
+            <id>bc-public</id>
+            <name>Public Maven Repository at Brockmann-Consult</name>
+            <url>http://www.brockmann-consult.de/mvn/os</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <modules>
         <module>chris-bootstrap</module>
         <module>chris-cloud-screening</module>

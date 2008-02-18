@@ -34,8 +34,7 @@ public class MultinormalDistribution implements Distribution {
      * Constructs a new multinormal distribution.
      *
      * @param mean        the distribution mean.
-     * @param covariances the distribution covariances. Only the upper triangular
-     *                    elements are used.
+     * @param covariances the distribution covariances.
      */
     public MultinormalDistribution(double[] mean, double[][] covariances) {
         this(mean.length, mean, covariances, new SymmetricEigenproblemSolver());
@@ -70,18 +69,16 @@ public class MultinormalDistribution implements Distribution {
         normFactor = 1.0 / pow(2.0 * PI, 0.5 * n) / sqrt(eigendecomposition.getEigenvalueProduct());
     }
 
-    /**
-     * Returns the probability density for a given vector.
-     *
-     * @param y the vector.
-     * @return the probability density for the vector y.
-     */
     public final double probabilityDensity(double[] y) {
         if (y.length != n) {
             throw new IllegalArgumentException("y.length != n");
         }
 
         return normFactor * exp(-0.5 * mahalanobisSquaredDistance(y));
+    }
+
+    public double[] getMean() {
+        return mean;
     }
 
     private double mahalanobisSquaredDistance(double[] y) {
@@ -101,37 +98,29 @@ public class MultinormalDistribution implements Distribution {
 
     private static class SymmetricEigenproblemSolver implements EigenproblemSolver {
 
-        public Eigendecomposition createEigendecomposition(int n, double[][] matrix) {
-            final double[][] symmetricMatrix = matrix.clone();
-
-            for (int i = 0; i < n; ++i) {
-                for (int j = i + 1; j < n; ++j) {
-                    symmetricMatrix[j][i] = symmetricMatrix[i][j];
-                }
-            }
-
+        public Eigendecomposition createEigendecomposition(int n, double[][] symmetricMatrix) {
             return new SymmetricEigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).eig());
         }
     }
 
     private static class SymmetricEigendecomposition implements Eigendecomposition {
-        private final Jama.EigenvalueDecomposition decomposition;
+        private double[] eigenvalues;
+        private double[][] v;
 
         public SymmetricEigendecomposition(Jama.EigenvalueDecomposition decomposition) {
-            this.decomposition = decomposition;
+            eigenvalues = decomposition.getRealEigenvalues();
+            v = decomposition.getV().getArray();
         }
 
         public double getEigenvalue(int i) {
-            return decomposition.getRealEigenvalues()[i];
+            return eigenvalues[i];
         }
 
         public double getV(int i, int j) {
-            return decomposition.getV().get(i, j);
+            return v[i][j];
         }
 
         public double getEigenvalueProduct() {
-            final double[] eigenvalues = decomposition.getRealEigenvalues();
-
             double product = eigenvalues[0];
             for (int i = 1; i < eigenvalues.length; ++i) {
                 product *= eigenvalues[i];

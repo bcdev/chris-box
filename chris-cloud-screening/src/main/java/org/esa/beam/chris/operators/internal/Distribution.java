@@ -24,8 +24,14 @@ public interface Distribution {
      * Returns the probability density for a given vector.
      *
      * @param y the vector.
-     *
      * @return the probability density for the vector y.
      */
     double probabilityDensity(double[] y);
+
+    /**
+     * Returns the distribution mean.
+     *
+     * @return the distribution mean.
+     */
+    double[] getMean();
 }

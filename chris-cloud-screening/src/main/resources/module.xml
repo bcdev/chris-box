@@ -93,19 +93,6 @@
 			<placeAfter>chrisExtractFeatures</placeAfter>
 		</action>
 		<action>
-			<id>chrisFindClucovClusters</id>
-			<class>org.esa.beam.chris.ui.FindClucovClustersAction</class>
-			<text>Find Clucov Clusters</text>
-			<shortDescr>
-				Find clusters in the selected CHRIS/PROBA cloud
-				screening feature product
-			</shortDescr>
-			<mnemonic />
-			<parent>chris</parent>
-			<helpID>chrisCloudScreeningTools</helpID>
-			<placeAfter>chrisFindClusters</placeAfter>
-		</action>
-		<action>
 			<id>chrisCloudMask</id>
 			<parent>chris</parent>
 			<class>org.esa.beam.chris.ui.CloudMaskAction</class>

@@ -1,0 +1,60 @@
+/* 
+ * Copyright (C) 2002-2008 by Brockmann Consult
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation. This program is distributed in the hope it will
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package org.esa.beam.chris.operators.internal;
+
+import junit.framework.TestCase;
+
+import java.util.Random;
+
+/**
+ * Tests for class {@link Clusterer}.
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ */
+public class ClustererTest extends TestCase {
+
+    public void testFindClusters() {
+        final double[][] points = createRandomPoints(new double[]{
+                4, 4, 4, 1, 1, 1, 1, 1,
+                4, 4, 4, 1, 1, 1, 1, 1,
+                2, 2, 2, 3, 3, 3, 3, 3,
+                2, 2, 2, 3, 3, 3, 3, 3,
+                2, 2, 2, 3, 3, 3, 3, 3,
+                2, 2, 2, 3, 3, 3, 3, 3,
+                2, 2, 2, 3, 3, 3, 3, 3,
+                2, 2, 2, 3, 3, 3, 3, 3,
+        });
+
+        final Clusterer.Cluster[] clusters = Clusterer.findClusters(points, 4, 10, 0.1);
+        assertEquals(4, clusters.length);
+
+        assertEquals(3.0, clusters[0].getMean()[0], 0.01);
+        assertEquals(2.0, clusters[1].getMean()[0], 0.01);
+        assertEquals(1.0, clusters[2].getMean()[0], 0.01);
+        assertEquals(4.0, clusters[3].getMean()[0], 0.01);
+    }
+
+    private static double[][] createRandomPoints(double[] doubles) {
+        final double[][] points = new double[doubles.length][1];
+
+        final Random random = new Random(5489);
+        for (int i = 0; i < doubles.length; ++i) {
+            points[i][0] = doubles[i] + 0.01 * random.nextGaussian();
+        }
+
+        return points;
+    }
+}

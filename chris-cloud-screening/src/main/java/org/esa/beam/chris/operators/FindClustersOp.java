@@ -29,6 +29,8 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import java.awt.Rectangle;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
 import java.io.IOException;
 
 /**
@@ -43,6 +45,7 @@ import java.io.IOException;
         copyright = "(c) 2007 by Brockmann Consult",
         description = "Finds clusters for features extracted from TOA reflectances.")
 public class FindClustersOp extends Operator {
+
     @SourceProduct
     private Product sourceProduct;
     @TargetProduct
@@ -53,12 +56,26 @@ public class FindClustersOp extends Operator {
     private String roiExpression;
     @Parameter(label = "Number of clusters", defaultValue = "14")
     private int clusterCount;
+    @Parameter(label = "Number of iterations", defaultValue = "20")
+    private int iterationCount;
+
+    public FindClustersOp() {
+    }
+
+    public FindClustersOp(Product sourceProduct, String[] sourceBandNames, int clusterCount, int iterationCount) {
+        this.sourceProduct = sourceProduct;
+        this.sourceBandNames = sourceBandNames;
+        this.roiExpression = "";
+        this.clusterCount = clusterCount;
+        this.iterationCount = iterationCount;
+    }
 
     private transient Band[] sourceBands;
     private transient Band[] targetBands;
     private transient Clusterer.Cluster[] clusters;
     private transient Band membershipBand;
 
+    @Override
     public void initialize() throws OperatorException {
         sourceBands = new Band[sourceBandNames.length];
         for (int i = 0; i < sourceBandNames.length; i++) {
@@ -71,22 +88,25 @@ public class FindClustersOp extends Operator {
 
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
-        final String name = sourceProduct.getName().replace("_REFL", "_FEAT");
+        final String name = sourceProduct.getName().replace("_FEAT", "_CLU");
         final String type = sourceProduct.getProductType().replace("_FEAT", "_CLU");
+
         targetProduct = new Product(name, type, width, height);
         targetProduct.setPreferredTileSize(width, height);
 
         targetBands = new Band[clusterCount];
         for (int i = 0; i < clusterCount; ++i) {
-            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT64);
+            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_INT8);
+            targetBand.setScalingFactor(1.0 / 127.0);
             targetBand.setUnit("dl");
             targetBand.setDescription("Cluster posterior probabilities");
 
             targetBands[i] = targetBand;
         }
 
-        membershipBand = targetProduct.addBand("membership_mask", ProductData.TYPE_INT8);
+        membershipBand = new ImageBand("membership_mask", ProductData.TYPE_INT8, width, height);
         membershipBand.setDescription("Cluster membership mask");
+        targetProduct.addBand(membershipBand);
     }
 
     @Override
@@ -113,46 +133,11 @@ public class FindClustersOp extends Operator {
                 }
             }
         }
-        if (targetBand == membershipBand) {
-            final int[] mask = createMembershipMask(clusters);
-
-            for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
-                for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                    targetTile.setSample(x, y, mask[y * sceneWidth + x]);
-                }
-            }
-        }
     }
 
     @Override
     public void dispose() {
         clusters = null;
-    }
-
-    // todo - make a 'cluster collection' object from the clusters[] array
-    private static int[] createMembershipMask(Clusterer.Cluster[] clusters) {
-        final int[] mask = new int[clusters[0].getPoints().length];
-
-        for (int i = 0; i < mask.length; ++i) {
-            final double[] d = new double[clusters.length];
-            for (int k = 0; k < clusters.length; ++k) {
-                d[k] = clusters[k].getPosteriorProbabilities()[i];
-            }
-            mask[i] = indexMax(d);
-        }
-
-        return mask;
-    }
-
-    private static int indexMax(double[] values) {
-        int index = 0;
-        for (int i = 1; i < values.length; ++i) {
-            if (values[i] > values[index]) {
-                index = i;
-            }
-        }
-
-        return index;
     }
 
     private void findClusters() throws IOException {
@@ -188,13 +173,38 @@ public class FindClustersOp extends Operator {
                 points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
             }
         }
-        clusters = Clusterer.findClusters(points, clusterCount, 20);
+        clusters = Clusterer.findClusters(points, clusterCount, 20, 0.0);
+    }
+
+    public void setClusterCount(int clusterCount) {
+        this.clusterCount = clusterCount;
     }
 
 
     public static class Spi extends OperatorSpi {
         public Spi() {
             super(FindClustersOp.class);
+        }
+    }
+
+
+    private class ImageBand extends Band {
+
+        public ImageBand(String name, int dataType, int width, int height) {
+            super(name, dataType, width, height);
+        }
+
+        @Override
+        public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
+            if (clusters == null) {
+                membershipBand.setImage(ClusterMembershipOpImage.create(targetBands, membershipBand));
+            }
+
+            final Rectangle rectangle = new Rectangle(x, y, w, h);
+            final RenderedImage image = getImage();
+            final Raster raster = image.getData(rectangle);
+
+            raster.getDataElements(x, y, w, h, data.getElems());
         }
     }
 }

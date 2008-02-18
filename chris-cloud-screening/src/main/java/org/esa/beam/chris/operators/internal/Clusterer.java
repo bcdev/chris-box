@@ -42,10 +42,11 @@ public class Clusterer {
      *
      * @param points       the data points.
      * @param clusterCount the number of clusters.
+     * @param dist         the minimum initial distance between any two cluster means.
      * @param seed         the seed used for the random initialization of clusters.
      */
-    private Clusterer(double[][] points, int clusterCount, int seed) {
-        this(points.length, points[0].length, points, clusterCount, seed);
+    private Clusterer(double[][] points, int clusterCount, double dist, int seed) {
+        this(points.length, points[0].length, points, clusterCount, dist, seed);
     }
 
     /**
@@ -55,9 +56,10 @@ public class Clusterer {
      * @param n            the dimension of the point space.
      * @param points       the data points.
      * @param clusterCount the number of clusters.
+     * @param dist         the minimum initial distance between any two cluster means.
      * @param seed         the seed used for the random initialization of clusters.
      */
-    private Clusterer(int m, int n, double[][] points, int clusterCount, int seed) {
+    private Clusterer(int m, int n, double[][] points, int clusterCount, double dist, int seed) {
         // todo: check arguments
 
         this.m = m;
@@ -71,7 +73,7 @@ public class Clusterer {
         covariances = new double[clusterCount][n][n];
         distributions = new Distribution[clusterCount];
 
-        initialize(seed);
+        initialize(dist, seed);
     }
 
     /**
@@ -80,10 +82,11 @@ public class Clusterer {
      * @param points         the data points.
      * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
+     * @param dist           the minimum initial distance between any two cluster means.
      * @return the cluster decomposition.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount) {
-        return new Clusterer(points, clusterCount, 5489).findClusters(iterationCount);
+    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
+        return new Clusterer(points, clusterCount, dist, 5489).findClusters(iterationCount);
     }
 
     /**
@@ -92,23 +95,25 @@ public class Clusterer {
      * @param points         the data points.
      * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
+     * @param dist           the minimum initial distance between any two cluster means.
      * @param seed           the seed used for the random initialization of clusters.
      * @return the cluster decomposition.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, int seed) {
-        return new Clusterer(points, clusterCount, seed).findClusters(iterationCount);
+    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist, int seed) {
+        return new Clusterer(points, clusterCount, dist, seed).findClusters(iterationCount);
     }
 
     /**
      * Randomly initializes the clusters using the k-means method.
      *
+     * @param dist the minimum initial distance between any two cluster means.
      * @param seed the seed value used for initializing the random number generator.
      */
-    private void initialize(int seed) {
+    private void initialize(double dist, int seed) {
         final Random random = new Random(seed);
 
         do {
-            kInit(random);
+            kInit(dist, random);
             for (int i = 0; i < m; ++i) {
                 for (int k = 0; k < clusterCount; ++k) {
                     h[k][i] = kDist(means[k], points[i]);
@@ -138,20 +143,21 @@ public class Clusterer {
     /**
      * Random k-means initialization.
      *
+     * @param dist   the minimum initial distance between any two cluster means.
      * @param random the randm number generator.
      */
-    private void kInit(Random random) {
+    private void kInit(double dist, Random random) {
         for (int k = 0; k < clusterCount; ++k) {
-            boolean duplicated = false;
+            boolean accepted = true;
             do {
                 System.arraycopy(points[random.nextInt(m)], 0, means[k], 0, n);
                 for (int i = 0; i < k; ++i) {
-                    duplicated = Arrays.equals(means[k], means[i]);
-                    if (duplicated) {
+                    accepted = kDist(means[k], means[i]) > dist * dist;
+                    if (!accepted) {
                         break;
                     }
                 }
-            } while (duplicated);
+            } while (!accepted);
         }
     }
 
@@ -183,7 +189,7 @@ public class Clusterer {
             for (int i = 0; i < m; ++i) {
                 if (h[k][i] != 0.0) {
                     ++memberCount;
-                    if (memberCount == n) {
+                    if (memberCount == Math.max(2, n)) {
                         continue testing;
                     }
                 }
@@ -274,8 +280,9 @@ public class Clusterer {
             }
         }
         for (int k = 0; k < n; ++k) {
-            for (int l = 0; l < n; ++l) {
+            for (int l = k; l < n; ++l) {
                 covariances[k][l] /= sum;
+                covariances[l][k] = covariances[k][l];
             }
         }
 
@@ -350,6 +357,15 @@ public class Clusterer {
             }
 
             return pdf.probabilityDensity(point);
+        }
+
+        /**
+         * Returns the cluster mean.
+         *
+         * @return the cluster mean.
+         */
+        public double[] getMean() {
+            return pdf.getMean();
         }
     }
 

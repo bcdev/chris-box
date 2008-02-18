@@ -13,7 +13,6 @@ import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
-import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
@@ -38,10 +37,10 @@ import java.util.Map;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ExtractFeatures",
-                  version = "1.0",
-                  authors = "Ralf Quast",
-                  copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Extracts features from TOA reflectances needed for cloud screening.")
+        version = "1.0",
+        authors = "Ralf Quast",
+        copyright = "(c) 2007 by Brockmann Consult",
+        description = "Extracts features from TOA reflectances needed for cloud screening.")
 public class ExtractFeaturesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
@@ -73,7 +72,7 @@ public class ExtractFeaturesOp extends Operator {
 
     public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
-        
+
         final Band[] reflectanceBands = getReflectanceBands(sourceProduct.getBands());
         categorizeBands(reflectanceBands);
 
@@ -81,14 +80,14 @@ public class ExtractFeaturesOp extends Operator {
 
         if (canComputeAtmosphericFeatures) {
             interpolatorO2 = new BandInterpolator(reflectanceBands,
-                                                  new double[]{760.625, 755.0, 770.0, 738.0, 755.0, 770.0, 788.0});
+                    new double[]{760.625, 755.0, 770.0, 738.0, 755.0, 770.0, 788.0});
             interpolatorWv = new BandInterpolator(reflectanceBands,
-                                                  new double[]{944.376, 895.0, 960.0, 865.0, 890.0, 985.0, 1100.0});
+                    new double[]{944.376, 895.0, 960.0, 865.0, 890.0, 985.0, 1100.0});
             final double[][] transmittanceTable = readTransmittanceTable();
             trO2 = getAverageValue(transmittanceTable, interpolatorO2.getInnerWavelength(),
-                                   interpolatorO2.getInnerBandwidth());
+                    interpolatorO2.getInnerBandwidth());
             trWv = getAverageValue(transmittanceTable, interpolatorWv.getInnerWavelength(),
-                                   interpolatorWv.getInnerBandwidth());
+                    interpolatorWv.getInnerBandwidth());
 
             final double sza = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
             final double vza = getAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE, 0.0);
@@ -98,8 +97,8 @@ public class ExtractFeaturesOp extends Operator {
         final String name = sourceProduct.getName().replace("_REFL", "_FEAT");
         final String type = sourceProduct.getProductType().replace("_REFL", "_FEAT");
         targetProduct = new Product(name, type,
-                                    sourceProduct.getSceneRasterWidth(),
-                                    sourceProduct.getSceneRasterHeight());
+                sourceProduct.getSceneRasterWidth(),
+                sourceProduct.getSceneRasterHeight());
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
@@ -172,16 +171,16 @@ public class ExtractFeaturesOp extends Operator {
         }
         try {
             computeSurfaceFeatures(br, wh, targetTileMap, targetRectangle, surfaceBands,
-                                   SubProgressMonitor.create(pm, 2));
+                    SubProgressMonitor.create(pm, 2));
             computeSurfaceFeatures(visBr, visWh, targetTileMap, targetRectangle, visBands,
-                                   SubProgressMonitor.create(pm, 2));
+                    SubProgressMonitor.create(pm, 2));
             computeSurfaceFeatures(nirBr, nirWh, targetTileMap, targetRectangle, nirBands,
-                                   SubProgressMonitor.create(pm, 2));
+                    SubProgressMonitor.create(pm, 2));
             if (canComputeAtmosphericFeatures) {
                 computeAtmosphericFeature(o2, targetTileMap, targetRectangle, interpolatorO2, trO2,
-                                          SubProgressMonitor.create(pm, 1));
+                        SubProgressMonitor.create(pm, 1));
                 computeAtmosphericFeature(wv, targetTileMap, targetRectangle, interpolatorWv, trWv,
-                                          SubProgressMonitor.create(pm, 1));
+                        SubProgressMonitor.create(pm, 1));
             }
         } finally {
             pm.done();
@@ -408,9 +407,7 @@ public class ExtractFeaturesOp extends Operator {
      *
      * @param product the product of interest.
      * @param name    the name of the CHRIS annotation.
-     *
      * @return the annotation or {@code null} if the annotation could not be found.
-     *
      * @throws OperatorException if the annotation could not be read.
      */
     // todo -- move
@@ -481,9 +478,7 @@ public class ExtractFeaturesOp extends Operator {
      * Returns an {@link ImageInputStream} for a resource file of interest.
      *
      * @param name the name of the resource file of interest.
-     *
      * @return the image input stream.
-     *
      * @throws OperatorException if the resource could not be found or the
      *                           image input stream could not be created.
      */
@@ -520,7 +515,7 @@ public class ExtractFeaturesOp extends Operator {
 
         public BandInterpolator(Band[] bands, double[] wavelengths) {
             innerBand = findProximateBand(bands, wavelengths[0], new ExclusiveBandFilter(wavelengths[1],
-                                                                                         wavelengths[2]));
+                    wavelengths[2]));
 
             infBands = findBands(bands, new ExclusiveBandFilter(wavelengths[3], wavelengths[4]));
             supBands = findBands(bands, new ExclusiveBandFilter(wavelengths[5], wavelengths[6]));
