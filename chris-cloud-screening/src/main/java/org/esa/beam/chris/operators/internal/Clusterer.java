@@ -82,6 +82,18 @@ public class Clusterer {
      * @param points         the data points.
      * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
+     * @return the cluster decomposition.
+     */
+    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount) {
+        return new Clusterer(points, clusterCount, 0.0, 5489).findClusters(iterationCount);
+    }
+
+    /**
+     * Finds a collection of clusters for a given set of data points.
+     *
+     * @param points         the data points.
+     * @param clusterCount   the number of clusters.
+     * @param iterationCount the number of EM iterations to be made.
      * @param dist           the minimum initial distance between any two cluster means.
      * @return the cluster decomposition.
      */

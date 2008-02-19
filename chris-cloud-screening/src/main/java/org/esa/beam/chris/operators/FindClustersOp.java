@@ -26,7 +26,6 @@ import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import java.awt.Rectangle;
 import java.awt.image.Raster;
@@ -48,8 +47,7 @@ public class FindClustersOp extends Operator {
 
     @SourceProduct
     private Product sourceProduct;
-    @TargetProduct
-    private Product targetProduct;
+
     @Parameter(alias = "features", defaultValue = "brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
     private String[] sourceBandNames;
     @Parameter(label = "ROI expression", defaultValue = "")
@@ -58,16 +56,20 @@ public class FindClustersOp extends Operator {
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "20")
     private int iterationCount;
+    @Parameter(label = "Cluster distance", defaultValue = "0.0")
+    private double clusterDistance;
 
     public FindClustersOp() {
     }
 
-    public FindClustersOp(Product sourceProduct, String[] sourceBandNames, int clusterCount, int iterationCount) {
+    public FindClustersOp(Product sourceProduct, String[] sourceBandNames, int clusterCount, int iterationCount,
+                          double clusterDistance) {
         this.sourceProduct = sourceProduct;
         this.sourceBandNames = sourceBandNames;
         this.roiExpression = "";
         this.clusterCount = clusterCount;
         this.iterationCount = iterationCount;
+        this.clusterDistance = clusterDistance;
     }
 
     private transient Band[] sourceBands;
@@ -91,7 +93,7 @@ public class FindClustersOp extends Operator {
         final String name = sourceProduct.getName().replace("_FEAT", "_CLU");
         final String type = sourceProduct.getProductType().replace("_FEAT", "_CLU");
 
-        targetProduct = new Product(name, type, width, height);
+        final Product targetProduct = new Product(name, type, width, height);
         targetProduct.setPreferredTileSize(width, height);
 
         targetBands = new Band[clusterCount];
@@ -107,6 +109,8 @@ public class FindClustersOp extends Operator {
         membershipBand = new ImageBand("membership_mask", ProductData.TYPE_INT8, width, height);
         membershipBand.setDescription("Cluster membership mask");
         targetProduct.addBand(membershipBand);
+
+        setTargetProduct(targetProduct);
     }
 
     @Override
@@ -173,11 +177,15 @@ public class FindClustersOp extends Operator {
                 points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
             }
         }
-        clusters = Clusterer.findClusters(points, clusterCount, 20, 0.0);
+        clusters = Clusterer.findClusters(points, clusterCount, iterationCount, clusterDistance);
     }
 
     public void setClusterCount(int clusterCount) {
         this.clusterCount = clusterCount;
+    }
+
+    public void setClusterDistance(double clusterDistance) {
+        this.clusterDistance = clusterDistance;
     }
 
 
