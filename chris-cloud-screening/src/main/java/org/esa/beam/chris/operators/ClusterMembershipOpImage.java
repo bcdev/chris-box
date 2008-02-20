@@ -26,6 +26,7 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.util.Vector;
+import java.util.Arrays;
 
 /**
  * todo - API doc
@@ -34,19 +35,21 @@ import java.util.Vector;
  * @version $Revision$ $Date$
  */
 public class ClusterMembershipOpImage extends PointOpImage {
+    private final int[] ignoreBandIds;
 
-    public static ClusterMembershipOpImage create(Band[] sourceBands, Band targetBand) {
+    public static ClusterMembershipOpImage create(Band[] sourceBands, Band targetBand, int[] ignoreBandIds) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
-
         for (final Band sourceBand : sourceBands) {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterMembershipOpImage(sourceImageVector, targetBand);
+        return new ClusterMembershipOpImage(sourceImageVector, targetBand, ignoreBandIds);
     }
 
-    public ClusterMembershipOpImage(Vector<RenderedImage> sourceImageVector, Band targetBand) {
+    public ClusterMembershipOpImage(Vector<RenderedImage> sourceImageVector, Band targetBand, int[] ignoreBandIds) {
         super(sourceImageVector, RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand), null, true);
+
+         this.ignoreBandIds = ignoreBandIds;
     }
 
     @Override
@@ -71,6 +74,9 @@ public class ClusterMembershipOpImage extends PointOpImage {
                 break;
             case DataBuffer.TYPE_FLOAT:
                 floatLoop(sourceAccessors, targetAccessor);
+                break;
+            case DataBuffer.TYPE_DOUBLE:
+                doubleLoop(sourceAccessors, targetAccessor);
                 break;
         }
 
@@ -197,9 +203,51 @@ public class ClusterMembershipOpImage extends PointOpImage {
         }
     }
 
+    private static void doubleLoop(RasterAccessor[] sources, RasterAccessor target) {
+        final double[] targetDataArray = target.getDoubleDataArray(0);
+        final int targetBandOffset = target.getBandOffset(0);
+        final int targetPixelStride = target.getPixelStride();
+        final int targetScanlineStride = target.getScanlineStride();
+
+        final double[][] sourceDataArrays = new double[sources.length][];
+        for (int i = 0; i < sources.length; i++) {
+            sourceDataArrays[i] = sources[i].getDoubleDataArray(0);
+        }
+
+        int sourceBandOffset = sources[0].getBandOffset(0);
+        int sourcePixelStride = sources[0].getPixelStride();
+        int sourceScanlineStride = sources[0].getScanlineStride();
+
+        int sourceScanlineOffset = sourceBandOffset;
+        int targetScanlineOffset = targetBandOffset;
+
+        for (int y = 0; y < target.getHeight(); y++) {
+            int sourcePixelOffset = sourceScanlineOffset;
+            int targetPixelOffset = targetScanlineOffset;
+
+            for (int x = 0; x < target.getWidth(); x++) {
+
+                final double[] sourceSamples = new double[sourceDataArrays.length];
+                for (int i = 0; i < sourceDataArrays.length; i++) {
+                    sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
+                }
+                targetDataArray[targetPixelOffset] = indexMax(sourceSamples);
+
+                sourcePixelOffset += sourcePixelStride;
+                targetPixelOffset += targetPixelStride;
+            }
+
+            sourceScanlineOffset += sourceScanlineStride;
+            targetScanlineOffset += targetScanlineStride;
+        }
+    }
+
     private static int indexMax(double[] samples) {
         int index = 0;
         for (int i = 1; i < samples.length; ++i) {
+//            if (ignoreBandIds.contains(i))  {
+//                continue;
+//            }
             if (samples[i] > samples[index]) {
                 index = i;
             }

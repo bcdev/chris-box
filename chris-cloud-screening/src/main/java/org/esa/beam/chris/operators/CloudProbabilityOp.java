@@ -7,25 +7,21 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @OperatorMetadata(alias = "chris.ComputeCloudProbability",
-                  version = "1.0",
-                  authors = "Marco Peters, Marco Zühlke",
-                  copyright = "(c) 2008 by Brockmann Consult",
-                  description = "Computes the cloud probability of a pixel.")
+        version = "1.0",
+        authors = "Marco Peters, Marco Zühlke",
+        copyright = "(c) 2008 by Brockmann Consult",
+        description = "Computes the cloud probability of a pixel.")
 public class CloudProbabilityOp extends Operator {
     // todo - turn these constants into parameter to generify this operator
     private static final String BAND_NAME_CLOUD_PROBABILITY = "cloud_probability";
@@ -41,10 +37,10 @@ public class CloudProbabilityOp extends Operator {
     private Product targetProduct;
 
     @Parameter(alias = "accumulate", description = "Considered classes which are accumulated to a probability.",
-               notEmpty = true, notNull = true)
+            notEmpty = true, notNull = true)
     private int[] accumulateClassIndices;
     @Parameter(alias = "redistribute", description = "Classes which are redistributed to the other classes.",
-               notEmpty = true, notNull = true)
+            notEmpty = true, notNull = true)
     private int[] redistributeClassIndices;
 
     private Map<Integer, Band> probabilityBandMap;
@@ -55,7 +51,7 @@ public class CloudProbabilityOp extends Operator {
     }
 
     CloudProbabilityOp(int[] accumulateClassIndices, int[] redistributeClassIndices, Product reflProduct,
-                              Product clusterProduct) {
+                       Product clusterProduct) {
         this.accumulateClassIndices = accumulateClassIndices;
         this.redistributeClassIndices = redistributeClassIndices;
         this.toaReflectanceProduct = reflProduct;
@@ -91,15 +87,15 @@ public class CloudProbabilityOp extends Operator {
             if (targetBand.getName().startsWith("reflectance_")) {
                 pm.beginTask(String.format("Computing '%s'", targetBand.getName()), 1);
                 final Tile sourceTile = getSourceTile(toaReflectanceProduct.getBand(targetBand.getName()),
-                                                      targetTile.getRectangle(),
-                                                      SubProgressMonitor.create(pm, 1));
+                        targetTile.getRectangle(),
+                        SubProgressMonitor.create(pm, 1));
                 targetTile.setRawSamples(sourceTile.getRawSamples());
             } else if (BAND_NAME_CLOUD_PROBABILITY.equals(targetBand.getName())) {
                 pm.beginTask(String.format("Computing '%s'", targetBand.getName()), probabilityBandMap.size() + 1);
                 final Map<Integer, Tile> tileMap = new HashMap<Integer, Tile>(probabilityBandMap.size());
-                for (Map.Entry<Integer,Band> entry : probabilityBandMap.entrySet()) {
+                for (Map.Entry<Integer, Band> entry : probabilityBandMap.entrySet()) {
                     final Tile sourceTile = getSourceTile(entry.getValue(), targetTile.getRectangle(),
-                                                          SubProgressMonitor.create(pm, 1));
+                            SubProgressMonitor.create(pm, 1));
                     tileMap.put(entry.getKey(), sourceTile);
                     if (pm.isCanceled()) {
                         return;
@@ -147,7 +143,7 @@ public class CloudProbabilityOp extends Operator {
 
         if (toaReflectanceProduct != null) {
             if (sceneRasterWidth != toaReflectanceProduct.getSceneRasterWidth() ||
-                sceneRasterHeight != toaReflectanceProduct.getSceneRasterHeight()) {
+                    sceneRasterHeight != toaReflectanceProduct.getSceneRasterHeight()) {
                 throw new OperatorException("Source products are not spatially equal.");
             }
             final Band[] reflBands = toaReflectanceProduct.getBands();
@@ -189,8 +185,8 @@ public class CloudProbabilityOp extends Operator {
 
     public static class Spi extends OperatorSpi {
 
-    protected Spi() {
-        super(CloudProbabilityOp.class);
+        public Spi() {
+            super(CloudProbabilityOp.class);
+        }
     }
-}
 }

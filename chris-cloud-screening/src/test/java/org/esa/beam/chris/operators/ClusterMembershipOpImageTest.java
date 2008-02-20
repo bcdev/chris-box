@@ -85,7 +85,7 @@ public class ClusterMembershipOpImageTest extends TestCase {
                 break;
         }
 
-        return ClusterMembershipOpImage.create(sourceBands, targetBand);
+        return ClusterMembershipOpImage.create(sourceBands, targetBand, new int[]{0, 8});
     }
 
     private static Band addSourceBand(Product product, String name, byte[] values) {

@@ -99,7 +99,7 @@ public class FindClustersOp extends Operator {
 
         probabilityBands = new Band[clusterCount];
         for (int i = 0; i < clusterCount; ++i) {
-            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT32);
+            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT64);
             targetBand.setUnit("dl");
             targetBand.setDescription("Cluster posterior probabilities");
 
@@ -205,7 +205,7 @@ public class FindClustersOp extends Operator {
         @Override
         public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
             if (initialized.compareAndSet(false, true)) {
-                setImage(ClusterMembershipOpImage.create(sourceBands, this));
+                setImage(ClusterMembershipOpImage.create(sourceBands, this, new int[]{0, 8}));
             }
 
             final Rectangle rectangle = new Rectangle(x, y, w, h);

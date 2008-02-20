@@ -1,6 +1,9 @@
 package org.esa.beam.chris.ui;
 
 import com.jidesoft.docking.DockingManager;
+import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.operators.ClusterMembershipOpImage;
+import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -8,11 +11,9 @@ import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * Action for masking clouds.
@@ -22,6 +23,7 @@ import java.util.logging.Level;
  */
 public class CloudMaskAction extends AbstractVisatAction {
     private static List<String> CHRIS_TYPES;
+    private Product clusterProduct;
 
     static {
         CHRIS_TYPES = new ArrayList<String>();
@@ -44,10 +46,12 @@ public class CloudMaskAction extends AbstractVisatAction {
 
         try {
             final Product selectedProduct = visatApp.getSelectedProduct();
-            Product clusterProduct = performAction(selectedProduct);
+            Product product = createFinalProduct(selectedProduct);
             VisatApp.getApp().addProduct(clusterProduct);
+            VisatApp.getApp().addProduct(product);
             visatApp.openProductSceneViewRGB(selectedProduct, "");
             visatApp.openProductSceneView(clusterProduct.getBand("membership_mask"), getHelpId());
+            visatApp.openProductSceneView(product.getBand("cloud_probability"), getHelpId());
             DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
 //            dockingManager.showFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
             dockingManager.showFrame("org.esa.beam.chris.ui.CloudMaskLabelingToolView");
@@ -67,37 +71,52 @@ public class CloudMaskAction extends AbstractVisatAction {
         setEnabled(enabled);
     }
 
-    private Product performAction(Product sourceProduct) throws OperatorException {
+    private Product createFinalProduct(Product reflectanceProduct) throws OperatorException {
         final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
 
         final Product featureProduct = GPF.createProduct("chris.ExtractFeatures",
                 parameterMap,
-                sourceProduct);
+                reflectanceProduct);
 
-        final HashMap<String, Object> clusterOpParameterMap = new HashMap<String, Object>();
-        clusterOpParameterMap.put("sourceBandNames", new String[]{"brightness_vis",
+        final Map<String, Object> findClustersOpParameterMap = new HashMap<String, Object>();
+        findClustersOpParameterMap.put("sourceBandNames", new String[]{"brightness_vis",
                 "brightness_nir",
                 "whiteness_vis",
                 "whiteness_nir",
                 "wv"});
-        clusterOpParameterMap.put("clusterCount", 14);
-        clusterOpParameterMap.put("iterationCount", 20);
-        clusterOpParameterMap.put("clusterDistance", 0.0);
+        findClustersOpParameterMap.put("clusterCount", 14);
+        findClustersOpParameterMap.put("iterationCount", 40);
+        findClustersOpParameterMap.put("clusterDistance", 0.0);
 
-        final Product clusterProduct = GPF.createProduct("chris.FindClusters",
-                clusterOpParameterMap,
+        clusterProduct = GPF.createProduct("chris.FindClusters",
+                findClustersOpParameterMap,
                 featureProduct);
 
-        final HashMap<String, Object> cloudMaskParameterMap = new HashMap<String, Object>();
-        cloudMaskParameterMap.put("sourceBandNames", new String[]{"brightness_vis",
-                "brightness_nir",
-                "whiteness_vis",
-                "whiteness_nir",
-                "wv"});
-        cloudMaskParameterMap.put("clusterCount", 14);
-        cloudMaskParameterMap.put("iterationCount", 20);
-        cloudMaskParameterMap.put("clusterDistance", 0.0);
 
-        return clusterProduct;
+        final Band memberShipBand = clusterProduct.getBand("membership_mask");
+        try {
+            memberShipBand.readRasterDataFully(ProgressMonitor.NULL);
+            memberShipBand.unloadRasterData();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final Band[] probabilityBands = new Band[14];
+        for (int i = 0; i < clusterProduct.getNumBands() - 1; ++i) {
+            probabilityBands[i] = clusterProduct.getBandAt(i);
+        }
+        memberShipBand.setImage(ClusterMembershipOpImage.create(probabilityBands, memberShipBand, new int[]{0, 8}));
+
+
+        final Map<String, Product> sourceProductMap = new HashMap<String, Product>();
+        sourceProductMap.put("toaRefl", reflectanceProduct);
+        sourceProductMap.put("cluster", clusterProduct);
+
+        final Map<String, Object> cloudProbabilityOpParameterMap = new HashMap<String, Object>();
+//        cloudProbabilityOpParameterMap.put("accumulate", new int[]{7, 11, 13});
+//        cloudProbabilityOpParameterMap.put("redistribute", new int[]{0, 8});
+        cloudProbabilityOpParameterMap.put("accumulate", new int[]{7, 11, 13});
+        cloudProbabilityOpParameterMap.put("redistribute", new int[]{0, 8});
+
+        return GPF.createProduct("chris.ComputeCloudProbability", cloudProbabilityOpParameterMap, sourceProductMap);
     }
 }
