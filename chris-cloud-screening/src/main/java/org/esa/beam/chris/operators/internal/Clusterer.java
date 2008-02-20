@@ -246,7 +246,7 @@ public class Clusterer {
         // E-step
         for (int i = 0; i < m; ++i) {
             double sum = 0.0;
-            for (int k = 0; k < h.length; ++k) {
+            for (int k = 0; k < clusterCount; ++k) {
                 h[k][i] = p[k] * distributions[k].probabilityDensity(points[i]);
                 sum += h[k][i];
             }
@@ -255,10 +255,10 @@ public class Clusterer {
                     h[k][i] /= sum;
                 }
             } else { // numerical underflow - recompute posterior cluster probabilities
+                final double[] sums = new double[clusterCount];
                 for (int k = 0; k < clusterCount; ++k) {
                     h[k][i] = distributions[k].logProbabilityDensity(points[i]);
                 }
-                final double[] sums = new double[clusterCount];
                 for (int k = 0; k < clusterCount; ++k) {
                     for (int l = 0; l < clusterCount; ++l) {
                         if (l != k) {
