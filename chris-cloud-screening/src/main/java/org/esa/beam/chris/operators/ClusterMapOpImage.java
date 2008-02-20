@@ -17,6 +17,7 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
+import javax.media.jai.ImageLayout;
 import javax.media.jai.PointOpImage;
 import javax.media.jai.RasterAccessor;
 import javax.media.jai.RasterFormatTag;
@@ -26,7 +27,6 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.util.Vector;
-import java.util.Arrays;
 
 /**
  * todo - API doc
@@ -34,22 +34,21 @@ import java.util.Arrays;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class ClusterMembershipOpImage extends PointOpImage {
-    private final int[] ignoreBandIds;
+public class ClusterMapOpImage extends PointOpImage {
 
-    public static ClusterMembershipOpImage create(Band[] sourceBands, Band targetBand, int[] ignoreBandIds) {
+    public static ClusterMapOpImage create(Band targetBand, Band[] sourceBands) {
+        final ImageLayout layout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
+
         for (final Band sourceBand : sourceBands) {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterMembershipOpImage(sourceImageVector, targetBand, ignoreBandIds);
+        return new ClusterMapOpImage(sourceImageVector, layout);
     }
 
-    public ClusterMembershipOpImage(Vector<RenderedImage> sourceImageVector, Band targetBand, int[] ignoreBandIds) {
-        super(sourceImageVector, RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand), null, true);
-
-         this.ignoreBandIds = ignoreBandIds;
+    private ClusterMapOpImage(Vector<RenderedImage> sourceImageVector, ImageLayout layout) {
+        super(sourceImageVector, layout, null, true);
     }
 
     @Override
@@ -244,10 +243,8 @@ public class ClusterMembershipOpImage extends PointOpImage {
 
     private static int indexMax(double[] samples) {
         int index = 0;
+
         for (int i = 1; i < samples.length; ++i) {
-//            if (ignoreBandIds.contains(i))  {
-//                continue;
-//            }
             if (samples[i] > samples[index]) {
                 index = i;
             }

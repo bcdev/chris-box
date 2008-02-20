@@ -23,7 +23,7 @@ import org.esa.beam.util.jai.RasterDataNodeOpImage;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 
-public class ClusterMembershipOpImageTest extends TestCase {
+public class ClusterMapOpImageTest extends TestCase {
 
     public void testComputationByteByte() {
         final RenderedImage image = createTestImage(ProductData.TYPE_INT8, ProductData.TYPE_INT8);
@@ -85,7 +85,7 @@ public class ClusterMembershipOpImageTest extends TestCase {
                 break;
         }
 
-        return ClusterMembershipOpImage.create(sourceBands, targetBand, new int[]{0, 8});
+        return ClusterMapOpImage.create(targetBand, sourceBands);
     }
 
     private static Band addSourceBand(Product product, String name, byte[] values) {
