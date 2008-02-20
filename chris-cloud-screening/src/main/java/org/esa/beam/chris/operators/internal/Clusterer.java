@@ -35,7 +35,7 @@ public class Clusterer {
     private final double[][] h;
     private final double[][] means;
     private final double[][][] covariances;
-    private final Distribution[] distributions;
+    private final MultinormalDistribution[] distributions;
 
     /**
      * Constructs a new instance of this class.
@@ -71,7 +71,7 @@ public class Clusterer {
         h = new double[clusterCount][m];
         means = new double[clusterCount][n];
         covariances = new double[clusterCount][n][n];
-        distributions = new Distribution[clusterCount];
+        distributions = new MultinormalDistribution[clusterCount];
 
         initialize(dist, seed);
     }
@@ -226,6 +226,9 @@ public class Clusterer {
                 System.out.println(MessageFormat.format("p[{0}] = {1}", k, p[k]));
             }
         }
+
+        replaceAllZeroProbabilities();
+
         final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
             clusters[k] = new Cluster(n, points, p[k], h[k], distributions[k]);
@@ -233,6 +236,30 @@ public class Clusterer {
         Arrays.sort(clusters, new ClusterComparator());
 
         return clusters;
+    }
+
+    private void replaceAllZeroProbabilities() {
+        for (int i = 0; i < m; i++) {
+            boolean badValue = true;
+            for (int k = 0; k < clusterCount; ++k) {
+                if (h[k][i] != 0) {
+                    badValue = false;
+                    break;
+                }
+            }
+            if (badValue) {
+                double sum = 0.0;
+                for (int k = 0; k < clusterCount; ++k) {
+                    h[k][i] = 1.0 / distributions[k].mahalanobisSquaredDistance(points[i]);
+                    sum += h[k][i];
+                }
+                if (sum > 0.0) {
+                    for (int k = 0; k < clusterCount; ++k) {
+                        h[k][i] /= sum;
+                    }
+                }
+            }
+        }
     }
 
     /**

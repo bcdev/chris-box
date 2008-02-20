@@ -81,7 +81,7 @@ public class MultinormalDistribution implements Distribution {
         return mean;
     }
 
-    private double mahalanobisSquaredDistance(double[] y) {
+    public double mahalanobisSquaredDistance(double[] y) {
         double u = 0.0;
 
         for (int i = 0; i < n; ++i) {
