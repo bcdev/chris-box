@@ -29,6 +29,14 @@ public interface Distribution {
     double probabilityDensity(double[] y);
 
     /**
+     * Returns the logarithm of the probability density for a given vector.
+     *
+     * @param y the vector.
+     * @return the logarithm of the probability density for the vector y.
+     */
+    double logProbabilityDensity(double[] y);
+
+    /**
      * Returns the distribution mean.
      *
      * @return the distribution mean.

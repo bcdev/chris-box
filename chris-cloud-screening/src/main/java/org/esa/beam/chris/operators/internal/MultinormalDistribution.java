@@ -28,7 +28,7 @@ public class MultinormalDistribution implements Distribution {
 
     private double[] mean;
     private Eigendecomposition eigendecomposition;
-    private double normFactor;
+    private double logNormFactor;
 
     /**
      * Constructs a new multinormal distribution.
@@ -66,22 +66,26 @@ public class MultinormalDistribution implements Distribution {
         this.mean = mean;
 
         eigendecomposition = solver.createEigendecomposition(n, covariances);
-        normFactor = 1.0 / pow(2.0 * PI, 0.5 * n) / sqrt(eigendecomposition.getEigenvalueProduct());
+        logNormFactor = -0.5 * (n * log(2.0 * PI) + log(eigendecomposition.getEigenvalueProduct()));
     }
 
     public final double probabilityDensity(double[] y) {
+        return exp(logProbabilityDensity(y));
+    }
+
+    public final double logProbabilityDensity(double[] y) {
         if (y.length != n) {
             throw new IllegalArgumentException("y.length != n");
         }
 
-        return normFactor * exp(-0.5 * mahalanobisSquaredDistance(y));
+        return logNormFactor - 0.5 * mahalanobisSquaredDistance(y);
     }
 
     public double[] getMean() {
         return mean;
     }
 
-    public double mahalanobisSquaredDistance(double[] y) {
+    private double mahalanobisSquaredDistance(double[] y) {
         double u = 0.0;
 
         for (int i = 0; i < n; ++i) {
@@ -93,6 +97,7 @@ public class MultinormalDistribution implements Distribution {
 
             u += (d * d) / eigendecomposition.getEigenvalue(i);
         }
+
         return u;
     }
 

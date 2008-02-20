@@ -13,6 +13,7 @@
  */
 package org.esa.beam.chris.operators.internal;
 
+import static java.lang.Math.exp;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -35,7 +36,7 @@ public class Clusterer {
     private final double[][] h;
     private final double[][] means;
     private final double[][][] covariances;
-    private final MultinormalDistribution[] distributions;
+    private final Distribution[] distributions;
 
     /**
      * Constructs a new instance of this class.
@@ -71,7 +72,7 @@ public class Clusterer {
         h = new double[clusterCount][m];
         means = new double[clusterCount][n];
         covariances = new double[clusterCount][n][n];
-        distributions = new MultinormalDistribution[clusterCount];
+        distributions = new Distribution[clusterCount];
 
         initialize(dist, seed);
     }
@@ -227,7 +228,7 @@ public class Clusterer {
             }
         }
 
-        replaceAllZeroProbabilities();
+//        replaceAllZeroProbabilities();
 
         final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
@@ -236,30 +237,6 @@ public class Clusterer {
         Arrays.sort(clusters, new ClusterComparator());
 
         return clusters;
-    }
-
-    private void replaceAllZeroProbabilities() {
-        for (int i = 0; i < m; i++) {
-            boolean badValue = true;
-            for (int k = 0; k < clusterCount; ++k) {
-                if (h[k][i] != 0) {
-                    badValue = false;
-                    break;
-                }
-            }
-            if (badValue) {
-                double sum = 0.0;
-                for (int k = 0; k < clusterCount; ++k) {
-                    h[k][i] = 1.0 / distributions[k].mahalanobisSquaredDistance(points[i]);
-                    sum += h[k][i];
-                }
-                if (sum > 0.0) {
-                    for (int k = 0; k < clusterCount; ++k) {
-                        h[k][i] /= sum;
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -276,6 +253,21 @@ public class Clusterer {
             if (sum > 0.0) {
                 for (int k = 0; k < h.length; ++k) {
                     h[k][i] /= sum;
+                }
+            } else { // numerical underflow - recompute posterior cluster probabilities
+                for (int k = 0; k < clusterCount; ++k) {
+                    h[k][i] = distributions[k].logProbabilityDensity(points[i]);
+                }
+                final double[] sums = new double[clusterCount];
+                for (int k = 0; k < clusterCount; ++k) {
+                    for (int l = 0; l < clusterCount; ++l) {
+                        if (l != k) {
+                            sums[k] += (p[l] / p[k]) * exp(h[l][i] - h[k][i]);
+                        }
+                    }
+                }
+                for (int k = 0; k < clusterCount; ++k) {
+                    h[k][i] = 1.0 / (1.0 + sums[k]);
                 }
             }
         }
@@ -336,7 +328,7 @@ public class Clusterer {
         private final int n;
 
         private final double[][] points;
-        private final double g;
+        private final double p;
         private final double h[];
         private final Distribution pdf;
 
@@ -345,14 +337,14 @@ public class Clusterer {
          *
          * @param n      the dimension of the point space.
          * @param points the data points.
-         * @param g      the cluster prior probability.
+         * @param p      the cluster prior probability.
          * @param h      the cluster posterior probabilities.
          * @param pdf    the cluster probability density function.
          */
-        private Cluster(int n, double[][] points, double g, double[] h, Distribution pdf) {
+        private Cluster(int n, double[][] points, double p, double[] h, Distribution pdf) {
             this.n = n;
             this.points = points;
-            this.g = g;
+            this.p = p;
             this.h = h;
             this.pdf = pdf;
         }
@@ -381,7 +373,7 @@ public class Clusterer {
          * @return the cluster prior probability.
          */
         public final double getPriorProbability() {
-            return g;
+            return p;
         }
 
         /**

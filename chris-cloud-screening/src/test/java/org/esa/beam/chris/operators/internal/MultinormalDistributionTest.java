@@ -30,10 +30,10 @@ public class MultinormalDistributionTest extends TestCase {
                 new MultinormalDistribution(new double[]{0.0}, new double[][]{{1.0}});
 
         final double maximum = 1.0 / sqrt(2.0 * PI);
-        assertEquals(maximum, dist.probabilityDensity(new double[]{0.0}), 0.0);
+        assertEquals(maximum, dist.probabilityDensity(new double[]{0.0}), 1.0E-14);
 
         final double expectedValue = maximum * exp(-0.5);
-        assertEquals(expectedValue, dist.probabilityDensity(new double[]{1.0}), 0.0);
+        assertEquals(expectedValue, dist.probabilityDensity(new double[]{1.0}), 1.0E-14);
     }
 
     public void test2D() {
@@ -41,9 +41,9 @@ public class MultinormalDistributionTest extends TestCase {
                 new MultinormalDistribution(new double[]{0.0, 0.0}, new double[][]{{1.0, 0.0}, {0.0, 2.0}});
 
         final double maximum = 1.0 / (2.0 * PI) / sqrt(2.0);
-        assertEquals(maximum, dist.probabilityDensity(new double[]{0.0, 0.0}), 0.0);
+        assertEquals(maximum, dist.probabilityDensity(new double[]{0.0, 0.0}), 1.0E-14);
 
         final double expectedValue = maximum * exp(-0.75);
-        assertEquals(expectedValue, dist.probabilityDensity(new double[]{1.0, 1.0}), 0.0);
+        assertEquals(expectedValue, dist.probabilityDensity(new double[]{1.0, 1.0}), 1.0E-14);
     }
 }
