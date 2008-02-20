@@ -29,6 +29,7 @@ public class ExtractFeaturesAction extends AbstractVisatAction {
                            "CHRIS_M2_REFL",
                            "CHRIS_M3_REFL",
                            "CHRIS_M3A_REFL",
+                           "CHRIS_M30_REFL",
                            "CHRIS_M4_REFL",
                            "CHRIS_M5_REFL");
     }

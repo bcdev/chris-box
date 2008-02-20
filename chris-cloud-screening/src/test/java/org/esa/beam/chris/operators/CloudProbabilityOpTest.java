@@ -27,7 +27,7 @@ public class CloudProbabilityOpTest extends TestCase {
     private static final double PROBABILITY_ACCURACY = 1e-4;
 
 
-    public void testInittializeOK() {
+    public void testInitializeOK() {
         Product reflDummy = createToaReflSourceProduct(PRODUCT_DIMENSION, REFL_BAND_COUNT);
         Product clusterDummy = createClusterSourceProduct(PRODUCT_DIMENSION, CLUSTER_CLASS_BAND_COUNT);
         CloudProbabilityOp probabilityOp = new CloudProbabilityOp(new int[]{0, 4}, new int[]{1, 2},

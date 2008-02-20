@@ -47,7 +47,6 @@ public class CloudProbabilityOp extends Operator {
                notEmpty = true, notNull = true)
     private int[] redistributeClassIndices;
 
-
     private Map<Integer, Band> probabilityBandMap;
     private List<Integer> useClassList;
 

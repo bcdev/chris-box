@@ -12,7 +12,7 @@ public class ExclusiveMultiBandFilter implements BandFilter {
 
     private final double[][] wavelengthIntervals;
 
-    public ExclusiveMultiBandFilter(double[][] wavelengthIntervals) {
+    public ExclusiveMultiBandFilter(double[]... wavelengthIntervals) {
         this.wavelengthIntervals = wavelengthIntervals;
     }
 

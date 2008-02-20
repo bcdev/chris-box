@@ -30,6 +30,7 @@ public class FindClustersAction extends AbstractVisatAction {
                            "CHRIS_M2_FEAT",
                            "CHRIS_M3_FEAT",
                            "CHRIS_M3A_FEAT",
+                           "CHRIS_M30_FEAT",
                            "CHRIS_M4_FEAT",
                            "CHRIS_M5_FEAT");
     }
@@ -71,7 +72,6 @@ public class FindClustersAction extends AbstractVisatAction {
         } else {
             name.append("_CLU");
         }
-//        parameterMap.put("targetProductName", name.toString());
         final String[] features = {"brightness_vis", "brightness_nir", "whiteness_vis", "whiteness_nir", "wv"};
         parameterMap.put("features", features);
         parameterMap.put("clusterCount", 14);

@@ -36,13 +36,13 @@ import java.util.Vector;
 public class ClusterMembershipOpImage extends PointOpImage {
 
     public static ClusterMembershipOpImage create(Band[] sourceBands, Band targetBand) {
-        final Vector<RenderedImage> images = new Vector<RenderedImage>();
+        final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band sourceBand : sourceBands) {
-            images.add(sourceBand.getImage());
+            sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterMembershipOpImage(images, targetBand);
+        return new ClusterMembershipOpImage(sourceImageVector, targetBand);
     }
 
     public ClusterMembershipOpImage(Vector<RenderedImage> sourceImageVector, Band targetBand) {
