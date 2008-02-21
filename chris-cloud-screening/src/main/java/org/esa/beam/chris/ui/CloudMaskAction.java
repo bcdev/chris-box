@@ -1,10 +1,9 @@
 package org.esa.beam.chris.ui;
 
 import com.jidesoft.docking.DockingManager;
-import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.ClusterMembershipOpImage;
-import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.chris.operators.MakeClusterMapOp;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.ui.command.CommandEvent;
@@ -13,7 +12,6 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import java.util.*;
 import java.util.logging.Level;
-import java.io.IOException;
 
 /**
  * Action for masking clouds.
@@ -24,6 +22,7 @@ import java.io.IOException;
 public class CloudMaskAction extends AbstractVisatAction {
     private static List<String> CHRIS_TYPES;
     private Product clusterProduct;
+    private Product membershipProduct;
 
     static {
         CHRIS_TYPES = new ArrayList<String>();
@@ -48,10 +47,11 @@ public class CloudMaskAction extends AbstractVisatAction {
             final Product selectedProduct = visatApp.getSelectedProduct();
             Product product = createFinalProduct(selectedProduct);
             VisatApp.getApp().addProduct(clusterProduct);
+            VisatApp.getApp().addProduct(membershipProduct);
             VisatApp.getApp().addProduct(product);
             visatApp.openProductSceneViewRGB(selectedProduct, "");
-            visatApp.openProductSceneView(clusterProduct.getBand("membership_mask"), getHelpId());
-            visatApp.openProductSceneView(product.getBand("cloud_probability"), getHelpId());
+            visatApp.openProductSceneView(membershipProduct.getBand("membership_mask"), getHelpId());
+//            visatApp.openProductSceneView(product.getBand("cloud_probability"), getHelpId());
             DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
 //            dockingManager.showFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
             dockingManager.showFrame("org.esa.beam.chris.ui.CloudMaskLabelingToolView");
@@ -92,20 +92,15 @@ public class CloudMaskAction extends AbstractVisatAction {
                 findClustersOpParameterMap,
                 featureProduct);
 
-
-        final Band memberShipBand = clusterProduct.getBand("membership_mask");
-        try {
-            memberShipBand.readRasterDataFully(ProgressMonitor.NULL);
-            memberShipBand.unloadRasterData();
-        } catch (IOException e) {
-            e.printStackTrace();
+        membershipProduct = GPF.createProduct("chris.MakeClusterMap", new HashMap<String, Object>(), clusterProduct);
+        for (Band band : membershipProduct.getBands()) {
+            if (band.getName().startsWith("prob")) {
+                final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
+                probBand.update(new int[]{0, 8});
+            }
         }
-        final Band[] probabilityBands = new Band[14];
-        for (int i = 0; i < clusterProduct.getNumBands() - 1; ++i) {
-            probabilityBands[i] = clusterProduct.getBandAt(i);
-        }
-        memberShipBand.setImage(ClusterMembershipOpImage.create(probabilityBands, memberShipBand, new int[]{0, 8}));
-
+        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) membershipProduct.getBand("membership_mask");
+        membershipBand.update();
 
         final Map<String, Product> sourceProductMap = new HashMap<String, Product>();
         sourceProductMap.put("toaRefl", reflectanceProduct);

@@ -16,6 +16,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.internal.Clusterer;
+import org.esa.beam.chris.operators.internal.Cluster;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -28,10 +29,8 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 
 import java.awt.Rectangle;
-import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
 
 /**
  * New class.
@@ -51,8 +50,6 @@ public class FindClustersOp extends Operator {
 
     @Parameter(alias = "features", defaultValue = "brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
     private String[] sourceBandNames;
-    @Parameter(label = "ROI expression", defaultValue = "")
-    private String roiExpression;
     @Parameter(label = "Number of clusters", defaultValue = "14")
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "20")
@@ -67,7 +64,6 @@ public class FindClustersOp extends Operator {
                           double clusterDistance) {
         this.sourceProduct = sourceProduct;
         this.sourceBandNames = sourceBandNames;
-        this.roiExpression = "";
         this.clusterCount = clusterCount;
         this.iterationCount = iterationCount;
         this.clusterDistance = clusterDistance;
@@ -75,8 +71,6 @@ public class FindClustersOp extends Operator {
 
     private transient Band[] sourceBands;
     private transient Band[] probabilityBands;
-    private transient Clusterer.Cluster[] clusters;
-    private transient Band membershipBand;
 
     @Override
     public void initialize() throws OperatorException {
@@ -99,53 +93,49 @@ public class FindClustersOp extends Operator {
 
         probabilityBands = new Band[clusterCount];
         for (int i = 0; i < clusterCount; ++i) {
-            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT64);
+            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT32);
             targetBand.setUnit("dl");
             targetBand.setDescription("Cluster posterior probabilities");
 
             probabilityBands[i] = targetBand;
         }
 
-        membershipBand = new ImageBand("membership_mask", ProductData.TYPE_INT8, width, height, probabilityBands);
-        membershipBand.setDescription("Cluster membership mask");
-        targetProduct.addBand(membershipBand);
-
         setTargetProduct(targetProduct);
     }
 
     @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        synchronized (this) {
-            if (clusters == null) {
-                try {
-                    clusters = findClusters();
-                } catch (IOException e) {
-                    throw new OperatorException(e);
-                }
-            }
-        }
-        final Rectangle targetRectangle = targetTile.getRectangle();
-        final int sceneWidth = sourceProduct.getSceneRasterWidth();
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("Computing clusters...", iterationCount);
 
-        for (int i = 0; i < clusterCount; ++i) {
-            if (targetBand == probabilityBands[i]) {
-                final double[] probabilities = clusters[i].getPosteriorProbabilities();
+        try {
+            final int sceneWidth = sourceProduct.getSceneRasterWidth();
+            final Clusterer clusterer = createClusterer();
+
+            for (int i = 0; i < iterationCount; ++i) {
+                checkForCancelation(pm);
+                clusterer.iterate();
+                pm.worked(1);
+            }
+
+            final Cluster[] clusters = clusterer.getClusters();
+            for (int i = 0; i < clusterCount; ++i) {
+                final Tile targetTile = targetTileMap.get(probabilityBands[i]);
+                final double[] p = clusters[i].getPosteriorProbabilities();
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                     for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                        targetTile.setSample(x, y, probabilities[y * sceneWidth + x]);
+                        targetTile.setSample(x, y, p[y * sceneWidth + x]);
                     }
                 }
             }
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        } finally {
+            pm.done();
         }
     }
 
-    @Override
-    public void dispose() {
-        clusters = null;
-    }
-
-    private Clusterer.Cluster[] findClusters() throws IOException {
+    private Clusterer createClusterer() throws IOException {
         final int sceneWidth = sourceProduct.getSceneRasterWidth();
         final int sceneHeight = sourceProduct.getSceneRasterHeight();
 
@@ -179,7 +169,7 @@ public class FindClustersOp extends Operator {
             }
         }
 
-        return Clusterer.findClusters(points, clusterCount, iterationCount, clusterDistance);
+        return new Clusterer(points, clusterCount, clusterDistance);
     }
 
     public void setClusterCount(int clusterCount) {
@@ -190,33 +180,9 @@ public class FindClustersOp extends Operator {
         this.clusterDistance = clusterDistance;
     }
 
-    private static class ImageBand extends Band {
-
-        private final Band[] sourceBands;
-        private final AtomicBoolean initialized;
-
-        public ImageBand(String name, int dataType, int width, int height, Band[] sourceBands) {
-            super(name, dataType, width, height);
-
-            this.sourceBands = sourceBands;
-            this.initialized = new AtomicBoolean();
-        }
-
-        @Override
-        public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
-            if (initialized.compareAndSet(false, true)) {
-                setImage(ClusterMembershipOpImage.create(sourceBands, this, new int[]{0, 8}));
-            }
-
-            final Rectangle rectangle = new Rectangle(x, y, w, h);
-            final RenderedImage image = getImage();
-            final Raster raster = image.getData(rectangle);
-
-            raster.getDataElements(x, y, w, h, data.getElems());
-        }
-    }
 
     public static class Spi extends OperatorSpi {
+
         public Spi() {
             super(FindClustersOp.class);
         }

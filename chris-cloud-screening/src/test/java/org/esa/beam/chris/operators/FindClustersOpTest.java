@@ -31,7 +31,44 @@ import java.util.Random;
  */
 public class FindClustersOpTest extends TestCase {
 
-    public void testClusters() throws IOException {
+    public void testFindClusters() throws IOException {
+        final int clusterCount = 4;
+
+        final Product sourceProduct = createTestProduct();
+        final FindClustersOp op = new FindClustersOp(sourceProduct, new String[]{"feature"}, clusterCount, 10, 0.1);
+
+        final Product targetProduct = op.getTargetProduct();
+        assertEquals(clusterCount, targetProduct.getNumBands());
+
+        final Band[] probabilityBands = targetProduct.getBands();
+        final double[][] probabilities = new double[clusterCount][64];
+
+        for (int i = 0; i < clusterCount; ++i) {
+            probabilityBands[i].readPixels(0, 0, 8, 8, probabilities[i]);
+        }
+
+        assertEquals(0.0, probabilities[0][1], 0.0);
+        assertEquals(0.0, probabilities[1][1], 0.0);
+        assertEquals(0.0, probabilities[2][1], 0.0);
+        assertEquals(1.0, probabilities[3][1], 0.0);
+
+        assertEquals(0.0, probabilities[0][5], 0.0);
+        assertEquals(0.0, probabilities[1][5], 0.0);
+        assertEquals(1.0, probabilities[2][5], 0.0);
+        assertEquals(0.0, probabilities[3][5], 0.0);
+
+        assertEquals(0.0, probabilities[0][17], 0.0);
+        assertEquals(1.0, probabilities[1][17], 0.0);
+        assertEquals(0.0, probabilities[2][17], 0.0);
+        assertEquals(0.0, probabilities[3][17], 0.0);
+
+        assertEquals(1.0, probabilities[0][21], 0.0);
+        assertEquals(0.0, probabilities[1][21], 0.0);
+        assertEquals(0.0, probabilities[2][21], 0.0);
+        assertEquals(0.0, probabilities[3][21], 0.0);
+    }
+
+    private static Product createTestProduct() {
         final Product sourceProduct = new Product("F", "FT", 8, 8);
 
         final double[] values = {
@@ -44,36 +81,10 @@ public class FindClustersOpTest extends TestCase {
                 2, 2, 2, 3, 3, 3, 3, 3,
                 2, 2, 2, 3, 3, 3, 3, 3,
         };
-        final int[] expectedMemberships = {
-                3, 3, 3, 2, 2, 2, 2, 2,
-                3, 3, 3, 2, 2, 2, 2, 2,
-                1, 1, 1, 0, 0, 0, 0, 0,
-                1, 1, 1, 0, 0, 0, 0, 0,
-                1, 1, 1, 0, 0, 0, 0, 0,
-                1, 1, 1, 0, 0, 0, 0, 0,
-                1, 1, 1, 0, 0, 0, 0, 0,
-                1, 1, 1, 0, 0, 0, 0, 0,
-        };
-        final Random random = new Random(5489);
-        for (int i = 0; i < values.length; i++) {
-            values[i] += 0.01 * random.nextGaussian();
-        }
-        addSourceBand(sourceProduct, "features", values);
+        noisify(values);
+        addSourceBand(sourceProduct, "feature", values);
 
-        final String[] sourceBandNames = {"features"};
-        final FindClustersOp op = new FindClustersOp(sourceProduct, sourceBandNames, 4, 10, 0.1);
-
-        final Product targetProduct = op.getTargetProduct();
-        assertEquals(5, targetProduct.getNumBands());
-
-        op.setClusterCount(4);
-        op.setClusterDistance(0.1);
-        final Band[] targetBands = targetProduct.getBands();
-        final int[] memberships = targetBands[4].readPixels(0, 0, 8, 8, new int[64]);
-
-        for (int i = 0; i < memberships.length; i++) {
-            assertEquals("index: " + i, expectedMemberships[i], memberships[i]);
-        }
+        return sourceProduct;
     }
 
     private static Band addSourceBand(Product product, String name, double[] values) {
@@ -84,5 +95,13 @@ public class FindClustersOpTest extends TestCase {
         band.setImage(new RasterDataNodeOpImage(band));
 
         return band;
+    }
+
+    private static void noisify(double[] values) {
+        final Random random = new Random(5489);
+
+        for (int i = 0; i < values.length; i++) {
+            values[i] += 0.01 * random.nextGaussian();
+        }
     }
 }

@@ -38,7 +38,7 @@ public class ClustererTest extends TestCase {
                 2, 2, 2, 3, 3, 3, 3, 3,
         });
 
-        final Clusterer.Cluster[] clusters = Clusterer.findClusters(points, 4, 10, 0.1);
+        final Cluster[] clusters = Clusterer.findClusters(points, 4, 10, 0.1);
         assertEquals(4, clusters.length);
 
         assertEquals(3.0, clusters[0].getMean()[0], 0.01);

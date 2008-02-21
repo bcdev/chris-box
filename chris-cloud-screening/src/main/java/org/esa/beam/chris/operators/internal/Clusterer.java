@@ -38,6 +38,52 @@ public class Clusterer {
     private final Distribution[] distributions;
 
     /**
+     * Finds a collection of clusters for a given set of data points.
+     *
+     * @param points         the data points.
+     * @param clusterCount   the number of clusters.
+     * @param iterationCount the number of EM iterations to be made.
+     * @return the cluster decomposition.
+     */
+    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount) {
+        return new Clusterer(points, clusterCount).findClusters(iterationCount);
+    }
+
+    /**
+     * Finds a collection of clusters for a given set of data points.
+     *
+     * @param points         the data points.
+     * @param clusterCount   the number of clusters.
+     * @param iterationCount the number of EM iterations to be made.
+     * @param dist           the minimum initial distance between any two cluster means.
+     * @return the cluster decomposition.
+     */
+    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
+        return new Clusterer(points, clusterCount, dist).findClusters(iterationCount);
+    }
+
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param points       the data points.
+     * @param clusterCount the number of clusters.
+     */
+    public Clusterer(double[][] points, int clusterCount) {
+        this(points, clusterCount, 0.0, 5489);
+    }
+
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param points       the data points.
+     * @param clusterCount the number of clusters.
+     * @param dist         the minimum initial distance between any two cluster means.
+     */
+    public Clusterer(double[][] points, int clusterCount, double dist) {
+        this(points, clusterCount, dist, 5489);
+    }
+
+    /**
      * Constructs a new instance of this class.
      *
      * @param points       the data points.
@@ -45,7 +91,7 @@ public class Clusterer {
      * @param dist         the minimum initial distance between any two cluster means.
      * @param seed         the seed used for the random initialization of clusters.
      */
-    private Clusterer(double[][] points, int clusterCount, double dist, int seed) {
+    public Clusterer(double[][] points, int clusterCount, double dist, int seed) {
         this(points.length, points[0].length, points, clusterCount, dist, seed);
     }
 
@@ -77,42 +123,74 @@ public class Clusterer {
     }
 
     /**
-     * Finds a collection of clusters for a given set of data points.
+     * Finds a collection of clusters.
      *
-     * @param points         the data points.
-     * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
      * @return the cluster decomposition.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount) {
-        return new Clusterer(points, clusterCount, 0.0, 5489).findClusters(iterationCount);
+    private Cluster[] findClusters(int iterationCount) {
+        while (iterationCount-- > 0) {
+            iterate();
+
+            // todo - log something
+            System.out.println("iterationCount = " + iterationCount);
+        }
+
+        return getClusters();
     }
 
     /**
-     * Finds a collection of clusters for a given set of data points.
-     *
-     * @param points         the data points.
-     * @param clusterCount   the number of clusters.
-     * @param iterationCount the number of EM iterations to be made.
-     * @param dist           the minimum initial distance between any two cluster means.
-     * @return the cluster decomposition.
+     * Carries out a single EM iteration.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
-        return new Clusterer(points, clusterCount, dist, 5489).findClusters(iterationCount);
+    public void iterate() {
+        // E-step
+        for (int i = 0; i < m; ++i) {
+            double sum = 0.0;
+            for (int k = 0; k < clusterCount; ++k) {
+                h[k][i] = p[k] * distributions[k].probabilityDensity(points[i]);
+                sum += h[k][i];
+            }
+            if (sum > 0.0) {
+                for (int k = 0; k < h.length; ++k) {
+                    h[k][i] /= sum;
+                }
+            } else { // numerical underflow - recompute posterior cluster probabilities
+                final double[] sums = new double[clusterCount];
+                for (int k = 0; k < clusterCount; ++k) {
+                    h[k][i] = distributions[k].logProbabilityDensity(points[i]);
+                }
+                for (int k = 0; k < clusterCount; ++k) {
+                    for (int l = 0; l < clusterCount; ++l) {
+                        if (l != k) {
+                            sums[k] += (p[l] / p[k]) * exp(h[l][i] - h[k][i]);
+                        }
+                    }
+                }
+                for (int k = 0; k < clusterCount; ++k) {
+                    h[k][i] = 1.0 / (1.0 + sums[k]);
+                }
+            }
+        }
+        // M-step
+        for (int k = 0; k < clusterCount; ++k) {
+            p[k] = calculateMoments(h[k], means[k], covariances[k]);
+            distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
+        }
     }
 
     /**
-     * Finds a collection of clusters for a given set of data points.
+     * Returns the clusters found.
      *
-     * @param points         the data points.
-     * @param clusterCount   the number of clusters.
-     * @param iterationCount the number of EM iterations to be made.
-     * @param dist           the minimum initial distance between any two cluster means.
-     * @param seed           the seed used for the random initialization of clusters.
-     * @return the cluster decomposition.
+     * @return the clusters found.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist, int seed) {
-        return new Clusterer(points, clusterCount, dist, seed).findClusters(iterationCount);
+    public Cluster[] getClusters() {
+        final Cluster[] clusters = new Cluster[clusterCount];
+        for (int k = 0; k < clusterCount; ++k) {
+            clusters[k] = new Cluster(n, points, p[k], h[k], distributions[k]);
+        }
+        Arrays.sort(clusters, new ClusterComparator());
+
+        return clusters;
     }
 
     /**
@@ -212,68 +290,6 @@ public class Clusterer {
     }
 
     /**
-     * Finds a collection of clusters.
-     *
-     * @param iterationCount the number of EM iterations to be made.
-     * @return the cluster decomposition.
-     */
-    private Cluster[] findClusters(int iterationCount) {
-        while (iterationCount-- > 0) {
-            iterate();
-
-            // todo - log something
-            System.out.println("iterationCount = " + iterationCount);
-        }
-
-        final Cluster[] clusters = new Cluster[clusterCount];
-        for (int k = 0; k < clusterCount; ++k) {
-            clusters[k] = new Cluster(n, points, p[k], h[k], distributions[k]);
-        }
-        Arrays.sort(clusters, new ClusterComparator());
-
-        return clusters;
-    }
-
-    /**
-     * Carries out a single EM iteration.
-     */
-    private void iterate() {
-        // E-step
-        for (int i = 0; i < m; ++i) {
-            double sum = 0.0;
-            for (int k = 0; k < clusterCount; ++k) {
-                h[k][i] = p[k] * distributions[k].probabilityDensity(points[i]);
-                sum += h[k][i];
-            }
-            if (sum > 0.0) {
-                for (int k = 0; k < h.length; ++k) {
-                    h[k][i] /= sum;
-                }
-            } else { // numerical underflow - recompute posterior cluster probabilities
-                final double[] sums = new double[clusterCount];
-                for (int k = 0; k < clusterCount; ++k) {
-                    h[k][i] = distributions[k].logProbabilityDensity(points[i]);
-                }
-                for (int k = 0; k < clusterCount; ++k) {
-                    for (int l = 0; l < clusterCount; ++l) {
-                        if (l != k) {
-                            sums[k] += (p[l] / p[k]) * exp(h[l][i] - h[k][i]);
-                        }
-                    }
-                }
-                for (int k = 0; k < clusterCount; ++k) {
-                    h[k][i] = 1.0 / (1.0 + sums[k]);
-                }
-            }
-        }
-        // M-step
-        for (int k = 0; k < clusterCount; ++k) {
-            p[k] = calculateMoments(h[k], means[k], covariances[k]);
-            distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
-        }
-    }
-
-    /**
      * Calculates the statistical moments.
      *
      * @param h           the posterior probabilities associated with the data points.
@@ -313,86 +329,6 @@ public class Clusterer {
         }
 
         return sum / m;
-    }
-
-    /**
-     * Cluster.
-     */
-    public static class Cluster {
-
-        private final int n;
-
-        private final double[][] points;
-        private final double p;
-        private final double h[];
-        private final Distribution pdf;
-
-        /**
-         * Constructs a new cluster.
-         *
-         * @param n      the dimension of the point space.
-         * @param points the data points.
-         * @param p      the cluster prior probability.
-         * @param h      the cluster posterior probabilities.
-         * @param pdf    the cluster probability density function.
-         */
-        private Cluster(int n, double[][] points, double p, double[] h, Distribution pdf) {
-            this.n = n;
-            this.points = points;
-            this.p = p;
-            this.h = h;
-            this.pdf = pdf;
-        }
-
-        /**
-         * Returns the data points.
-         *
-         * @return the data point.
-         */
-        public final double[][] getPoints() {
-            return points;
-        }
-
-        /**
-         * Returns the cluster posterior probabilities.
-         *
-         * @return the cluster posterior probabilities.
-         */
-        public final double[] getPosteriorProbabilities() {
-            return h;
-        }
-
-        /**
-         * Returns the cluster prior probability.
-         *
-         * @return the cluster prior probability.
-         */
-        public final double getPriorProbability() {
-            return p;
-        }
-
-        /**
-         * Returns the cluster probability density for a data point.
-         *
-         * @param point the data point.
-         * @return the cluster probability density.
-         */
-        public final double probabilityDensity(double[] point) {
-            if (point.length != n) {
-                throw new IllegalArgumentException("point.length != n");
-            }
-
-            return pdf.probabilityDensity(point);
-        }
-
-        /**
-         * Returns the cluster mean.
-         *
-         * @return the cluster mean.
-         */
-        public double[] getMean() {
-            return pdf.getMean();
-        }
     }
 
     /**

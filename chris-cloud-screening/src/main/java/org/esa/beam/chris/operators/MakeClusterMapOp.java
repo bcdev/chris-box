@@ -15,19 +15,21 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import java.awt.Rectangle;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * todo - API doc
@@ -44,10 +46,6 @@ public class MakeClusterMapOp extends Operator {
 
     @SourceProduct
     private Product sourceProduct;
-    @TargetProduct
-    private Product targetProduct;
-
-    private transient Band membershipBand;
 
     @Override
     public void initialize() throws OperatorException {
@@ -55,50 +53,78 @@ public class MakeClusterMapOp extends Operator {
         int height = sourceProduct.getSceneRasterHeight();
         final String name = sourceProduct.getName().replace("_CLU", "_MAP");
         final String type = sourceProduct.getProductType().replace("_CLU", "_MAP");
-        targetProduct = new Product(name, type, width, height);
-//        targetProduct.setPreferredTileSize(width, height);
+        final Product targetProduct = new Product(name, type, width, height);
 
-        membershipBand = targetProduct.addBand("cluster_membership_map", ProductData.TYPE_INT8);
-        membershipBand.setDescription("Cluster membership map");
+        final List<Band> bandList = new ArrayList<Band>();
+        int bandId = 0;
+        for (final Band band : sourceProduct.getBands()) {
+            if (band.getName().startsWith("probability")) {
+                bandList.add(band);
+                ProbabilityImageBand probBand = new ProbabilityImageBand(band.getName(), band.getDataType(), width, height, bandId, sourceProduct.getBands());
+                probBand.setDescription("Cluster membership mask");
+                targetProduct.addBand(probBand);
+                probBand.update(new int[]{});
+                bandId++;
+            }
+        }
+        final MembershipImageBand membershipBand = new MembershipImageBand("membership_mask", ProductData.TYPE_INT8,
+                width, height, targetProduct.getBands());
+        membershipBand.setDescription("Cluster membership mask");
+        targetProduct.addBand(membershipBand);
+
+        membershipBand.update();
+
+        setTargetProduct(targetProduct);
     }
 
-    @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        final Rectangle targetRectangle = targetTile.getRectangle();
-        final int sceneWidth = sourceProduct.getSceneRasterWidth();
+    public static class MembershipImageBand extends Band {
+        private final Band[] sourceBands;
 
-        final int[] mask = createMembershipMask(null);
+        public MembershipImageBand(String name, int dataType, int width, int height, Band[] sourceBands) {
+            super(name, dataType, width, height);
 
-        for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
-            for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                targetTile.setSample(x, y, mask[y * sceneWidth + x]);
-            }
+            this.sourceBands = sourceBands;
+        }
+
+        public void update() {
+            final RenderedImage image = ClusterMapOpImage.create(this, sourceBands);
+            setImage(image);
+        }
+
+        @Override
+        public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
+            final Rectangle rectangle = new Rectangle(x, y, w, h);
+            final RenderedImage image = getImage();
+            final Raster raster = image.getData(rectangle);
+
+            raster.getDataElements(x, y, w, h, data.getElems());
         }
     }
 
-    private static int[] createMembershipMask(Clusterer.Cluster[] clusters) {
-        final int[] mask = new int[clusters[0].getPoints().length];
+    public static class ProbabilityImageBand extends Band {
 
-        for (int i = 0; i < mask.length; ++i) {
-            final double[] d = new double[clusters.length];
-            for (int k = 0; k < clusters.length; ++k) {
-                d[k] = clusters[k].getPosteriorProbabilities()[i];
-            }
-            mask[i] = indexMax(d);
+        private final int bandId;
+        private final Band[] probabilityBands;
+
+        public ProbabilityImageBand(String name, int dataType, int width, int height, int bandId, Band[] probabilityBands) {
+            super(name, dataType, width, height);
+            this.bandId = bandId;
+            this.probabilityBands = probabilityBands;
         }
 
-        return mask;
-    }
-
-    private static int indexMax(double[] values) {
-        int index = 0;
-        for (int i = 1; i < values.length; ++i) {
-            if (values[i] > values[index]) {
-                index = i;
-            }
+        public void update(int[] redistributeBandIds) {
+            final RenderedImage image = ClusterProbabilityOpImage.create(this, probabilityBands, bandId, redistributeBandIds);
+            setImage(image);
         }
 
-        return index;
+        @Override
+        public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
+            final Rectangle rectangle = new Rectangle(x, y, w, h);
+            final RenderedImage image = getImage();
+            final Raster raster = image.getData(rectangle);
+
+            raster.getDataElements(x, y, w, h, data.getElems());
+        }
     }
 
     public static class Spi extends OperatorSpi {
