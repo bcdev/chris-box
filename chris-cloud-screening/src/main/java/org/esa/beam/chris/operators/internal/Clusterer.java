@@ -14,7 +14,6 @@
 package org.esa.beam.chris.operators.internal;
 
 import static java.lang.Math.exp;
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
@@ -222,13 +221,9 @@ public class Clusterer {
         while (iterationCount-- > 0) {
             iterate();
 
-            for (int k = 0; k < p.length; ++k) {
-                // todo: use logger
-                System.out.println(MessageFormat.format("p[{0}] = {1}", k, p[k]));
-            }
+            // todo - log something
+            System.out.println("iterationCount = " + iterationCount);
         }
-
-//        replaceAllZeroProbabilities();
 
         final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
