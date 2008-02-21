@@ -55,7 +55,7 @@ public class Clusterer {
      * @param points         the data points.
      * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
-     * @param dist           the minimum initial distance between any two cluster means.
+     * @param dist           the minimum distance to be exceeded by any pair of initial clusters.
      * @return the cluster decomposition.
      */
     public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
@@ -69,7 +69,7 @@ public class Clusterer {
      * @param clusterCount the number of clusters.
      */
     public Clusterer(double[][] points, int clusterCount) {
-        this(points, clusterCount, 0.0, 5489);
+        this(points, clusterCount, 0.0);
     }
 
     /**
@@ -77,7 +77,7 @@ public class Clusterer {
      *
      * @param points       the data points.
      * @param clusterCount the number of clusters.
-     * @param dist         the minimum initial distance between any two cluster means.
+     * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
      */
     public Clusterer(double[][] points, int clusterCount, double dist) {
         this(points, clusterCount, dist, 5489);
@@ -88,7 +88,7 @@ public class Clusterer {
      *
      * @param points       the data points.
      * @param clusterCount the number of clusters.
-     * @param dist         the minimum initial distance between any two cluster means.
+     * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
      * @param seed         the seed used for the random initialization of clusters.
      */
     public Clusterer(double[][] points, int clusterCount, double dist, int seed) {
@@ -102,7 +102,7 @@ public class Clusterer {
      * @param n            the dimension of the point space.
      * @param points       the data points.
      * @param clusterCount the number of clusters.
-     * @param dist         the minimum initial distance between any two cluster means.
+     * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
      * @param seed         the seed used for the random initialization of clusters.
      */
     private Clusterer(int m, int n, double[][] points, int clusterCount, double dist, int seed) {
@@ -130,10 +130,8 @@ public class Clusterer {
      */
     private Cluster[] findClusters(int iterationCount) {
         while (iterationCount-- > 0) {
-            iterate();
-
             // todo - log something
-            System.out.println("iterationCount = " + iterationCount);
+            iterate();
         }
 
         return getClusters();
@@ -196,7 +194,7 @@ public class Clusterer {
     /**
      * Randomly initializes the clusters using the k-means method.
      *
-     * @param dist the minimum initial distance between any two cluster means.
+     * @param dist the minimum distance to be exceeded by any pair of initial clusters.
      * @param seed the seed value used for initializing the random number generator.
      */
     private void initialize(double dist, int seed) {
@@ -233,7 +231,7 @@ public class Clusterer {
     /**
      * Random k-means initialization.
      *
-     * @param dist   the minimum initial distance between any two cluster means.
+     * @param dist   the minimum distance to be exceeded by any pair of initial clusters.
      * @param random the randm number generator.
      */
     private void kInit(double dist, Random random) {
