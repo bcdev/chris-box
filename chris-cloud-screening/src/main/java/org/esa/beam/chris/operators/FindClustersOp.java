@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2007 by Brockmann Consult
+ * Copyright (C) 2002-2008 by Brockmann Consult
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,8 +15,8 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.chris.operators.internal.Cluster;
+import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -27,6 +27,7 @@ import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import java.awt.Rectangle;
 import java.io.IOException;
@@ -47,6 +48,8 @@ public class FindClustersOp extends Operator {
 
     @SourceProduct
     private Product sourceProduct;
+    @TargetProduct
+    private Product targetProduct;
 
     @Parameter(alias = "features", defaultValue = "brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
     private String[] sourceBandNames;
@@ -54,19 +57,19 @@ public class FindClustersOp extends Operator {
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "20")
     private int iterationCount;
-    @Parameter(label = "Cluster distance", defaultValue = "0.0")
-    private double clusterDistance;
+    @Parameter(label = "Distance threshold", defaultValue = "0.0")
+    private double distanceThreshold;
 
     public FindClustersOp() {
     }
 
     public FindClustersOp(Product sourceProduct, String[] sourceBandNames, int clusterCount, int iterationCount,
-                          double clusterDistance) {
+                          double distanceThreshold) {
         this.sourceProduct = sourceProduct;
         this.sourceBandNames = sourceBandNames;
         this.clusterCount = clusterCount;
         this.iterationCount = iterationCount;
-        this.clusterDistance = clusterDistance;
+        this.distanceThreshold = distanceThreshold;
     }
 
     private transient Band[] sourceBands;
@@ -141,7 +144,6 @@ public class FindClustersOp extends Operator {
 
         final double[] samples = new double[sceneWidth];
 
-        // todo - valid expression
         final double[][] points = new double[sceneWidth * sceneHeight][sourceBands.length];
         final double[] min = new double[sourceBands.length];
         final double[] max = new double[sourceBands.length];
@@ -153,7 +155,6 @@ public class FindClustersOp extends Operator {
             for (int y = 0; y < sceneHeight; y++) {
                 sourceBands[i].readPixels(0, y, sceneWidth, 1, samples, ProgressMonitor.NULL);
 
-                // todo - no-data
                 for (int x = 0; x < sceneWidth; x++) {
                     points[y * sceneWidth + x][i] = samples[x];
                     if (samples[x] < min[i]) {
@@ -169,17 +170,8 @@ public class FindClustersOp extends Operator {
             }
         }
 
-        return new Clusterer(points, clusterCount, clusterDistance);
+        return new Clusterer(points, clusterCount, distanceThreshold);
     }
-
-    public void setClusterCount(int clusterCount) {
-        this.clusterCount = clusterCount;
-    }
-
-    public void setClusterDistance(double clusterDistance) {
-        this.clusterDistance = clusterDistance;
-    }
-
 
     public static class Spi extends OperatorSpi {
 
