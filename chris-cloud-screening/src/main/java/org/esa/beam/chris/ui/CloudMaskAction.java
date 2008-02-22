@@ -2,8 +2,8 @@ package org.esa.beam.chris.ui;
 
 import com.jidesoft.docking.DockingManager;
 import org.esa.beam.chris.operators.MakeClusterMapOp;
-import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.ui.command.CommandEvent;
@@ -22,7 +22,7 @@ import java.util.logging.Level;
 public class CloudMaskAction extends AbstractVisatAction {
     private static List<String> CHRIS_TYPES;
     private Product clusterProduct;
-    private Product membershipProduct;
+    private Product mapProduct;
 
     static {
         CHRIS_TYPES = new ArrayList<String>();
@@ -47,11 +47,9 @@ public class CloudMaskAction extends AbstractVisatAction {
             final Product selectedProduct = visatApp.getSelectedProduct();
             Product product = createFinalProduct(selectedProduct);
             VisatApp.getApp().addProduct(clusterProduct);
-            VisatApp.getApp().addProduct(membershipProduct);
+            VisatApp.getApp().addProduct(mapProduct);
             VisatApp.getApp().addProduct(product);
             visatApp.openProductSceneViewRGB(selectedProduct, "");
-            visatApp.openProductSceneView(membershipProduct.getBand("membership_mask"), getHelpId());
-//            visatApp.openProductSceneView(product.getBand("cloud_probability"), getHelpId());
             DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
 //            dockingManager.showFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
             dockingManager.showFrame("org.esa.beam.chris.ui.CloudMaskLabelingToolView");
@@ -86,32 +84,27 @@ public class CloudMaskAction extends AbstractVisatAction {
                 "wv"});
         findClustersOpParameterMap.put("clusterCount", 14);
         findClustersOpParameterMap.put("iterationCount", 40);
-        findClustersOpParameterMap.put("clusterDistance", 0.0);
 
         clusterProduct = GPF.createProduct("chris.FindClusters",
                 findClustersOpParameterMap,
                 featureProduct);
 
-        membershipProduct = GPF.createProduct("chris.MakeClusterMap", new HashMap<String, Object>(), clusterProduct);
-        for (Band band : membershipProduct.getBands()) {
+        mapProduct = GPF.createProduct("chris.MakeClusterMap", new HashMap<String, Object>(), clusterProduct);
+
+        for (Band band : mapProduct.getBands()) {
             if (band.getName().startsWith("prob")) {
                 final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
                 probBand.update(new int[]{0, 8});
             }
         }
-        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) membershipProduct.getBand("membership_mask");
+        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) mapProduct.getBand("membership_mask");
         membershipBand.update();
 
-        final Map<String, Product> sourceProductMap = new HashMap<String, Product>();
-        sourceProductMap.put("toaRefl", reflectanceProduct);
-        sourceProductMap.put("cluster", clusterProduct);
-
         final Map<String, Object> cloudProbabilityOpParameterMap = new HashMap<String, Object>();
-//        cloudProbabilityOpParameterMap.put("accumulate", new int[]{7, 11, 13});
-//        cloudProbabilityOpParameterMap.put("redistribute", new int[]{0, 8});
-        cloudProbabilityOpParameterMap.put("accumulate", new int[]{7, 11, 13});
-        cloudProbabilityOpParameterMap.put("redistribute", new int[]{0, 8});
+        cloudProbabilityOpParameterMap.put("sourceBands",
+                new String[]{"probability_10", "probability_11", "probability_13"});
+        cloudProbabilityOpParameterMap.put("targetBand", "cloud_probability");
 
-        return GPF.createProduct("chris.ComputeCloudProbability", cloudProbabilityOpParameterMap, sourceProductMap);
+        return GPF.createProduct("chris.ComputeCloudProbability", cloudProbabilityOpParameterMap, mapProduct);
     }
 }

@@ -4,7 +4,6 @@ import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -13,9 +12,10 @@ import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.util.ProductUtils;
 
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 @OperatorMetadata(alias = "chris.ComputeCloudProbability",
         version = "1.0",
@@ -23,165 +23,99 @@ import java.util.*;
         copyright = "(c) 2008 by Brockmann Consult",
         description = "Computes the cloud probability of a pixel.")
 public class CloudProbabilityOp extends Operator {
-    // todo - turn these constants into parameter to generify this operator
-    private static final String BAND_NAME_CLOUD_PROBABILITY = "cloud_probability";
-    private static final String PROBABILITY_PREFIX = "probability_";
 
-
-    @SourceProduct(alias = "cluster")
-    private Product clusterProduct;
-    @SourceProduct(alias = "toaRefl", optional = true)
-    private Product toaReflectanceProduct;
-
+    @SourceProduct(alias = "source")
+    private Product sourceProduct;
     @TargetProduct(description = "Product containing the accumulated probability.")
     private Product targetProduct;
 
-    @Parameter(alias = "accumulate", description = "Considered classes which are accumulated to a probability.",
-            notEmpty = true, notNull = true)
-    private int[] accumulateClassIndices;
-    @Parameter(alias = "redistribute", description = "Classes which are redistributed to the other classes.",
-            notEmpty = true, notNull = true)
-    private int[] redistributeClassIndices;
+    @Parameter(alias = "sourceBands", description = "Bands being accumulated.", notEmpty = true, notNull = true)
+    private String[] sourceBandNames;
+    @Parameter(alias = "targetBand", description = "Name of the accumulation band.", notEmpty = true, notNull = true)
+    private String accumulationBandName;
 
-    private Map<Integer, Band> probabilityBandMap;
-    private List<Integer> useClassList;
-
+    private transient List<Band> sourceBandList;
 
     public CloudProbabilityOp() {
     }
 
-    CloudProbabilityOp(int[] accumulateClassIndices, int[] redistributeClassIndices, Product reflProduct,
-                       Product clusterProduct) {
-        this.accumulateClassIndices = accumulateClassIndices;
-        this.redistributeClassIndices = redistributeClassIndices;
-        this.toaReflectanceProduct = reflProduct;
-        this.clusterProduct = clusterProduct;
+    public CloudProbabilityOp(Product sourceProduct, String[] sourceBandNames, String accumulationBandName) {
+        this.sourceProduct = sourceProduct;
+        this.sourceBandNames = sourceBandNames;
+        this.accumulationBandName = accumulationBandName;
     }
 
     @Override
     public void initialize() throws OperatorException {
+        validateParameters();
 
-        validateParameter();
-
-        probabilityBandMap = new HashMap<Integer, Band>(clusterProduct.getNumBands());
-        useClassList = new ArrayList<Integer>(clusterProduct.getNumBands());
-        for (String bandName : clusterProduct.getBandNames()) {
-            if (bandName.startsWith(PROBABILITY_PREFIX)) {
-                final int bandId = Integer.valueOf(bandName.substring(PROBABILITY_PREFIX.length()));
-                probabilityBandMap.put(bandId, clusterProduct.getBand(bandName));
-                if (Arrays.binarySearch(redistributeClassIndices, bandId) < 0) {  // not included
-                    useClassList.add(bandId);
-                }
-            }
+        sourceBandList = new ArrayList<Band>();
+        for (final String name : sourceBandNames) {
+            sourceBandList.add(sourceProduct.getBand(name));
         }
-
         final Product targetProduct = createTargetProduct();
 
         setTargetProduct(targetProduct);
     }
 
-
     @Override
     public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        final int width = targetTile.getRectangle().width;
+        final int height = targetTile.getRectangle().height;
+
+        pm.beginTask("Computing band '" + targetBand.getName() + "'...", sourceBandList.size() + width * height);
+
         try {
-            if (targetBand.getName().startsWith("reflectance_")) {
-                pm.beginTask(String.format("Computing '%s'", targetBand.getName()), 1);
-                final Tile sourceTile = getSourceTile(toaReflectanceProduct.getBand(targetBand.getName()),
-                        targetTile.getRectangle(),
+            final List<Tile> sourceTileList = new ArrayList<Tile>(sourceBandList.size());
+            for (final Band sourceBand : sourceBandList) {
+                checkForCancelation(pm);
+                final Tile sourceTile = getSourceTile(sourceBand, targetTile.getRectangle(),
                         SubProgressMonitor.create(pm, 1));
-                targetTile.setRawSamples(sourceTile.getRawSamples());
-            } else if (BAND_NAME_CLOUD_PROBABILITY.equals(targetBand.getName())) {
-                pm.beginTask(String.format("Computing '%s'", targetBand.getName()), probabilityBandMap.size() + 1);
-                final Map<Integer, Tile> tileMap = new HashMap<Integer, Tile>(probabilityBandMap.size());
-                for (Map.Entry<Integer, Band> entry : probabilityBandMap.entrySet()) {
-                    final Tile sourceTile = getSourceTile(entry.getValue(), targetTile.getRectangle(),
-                            SubProgressMonitor.create(pm, 1));
-                    tileMap.put(entry.getKey(), sourceTile);
-                    if (pm.isCanceled()) {
-                        return;
-                    }
+                sourceTileList.add(sourceTile);
+            }
+
+            for (final Tile.Pos pos : targetTile) {
+                checkForCancelation(pm);
+
+                double sum = 0.0;
+                for (final Tile sourceTile : sourceTileList) {
+                    sum += sourceTile.getSampleDouble(pos.x, pos.y);
                 }
-                computeCloudProbability(targetTile, tileMap);
+                targetTile.setSample(pos.x, pos.y, sum);
+
                 pm.worked(1);
-            } else {
-                throw new OperatorException(
-                        String.format("Nothing known about a band named '%s'", targetBand.getName()));
             }
         } finally {
             pm.done();
         }
     }
 
-    private void validateParameter() {
-        for (int accumulateClass : accumulateClassIndices) {
-            final Band band = clusterProduct.getBand(PROBABILITY_PREFIX + accumulateClass);
+    private void validateParameters() {
+        for (String name : sourceBandNames) {
+            final Band band = sourceProduct.getBand(name);
             if (band == null) {
-                throw new OperatorException(
-                        String.format("Not able to find accumulate class with index %d", accumulateClass));
+                throw new OperatorException(MessageFormat.format("Band ''{0}'' does not exist.", name));
             }
         }
-
-        for (int redistributeClass : redistributeClassIndices) {
-            final Band band = clusterProduct.getBand(PROBABILITY_PREFIX + redistributeClass);
-            if (band == null) {
-                throw new OperatorException(
-                        String.format("Not able to find redistribute class with index %d", redistributeClass));
-            }
-        }
+        // todo - data type should be the same for all bands (?)
     }
 
     private Product createTargetProduct() {
-        final String name = clusterProduct.getName().replace("_CLU", "_PROB");
-        final String type = clusterProduct.getProductType().replace("_CLU", "_PROB");
-        final int sceneRasterWidth = clusterProduct.getSceneRasterWidth();
-        final int sceneRasterHeight = clusterProduct.getSceneRasterHeight();
+        // todo - introduce parameters for name and type and rename operator into AccumulateOp
+        final String name = sourceProduct.getName().replace("_MAP", "_PROB");
+        final String type = sourceProduct.getProductType().replace("_MAP", "_PROB");
+        final int sceneRasterWidth = sourceProduct.getSceneRasterWidth();
+        final int sceneRasterHeight = sourceProduct.getSceneRasterHeight();
         final Product targetProduct = new Product(name, type, sceneRasterWidth, sceneRasterHeight);
-        targetProduct.setStartTime(clusterProduct.getStartTime());
-        targetProduct.setEndTime(clusterProduct.getEndTime());
 
-        targetProduct.addBand(BAND_NAME_CLOUD_PROBABILITY, ProductData.TYPE_FLOAT32);
+        targetProduct.setStartTime(sourceProduct.getStartTime());
+        targetProduct.setEndTime(sourceProduct.getEndTime());
 
-        if (toaReflectanceProduct != null) {
-            if (sceneRasterWidth != toaReflectanceProduct.getSceneRasterWidth() ||
-                    sceneRasterHeight != toaReflectanceProduct.getSceneRasterHeight()) {
-                throw new OperatorException("Source products are not spatially equal.");
-            }
-            final Band[] reflBands = toaReflectanceProduct.getBands();
-            for (Band band : reflBands) {
-                if (band.getName().startsWith("reflectance")) {
-                    ProductUtils.copyBand(band.getName(), toaReflectanceProduct, targetProduct);
-                }
-            }
-        }
+        targetProduct.addBand(accumulationBandName, sourceBandList.get(0).getDataType());
+
         return targetProduct;
     }
 
-    private void computeCloudProbability(Tile targetTile, Map<Integer, Tile> probabilityTiles) {
-        for (Tile.Pos pos : targetTile) {
-            double accum = accumulateClassProbabilities(probabilityTiles, pos);
-            double sum = sumNotRedistributed(probabilityTiles, pos);
-            targetTile.setSample(pos.x, pos.y, accum / sum);
-        }
-    }
-
-    private double sumNotRedistributed(Map<Integer, Tile> probabilityTiles, Tile.Pos pos) {
-        double accuSum = 0;
-        for (int classIndex : useClassList) {
-            final Tile tile = probabilityTiles.get(classIndex);
-            accuSum = accuSum + tile.getSampleDouble(pos.x, pos.y);
-        }
-        return accuSum;
-    }
-
-    private double accumulateClassProbabilities(Map<Integer, Tile> probabilityTiles, Tile.Pos pos) {
-        double accuSum = 0;
-        for (int classIndex : accumulateClassIndices) {
-            final Tile tile = probabilityTiles.get(classIndex);
-            final double sampleDouble = tile.getSampleDouble(pos.x, pos.y);
-            accuSum = accuSum + sampleDouble;
-        }
-        return accuSum;
-    }
 
     public static class Spi extends OperatorSpi {
 
