@@ -100,11 +100,12 @@ public class CloudMaskAction extends AbstractVisatAction {
         final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) mapProduct.getBand("membership_mask");
         membershipBand.update();
 
-        final Map<String, Object> cloudProbabilityOpParameterMap = new HashMap<String, Object>();
-        cloudProbabilityOpParameterMap.put("sourceBands",
+        final Map<String, Object> accumulateOpParameterMap = new HashMap<String, Object>();
+        accumulateOpParameterMap.put("sourceBands",
                 new String[]{"probability_10", "probability_11", "probability_13"});
-        cloudProbabilityOpParameterMap.put("targetBand", "cloud_probability");
+        accumulateOpParameterMap.put("targetBand", "cloud_probability");
+        // todo - product name and type
 
-        return GPF.createProduct("chris.ComputeCloudProbability", cloudProbabilityOpParameterMap, mapProduct);
+        return GPF.createProduct("chris.Accumulate", accumulateOpParameterMap, mapProduct);
     }
 }

@@ -17,29 +17,35 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-@OperatorMetadata(alias = "chris.ComputeCloudProbability",
+@OperatorMetadata(alias = "chris.Accumulate",
         version = "1.0",
-        authors = "Marco Peters, Marco Zühlke",
-        copyright = "(c) 2008 by Brockmann Consult",
-        description = "Computes the cloud probability of a pixel.")
-public class CloudProbabilityOp extends Operator {
+        authors = "Marco Peters, Ralf Quast, Marco Zühlke",
+        copyright = "(c) 2008 Brockmann Consult",
+        description = "Calculates the arithmetic sum (or accumulation) of certain bands.")
+public class AccumulateOp extends Operator {
 
     @SourceProduct(alias = "source")
     private Product sourceProduct;
-    @TargetProduct(description = "Product containing the accumulated probability.")
+    @TargetProduct(description = "The result of the accumulation.")
     private Product targetProduct;
 
     @Parameter(alias = "sourceBands", description = "Bands being accumulated.", notEmpty = true, notNull = true)
     private String[] sourceBandNames;
+    @Parameter(alias = "targetProductName", defaultValue = "Accumulation", description = "Name of the target product",
+            notEmpty = true, notNull = true)
+    private String targetProductName;
+    @Parameter(alias = "targetProductType", defaultValue = "Accumulation", description = "Type of the target product",
+            notEmpty = true, notNull = true)
+    private String targetProductType;
     @Parameter(alias = "targetBand", description = "Name of the accumulation band.", notEmpty = true, notNull = true)
     private String accumulationBandName;
 
     private transient List<Band> sourceBandList;
 
-    public CloudProbabilityOp() {
+    public AccumulateOp() {
     }
 
-    public CloudProbabilityOp(Product sourceProduct, String[] sourceBandNames, String accumulationBandName) {
+    public AccumulateOp(Product sourceProduct, String[] sourceBandNames, String accumulationBandName) {
         this.sourceProduct = sourceProduct;
         this.sourceBandNames = sourceBandNames;
         this.accumulationBandName = accumulationBandName;
@@ -101,16 +107,15 @@ public class CloudProbabilityOp extends Operator {
     }
 
     private Product createTargetProduct() {
-        // todo - introduce parameters for name and type and rename operator into AccumulateOp
-        final String name = sourceProduct.getName().replace("_MAP", "_PROB");
-        final String type = sourceProduct.getProductType().replace("_MAP", "_PROB");
         final int sceneRasterWidth = sourceProduct.getSceneRasterWidth();
         final int sceneRasterHeight = sourceProduct.getSceneRasterHeight();
-        final Product targetProduct = new Product(name, type, sceneRasterWidth, sceneRasterHeight);
+        final Product targetProduct = new Product(targetProductName, targetProductType, sceneRasterWidth,
+                sceneRasterHeight);
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
 
+        // todo - set preferred tile size (?)
         targetProduct.addBand(accumulationBandName, sourceBandList.get(0).getDataType());
 
         return targetProduct;
@@ -120,7 +125,7 @@ public class CloudProbabilityOp extends Operator {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(CloudProbabilityOp.class);
+            super(AccumulateOp.class);
         }
     }
 }

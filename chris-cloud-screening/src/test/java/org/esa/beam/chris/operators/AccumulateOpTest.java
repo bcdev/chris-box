@@ -9,7 +9,7 @@ import org.esa.beam.framework.gpf.OperatorException;
 import java.awt.Dimension;
 import java.io.IOException;
 
-public class CloudProbabilityOpTest extends TestCase {
+public class AccumulateOpTest extends TestCase {
 
     private static final Dimension PRODUCT_DIMENSION = new Dimension(2, 2);
     private static final int TEST_PRODUCT_BAND_COUNT = 5;
@@ -28,24 +28,21 @@ public class CloudProbabilityOpTest extends TestCase {
 
     public void testInitializeOK() {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        CloudProbabilityOp probabilityOp = new CloudProbabilityOp(clusterDummy,
-                new String[]{"band_0", "band_4"}, "sum");
-        probabilityOp.getTargetProduct();
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
+        op.getTargetProduct();
     }
 
     public void testInitializeWithoutReflProduct() {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        CloudProbabilityOp probabilityOp = new CloudProbabilityOp(clusterDummy,
-                new String[]{"band_0", "band_4"}, "sum");
-        probabilityOp.getTargetProduct();
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
+        op.getTargetProduct();
     }
 
     public void testIllegalBandName() {
         Product clusterDummy1 = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        CloudProbabilityOp probabilityOp = new CloudProbabilityOp(clusterDummy1,
-                new String[]{"band_0", "band_7"}, "");
+        AccumulateOp op = new AccumulateOp(clusterDummy1, new String[]{"band_0", "band_7"}, "");
         try {
-            probabilityOp.getTargetProduct();
+            op.getTargetProduct();
             fail("OperatorException expected: Band not found");
         } catch (OperatorException expected) {
             // expected
@@ -54,10 +51,9 @@ public class CloudProbabilityOpTest extends TestCase {
 
     public void testTargetProduct() {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        CloudProbabilityOp probabilityOp = new CloudProbabilityOp(clusterDummy,
-                new String[]{"band_0", "band_4"}, "sum");
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
 
-        final Product targetProduct = probabilityOp.getTargetProduct();
+        final Product targetProduct = op.getTargetProduct();
         assertNull(targetProduct.getGeoCoding());
         assertEquals(1, targetProduct.getNumBands());
         final Band sumBand = targetProduct.getBand("sum");
@@ -67,10 +63,9 @@ public class CloudProbabilityOpTest extends TestCase {
 
     public void testCloudProbabilityBand() throws IOException {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        CloudProbabilityOp probabilityOp = new CloudProbabilityOp(clusterDummy,
-                new String[]{"band_0", "band_4"}, "sum");
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
 
-        final Product targetProduct = probabilityOp.getTargetProduct();
+        final Product targetProduct = op.getTargetProduct();
         final Band sumBand = targetProduct.getBand("sum");
         double[] samples = new double[PRODUCT_DIMENSION.width * PRODUCT_DIMENSION.height];
         sumBand.readPixels(0, 0, PRODUCT_DIMENSION.width, PRODUCT_DIMENSION.height, samples);
@@ -86,9 +81,9 @@ public class CloudProbabilityOpTest extends TestCase {
     // PRIVATE SECTION
     ////////////////////////////////////////////////////////////////////////////////////////
 
-    private Product createTestProduct(Dimension dim, int numClusterBands) {
+    private Product createTestProduct(Dimension dim, int bandCount) {
         final Product product = new Product("ChrisM3_CLU", "ChrisM3_CLU", dim.width, dim.height);
-        for (int i = 0; i < numClusterBands; i++) {
+        for (int i = 0; i < bandCount; i++) {
             final Band band = new Band(String.format("band_%d", i), ProductData.TYPE_FLOAT64,
                     dim.width, dim.height);
             product.addBand(band);
