@@ -20,6 +20,9 @@ import java.util.Random;
 
 /**
  * Expectation maximization (EM) cluster algorithm.
+ * <p/>
+ * todo - observer notifications
+ * todo - make algorithm use tiles
  *
  * @author Ralf Quast
  * @version $Revision: 1412 $ $Date: 2007-11-24 02:18:27 +0100 (Sa, 24 Nov 2007) $
@@ -130,8 +133,8 @@ public class Clusterer {
      */
     private Cluster[] findClusters(int iterationCount) {
         while (iterationCount-- > 0) {
-            // todo - log something
             iterate();
+            // todo - notify observer
         }
 
         return getClusters();
@@ -139,6 +142,7 @@ public class Clusterer {
 
     /**
      * Carries out a single EM iteration.
+     * todo - make private when observer notifications implemented
      */
     public void iterate() {
         // E-step
@@ -178,6 +182,7 @@ public class Clusterer {
 
     /**
      * Returns the clusters found.
+     * todo - make private when observer notifications implemented
      *
      * @return the clusters found.
      */
@@ -220,7 +225,7 @@ public class Clusterer {
                     }
                 }
             }
-        } while (!kTest());
+        } while (!kStop());
 
         for (int k = 0; k < clusterCount; ++k) {
             p[k] = calculateMoments(h[k], means[k], covariances[k]);
@@ -242,6 +247,7 @@ public class Clusterer {
                 for (int i = 0; i < k; ++i) {
                     accepted = kDist(means[k], means[i]) > dist * dist;
                     if (!accepted) {
+                        // todo - notify observer
                         break;
                     }
                 }
@@ -270,7 +276,7 @@ public class Clusterer {
      *
      * @return {@code true} when each cluster has enough members, {@code false} otherwise.
      */
-    private boolean kTest() {
+    private boolean kStop() {
         testing:
         for (int k = 0; k < clusterCount; ++k) {
             int memberCount = 0;
@@ -282,8 +288,10 @@ public class Clusterer {
                     }
                 }
             }
+            // todo - notify observer
             return false;
         }
+
         return true;
     }
 
