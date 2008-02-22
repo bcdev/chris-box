@@ -42,7 +42,7 @@ public class ClusterProbabilityOpImage extends PointOpImage {
     public static ClusterProbabilityOpImage create(Band targetBand,
                                                    Band[] sourceBands,
                                                    int correspondingBandIndex,
-                                                   int[] ignoredBandIndexes) {
+                                                   int[] backgroundBandIndexes) {
         final ImageLayout layout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
@@ -50,13 +50,13 @@ public class ClusterProbabilityOpImage extends PointOpImage {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterProbabilityOpImage(sourceImageVector, layout, correspondingBandIndex, ignoredBandIndexes);
+        return new ClusterProbabilityOpImage(sourceImageVector, layout, correspondingBandIndex, backgroundBandIndexes);
     }
 
     private ClusterProbabilityOpImage(Vector<RenderedImage> sourceImageVector,
-                                     ImageLayout layout,
-                                     int correspondingBandIndex,
-                                     int[] backgroundBandIndexes) {
+                                      ImageLayout layout,
+                                      int correspondingBandIndex,
+                                      int[] backgroundBandIndexes) {
         super(sourceImageVector, layout, null, true);
 
         this.correspondingBandIndex = correspondingBandIndex;
