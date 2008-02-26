@@ -24,6 +24,7 @@ import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.framework.gpf.annotations.Parameter;
 
 import java.awt.Rectangle;
 import java.awt.image.Raster;
@@ -47,6 +48,8 @@ public class MakeClusterMapOp extends Operator {
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
+    @Parameter
+    private int[] backgroundBandIndexes;
 
     @Override
     public void initialize() throws OperatorException {
@@ -64,7 +67,7 @@ public class MakeClusterMapOp extends Operator {
                     sourceBand.getDataType(), width, height, sourceBands, i);
             targetBand.setDescription(sourceBand.getDescription());
             targetProduct.addBand(targetBand);
-            targetBand.update(new int[]{});
+            targetBand.update(backgroundBandIndexes);
         }
         final MembershipImageBand membershipBand = new MembershipImageBand("membership_mask", ProductData.TYPE_INT8,
                 width, height, targetProduct.getBands());

@@ -29,7 +29,7 @@ import java.util.logging.Level;
 public class CloudMaskAction extends AbstractVisatAction {
     private static List<String> CHRIS_TYPES;
     private Product clusterProduct;
-    private Product mapProduct;
+    private Product clusterMapProduct;
 
     static {
         CHRIS_TYPES = new ArrayList<String>();
@@ -46,16 +46,12 @@ public class CloudMaskAction extends AbstractVisatAction {
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
         VisatApp visatApp = VisatApp.getApp();
-//        DockableFrame spectrumView = visatApp.getMainFrame().getDockingManager().getFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
-//        spectrumView.getContext().setCurrentDockSide(DockContext.DOCK_SIDE_SOUTH);
-//        spectrumView.getContext().setInitIndex(0);
-
         try {
             final Product selectedProduct = visatApp.getSelectedProduct();
-            Product product = createFinalProduct(selectedProduct);
-            VisatApp.getApp().addProduct(clusterProduct);
-            VisatApp.getApp().addProduct(mapProduct);
-            VisatApp.getApp().addProduct(product);
+            Product cloudMaskProduct = createCloudMaskProduct(selectedProduct);
+//            VisatApp.getApp().addProduct(clusterProduct);
+            VisatApp.getApp().addProduct(clusterMapProduct);
+            VisatApp.getApp().addProduct(cloudMaskProduct);
             visatApp.openProductSceneViewRGB(selectedProduct, "");
             DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
 //            dockingManager.showFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
@@ -76,48 +72,78 @@ public class CloudMaskAction extends AbstractVisatAction {
         setEnabled(enabled);
     }
 
-    private Product createFinalProduct(Product reflectanceProduct) throws OperatorException {
-        // 1. Extract features
-        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
-
-        final Product featureProduct = GPF.createProduct("chris.ExtractFeatures",
-                parameterMap,
-                reflectanceProduct);
-
-        // 2. Find clusters
-        final Map<String, Object> findClustersOpParameterMap = new HashMap<String, Object>();
-        findClustersOpParameterMap.put("sourceBandNames", new String[]{"brightness_vis",
-                "brightness_nir",
-                "whiteness_vis",
-                "whiteness_nir",
-                "wv"});
-        findClustersOpParameterMap.put("clusterCount", 14);
-        findClustersOpParameterMap.put("iterationCount", 40);
-
-        clusterProduct = GPF.createProduct("chris.FindClusters",
-                findClustersOpParameterMap,
-                featureProduct);
-
-        // 3. Cluster labeling
-        mapProduct = GPF.createProduct("chris.MakeClusterMap", new HashMap<String, Object>(), clusterProduct);
+    private Product createCloudMaskProduct(Product reflectanceProduct) throws OperatorException {
         final int[] backgroundIndexes = {0, 8};
         final int[] cloudClusterIndexes = {9, 10, 12};
         final int[] surfaceClusterIndexes = {1, 2, 3, 4, 5, 6, 7, 11, 13};
         final String[] surfaceClusterLabels = {"1", "2", "3", "4", "5", "6", "7", "11", "13"};
 
-        for (Band band : mapProduct.getBands()) {
-            if (band.getName().startsWith("prob")) {
-                final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
-                probBand.update(backgroundIndexes);
-            }
-        }
-        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) mapProduct.getBand("membership_mask");
-        membershipBand.update();
+        // 1. Extract features
+        final Product featureProduct = createFeatureProduct(reflectanceProduct);
+
+        // 2. Find clusters
+        clusterProduct = createClusterProduct(featureProduct);
+
+        // 3. Cluster labeling
+        clusterMapProduct = createClusterMapProduct(clusterProduct, backgroundIndexes);
+
+// simulates GUI labeling        
+//        for (Band band : clusterMapProduct.getBands()) {
+//            if (band.getName().startsWith("prob")) {
+//                final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
+//                probBand.update(backgroundIndexes);
+//            }
+//        }
+//        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) clusterMapProduct.getBand("membership_mask");
+//        membershipBand.update();
 
         // 4. Cluster probabilities
+        final Product cloudProbabilityProduct = createCloudProbabilityProduct(cloudClusterIndexes, clusterMapProduct);
+
+        // 5. Endmember extraction
+        final ExtractEndmembersOp endmemberOp = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterMapProduct, cloudClusterIndexes,
+                surfaceClusterIndexes, surfaceClusterLabels);
+        final Endmember[] endmembers = endmemberOp.calculateEndmembers(ProgressMonitor.NULL);
+
+        // 6. Cloud abundances
+        final Product cloudAbundancesProduct = createCloudAbundancesProduct(reflectanceProduct, endmembers);
+
+        // 7. Cloud probability * cloud abundance
+        final Product cloudMaskProduct = createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
+
+        return cloudMaskProduct;
+    }
+
+    private Product createCloudMaskProduct(Product cloudProbabilityProduct, Product cloudAbundancesProduct) {
+        BandArithmeticOp.BandDescriptor[] bandDescriptors = new BandArithmeticOp.BandDescriptor[1];
+        bandDescriptors[0] = new BandArithmeticOp.BandDescriptor();
+        bandDescriptors[0].name = "cloud_mask";
+        bandDescriptors[0].expression = "$probability.cloud_probability * $abundance.Cloud_abundance";
+        bandDescriptors[0].type = ProductData.TYPESTRING_FLOAT32;
+        final Map<String, Object> cloudMaskParameterMap = new HashMap<String, Object>();
+        cloudMaskParameterMap.put("targetBandDescriptors", bandDescriptors);
+        final Map<String, Product> cloudMaskSourceMap = new HashMap<String, Product>();
+        cloudMaskSourceMap.put("probability", cloudProbabilityProduct);
+        cloudMaskSourceMap.put("abundance", cloudAbundancesProduct);
+        return GPF.createProduct(OperatorSpi.getOperatorAlias(BandArithmeticOp.class),
+                cloudMaskParameterMap, cloudMaskSourceMap);
+    }
+
+    private Product createCloudAbundancesProduct(Product reflectanceProduct, Endmember[] endmembers) {
+        final String[] reflBands = findBandNames(reflectanceProduct, "reflectance_");
+        final Map<String, Object> unmixingParameterMap = new HashMap<String, Object>();
+        unmixingParameterMap.put("sourceBandNames", reflBands);
+        unmixingParameterMap.put("endmembers", endmembers);
+        unmixingParameterMap.put("unmixingModelName", "Fully Constrained LSU");
+
+        return GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
+                unmixingParameterMap, reflectanceProduct);
+    }
+
+    private Product createCloudProbabilityProduct(int[] cloudClusterIndexes, Product clusterMapProduct) {
         final Map<String, Object> accumulateOpParameterMap = new HashMap<String, Object>();
 
-        final String[] bandNames = mapProduct.getBandNames();
+        final String[] bandNames = this.clusterMapProduct.getBandNames();
         final List<String> bandNameList = new ArrayList<String>();
         for (int i = 0; i < bandNames.length; ++i) {
             if (bandNames[i].startsWith("prob")) {
@@ -131,37 +157,35 @@ public class CloudMaskAction extends AbstractVisatAction {
         accumulateOpParameterMap.put("targetBand", "cloud_probability");
         // todo - product name and type
 
-        final Product cloudProbabilityProduct = GPF.createProduct("chris.Accumulate", accumulateOpParameterMap, mapProduct);
+        return GPF.createProduct("chris.Accumulate", accumulateOpParameterMap, clusterMapProduct);
+    }
 
-        // 5. Endmember extraction
-        final ExtractEndmembersOp endmemberOp = new ExtractEndmembersOp(reflectanceProduct, featureProduct, mapProduct, cloudClusterIndexes,
-                surfaceClusterIndexes, surfaceClusterLabels);
-        final Endmember[] endmembers = endmemberOp.calculateEndmembers(ProgressMonitor.NULL);
+    private Product createClusterMapProduct(Product clusterProduct, int[] backgroundIndexes) {
+        final Map<String, Object> clusterMapParameter = new HashMap<String, Object>();
+        clusterMapParameter.put("backgroundBandIndexes", backgroundIndexes);
+        return GPF.createProduct("chris.MakeClusterMap", clusterMapParameter, clusterProduct);
+    }
 
-        // 6. Cloud abundances
-        final String[] reflBands = findBandNames(reflectanceProduct, "reflectance_");
-        final Map<String, Object> unmixingParameterMap = new HashMap<String, Object>();
-        unmixingParameterMap.put("sourceBandNames", reflBands);
-        unmixingParameterMap.put("endmembers", endmembers);
-        unmixingParameterMap.put("unmixingModelName", "Fully Constrained LSU");
+    private Product createClusterProduct(Product featureProduct) {
+        final Map<String, Object> findClustersOpParameterMap = new HashMap<String, Object>();
+        findClustersOpParameterMap.put("sourceBandNames", new String[]{"brightness_vis",
+                "brightness_nir",
+                "whiteness_vis",
+                "whiteness_nir",
+                "wv"});
+        findClustersOpParameterMap.put("clusterCount", 14);
+        findClustersOpParameterMap.put("iterationCount", 40);
 
-        final Product cloudAbundancesProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
-                unmixingParameterMap, reflectanceProduct);
+        return GPF.createProduct("chris.FindClusters",
+                findClustersOpParameterMap,
+                featureProduct);
+    }
 
-        // 7. Cloud probability * cloud abundance
-        BandArithmeticOp.BandDescriptor[] bandDescriptors = new BandArithmeticOp.BandDescriptor[1];
-        bandDescriptors[0] = new BandArithmeticOp.BandDescriptor();
-        bandDescriptors[0].name = "cloud_mask";
-        bandDescriptors[0].expression = "$probability.cloud_probability * $abundance.Cloud_abundance";
-        bandDescriptors[0].type = ProductData.TYPESTRING_FLOAT32;
-        final Map<String, Object> cloudMaskParameterMap = new HashMap<String, Object>();
-        cloudMaskParameterMap.put("targetBandDescriptors", bandDescriptors);
-        final Map<String, Product> cloudMaskSourceMap = new HashMap<String, Product>();
-        cloudMaskSourceMap.put("probability", cloudProbabilityProduct);
-        cloudMaskSourceMap.put("abundance", cloudAbundancesProduct);
-        final Product cloudMaskProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(BandArithmeticOp.class),
-                cloudMaskParameterMap, cloudMaskSourceMap);
-        return cloudMaskProduct;
+    private Product createFeatureProduct(Product reflectanceProduct) {
+        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
+        return GPF.createProduct("chris.ExtractFeatures",
+                parameterMap,
+                reflectanceProduct);
     }
 
     private static String[] findBandNames(Product product, String prefix) {
