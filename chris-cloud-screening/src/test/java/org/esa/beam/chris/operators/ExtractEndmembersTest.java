@@ -58,11 +58,11 @@ public class ExtractEndmembersTest extends TestCase {
         final ExtractEndmembersOp op = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterProduct,
                 new int[]{1, 4}, new int[]{0, 2}, new String[]{"Erni", "Bert"});
 
-        final Endmember[] endmembers = op.calculateEndmembers(ProgressMonitor.NULL);
+        final Endmember[] endmembers = (Endmember[]) op.getTargetProperty("endmembers");
 
         assertNotNull(endmembers);
         assertEquals(3, endmembers.length);
-        assertEquals("Cloud", endmembers[0].getName());
+        assertEquals("cloud", endmembers[0].getName());
         assertEquals("Erni", endmembers[1].getName());
         assertEquals("Bert", endmembers[2].getName());
         assertEquals(4, endmembers[0].getSize());

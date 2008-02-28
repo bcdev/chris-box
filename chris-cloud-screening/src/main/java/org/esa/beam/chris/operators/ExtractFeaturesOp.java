@@ -45,7 +45,7 @@ public class ExtractFeaturesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
 
-    @SourceProduct(alias = "input")
+    @SourceProduct(alias = "source")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;

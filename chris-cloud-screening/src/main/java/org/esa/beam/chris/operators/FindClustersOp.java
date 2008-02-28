@@ -46,7 +46,7 @@ import java.util.Map;
         description = "Finds clusters for features extracted from TOA reflectances.")
 public class FindClustersOp extends Operator {
 
-    @SourceProduct
+    @SourceProduct(alias = "source")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;

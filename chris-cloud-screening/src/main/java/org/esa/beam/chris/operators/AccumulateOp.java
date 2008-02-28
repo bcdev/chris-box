@@ -31,12 +31,6 @@ public class AccumulateOp extends Operator {
 
     @Parameter(alias = "sourceBands", description = "Bands being accumulated.", notEmpty = true, notNull = true)
     private String[] sourceBandNames;
-    @Parameter(alias = "targetProductName", defaultValue = "Accumulation", description = "Name of the target product",
-            notEmpty = true, notNull = true)
-    private String targetProductName;
-    @Parameter(alias = "targetProductType", defaultValue = "Accumulation", description = "Type of the target product",
-            notEmpty = true, notNull = true)
-    private String targetProductType;
     @Parameter(alias = "targetBand", description = "Name of the accumulation band.", notEmpty = true, notNull = true)
     private String accumulationBandName;
 
@@ -109,7 +103,7 @@ public class AccumulateOp extends Operator {
     private Product createTargetProduct() {
         final int sceneRasterWidth = sourceProduct.getSceneRasterWidth();
         final int sceneRasterHeight = sourceProduct.getSceneRasterHeight();
-        final Product targetProduct = new Product(targetProductName, targetProductType, sceneRasterWidth,
+        final Product targetProduct = new Product("Accumulation", "Accumulation", sceneRasterWidth,
                 sceneRasterHeight);
 
         targetProduct.setStartTime(sourceProduct.getStartTime());

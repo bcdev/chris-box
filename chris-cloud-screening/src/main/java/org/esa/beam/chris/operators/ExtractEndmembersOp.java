@@ -24,7 +24,7 @@ import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.framework.gpf.annotations.TargetProperty;
 import org.esa.beam.unmixing.Endmember;
 
 import java.awt.Rectangle;
@@ -51,9 +51,6 @@ public class ExtractEndmembersOp extends Operator {
     @SourceProduct(alias = "clusters")
     private Product clusterProduct;
 
-    @TargetProduct
-    private Product targetProduct;
-
     @Parameter(alias = "cloudClusterIndexes", notEmpty = true, notNull = true)
     private int[] cloudClusterIndexes;
     @Parameter(alias = "surfaceClusterIndexes", notEmpty = true, notNull = true)
@@ -61,6 +58,7 @@ public class ExtractEndmembersOp extends Operator {
     @Parameter(alias = "surfaceClusterLabels", notEmpty = true, notNull = true)
     private String[] surfaceClusterLabels;
 
+    @TargetProperty
     private Endmember[] endmembers;
 
     /**
@@ -91,16 +89,11 @@ public class ExtractEndmembersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        endmembers = calculateEndmembers(ProgressMonitor.NULL);
-        targetProduct = createTargetProduct();
-        setTargetProduct(targetProduct);
+        endmembers = computeEndmembers(ProgressMonitor.NULL);
+        setTargetProduct(new Product("empty", "empty", 0, 0));
     }
 
-    @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-    }
-
-    public Endmember[] calculateEndmembers(ProgressMonitor pm) {
+    private Endmember[] computeEndmembers(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
         final Band membershipBand = clusterProduct.getBand("membership_mask");
@@ -143,7 +136,7 @@ public class ExtractEndmembersOp extends Operator {
 
             reflectances[i] = reflectanceTile.getSampleDouble(cloudEndmemberX, cloudEndmemberY);
         }
-        Endmember em = new Endmember("Cloud", wavelengths, reflectances);
+        final Endmember em = new Endmember("cloud", wavelengths, reflectances);
         endmembers[0] = em;
 
 
@@ -191,10 +184,6 @@ public class ExtractEndmembersOp extends Operator {
             wavelengths[i] = reflectanceBands[i].getSpectralWavelength();
         }
         return wavelengths;
-    }
-
-    private Product createTargetProduct() {
-        return null;
     }
 
     private static boolean isContained(int index, int[] indexes) {

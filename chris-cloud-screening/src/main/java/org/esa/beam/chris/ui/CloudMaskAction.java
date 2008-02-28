@@ -3,8 +3,6 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.core.ProgressMonitor;
 import com.jidesoft.docking.DockingManager;
 import org.esa.beam.chris.operators.ExtractEndmembersOp;
-import org.esa.beam.chris.operators.MakeClusterMapOp;
-import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.GPF;
@@ -52,7 +50,7 @@ public class CloudMaskAction extends AbstractVisatAction {
 //            VisatApp.getApp().addProduct(clusterProduct);
             VisatApp.getApp().addProduct(clusterMapProduct);
             VisatApp.getApp().addProduct(cloudMaskProduct);
-            visatApp.openProductSceneViewRGB(selectedProduct, "");
+//            visatApp.openProductSceneViewRGB(selectedProduct, "");
             DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
 //            dockingManager.showFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
             dockingManager.showFrame("org.esa.beam.chris.ui.CloudMaskLabelingToolView");
@@ -103,7 +101,7 @@ public class CloudMaskAction extends AbstractVisatAction {
         // 5. Endmember extraction
         final ExtractEndmembersOp endmemberOp = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterMapProduct, cloudClusterIndexes,
                 surfaceClusterIndexes, surfaceClusterLabels);
-        final Endmember[] endmembers = endmemberOp.calculateEndmembers(ProgressMonitor.NULL);
+        final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
 
         // 6. Cloud abundances
         final Product cloudAbundancesProduct = createCloudAbundancesProduct(reflectanceProduct, endmembers);
@@ -118,7 +116,7 @@ public class CloudMaskAction extends AbstractVisatAction {
         BandArithmeticOp.BandDescriptor[] bandDescriptors = new BandArithmeticOp.BandDescriptor[1];
         bandDescriptors[0] = new BandArithmeticOp.BandDescriptor();
         bandDescriptors[0].name = "cloud_mask";
-        bandDescriptors[0].expression = "$probability.cloud_probability * $abundance.Cloud_abundance";
+        bandDescriptors[0].expression = "$probability.cloud_probability * $abundance.cloud_abundance";
         bandDescriptors[0].type = ProductData.TYPESTRING_FLOAT32;
         final Map<String, Object> cloudMaskParameterMap = new HashMap<String, Object>();
         cloudMaskParameterMap.put("targetBandDescriptors", bandDescriptors);
@@ -162,7 +160,7 @@ public class CloudMaskAction extends AbstractVisatAction {
 
     private Product createClusterMapProduct(Product clusterProduct, int[] backgroundIndexes) {
         final Map<String, Object> clusterMapParameter = new HashMap<String, Object>();
-        clusterMapParameter.put("backgroundBandIndexes", backgroundIndexes);
+        clusterMapParameter.put("backgroundClusterIndexes", backgroundIndexes);
         return GPF.createProduct("chris.MakeClusterMap", clusterMapParameter, clusterProduct);
     }
 

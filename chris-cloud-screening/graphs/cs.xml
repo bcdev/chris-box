@@ -1,0 +1,123 @@
+<graph>
+    <id>cloud-screening</id>
+
+    <node>
+        <id>features</id>
+        <operator>chris.ExtractFeatures</operator>
+        <sources>
+            <source>${input}</source>
+        </sources>
+    </node>
+
+    <node>
+        <id>clusters</id>
+        <operator>chris.FindClusters</operator>
+        <sources>
+            <source>features</source>
+        </sources>
+        <parameters>
+            <sourceBandNames>brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv</sourceBandNames>
+            <clusterCount>14</clusterCount>
+            <iterationCount>40</iterationCount>
+        </parameters>
+    </node>
+
+    <node>
+        <id>map</id>
+        <operator>chris.MakeClusterMap</operator>
+        <sources>
+            <source>clusters</source>
+        </sources>
+        <parameters>
+            <backgroundClusterIndexes>0,8</backgroundClusterIndexes>
+        </parameters>
+    </node>
+
+    <node>
+        <id>cloudProbability</id>
+        <operator>chris.Accumulate</operator>
+        <sources>
+            <source>map</source>
+        </sources>
+        <parameters>
+            <sourceBands>probability_10,probability_11,probability_13</sourceBands>
+            <targetBand>cloud_probability</targetBand>
+        </parameters>
+    </node>
+
+    <node>
+        <id>endmembers</id>
+        <operator>chris.ExtractEndmembers</operator>
+        <sources>
+            <reflectances>${input}</reflectances>
+            <features>features</features>
+            <clusters>map</clusters>
+        </sources>
+        <parameters>
+            <cloudClusterIndexes>9,10,12</cloudClusterIndexes>
+            <surfaceClusterIndexes>1,2,3,4,5,6,7,11,13</surfaceClusterIndexes>
+            <surfaceClusterLabels>1,2,3,4,5,6,7,11,13</surfaceClusterLabels>
+        </parameters>
+    </node>
+
+    <node>
+        <id>cloudAbundance</id>
+        <operator>Unmix</operator>
+        <sources>
+            <sourceProduct>${input}</sourceProduct>
+        </sources>
+        <parameters>
+            <endmembers ref="endmembers.endmembers"/>
+            <unmixingModelName>Fully Constrained LSU</unmixingModelName>
+            <computeErrorBands>true</computeErrorBands>
+            <sourceBands>
+                <band>reflectance_1</band>
+                <band>reflectance_2</band>
+                <band>reflectance_3</band>
+                <band>reflectance_4</band>
+                <band>reflectance_5</band>
+                <band>reflectance_6</band>
+                <band>reflectance_7</band>
+                <band>reflectance_8</band>
+                <band>reflectance_9</band>
+                <band>reflectance_10</band>
+                <band>reflectance_11</band>
+                <band>reflectance_12</band>
+                <band>reflectance_13</band>
+                <band>reflectance_14</band>
+            </sourceBands>
+        </parameters>
+    </node>
+
+    <!--
+    <node>
+        <id>cloudMask</id>
+        <operator>BandArithmetic</operator>
+        <sources>
+            <source>cloudProbability</source>
+            <source>cloudAbundance</source>
+        </sources>
+        <parameters>
+            <targetBandDescriptors>
+                <targetBandDescriptor>
+                    <name>cloud_mask</name>
+                    <expression>$cloudProbability.cloud_probability * $cloudAbundance.cloud_abundance</expression>
+                    <type>???</type>
+                </targetBandDescriptor>
+            </targetBandDescriptors>
+        </parameters>
+    </node>
+
+    <node>
+        <id>merge</id>
+        <operator>TBD</operator>
+        <sources>
+            <source>${input}</source>
+            <source>cloudProbability</source>
+            <source>cloudAbundance</source>
+            <source>cloudMask</source>
+        </sources>
+    </node>
+    -->
+
+</graph>

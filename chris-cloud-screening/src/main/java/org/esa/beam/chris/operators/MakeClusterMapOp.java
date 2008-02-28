@@ -44,12 +44,12 @@ import java.io.IOException;
         description = "Makes the cluster membership map for clusters of features extracted from TOA reflectances.")
 public class MakeClusterMapOp extends Operator {
 
-    @SourceProduct
+    @SourceProduct(alias = "source")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
     @Parameter
-    private int[] backgroundBandIndexes;
+    private int[] backgroundClusterIndexes;
 
     @Override
     public void initialize() throws OperatorException {
@@ -67,7 +67,7 @@ public class MakeClusterMapOp extends Operator {
                     sourceBand.getDataType(), width, height, sourceBands, i);
             targetBand.setDescription(sourceBand.getDescription());
             targetProduct.addBand(targetBand);
-            targetBand.update(backgroundBandIndexes);
+            targetBand.update(backgroundClusterIndexes);
         }
         final MembershipImageBand membershipBand = new MembershipImageBand("membership_mask", ProductData.TYPE_INT8,
                 width, height, targetProduct.getBands());
