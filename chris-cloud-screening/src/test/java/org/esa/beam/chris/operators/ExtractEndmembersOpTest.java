@@ -14,7 +14,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
 import junit.framework.TestCase;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
@@ -30,7 +29,7 @@ import java.io.IOException;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class ExtractEndmembersTest extends TestCase {
+public class ExtractEndmembersOpTest extends TestCase {
 
     public void testCalculateEndmembers() throws IOException {
         final double[][] reflectances = {
@@ -76,6 +75,19 @@ public class ExtractEndmembersTest extends TestCase {
         }
         for (int i = 0; i < 4; ++i) {
             assertEquals("i = " + i, reflectances[i][5], endmembers[2].getRadiation(i), 0.0);
+        }
+
+        final Product targetProduct = op.getTargetProduct();
+        assertSame(reflectanceProduct, targetProduct);
+
+        for (int i = 0; i < targetProduct.getBands().length; i++) {
+            Band band = targetProduct.getBands()[i];
+            assertNotNull(band.getImage());
+
+            final double[] values = band.readPixels(0, 0, 3, 2, new double[6]);
+            for (int j = 0; j < values.length; j++) {
+                assertEquals(reflectances[i][j], values[j], 0.0);
+            }
         }
     }
 

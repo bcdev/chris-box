@@ -30,6 +30,7 @@ import org.esa.beam.unmixing.Endmember;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * todo - API doc
@@ -89,17 +90,25 @@ public class ExtractEndmembersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        endmembers = computeEndmembers(ProgressMonitor.NULL);
-        setTargetProduct(new Product("empty", "empty", 0, 0));
+        endmembers = calculateEndmembers(ProgressMonitor.NULL);
+        setTargetProduct(reflectanceProduct);
     }
 
-    private Endmember[] computeEndmembers(ProgressMonitor pm) {
+    @Override
+    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+    }
+
+    @Override
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+    }
+
+    private Endmember[] calculateEndmembers(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
         final Band membershipBand = clusterProduct.getBand("membership_mask");
 
         final Band[] reflectanceBands = findBands(reflectanceProduct, "reflectance");
-        final double[] wavelengths = getEndmemberWavelength(reflectanceBands);
+        final double[] wavelengths = getSpectralWavelengths(reflectanceBands);
         final Endmember[] endmembers = new Endmember[surfaceClusterIndexes.length + 1];
 
         final int h = membershipBand.getRasterHeight();
@@ -178,10 +187,10 @@ public class ExtractEndmembersOp extends Operator {
         return endmembers;
     }
 
-    private double[] getEndmemberWavelength(Band[] reflectanceBands) {
-        final double[] wavelengths = new double[reflectanceBands.length];
-        for (int i = 0; i < reflectanceBands.length; ++i) {
-            wavelengths[i] = reflectanceBands[i].getSpectralWavelength();
+    private static double[] getSpectralWavelengths(Band[] bands) {
+        final double[] wavelengths = new double[bands.length];
+        for (int i = 0; i < bands.length; ++i) {
+            wavelengths[i] = bands[i].getSpectralWavelength();
         }
         return wavelengths;
     }
