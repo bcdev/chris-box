@@ -16,15 +16,16 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.framework.gpf.annotations.Parameter;
 
 import java.awt.Rectangle;
 import java.awt.image.Raster;
@@ -73,6 +74,14 @@ public class MakeClusterMapOp extends Operator {
                 width, height, targetProduct.getBands());
         membershipBand.setDescription("Cluster membership mask");
         targetProduct.addBand(membershipBand);
+
+        final IndexCoding indexCoding = new IndexCoding("cluster_classes");
+        for (int i = 0; i < sourceBands.length; i++) {
+            indexCoding.addIndex("class_" + (i + 1), i, "Cluster label");
+        }
+
+        targetProduct.getIndexCodingGroup().add(indexCoding);
+        membershipBand.setSampleCoding(indexCoding);
         membershipBand.update();
 
         setTargetProduct(targetProduct);
