@@ -1,0 +1,13 @@
+ENVI
+description = {Reflectance for spectral band 54 - Unit: dl - Wavelength: 911.353nm}
+samples = 59
+lines = 59
+bands = 1
+header offset = 0
+file type = ENVI Standard
+data type = 2
+interleave = bsq
+byte order = 1
+wavelength = {911.353}
+data gain values = {1.0E-4}
+data offset values = {0.0}

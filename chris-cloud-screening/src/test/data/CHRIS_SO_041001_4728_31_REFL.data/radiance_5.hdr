@@ -1,0 +1,13 @@
+ENVI
+description = {Radiance for spectral band 5 - Unit: microWatts/nm/m^2/str - Wavelength: 472.806nm}
+samples = 59
+lines = 59
+bands = 1
+header offset = 0
+file type = ENVI Standard
+data type = 3
+interleave = bsq
+byte order = 1
+wavelength = {472.806}
+data gain values = {1.0}
+data offset values = {0.0}
