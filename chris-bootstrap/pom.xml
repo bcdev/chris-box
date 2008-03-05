@@ -25,7 +25,17 @@
         </dependency>
         <dependency>
             <groupId>org.esa.beam.chris</groupId>
+            <artifactId>chris-atmospheric-correction</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.esa.beam.chris</groupId>
             <artifactId>chris-cloud-screening</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.esa.beam.chris</groupId>
+            <artifactId>chris-geometric-correction</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>

@@ -24,7 +24,9 @@
 
     <modules>
         <module>chris-bootstrap</module>
+        <module>chris-atmospheric-correction</module>
         <module>chris-cloud-screening</module>
+        <module>chris-geometric-correction</module>
         <module>chris-noise-reduction</module>
         <module>chris-reflectance-computation</module>
     </modules>

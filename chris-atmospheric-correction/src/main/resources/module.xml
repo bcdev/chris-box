@@ -1,9 +1,9 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
-    <symbolicName>chris-reflectance-computation</symbolicName>
+    <symbolicName>chris-atmospheric-correction</symbolicName>
     <version>1.0-SNAPSHOT</version>
-    <name>CHRIS/PROBA Reflectance Computation Tool</name>
-    <description>CHRIS/PROBA Reflectance Computation Tool</description>
+    <name>CHRIS/PROBA Atmospheric Correction Tool</name>
+    <description>CHRIS/PROBA Atmospheric Correction Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -41,13 +41,13 @@
             <mnemonic/>
         </action>
         <action>
-            <id>chrisComputeReflectances</id>
-            <class>org.esa.beam.chris.ui.ComputeReflectancesAction</class>
-            <text>Compute Reflectances...</text>
-            <shortDescr>Compute TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
+            <id>chrisAtmosphericCorrection</id>
+            <class>org.esa.beam.chris.ui.PerformAtmosphericCorrectionAction</class>
+            <text>Perform Atmospheric Correction...</text>
+            <shortDescr>Perfoms an atmospheric correction for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisReflectanceComputationTool</helpID>
+            <helpID>chrisAtmosphericCorrectionTool</helpID>
             <placeAfter>chrisNoiseReduction</placeAfter>
         </action>
     </extension>
@@ -55,7 +55,7 @@
     <extension point="beam-ui:helpSets">
         <helpSet>
             <parent>beam-help</parent>
-            <path>doc/help/reflectancecomputation.hs</path>
+            <path>doc/help/atmosphericcorrection.hs</path>
         </helpSet>
     </extension>
 

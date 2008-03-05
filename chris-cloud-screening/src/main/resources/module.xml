@@ -101,7 +101,7 @@
 			<accelerator>ctrl alt M</accelerator>
 			<shortDescr>Computes a cloud mask.</shortDescr>
 			<helpId>chrisCloudScreeningTools</helpId>
-			<placeAfter>chrisFindClucovClusters</placeAfter>
+			<placeAfter>chrisFindClusters</placeAfter>
 		</action>
 
 	</extension>

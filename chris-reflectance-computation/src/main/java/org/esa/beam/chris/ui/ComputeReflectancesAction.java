@@ -30,6 +30,7 @@ public class ComputeReflectancesAction extends AbstractVisatAction {
                            "CHRIS_M1_NR",
                            "CHRIS_M2_NR",
                            "CHRIS_M3_NR",
+                           "CHRIS_M30_NR",
                            "CHRIS_M3A_NR",
                            "CHRIS_M4_NR",
                            "CHRIS_M5_NR");
@@ -42,7 +43,7 @@ public class ComputeReflectancesAction extends AbstractVisatAction {
                 new DefaultSingleTargetProductDialog("chris.ComputeReflectances",
                                                      getAppContext(),
                                                      "Reflectance Computation",
-                                                     "chrisReflectanceComputation");
+                                                     "chrisReflectanceComputationTool");
         dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_NR", "_REFL"));
         dialog.show();
 //
