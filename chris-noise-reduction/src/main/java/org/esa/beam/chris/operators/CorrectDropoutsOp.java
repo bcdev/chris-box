@@ -58,7 +58,7 @@ public class CorrectDropoutsOp extends Operator {
     Product targetProduct;
 
     @Parameter(defaultValue = "5", interval = "[1, 62]")
-    private Integer neighborBandCount;
+    private int neighborBandCount;
 
     @Parameter(defaultValue = "N4", valueSet = {"N4", "N8"})
     private DropoutCorrection.Type neighborhoodType;

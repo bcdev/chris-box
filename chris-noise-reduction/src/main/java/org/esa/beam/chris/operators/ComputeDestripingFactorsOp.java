@@ -72,10 +72,10 @@ public class ComputeDestripingFactorsOp extends Operator {
     Product targetProduct;
 
     @Parameter(defaultValue = "27", interval = "[11, 99]")
-    Integer smoothingOrder;
+    int smoothingOrder;
 
     @Parameter(defaultValue = "true")
-    Boolean slitCorrection;
+    boolean slitCorrection;
 
     private int spectralBandCount;
 
