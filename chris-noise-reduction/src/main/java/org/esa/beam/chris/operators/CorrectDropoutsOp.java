@@ -33,7 +33,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.*;
+import java.awt.Rectangle;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import java.text.MessageFormat;
@@ -112,7 +112,7 @@ public class CorrectDropoutsOp extends Operator {
 
             final FlagCoding flagCoding = sourceMskBands[i].getFlagCoding();
             if (flagCoding != null) {
-                targetMskBands[i].setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
+                targetMskBands[i].setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
