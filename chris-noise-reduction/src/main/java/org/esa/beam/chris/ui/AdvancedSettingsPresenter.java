@@ -2,6 +2,7 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.binding.ValueContainer;
 import com.bc.ceres.binding.ValueContainerFactory;
+import com.bc.ceres.binding.ValidationException;
 import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
 import org.esa.beam.chris.operators.CorrectDropoutsOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
@@ -24,10 +25,13 @@ class AdvancedSettingsPresenter {
     private ValueContainer dropoutCorrectionValueContainer;
 
     public AdvancedSettingsPresenter() {
-        destripingParameterMap = new HashMap<String, Object>();
-        dropoutCorrectionParameterMap = new HashMap<String, Object>();
-
-        initValueContainers();
+        this (new HashMap<String, Object>(7), new HashMap<String, Object>(7));
+        try {
+            destripingValueContainer.setDefaultValues();
+            dropoutCorrectionValueContainer.setDefaultValues();
+        } catch (ValidationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private AdvancedSettingsPresenter(Map<String, Object> destripingParameterMap,
