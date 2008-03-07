@@ -196,7 +196,11 @@ public class ClusterProbabilityOpImage extends PointOpImage {
             }
         }
 
-        return samples[correspondingBandIndex] / sum;
+        if (sum > 0.0) {
+            return samples[correspondingBandIndex] / sum;
+        } else {
+            return 0.0;
+        }
     }
 
     private static boolean isContained(int index, int[] indexes) {
