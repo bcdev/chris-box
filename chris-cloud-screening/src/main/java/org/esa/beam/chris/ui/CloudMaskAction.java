@@ -1,14 +1,8 @@
 package org.esa.beam.chris.ui;
 
 
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Level;
-
-import javax.swing.AbstractAction;
-
+import com.jidesoft.docking.DockableFrame;
+import com.jidesoft.docking.DockingManager;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -16,8 +10,12 @@ import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
-import com.jidesoft.docking.DockableFrame;
-import com.jidesoft.docking.DockingManager;
+import javax.swing.AbstractAction;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Action for masking clouds.
@@ -28,6 +26,7 @@ import com.jidesoft.docking.DockingManager;
 public class CloudMaskAction extends AbstractVisatAction {
 
     private static List<String> CHRIS_TYPES;
+
     static {
         CHRIS_TYPES = new ArrayList<String>();
         Collections.addAll(CHRIS_TYPES,
@@ -48,14 +47,14 @@ public class CloudMaskAction extends AbstractVisatAction {
             visatApp.openProductSceneViewRGB(reflectanceProduct, "");
             final CloudLabeler cloudLabeler = new CloudLabeler(reflectanceProduct);
             cloudLabeler.processStepOne();
-                       
+
             final Band membershipBand = cloudLabeler.getMembershipBand();
             visatApp.openProductSceneView(membershipBand, "");
-            
+
             final DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
             final DockableFrame dockableFrame = new DockableFrame("Cluster Labeling");
-            final ClusterLabelingToolView clusterLabelingView = 
-                new ClusterLabelingToolView(dockableFrame.getKey(), cloudLabeler);
+            final ClusterLabelingToolView clusterLabelingView =
+                    new ClusterLabelingToolView(dockableFrame.getKey(), cloudLabeler);
 
             final AbstractAction closeAction = new AbstractAction() {
                 public void actionPerformed(ActionEvent e) {
