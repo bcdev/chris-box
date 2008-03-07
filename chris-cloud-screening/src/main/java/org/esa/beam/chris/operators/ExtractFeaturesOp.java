@@ -70,6 +70,7 @@ public class ExtractFeaturesOp extends Operator {
     private transient BandInterpolator interpolatorWv;
     private transient double mu;
 
+    @Override
     public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
 

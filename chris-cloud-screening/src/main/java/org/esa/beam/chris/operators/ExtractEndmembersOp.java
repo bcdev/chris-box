@@ -16,7 +16,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.internal.BandFilter;
-import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
+import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -110,7 +110,18 @@ public class ExtractEndmembersOp extends Operator {
         final IndexCoding indexCoding = (IndexCoding) membershipBand.getSampleCoding();
         final String[] labels = indexCoding.getIndexNames();
 
-        final Band[] reflectanceBands = findAbsorptionFreeBands(reflectanceProduct, "reflectance");
+        final BandFilter bandFilter = new ExclusiveMultiBandFilter(new double[][]{
+                {400.0, 440.0},
+                {590.0, 600.0},
+                {630.0, 636.0},
+                {648.0, 658.0},
+                {686.0, 709.0},
+                {792.0, 799.0},
+                {756.0, 775.0},
+                {808.0, 840.0},
+                {885.0, 985.0},
+                {985.0, 1010.0}});
+        final Band[] reflectanceBands = findBands(reflectanceProduct, "reflectance", bandFilter);
         final double[] wavelengths = getSpectralWavelengths(reflectanceBands);
         final Endmember[] endmembers = new Endmember[surfaceClusterIndexes.length + 1];
 
@@ -211,32 +222,19 @@ public class ExtractEndmembersOp extends Operator {
     }
 
     private static Band[] findBands(Product product, String prefix) {
-        final List<Band> bandList = new ArrayList<Band>();
-
-        for (final Band band : product.getBands()) {
-            if (band.getName().startsWith(prefix)) {
-                bandList.add(band);
+        return findBands(product, prefix, new BandFilter() {
+            @Override
+            public boolean accept(Band band) {
+                return true;
             }
-        }
-        return bandList.toArray(new Band[bandList.size()]);
+        });
     }
 
-    private static Band[] findAbsorptionFreeBands(Product product, String prefix) {
-        final BandFilter bandFilter = new InclusiveMultiBandFilter(new double[][]{
-                {400.0, 440.0},
-                {590.0, 600.0},
-                {630.0, 636.0},
-                {648.0, 658.0},
-                {686.0, 709.0},
-                {792.0, 799.0},
-                {756.0, 775.0},
-                {808.0, 840.0},
-                {885.0, 985.0},
-                {985.0, 1010.0}});
+    private static Band[] findBands(Product product, String prefix, BandFilter filter) {
         final List<Band> bandList = new ArrayList<Band>();
 
         for (final Band band : product.getBands()) {
-            if (band.getName().startsWith(prefix) && !bandFilter.accept(band)) {
+            if (band.getName().startsWith(prefix) && filter.accept(band)) {
                 bandList.add(band);
             }
         }
