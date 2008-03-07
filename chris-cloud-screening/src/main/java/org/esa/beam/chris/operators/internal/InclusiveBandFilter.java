@@ -6,7 +6,7 @@ import org.esa.beam.framework.datamodel.Band;
  * New class.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 1411 $ $Date$
  */
 public class InclusiveBandFilter implements BandFilter {
 
@@ -19,9 +19,8 @@ public class InclusiveBandFilter implements BandFilter {
     }
 
     public boolean accept(Band band) {
-        final double lowerBound = band.getSpectralWavelength() - 0.5 * band.getSpectralBandwidth();
-        final double upperBound = band.getSpectralWavelength() + 0.5 * band.getSpectralBandwidth();
+        final double wavelength = band.getSpectralWavelength();
 
-        return lowerBound > minWavelength && upperBound < maxWavelength;
+        return wavelength > minWavelength && wavelength < maxWavelength;
     }
 }

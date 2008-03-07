@@ -5,7 +5,7 @@ import com.jidesoft.docking.DockingManager;
 import org.esa.beam.chris.operators.ExtractEndmembersOp;
 import org.esa.beam.chris.operators.MakeClusterMapOp;
 import org.esa.beam.chris.operators.internal.BandFilter;
-import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
+import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -234,7 +234,7 @@ public class CloudMaskAction extends AbstractVisatAction {
     }
 
     private static String[] findBandNames(Product product, String prefix) {
-        final BandFilter bandFilter = new ExclusiveMultiBandFilter(new double[][]{
+        final BandFilter bandFilter = new InclusiveMultiBandFilter(new double[][]{
                 {400.0, 440.0},
                 {590.0, 600.0},
                 {630.0, 636.0},
