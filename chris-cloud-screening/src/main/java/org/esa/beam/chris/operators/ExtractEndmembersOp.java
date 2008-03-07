@@ -17,6 +17,8 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.SampleCoding;
+import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -56,8 +58,6 @@ public class ExtractEndmembersOp extends Operator {
     private int[] cloudClusterIndexes;
     @Parameter(alias = "surfaceClusterIndexes", notEmpty = true, notNull = true)
     private int[] surfaceClusterIndexes;
-    @Parameter(alias = "surfaceClusterLabels", notEmpty = true, notNull = true)
-    private String[] surfaceClusterLabels;
 
     @TargetProperty
     private Endmember[] endmembers;
@@ -76,16 +76,14 @@ public class ExtractEndmembersOp extends Operator {
      * @param clusterProduct        the cluster product.
      * @param cloudClusterIndexes   the cloud cluster indexes.
      * @param surfaceClusterIndexes the surface cluster indexes.
-     * @param surfaceClusterLabels  the surface cluster labels.
      */
     public ExtractEndmembersOp(Product reflectanceProduct, Product featureProduct, Product clusterProduct,
-                               int[] cloudClusterIndexes, int[] surfaceClusterIndexes, String[] surfaceClusterLabels) {
+                               int[] cloudClusterIndexes, int[] surfaceClusterIndexes) {
         this.reflectanceProduct = reflectanceProduct;
         this.featureProduct = featureProduct;
         this.clusterProduct = clusterProduct;
         this.cloudClusterIndexes = cloudClusterIndexes;
         this.surfaceClusterIndexes = surfaceClusterIndexes;
-        this.surfaceClusterLabels = surfaceClusterLabels;
     }
 
     @Override
@@ -102,10 +100,14 @@ public class ExtractEndmembersOp extends Operator {
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
     }
 
+    // todo - refactor
     private Endmember[] calculateEndmembers(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
         final Band membershipBand = clusterProduct.getBand("membership_mask");
+
+        final IndexCoding indexCoding = (IndexCoding) membershipBand.getSampleCoding();
+        final String[] labels = indexCoding.getIndexNames();
 
         final Band[] reflectanceBands = findBands(reflectanceProduct, "reflectance");
         final double[] wavelengths = getSpectralWavelengths(reflectanceBands);
@@ -174,12 +176,14 @@ public class ExtractEndmembersOp extends Operator {
             }
         }
 
-        for (int k = 0, j = 1; k < probabilityBands.length; ++k) {
+        for (int k = 0, j = 0; k < probabilityBands.length; ++k) {
             if (count[k] > 0) {
                 for (int i = 0; i < reflectanceBands.length; ++i) {
                     meanReflectances[k][i] /= count[k];
                 }
-                endmembers[j] = new Endmember(surfaceClusterLabels[j - 1], wavelengths, meanReflectances[k]);
+                final int index = surfaceClusterIndexes[j];
+                final String label = labels[index];
+                endmembers[j + 1] = new Endmember(label, wavelengths, meanReflectances[k]);
                 ++j;
             }
         }

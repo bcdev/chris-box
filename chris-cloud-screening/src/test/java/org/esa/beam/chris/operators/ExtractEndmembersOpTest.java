@@ -18,6 +18,7 @@ import junit.framework.TestCase;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
@@ -54,8 +55,10 @@ public class ExtractEndmembersOpTest extends TestCase {
         };
         final Product clusterProduct = createClusterProduct(probabilities);
 
+        final int[] cloudIndexes = {1, 4};
+        final int[] surfaceClusterIndexes = {0, 2};
         final ExtractEndmembersOp op = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterProduct,
-                new int[]{1, 4}, new int[]{0, 2}, new String[]{"Erni", "Bert"});
+                cloudIndexes, surfaceClusterIndexes);
 
         final Endmember[] endmembers = (Endmember[]) op.getTargetProperty("endmembers");
 
@@ -118,7 +121,16 @@ public class ExtractEndmembersOpTest extends TestCase {
         for (int i = 0; i < probabilities.length; ++i) {
             addSyntheticBand(clusterProduct, "probability_" + i, probabilities[i]);
         }
-        addSyntheticBand(clusterProduct, "membership_mask", memberships);
+        final Band membershipBand = addSyntheticBand(clusterProduct, "membership_mask", memberships);
+        final IndexCoding indexCoding = new IndexCoding("cluster_classes");
+        indexCoding.addIndex("Erni", 0, "Cluster label");
+        indexCoding.addIndex("Cloud 1", 1, "Cluster label");
+        indexCoding.addIndex("Bert", 2, "Cluster label");
+        indexCoding.addIndex("Background", 3, "Cluster label");
+        indexCoding.addIndex("Cloud 2", 4, "Cluster label");
+
+        clusterProduct.getIndexCodingGroup().add(indexCoding);
+        membershipBand.setSampleCoding(indexCoding);
 
         return clusterProduct;
     }

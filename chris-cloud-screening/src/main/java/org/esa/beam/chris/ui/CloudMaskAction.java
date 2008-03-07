@@ -1,20 +1,28 @@
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.core.ProgressMonitor;
+import com.jidesoft.docking.DockableFrame;
 import com.jidesoft.docking.DockingManager;
 import org.esa.beam.chris.operators.ExtractEndmembersOp;
+import org.esa.beam.chris.operators.MakeClusterMapOp;
+import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.datamodel.ImageInfo;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.operators.common.BandArithmeticOp;
 import org.esa.beam.framework.ui.command.CommandEvent;
+import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
+import javax.swing.AbstractAction;
+import javax.swing.JInternalFrame;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -25,7 +33,12 @@ import java.util.logging.Level;
  * @author Marco Zühlke
  */
 public class CloudMaskAction extends AbstractVisatAction {
+
     private static List<String> CHRIS_TYPES;
+
+    // todo - move
+    private Product reflectanceProduct;
+    private Product featureProduct;
     private Product clusterProduct;
     private Product clusterMapProduct;
 
@@ -43,22 +56,55 @@ public class CloudMaskAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        VisatApp visatApp = VisatApp.getApp();
+        final VisatApp visatApp = VisatApp.getApp();
         try {
-            final Product selectedProduct = visatApp.getSelectedProduct();
-            Product cloudMaskProduct = createCloudMaskProduct(selectedProduct);
-//            VisatApp.getApp().addProduct(clusterProduct);
-            VisatApp.getApp().addProduct(clusterMapProduct);
-            VisatApp.getApp().addProduct(cloudMaskProduct);
-//            visatApp.openProductSceneViewRGB(selectedProduct, "");
-            DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
-//            dockingManager.showFrame("org.esa.beam.visat.toolviews.spectrum.SpectrumToolView");
-            dockingManager.showFrame("org.esa.beam.chris.ui.CloudMaskLabelingToolView");
+            reflectanceProduct = visatApp.getSelectedProduct();
+                       
+            visatApp.openProductSceneViewRGB(reflectanceProduct, "");
+            processStepOne();
+            final Band membershipBand = clusterMapProduct.getBand("membership_mask");
+            visatApp.openProductSceneView(membershipBand, "");
+            final DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
+            final DockableFrame dockableFrame = new DockableFrame("Cluster Labeling");
+
+            final ActionListener labelingAction = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    processLabelingStep(new int[]{0, 8});
+                    final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
+                    final ProductSceneView productSceneView = (ProductSceneView) internalFrame.getContentPane();
+                    visatApp.updateImage(productSceneView);
+                }
+            };
+
+            final ActionListener continueProcessingAction = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    dockingManager.removeFrame(dockableFrame.getKey());
+                    final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
+                    visatApp.getDesktopPane().closeFrame(internalFrame);
+                    processLabelingStep(new int[]{0, 8});
+                    final Product cloudMaskProduct = processStepTwo(new int[]{9, 10, 12}, new int[]{1, 2, 3, 4, 5, 6, 7, 11, 13});
+                    visatApp.addProduct(cloudMaskProduct);
+                }
+            };
+//            ImageInfo imageInfo = membershipBand.getImageInfo();
+            ImageInfo imageInfo = null;
+            final ClusterLabelingToolView clusterLabelingToolView = new ClusterLabelingToolView(imageInfo,
+                    labelingAction,
+                    continueProcessingAction);
+
+            final AbstractAction closeAction = new AbstractAction() {
+                public void actionPerformed(ActionEvent e) {
+                    dockingManager.removeFrame(dockableFrame.getKey());
+                }
+            };
+            dockableFrame.setCloseAction(closeAction);
+            dockableFrame.setContentPane(clusterLabelingToolView.getControl());
+            dockingManager.addFrame(dockableFrame);
+            dockingManager.showFrame(dockableFrame.getKey());
         } catch (OperatorException e) {
             VisatApp.getApp().showErrorDialog(e.getMessage());
             VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
         }
-
     }
 
     @Override
@@ -70,46 +116,46 @@ public class CloudMaskAction extends AbstractVisatAction {
         setEnabled(enabled);
     }
 
-    private Product createCloudMaskProduct(Product reflectanceProduct) throws OperatorException {
-        final int[] backgroundIndexes = {0, 8};
-        final int[] cloudClusterIndexes = {9, 10, 12};
-        final int[] surfaceClusterIndexes = {1, 2, 3, 4, 5, 6, 7, 11, 13};
-        final String[] surfaceClusterLabels = {"1", "2", "3", "4", "5", "6", "7", "11", "13"};
 
+    private void processStepOne() throws OperatorException {
         // 1. Extract features
-        final Product featureProduct = createFeatureProduct(reflectanceProduct);
+        featureProduct = createFeatureProduct(reflectanceProduct);
 
         // 2. Find clusters
         clusterProduct = createClusterProduct(featureProduct);
 
         // 3. Cluster labeling
+        final int[] backgroundIndexes = new int[0];
         clusterMapProduct = createClusterMapProduct(clusterProduct, backgroundIndexes);
+    }
 
-// simulates GUI labeling        
-//        for (Band band : clusterMapProduct.getBands()) {
-//            if (band.getName().startsWith("prob")) {
-//                final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
-//                probBand.update(backgroundIndexes);
-//            }
-//        }
-//        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) clusterMapProduct.getBand("membership_mask");
-//        membershipBand.update();
+    private void processLabelingStep(int[] backgroundIndexes) throws OperatorException {
+        for (Band band : clusterMapProduct.getBands()) {
+            if (band.getName().startsWith("prob")) {
+                final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
+                probBand.update(backgroundIndexes);
+            }
+        }
+        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) clusterMapProduct.getBand("membership_mask");
+        membershipBand.update();
+    }
+
+    private Product processStepTwo(int[] cloudClusterIndexes, int[] surfaceClusterIndexes) throws OperatorException {
 
         // 4. Cluster probabilities
         final Product cloudProbabilityProduct = createCloudProbabilityProduct(cloudClusterIndexes, clusterMapProduct);
 
         // 5. Endmember extraction
         final ExtractEndmembersOp endmemberOp = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterMapProduct, cloudClusterIndexes,
-                surfaceClusterIndexes, surfaceClusterLabels);
+                surfaceClusterIndexes);
         final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
 
         // 6. Cloud abundances
         final Product cloudAbundancesProduct = createCloudAbundancesProduct(reflectanceProduct, endmembers);
 
         // 7. Cloud probability * cloud abundance
-        final Product cloudMaskProduct = createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
 
-        return cloudMaskProduct;
+        return createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
     }
 
     private Product createCloudMaskProduct(Product cloudProbabilityProduct, Product cloudAbundancesProduct) {
