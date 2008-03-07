@@ -63,10 +63,6 @@ public class ClusterLabelingToolView extends AbstractToolView {
         visatApp = VisatApp.getApp();
     }
 
-    public LabelTableModel getTableModel() {
-        return tableModel;
-    }
-
     @Override
     protected JComponent createControl() {
 
@@ -107,10 +103,9 @@ public class ClusterLabelingToolView extends AbstractToolView {
     }
     
     private void applyLabeling() {
-        final ClusterLabelingToolView.LabelTableModel labelTableModel = getTableModel();
         Band membershipBand = cloudLabeler.getMembershipBand();
-        membershipBand.setImageInfo(labelTableModel.getImageInfo().createDeepCopy());
-        cloudLabeler.processLabelingStep(labelTableModel.getBackgroundIndexes());
+        membershipBand.setImageInfo(tableModel.getImageInfo().createDeepCopy());
+        cloudLabeler.processLabelingStep(tableModel.getBackgroundIndexes());
         final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
         final ProductSceneView productSceneView = (ProductSceneView) internalFrame.getContentPane();
         visatApp.updateImage(productSceneView);
@@ -122,10 +117,9 @@ public class ClusterLabelingToolView extends AbstractToolView {
         Band membershipBand = cloudLabeler.getMembershipBand();
         final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
         visatApp.getDesktopPane().closeFrame(internalFrame);
-        final ClusterLabelingToolView.LabelTableModel labelTableModel = getTableModel();
-        cloudLabeler.processLabelingStep(labelTableModel.getBackgroundIndexes());
-        final int[] cloudClusterIndexes = labelTableModel.getCloudIndexes();
-        final int[] surfaceClusterIndexes = labelTableModel.getSurfaceIndexes();
+        cloudLabeler.processLabelingStep(tableModel.getBackgroundIndexes());
+        final int[] cloudClusterIndexes = tableModel.getCloudIndexes();
+        final int[] surfaceClusterIndexes = tableModel.getSurfaceIndexes();
         final Product cloudMaskProduct = cloudLabeler.processStepTwo(cloudClusterIndexes, surfaceClusterIndexes);
         visatApp.addProduct(cloudMaskProduct);
     }
