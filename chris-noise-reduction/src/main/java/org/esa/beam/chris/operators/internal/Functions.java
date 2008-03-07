@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: Functions.java 1378 2007-11-14 15:32:24Z ralf $
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *

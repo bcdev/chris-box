@@ -16,7 +16,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.internal.BandFilter;
-import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
+import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -222,7 +222,7 @@ public class ExtractEndmembersOp extends Operator {
     }
 
     private static Band[] findAbsorptionFreeBands(Product product, String prefix) {
-        final BandFilter bandFilter = new InclusiveMultiBandFilter(new double[][]{
+        final BandFilter bandFilter = new ExclusiveMultiBandFilter(new double[][]{
                 {400.0, 440.0},
                 {590.0, 600.0},
                 {630.0, 636.0},

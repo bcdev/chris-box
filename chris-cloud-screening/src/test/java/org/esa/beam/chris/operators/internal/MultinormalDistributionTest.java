@@ -21,7 +21,7 @@ import static java.lang.Math.*;
  * Tests for class {@link MultinormalDistribution}.
  *
  * @author Ralf Quast
- * @version $Revision: 1412 $ $Date: 2007-11-24 02:18:27 +0100 (Sa, 24 Nov 2007) $
+ * @version $Revision$ $Date$
  */
 public class MultinormalDistributionTest extends TestCase {
 

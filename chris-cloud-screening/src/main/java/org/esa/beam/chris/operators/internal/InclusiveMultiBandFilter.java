@@ -17,10 +17,11 @@ public class InclusiveMultiBandFilter implements BandFilter {
     }
 
     public boolean accept(Band band) {
-        final float wavelength = band.getSpectralWavelength();
+        final double lowerBound = band.getSpectralWavelength() - 0.5 * band.getSpectralBandwidth();
+        final double upperBound = band.getSpectralWavelength() + 0.5 * band.getSpectralBandwidth();
 
         for (final double[] interval : wavelengthIntervals) {
-            if (wavelength > interval[0] && wavelength < interval[1]) {
+            if (lowerBound > interval[0] && upperBound < interval[1]) {
                 return true;
             }
         }

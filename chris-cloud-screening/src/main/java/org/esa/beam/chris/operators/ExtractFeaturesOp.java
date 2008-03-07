@@ -211,8 +211,8 @@ public class ExtractFeaturesOp extends Operator {
         final List<Band> visBandList = new ArrayList<Band>();
         final List<Band> nirBandList = new ArrayList<Band>();
 
-        final BandFilter visBandFilter = new InclusiveBandFilter(400.0, 700.0);
-        final BandFilter absBandFilter = new InclusiveMultiBandFilter(new double[][]{
+        final BandFilter visBandFilter = new ExclusiveBandFilter(400.0, 700.0);
+        final BandFilter absBandFilter = new ExclusiveMultiBandFilter(new double[][]{
                 {400.0, 440.0},
                 {590.0, 600.0},
                 {630.0, 636.0},
@@ -514,11 +514,11 @@ public class ExtractFeaturesOp extends Operator {
         private final double interpolationWeight;
 
         public BandInterpolator(Band[] bands, double[] wavelengths) {
-            innerBand = findProximateBand(bands, wavelengths[0], new ExclusiveBandFilter(wavelengths[1],
+            innerBand = findProximateBand(bands, wavelengths[0], new InclusiveBandFilter(wavelengths[1],
                     wavelengths[2]));
 
-            infBands = findBands(bands, new ExclusiveBandFilter(wavelengths[3], wavelengths[4]));
-            supBands = findBands(bands, new ExclusiveBandFilter(wavelengths[5], wavelengths[6]));
+            infBands = findBands(bands, new InclusiveBandFilter(wavelengths[3], wavelengths[4]));
+            supBands = findBands(bands, new InclusiveBandFilter(wavelengths[5], wavelengths[6]));
 
             if (innerBand == null) {
                 throw new OperatorException(MessageFormat.format(

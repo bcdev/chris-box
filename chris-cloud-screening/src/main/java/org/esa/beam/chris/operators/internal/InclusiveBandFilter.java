@@ -19,8 +19,9 @@ public class InclusiveBandFilter implements BandFilter {
     }
 
     public boolean accept(Band band) {
-        final double wavelength = band.getSpectralWavelength();
+        final double lowerBound = band.getSpectralWavelength() - 0.5 * band.getSpectralBandwidth();
+        final double upperBound = band.getSpectralWavelength() + 0.5 * band.getSpectralBandwidth();
 
-        return wavelength > minWavelength && wavelength < maxWavelength;
+        return lowerBound > minWavelength && upperBound < maxWavelength;
     }
 }

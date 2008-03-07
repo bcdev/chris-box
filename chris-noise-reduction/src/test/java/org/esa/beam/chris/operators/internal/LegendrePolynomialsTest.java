@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: LegendrePolynomialsTest.java 1226 2007-11-01 12:51:59Z ralf $
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
