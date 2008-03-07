@@ -14,21 +14,32 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.jidesoft.grid.ColorCellEditor;
-import com.jidesoft.grid.ColorCellRenderer;
-import org.esa.beam.framework.datamodel.ColorPaletteDef;
-import org.esa.beam.framework.datamodel.ImageInfo;
-import org.esa.beam.framework.ui.application.support.AbstractToolView;
-
-import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
-import java.util.List;
-import java.util.ArrayList;
-import java.lang.reflect.Array;
+
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+
+import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.ColorPaletteDef;
+import org.esa.beam.framework.datamodel.ImageInfo;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.ui.application.support.AbstractToolView;
+import org.esa.beam.framework.ui.product.ProductSceneView;
+import org.esa.beam.visat.VisatApp;
+
+import com.jidesoft.docking.DockingManager;
+import com.jidesoft.grid.ColorCellEditor;
+import com.jidesoft.grid.ColorCellRenderer;
 
 /**
  * Cluster labeling tool view.
@@ -40,22 +51,16 @@ import java.lang.reflect.Array;
  */
 public class ClusterLabelingToolView extends AbstractToolView {
 
-    private ActionListener labelingAction;
-    private ActionListener computeAction;
-    private ImageInfo imageInfo;
+    private final CloudLabeler cloudLabeler;
+    private final VisatApp visatApp;
+    private final String viewKey;
+    
     private LabelTableModel tableModel;
 
-
-    public ClusterLabelingToolView(ImageInfo imageInfo) {
-        this.imageInfo = imageInfo;
-    }
-
-    public void setLabelingAction(ActionListener labelingAction) {
-        this.labelingAction = labelingAction;
-    }
-
-    public void setComputeAction(ActionListener computeAction) {
-        this.computeAction = computeAction;
+    public ClusterLabelingToolView(String viewKey, CloudLabeler cloudLabeler) {
+        this.viewKey = viewKey;
+        this.cloudLabeler = cloudLabeler;
+        visatApp = VisatApp.getApp();
     }
 
     public LabelTableModel getTableModel() {
@@ -70,14 +75,22 @@ public class ClusterLabelingToolView extends AbstractToolView {
         final JButton applyLabelingButton = new JButton("Apply Labeling");
         final JButton continueProcessingButton = new JButton("Continue Processing");
 
-        applyLabelingButton.addActionListener(labelingAction);
-        continueProcessingButton.addActionListener(computeAction);
+        applyLabelingButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                applyLabeling();
+            }
+        });
+        continueProcessingButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                computeCloudMask();
+            }
+        });
 
         final JPanel panel = new JPanel();
         panel.add(applyLabelingButton);
         panel.add(continueProcessingButton);
 
-        tableModel = new LabelTableModel(imageInfo);
+        tableModel = new LabelTableModel(cloudLabeler.getMembershipBand().getImageInfo());
         final JTable jTable = new JTable(tableModel);
         jTable.setDefaultRenderer(Double.class, new PercentageRenderer());
         final ColorCellRenderer colorCellRenderer = new ColorCellRenderer();
@@ -91,6 +104,30 @@ public class ClusterLabelingToolView extends AbstractToolView {
         panel.add(tableScrollPane);
 
         return panel;
+    }
+    
+    private void applyLabeling() {
+        final ClusterLabelingToolView.LabelTableModel labelTableModel = getTableModel();
+        Band membershipBand = cloudLabeler.getMembershipBand();
+        membershipBand.setImageInfo(labelTableModel.getImageInfo().createDeepCopy());
+        cloudLabeler.processLabelingStep(labelTableModel.getBackgroundIndexes());
+        final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
+        final ProductSceneView productSceneView = (ProductSceneView) internalFrame.getContentPane();
+        visatApp.updateImage(productSceneView);
+    }
+    
+    private void computeCloudMask() {
+        DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
+        dockingManager.removeFrame(viewKey);
+        Band membershipBand = cloudLabeler.getMembershipBand();
+        final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
+        visatApp.getDesktopPane().closeFrame(internalFrame);
+        final ClusterLabelingToolView.LabelTableModel labelTableModel = getTableModel();
+        cloudLabeler.processLabelingStep(labelTableModel.getBackgroundIndexes());
+        final int[] cloudClusterIndexes = labelTableModel.getCloudIndexes();
+        final int[] surfaceClusterIndexes = labelTableModel.getSurfaceIndexes();
+        final Product cloudMaskProduct = cloudLabeler.processStepTwo(cloudClusterIndexes, surfaceClusterIndexes);
+        visatApp.addProduct(cloudMaskProduct);
     }
 
     private static class PercentageRenderer extends DefaultTableCellRenderer {
@@ -131,15 +168,6 @@ public class ClusterLabelingToolView extends AbstractToolView {
             return imageInfo;
         }
 
-        // used ????
-//        public void setImageInfo(ImageInfo imageInfo) {
-//            this.imageInfo = imageInfo;
-//            final int numPoints = imageInfo.getColorPaletteDef().getNumPoints();
-//            cloud = new boolean[numPoints];
-//            background = new boolean[numPoints];
-//            fireTableDataChanged();
-//        }
-
         public int[] getBackgroundIndexes() {
             return getSetIndexes(background);
         }
@@ -169,7 +197,6 @@ public class ClusterLabelingToolView extends AbstractToolView {
             }
             return getSetIndexes(surface);
         }
-
 
         @Override
         public String getColumnName(int columnIndex) {
@@ -238,7 +265,5 @@ public class ClusterLabelingToolView extends AbstractToolView {
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex >= 0 && columnIndex <= 3;
         }
-
     }
-
 }
