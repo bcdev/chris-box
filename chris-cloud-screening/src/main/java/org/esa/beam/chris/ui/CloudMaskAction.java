@@ -4,6 +4,9 @@ import com.jidesoft.docking.DockableFrame;
 import com.jidesoft.docking.DockingManager;
 import org.esa.beam.chris.operators.ExtractEndmembersOp;
 import org.esa.beam.chris.operators.MakeClusterMapOp;
+import org.esa.beam.chris.operators.internal.BandFilter;
+import org.esa.beam.chris.operators.internal.InclusiveBandFilter;
+import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -67,30 +70,36 @@ public class CloudMaskAction extends AbstractVisatAction {
             final DockingManager dockingManager = visatApp.getMainFrame().getDockingManager();
             final DockableFrame dockableFrame = new DockableFrame("Cluster Labeling");
 
+            final ImageInfo imageInfo = membershipBand.getImageInfo();
+            final ClusterLabelingToolView clusterLabelingToolView = new ClusterLabelingToolView(imageInfo);
+
             final ActionListener labelingAction = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    processLabelingStep(new int[]{0, 8});
+                    final ClusterLabelingToolView.LabelTableModel labelTableModel = clusterLabelingToolView.getTableModel();
+                    membershipBand.setImageInfo(labelTableModel.getImageInfo().createDeepCopy());
+                    processLabelingStep(labelTableModel.getBackgroundIndexes());
                     final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
                     final ProductSceneView productSceneView = (ProductSceneView) internalFrame.getContentPane();
                     visatApp.updateImage(productSceneView);
                 }
             };
+            clusterLabelingToolView.setLabelingAction(labelingAction);
 
             final ActionListener continueProcessingAction = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     dockingManager.removeFrame(dockableFrame.getKey());
                     final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
                     visatApp.getDesktopPane().closeFrame(internalFrame);
-                    processLabelingStep(new int[]{0, 8});
-                    final Product cloudMaskProduct = processStepTwo(new int[]{9, 10, 12}, new int[]{1, 2, 3, 4, 5, 6, 7, 11, 13});
+
+                    final ClusterLabelingToolView.LabelTableModel labelTableModel = clusterLabelingToolView.getTableModel();
+                    processLabelingStep(labelTableModel.getBackgroundIndexes());
+                    final int[] cloudClusterIndexes = labelTableModel.getCloudIndexes();
+                    final int[] surfaceClusterIndexes = labelTableModel.getSurfaceIndexes();
+                    final Product cloudMaskProduct = processStepTwo(cloudClusterIndexes, surfaceClusterIndexes);
                     visatApp.addProduct(cloudMaskProduct);
                 }
             };
-//            ImageInfo imageInfo = membershipBand.getImageInfo();
-            ImageInfo imageInfo = null;
-            final ClusterLabelingToolView clusterLabelingToolView = new ClusterLabelingToolView(imageInfo,
-                    labelingAction,
-                    continueProcessingAction);
+            clusterLabelingToolView.setComputeAction(continueProcessingAction);
 
             final AbstractAction closeAction = new AbstractAction() {
                 public void actionPerformed(ActionEvent e) {
@@ -225,6 +234,29 @@ public class CloudMaskAction extends AbstractVisatAction {
                 featureProduct);
     }
 
+    private static String[] findBandNames(Product product, String prefix) {
+        final BandFilter bandFilter = new InclusiveMultiBandFilter(new double[][]{
+                {400.0, 440.0},
+                {590.0, 600.0},
+                {630.0, 636.0},
+                {648.0, 658.0},
+                {686.0, 709.0},
+                {792.0, 799.0},
+                {756.0, 775.0},
+                {808.0, 840.0},
+                {885.0, 985.0},
+                {985.0, 1010.0}});
+        final List<String> nameList = new ArrayList<String>();
+
+        for (final Band band : product.getBands()) {
+            if (band.getName().startsWith(prefix) && !bandFilter.accept(band)) {
+                nameList.add(band.getName());
+            }
+        }
+
+        return nameList.toArray(new String[nameList.size()]);
+    }
+
     private Product createFeatureProduct(Product reflectanceProduct) {
         final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
         return GPF.createProduct("chris.ExtractFeatures",
@@ -232,16 +264,16 @@ public class CloudMaskAction extends AbstractVisatAction {
                 reflectanceProduct);
     }
 
-    private static String[] findBandNames(Product product, String prefix) {
-        final List<String> bandList = new ArrayList<String>();
-
-        for (final String bandName : product.getBandNames()) {
-            if (bandName.startsWith(prefix)) {
-                bandList.add(bandName);
-            }
-        }
-        return bandList.toArray(new String[bandList.size()]);
-    }
+//    private static String[] findBandNames(Product product, String prefix) {
+//        final List<String> bandList = new ArrayList<String>();
+//
+//        for (final String bandName : product.getBandNames()) {
+//            if (bandName.startsWith(prefix)) {
+//                bandList.add(bandName);
+//            }
+//        }
+//        return bandList.toArray(new String[bandList.size()]);
+//    }
 
     private static boolean isContained(int index, int[] indexes) {
         for (int i : indexes) {
