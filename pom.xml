@@ -29,6 +29,7 @@
         <module>chris-geometric-correction</module>
         <module>chris-noise-reduction</module>
         <module>chris-reflectance-computation</module>
+        <module>chris-aod</module>
     </modules>
 
     <dependencyManagement>
