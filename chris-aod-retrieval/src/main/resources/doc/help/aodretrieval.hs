@@ -4,7 +4,7 @@
         "http://java.sun.com/products/javahelp/helpset_2_0.dtd">
 
 <helpset version="2.0">
-    <title>CHRIS/PROBA Aerosol Optical Depth Calculation Tool Help</title>
+    <title>CHRIS/PROBA Aerosol Optical Depth Retrieval Tool Help</title>
     <maps>
         <homeID>top</homeID>
         <mapref location="map.jhm"/>

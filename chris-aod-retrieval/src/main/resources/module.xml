@@ -1,9 +1,9 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
-    <symbolicName>chris-aod</symbolicName>
+    <symbolicName>chris-aod-retrieval</symbolicName>
     <version>1.0-SNAPSHOT</version>
-    <name>CHRIS/PROBA Aerosol Optical Depth</name>
-    <description>CHRIS/PROBA Aerosol Optical Depth Calculation Tool</description>
+    <name>CHRIS/PROBA Aerosol Optical Depth Retrieval</name>
+    <description>CHRIS/PROBA Aerosol Optical Depth Retrieval Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -42,12 +42,12 @@
         </action>
         <action>
             <id>chrisAOD</id>
-            <class>org.esa.beam.chris.ui.PerformAODAction</class>
+            <class>org.esa.beam.chris.ui.PerformAodRetrieval</class>
             <text>Perform AOD Calculation...</text>
-            <shortDescr>Perfoms the calculation of the Aerosol Optical Depth for the selected CHRIS/PROBA product</shortDescr>
+            <shortDescr>Retrieves the Aerosol Optical Depth for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisAODTool</helpID>
+            <helpID>chrisAodRetrievalTool</helpID>
             <placeAfter>chrisAtmosphericCorrection</placeAfter>
         </action>
     </extension>
@@ -55,7 +55,7 @@
     <extension point="beam-ui:helpSets">
         <helpSet>
             <parent>beam-help</parent>
-            <path>doc/help/aod.hs</path>
+            <path>doc/help/aodretrieval.hs</path>
         </helpSet>
     </extension>
 

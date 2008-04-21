@@ -12,10 +12,10 @@
     <packaging>jar</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
-    <artifactId>chris-aod</artifactId>
-    <name>CHRIS/PROBA Aerosol Optical Depth</name>
+    <artifactId>chris-aod-retrieval</artifactId>
+    <name>CHRIS/PROBA Aerosol Optical Depth Retrieval</name>
     <version>1.0-SNAPSHOT</version>
-    <description>CHRIS/PROBA Aerosol Optical Depth Calculation Tool</description>
+    <description>CHRIS/PROBA Aerosol Optical Depth Retrieval Tool</description>
 
     <dependencies>
         <dependency>
