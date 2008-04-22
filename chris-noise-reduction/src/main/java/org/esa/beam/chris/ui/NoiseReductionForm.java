@@ -3,14 +3,28 @@ package org.esa.beam.chris.ui;
 import com.jidesoft.grid.BooleanCheckBoxCellEditor;
 import com.jidesoft.grid.BooleanCheckBoxCellRenderer;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.ui.TargetProductSelector;
+import org.esa.beam.framework.gpf.ui.TargetProductSelectorModel;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.CellEditorListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.EventObject;
 
 /**
@@ -28,6 +42,8 @@ class NoiseReductionForm extends JPanel {
     private JButton addButton;
     private JButton removeButton;
 
+    private TargetProductSelector targetProductSelector;
+
     private JButton advancedSettingsButton;
 
     /**
@@ -36,6 +52,10 @@ class NoiseReductionForm extends JPanel {
     public NoiseReductionForm(NoiseReductionPresenter presenter) {
         initComponents();
         bindComponents(presenter);
+    }
+
+    public TargetProductSelectorModel getTargetProductSelectorModel() {
+        return targetProductSelector.getModel();
     }
 
     private void bindComponents(NoiseReductionPresenter presenter) {
@@ -125,6 +145,9 @@ class NoiseReductionForm extends JPanel {
         JPanel metadataPanel = new JPanel();
         metadataTable = new JTable();
         metadataTable.setName("metadataTable");
+
+        targetProductSelector = new TargetProductSelector();
+
         advancedSettingsButton = new JButton();
         advancedSettingsButton.setName("advancedSettingsButton");
 
@@ -192,7 +215,8 @@ class NoiseReductionForm extends JPanel {
 
         dataPanel.add(metadataPanel, BorderLayout.SOUTH);
 
-        add(dataPanel, BorderLayout.CENTER);
+        add(dataPanel, BorderLayout.NORTH);
+        add(targetProductSelector.createDefaultPanel(), BorderLayout.CENTER);
 
         JPanel settingsButtonPanel = new JPanel(new GridBagLayout());
         gridBagConstraints.gridx = 0;
