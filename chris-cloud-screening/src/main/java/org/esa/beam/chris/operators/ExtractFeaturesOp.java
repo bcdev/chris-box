@@ -45,7 +45,7 @@ public class ExtractFeaturesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
 
-    @SourceProduct(alias = "source")
+    @SourceProduct(alias = "source", type = "CHRIS_M[15]_REFL")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
@@ -150,7 +150,7 @@ public class ExtractFeaturesOp extends Operator {
     }
 
     private static Band[] getReflectanceBands(Band[] bands) {
-        final List<Band> reflectanceBandList = new ArrayList<Band>();
+        final List<Band> reflectanceBandList = new ArrayList<Band>(bands.length);
         for (final Band band : bands) {
             if (band.getName().startsWith("reflectance")) {
                 reflectanceBandList.add(band);
@@ -208,9 +208,9 @@ public class ExtractFeaturesOp extends Operator {
     }
 
     private void categorizeBands(Band[] bands) {
-        final List<Band> surfaceBandList = new ArrayList<Band>();
-        final List<Band> visBandList = new ArrayList<Band>();
-        final List<Band> nirBandList = new ArrayList<Band>();
+        final List<Band> surfaceBandList = new ArrayList<Band>(bands.length);
+        final List<Band> visBandList = new ArrayList<Band>(bands.length);
+        final List<Band> nirBandList = new ArrayList<Band>(bands.length);
 
         final BandFilter visBandFilter = new InclusiveBandFilter(400.0, 700.0);
         final BandFilter absBandFilter = new InclusiveMultiBandFilter(new double[][]{
@@ -334,7 +334,7 @@ public class ExtractFeaturesOp extends Operator {
     }
 
     private static double[] getSamples(int x, int y, Tile[] tiles) {
-        final double samples[] = new double[tiles.length];
+        final double[] samples = new double[tiles.length];
 
         for (int i = 0; i < samples.length; i++) {
             samples[i] = tiles[i].getSampleDouble(x, y);
