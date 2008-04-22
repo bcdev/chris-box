@@ -36,7 +36,7 @@ public interface MvFunction {
      *@exception  java.lang.UnsupportedOperationException  Description of
      *      Exception
      */
-    void g(double[] x, double[] g) throws java.lang.UnsupportedOperationException;
+//    void g(double[] x, double[] g) throws java.lang.UnsupportedOperationException;
 }
 
 
