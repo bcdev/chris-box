@@ -216,6 +216,8 @@ class NoiseReductionForm extends JPanel {
         dataPanel.add(metadataPanel, BorderLayout.SOUTH);
 
         add(dataPanel, BorderLayout.NORTH);
+        targetProductSelector.getSaveToFileCheckBox().setSelected(true);
+        targetProductSelector.getSaveToFileCheckBox().setEnabled(false);
         add(targetProductSelector.createDefaultPanel(), BorderLayout.CENTER);
 
         JPanel settingsButtonPanel = new JPanel(new GridBagLayout());
