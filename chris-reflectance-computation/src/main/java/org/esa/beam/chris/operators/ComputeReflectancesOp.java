@@ -40,7 +40,7 @@ public class ComputeReflectancesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
 
-    @SourceProduct(alias = "input")
+    @SourceProduct(alias = "input", type = "CHRIS_M[1-5][A0]?_NR")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
@@ -189,7 +189,7 @@ public class ComputeReflectancesOp extends Operator {
     }
 
     static void assertValidity(Product product) {
-        if (!product.getProductType().matches("CHRIS_M[1-5]A?_NR")) {
+        if (!product.getProductType().matches("CHRIS_M[1-5][A0]?_NR")) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not of appropriate type", product.getName()));
         }

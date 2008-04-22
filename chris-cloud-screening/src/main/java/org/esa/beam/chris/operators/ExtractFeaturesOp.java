@@ -45,7 +45,7 @@ public class ExtractFeaturesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
 
-    @SourceProduct(alias = "source", type = "CHRIS_M[15]_REFL")
+    @SourceProduct(alias = "source", type = "CHRIS_M[1-5][A0]?_REFL")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
@@ -60,7 +60,7 @@ public class ExtractFeaturesOp extends Operator {
     private transient Band wv;
 
     private transient Band[] surfaceBands;
-    private transient Band[] visBands;
+    private transient Band[] visBands;      
     private transient Band[] nirBands;
 
     private transient boolean canComputeAtmosphericFeatures;
@@ -397,7 +397,7 @@ public class ExtractFeaturesOp extends Operator {
     }
 
     static void assertValidity(Product product) {
-        if (!product.getProductType().matches("CHRIS_M[1-5]A?_REFL")) {
+        if (!product.getProductType().matches("CHRIS_M[1-5][A0]?_REFL")) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not of appropriate type", product.getName()));
         }
