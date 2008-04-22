@@ -29,7 +29,7 @@ import java.awt.image.WritableRaster;
 import java.util.Vector;
 
 /**
- * todo - API doc
+ * Creates a cluster map.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
