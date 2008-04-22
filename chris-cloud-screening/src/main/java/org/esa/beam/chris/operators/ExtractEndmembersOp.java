@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * todo - API doc
+ * Extracts endmembers for calculating cloud abundances.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
