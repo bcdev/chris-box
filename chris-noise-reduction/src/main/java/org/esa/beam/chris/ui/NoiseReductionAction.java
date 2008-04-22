@@ -156,26 +156,10 @@ public class NoiseReductionAction extends AbstractVisatAction {
         getAppContext().getPreferences().setPropertyString(BasicApp.PROPERTY_KEY_APP_LAST_SAVE_DIR, productDir);
 
         final Product[] sourceProducts = presenter.getCheckedProducts();
-//
         final File[] targetProductFiles = new File[sourceProducts.length];
-//        List<String> existingFilePaths = new ArrayList<String>(7);
         for (int i = 0; i < sourceProducts.length; ++i) {
             targetProductFiles[i] = createTargetProductFile(productSelectorModel, sourceProducts[i].getName());
-//            if (targetProductFiles[i].exists()) {
-//                existingFilePaths.add(targetProductFiles[i].getAbsolutePath());
-//            }
         }
-//        if (!existingFilePaths.isEmpty()) {
-//            String fileList = StringUtils.arrayToString(existingFilePaths.toArray(new String[existingFilePaths.size()]), "\n");
-//            String message = "The specified output file(s)\n{0}\nalready exists.\n\n" +
-//                    "Do you want to overwrite the existing file(s)?";
-//            String formatedMessage = MessageFormat.format(message, fileList);
-//            final int answer = JOptionPane.showConfirmDialog(null, formatedMessage,
-//                    DIALOG_TITLE, JOptionPane.YES_NO_OPTION);
-//            if (answer != JOptionPane.YES_OPTION) {
-//                return;
-//            }
-//        }
 
         final Map<String, Object> parameterMap = presenter.getDropoutCorrectionParameterMap();
         new NoiseReductionSwingWorker(sourceProducts, presenter.getDestripingParameterMap(), parameterMap, targetProductFiles, productSelectorModel.getFormatName(), productSelectorModel.isSaveToFileSelected(),
