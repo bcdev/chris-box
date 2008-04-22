@@ -29,6 +29,7 @@ import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
+import org.esa.beam.util.SystemUtils;
 
 import javax.swing.JOptionPane;
 import java.io.File;
@@ -66,7 +67,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
+        final Product selectedProduct = getAppContext().getSelectedProduct();
         final Product[] acquisitionSet = getAcquisitionSet(selectedProduct);
 
         final NoiseReductionPresenter presenter =
@@ -79,6 +80,10 @@ public class NoiseReductionAction extends AbstractVisatAction {
         final NoiseReductionForm noiseReductionForm = new NoiseReductionForm(presenter);
         dialog.setContent(noiseReductionForm);
         final TargetProductSelectorModel targetProductSelectorModel = noiseReductionForm.getTargetProductSelectorModel();
+        String homeDirPath = SystemUtils.getUserHomeDir().getPath();
+        String saveDir = getAppContext().getPreferences().getPropertyString(BasicApp.PROPERTY_KEY_APP_LAST_SAVE_DIR, homeDirPath);
+        targetProductSelectorModel.setProductDir(new File(saveDir));
+
         targetProductSelectorModel.setProductName("${source}_NR");
 
         if (dialog.show() == ModalDialog.ID_OK) {
