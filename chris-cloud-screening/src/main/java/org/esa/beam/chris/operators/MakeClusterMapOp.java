@@ -123,6 +123,14 @@ public class MakeClusterMapOp extends Operator {
 
         public void update() {
             setImage(ClusterMapOpImage.create(this, sourceBands));
+            // todo - remove this later, we don't want buffers anymore!
+            if (hasRasterData()) {
+                try {
+                    readRasterDataFully();
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         }
 
         @Override
@@ -150,6 +158,14 @@ public class MakeClusterMapOp extends Operator {
         // todo - generify or remove parameter in order to make this an interface method
         public void update(int[] backgroundBandIndexes) {
             setImage(ClusterProbabilityOpImage.create(this, sourceBands, correspondingBandIndex, backgroundBandIndexes));
+            // todo - remove this later, we don't want buffers anymore!
+            if (hasRasterData()) {
+                try {
+                    readRasterDataFully();
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         }
 
         @Override

@@ -16,11 +16,6 @@
  */
 package org.esa.beam.chris.ui;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.esa.beam.chris.operators.ExtractEndmembersOp;
 import org.esa.beam.chris.operators.MakeClusterMapOp;
 import org.esa.beam.chris.operators.internal.BandFilter;
@@ -35,6 +30,11 @@ import org.esa.beam.framework.gpf.operators.common.BandArithmeticOp;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by marcoz.
  *
@@ -42,20 +42,24 @@ import org.esa.beam.unmixing.SpectralUnmixingOp;
  * @version $Revision: $ $Date: $
  */
 public class CloudLabeler {
-    
+
     private final Product reflectanceProduct;
     private Product featureProduct;
     private Product clusterProduct;
     private Product clusterMapProduct;
+    private int[] cloudClusterIndexes;
+    private int[] backgroundClusterIndexes;
+    private int[] surfaceClusterIndexes;
+    private boolean computeAbundances;
 
     public CloudLabeler(Product reflectanceProduct) {
         this.reflectanceProduct = reflectanceProduct;
     }
-    
+
     public Band getMembershipBand() {
         return clusterMapProduct.getBand("membership_mask");
     }
-    
+
     public void processStepOne() throws OperatorException {
         // 1. Extract features
         featureProduct = createFeatureProduct();
@@ -67,7 +71,7 @@ public class CloudLabeler {
         final int[] backgroundIndexes = new int[0];
         clusterMapProduct = createClusterMapProduct(backgroundIndexes);
     }
-    
+
     public void processLabelingStep(int[] backgroundIndexes) throws OperatorException {
         for (Band band : clusterMapProduct.getBands()) {
             if (band.getName().startsWith("prob")) {
@@ -79,28 +83,50 @@ public class CloudLabeler {
         membershipBand.update();
     }
 
-    public Product processStepTwo(int[] cloudClusterIndexes, int[] surfaceClusterIndexes) throws OperatorException {
+    public int[] getCloudClusterIndexes() {
+        return cloudClusterIndexes;
+    }
+
+    public int[] getSurfaceClusterIndexes() {
+        return surfaceClusterIndexes;
+    }
+
+    public int[] getBackgroundClusterIndexes() {
+        return backgroundClusterIndexes;
+    }
+
+    public boolean getComputeAbundances() {
+        return computeAbundances;
+    }
+
+    public Product processStepTwo(int[] cloudClusterIndexes, int[] backgroundClusterIndexes, int[] surfaceClusterIndexes, boolean computeAbundances) throws OperatorException {
+        this.cloudClusterIndexes = cloudClusterIndexes;
+        this.backgroundClusterIndexes = backgroundClusterIndexes;
+        this.surfaceClusterIndexes = surfaceClusterIndexes;
+        this.computeAbundances = computeAbundances;
 
         // 4. Cluster probabilities
         final Product cloudProbabilityProduct = createCloudProbabilityProduct(cloudClusterIndexes);
+        if (!computeAbundances) {
+            return cloudProbabilityProduct;
+        }
 
         // 5. Endmember extraction
         final ExtractEndmembersOp endmemberOp = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterMapProduct, cloudClusterIndexes,
-                surfaceClusterIndexes);
+                                                                        surfaceClusterIndexes);
         final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
 
         // 6. Cloud abundances
         final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers);
 
         // 7. Cloud probability * cloud abundance
-
         return createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
     }
 
     private Product createCloudMaskProduct(Product cloudProbabilityProduct, Product cloudAbundancesProduct) {
         BandArithmeticOp.BandDescriptor[] bandDescriptors = new BandArithmeticOp.BandDescriptor[1];
         bandDescriptors[0] = new BandArithmeticOp.BandDescriptor();
-        bandDescriptors[0].name = "cloud_mask";
+        bandDescriptors[0].name = "cloud_probability";
         bandDescriptors[0].expression = "$probability.cloud_probability * $abundance.cloud_abundance";
         bandDescriptors[0].type = ProductData.TYPESTRING_FLOAT32;
         final Map<String, Object> cloudMaskParameterMap = new HashMap<String, Object>();
@@ -109,7 +135,7 @@ public class CloudLabeler {
         cloudMaskSourceMap.put("probability", cloudProbabilityProduct);
         cloudMaskSourceMap.put("abundance", cloudAbundancesProduct);
         return GPF.createProduct(OperatorSpi.getOperatorAlias(BandArithmeticOp.class),
-                cloudMaskParameterMap, cloudMaskSourceMap);
+                                 cloudMaskParameterMap, cloudMaskSourceMap);
     }
 
     private Product createCloudAbundancesProduct(Endmember[] endmembers) {
@@ -131,7 +157,7 @@ public class CloudLabeler {
         unmixingParameterMap.put("unmixingModelName", "Fully Constrained LSU");
 
         return GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
-                unmixingParameterMap, reflectanceProduct);
+                                 unmixingParameterMap, reflectanceProduct);
     }
 
     private Product createCloudProbabilityProduct(int[] cloudClusterIndexes) {
@@ -171,10 +197,10 @@ public class CloudLabeler {
         findClustersOpParameterMap.put("iterationCount", 40);
 
         return GPF.createProduct("chris.FindClusters",
-                findClustersOpParameterMap,
-                featureProduct);
+                                 findClustersOpParameterMap,
+                                 featureProduct);
     }
-    
+
     private static String[] findBandNames(Product product, String prefix, BandFilter filter) {
         final List<String> nameList = new ArrayList<String>();
 
@@ -186,11 +212,12 @@ public class CloudLabeler {
 
         return nameList.toArray(new String[nameList.size()]);
     }
+
     private Product createFeatureProduct() {
         final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
         return GPF.createProduct("chris.ExtractFeatures",
-                parameterMap,
-                reflectanceProduct);
+                                 parameterMap,
+                                 reflectanceProduct);
     }
 
     private static boolean isContained(int index, int[] indexes) {
@@ -203,4 +230,18 @@ public class CloudLabeler {
         return false;
     }
 
+    public void dispose() {
+        if (featureProduct != null) {
+            featureProduct.dispose();
+            featureProduct = null;
+        }
+        if (clusterProduct != null) {
+            clusterProduct.dispose();
+            clusterProduct = null;
+        }
+        if (clusterMapProduct != null) {
+            clusterMapProduct.dispose();
+            clusterMapProduct = null;
+        }
+    }
 }

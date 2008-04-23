@@ -40,26 +40,7 @@
 
 	<categories>Application,Processor,CHRIS</categories>
 
-    <extension point="beam-visat:toolViews">
-        <toolView>
-            <id>org.esa.beam.chris.ui.CloudMaskLabelingToolView</id>
-            <class>org.esa.beam.chris.ui.CloudMaskLabelingToolView</class>
-            <title>Cloud Mask</title>
-            <tabTitle>Cloud Mask</tabTitle>
-            <mnemonic>C</mnemonic>
-            <accelerator>ctrl alt C</accelerator>
-            <description>Lable cluster classes.</description>
-            <!--<smallIcon>/org/esa/beam/resources/images/icons/WorldMap16.gif</smallIcon>-->
-            <!--<largeIcon>/org/esa/beam/resources/images/icons/WorldMap24.gif</largeIcon>-->
-            <helpId>showCloudMask</helpId>
-            <initState>HIDDEN</initState>
-            <initSide>SOUTH</initSide>
-            <initIndex>0</initIndex>
-        </toolView>
-    </extension>
-
-
-	<extension point="beam-visat:actions">
+	<extension point="beam-ui:actions">
 		<action>
 			<id>chris</id>
 			<class>org.esa.beam.visat.actions.ActionGroup</class>

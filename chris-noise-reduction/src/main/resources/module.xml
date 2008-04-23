@@ -33,7 +33,7 @@
 
     <categories>Application,Processor,CHRIS</categories>
 
-    <extension point="beam-visat:actions">
+    <extension point="beam-ui:actions">
         <action>
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
