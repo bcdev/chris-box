@@ -170,6 +170,8 @@ class NoiseReductionForm extends JPanel {
         acquisitionScrollPane.setViewportView(acquisitionSetTable);
 
         gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.insets = new Insets(4,4,4,4);
+        
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridheight = 3;
