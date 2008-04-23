@@ -29,11 +29,13 @@ import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.operators.common.BandArithmeticOp;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
+import org.esa.beam.util.ProductUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
 
 /**
  * Created by marcoz.
@@ -108,6 +110,7 @@ public class CloudLabeler {
         // 4. Cluster probabilities
         final Product cloudProbabilityProduct = createCloudProbabilityProduct(cloudClusterIndexes);
         if (!computeAbundances) {
+            cloudProbabilityProduct.setName(reflectanceProduct.getName()+"_CLOUD");
             return cloudProbabilityProduct;
         }
 
@@ -120,7 +123,28 @@ public class CloudLabeler {
         final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers);
 
         // 7. Cloud probability * cloud abundance
-        return createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
+        final Product product = createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
+        product.setName(reflectanceProduct.getName()+"_CLOUD");
+        return product;
+    }
+
+    public void addCloudBandToInput(Product cloudProbProduct) {
+        Band targetBand = reflectanceProduct.getBand("cloud_probability");
+        if (targetBand == null) {
+            targetBand = ProductUtils.copyBand("cloud_probability", cloudProbProduct, reflectanceProduct);
+        }
+        Band sourceBand = cloudProbProduct.getBand("cloud_probability");
+        try {
+            sourceBand.readRasterDataFully();
+        } catch (IOException e) {
+            // todo - handle exception here
+            e.printStackTrace();
+        }
+        final ProductData sourceRaster = sourceBand.getRasterData();
+        final ProductData targetRaster = targetBand.createCompatibleSceneRasterData();
+        System.arraycopy(sourceRaster.getElems(), 0, targetRaster.getElems(), 0, sourceRaster.getNumElems());
+        targetBand.setRasterData(targetRaster);
+//        targetBand.setImage(sourceBand.getImage());
     }
 
     private Product createCloudMaskProduct(Product cloudProbabilityProduct, Product cloudAbundancesProduct) {

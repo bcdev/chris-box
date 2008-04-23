@@ -31,11 +31,11 @@ import java.util.Random;
  */
 public class FindClustersOpTest extends TestCase {
 
-    public void testFindClustersWithSimpleProduct() throws IOException {
+    public void testFindClusters() throws IOException {
         final int clusterCount = 4;
 
         final Product sourceProduct = createTestProduct();
-        final FindClustersOp op = new FindClustersOp(sourceProduct, clusterCount, 10);
+        final FindClustersOp op = new FindClustersOp(sourceProduct, new String[]{"feature"}, clusterCount, 10, 0.1);
 
         final Product targetProduct = op.getTargetProduct();
         assertEquals(clusterCount, targetProduct.getNumBands());
@@ -47,28 +47,25 @@ public class FindClustersOpTest extends TestCase {
             probabilityBands[i].readPixels(0, 0, 8, 8, probabilities[i]);
         }
 
-//        these asserts fail in general because the cluster analysis of the
-//        test product requires a particular initialization
+        assertEquals(0.0, probabilities[0][1], 0.0);
+        assertEquals(0.0, probabilities[1][1], 0.0);
+        assertEquals(0.0, probabilities[2][1], 0.0);
+        assertEquals(1.0, probabilities[3][1], 0.0);
 
-//        assertEquals(0.0, probabilities[0][1], 0.0);
-//        assertEquals(0.0, probabilities[1][1], 0.0);
-//        assertEquals(0.0, probabilities[2][1], 0.0);
-//        assertEquals(1.0, probabilities[3][1], 0.0);
-//
-//        assertEquals(0.0, probabilities[0][5], 0.0);
-//        assertEquals(0.0, probabilities[1][5], 0.0);
-//        assertEquals(1.0, probabilities[2][5], 0.0);
-//        assertEquals(0.0, probabilities[3][5], 0.0);
-//
-//        assertEquals(0.0, probabilities[0][17], 0.0);
-//        assertEquals(1.0, probabilities[1][17], 0.0);
-//        assertEquals(0.0, probabilities[2][17], 0.0);
-//        assertEquals(0.0, probabilities[3][17], 0.0);
-//
-//        assertEquals(1.0, probabilities[0][21], 0.0);
-//        assertEquals(0.0, probabilities[1][21], 0.0);
-//        assertEquals(0.0, probabilities[2][21], 0.0);
-//        assertEquals(0.0, probabilities[3][21], 0.0);
+        assertEquals(0.0, probabilities[0][5], 0.0);
+        assertEquals(0.0, probabilities[1][5], 0.0);
+        assertEquals(1.0, probabilities[2][5], 0.0);
+        assertEquals(0.0, probabilities[3][5], 0.0);
+
+        assertEquals(0.0, probabilities[0][17], 0.0);
+        assertEquals(1.0, probabilities[1][17], 0.0);
+        assertEquals(0.0, probabilities[2][17], 0.0);
+        assertEquals(0.0, probabilities[3][17], 0.0);
+
+        assertEquals(1.0, probabilities[0][21], 0.0);
+        assertEquals(0.0, probabilities[1][21], 0.0);
+        assertEquals(0.0, probabilities[2][21], 0.0);
+        assertEquals(0.0, probabilities[3][21], 0.0);
     }
 
     private static Product createTestProduct() {

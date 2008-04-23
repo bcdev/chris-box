@@ -159,14 +159,13 @@ public class ClusterLabelingWindow extends JDialog {
     }
 
     private void computeCloudMask() {
-        Band membershipBand = cloudLabeler.getMembershipBand();
-        final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
-        visatApp.getDesktopPane().closeFrame(internalFrame);
         final int[] backgroundIndexes = tableModel.getBackgroundIndexes();
         cloudLabeler.processLabelingStep(backgroundIndexes);
         final int[] cloudClusterIndexes = tableModel.getCloudIndexes();
         final int[] surfaceClusterIndexes = tableModel.getSurfaceIndexes();
         final Product cloudMaskProduct = cloudLabeler.processStepTwo(cloudClusterIndexes, backgroundIndexes, surfaceClusterIndexes, abundancesCheckBox.isSelected());
+//        cloudLabeler.addCloudBandToInput(cloudMaskProduct);
+//        cloudMaskProduct.dispose();
         visatApp.addProduct(cloudMaskProduct);
     }
 

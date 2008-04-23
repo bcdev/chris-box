@@ -60,7 +60,7 @@ public class CloudMaskAction extends AbstractVisatAction {
                 openClusterLabelingWindow(internalFrame, productSceneView, cloudLabeler);
             } else {
                 final String message = String.format(
-                        "A cluster analysis of the reflectances in '%s'\n" +
+                            "A cluster analysis of the reflectances in '%s'\n" +
                                 "has to be performed for the following interactive cloud labeling.\n" +
                                 "The cluster analysis may take considerable time.\n\n" +
                                 "Do you want to continue?", reflectanceProduct.getDisplayName());
@@ -148,7 +148,7 @@ public class CloudMaskAction extends AbstractVisatAction {
         }
 
         @Override
-                    public void internalFrameOpened(InternalFrameEvent e) {
+        public void internalFrameOpened(InternalFrameEvent e) {
             final JInternalFrame internalFrame = e.getInternalFrame();
             ProductSceneView productSceneView = getProductSceneView(internalFrame);
             if (productSceneView.getRaster() == membershipBand) {
