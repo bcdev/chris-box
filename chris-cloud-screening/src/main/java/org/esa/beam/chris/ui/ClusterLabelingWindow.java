@@ -238,7 +238,7 @@ public class ClusterLabelingWindow extends JDialog {
             Arrays.fill(array, false);
             if (indexes != null) {
                 for (final int index : indexes) {
-                    if (index >= 0 && index < indexes.length) {
+                    if (index >= 0 && index < array.length) {
                         array[index] = true;
                     }
                 }
