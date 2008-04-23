@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 
 /**
  * Noise reduction action.
@@ -52,6 +51,8 @@ import java.util.logging.Level;
 public class NoiseReductionAction extends AbstractVisatAction {
 
     private static final String DIALOG_TITLE = "CHRIS Noise Reduction";
+    private static final String SOURCE_NAME_PATTERN = "${sourceName}";
+    private static final String SOURCE_NAME_REGEX = "\\$\\{sourceName\\}";
 
     static final List<String> CHRIS_TYPES;
 
@@ -63,9 +64,16 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
+        final Product[] acquisitionSet;
         final Product selectedProduct = getAppContext().getSelectedProduct();
-        final Product[] acquisitionSet = getAcquisitionSet(selectedProduct);
-
+        if (selectedProduct != null
+                && !(selectedProduct.getProductReader().getInput() instanceof Product) // not a subset
+                && !(selectedProduct.getProductReader().getInput() instanceof Product[]) // not created from operator
+                && CHRIS_TYPES.contains(selectedProduct.getProductType())) {
+            acquisitionSet = getAcquisitionSet(selectedProduct);
+        } else {
+            acquisitionSet = new Product[0];
+        }
 
         final NoiseReductionPresenter presenter =
                 new NoiseReductionPresenter(acquisitionSet, new AdvancedSettingsPresenter());
@@ -75,12 +83,16 @@ public class NoiseReductionAction extends AbstractVisatAction {
                 new ModalDialog(VisatApp.getApp().getMainFrame(), DIALOG_TITLE, ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionTool") {
                     @Override
                     protected boolean verifyUserInput() {
-                        if (!targetProductSelectorModel.getProductName().contains("${source}")) {
-                            showErrorDialog("Target product name must use '${source}' expression.");
+                        if (!targetProductSelectorModel.getProductName().contains(SOURCE_NAME_PATTERN)) {
+                            showErrorDialog("Target product name must use the '" + SOURCE_NAME_PATTERN + "' expression.");
                             return false;
                         }
 
                         final Product[] sourceProducts = presenter.getCheckedProducts();
+                        if (sourceProducts.length == 0) {
+                            showWarningDialog("At least one product must be selected for noise reduction.");
+                            return false;
+                        }
                         final File[] targetProductFiles = new File[sourceProducts.length];
                         List<String> existingFilePaths = new ArrayList<String>(7);
                         for (int i = 0; i < sourceProducts.length; ++i) {
@@ -110,35 +122,20 @@ public class NoiseReductionAction extends AbstractVisatAction {
         String saveDir = getAppContext().getPreferences().getPropertyString(BasicApp.PROPERTY_KEY_APP_LAST_SAVE_DIR, homeDirPath);
         targetProductSelectorModel.setProductDir(new File(saveDir));
 
-        targetProductSelectorModel.setProductName("${source}_NR");
+        targetProductSelectorModel.setProductName(SOURCE_NAME_PATTERN + "_NR");
 
-        if (dialog.show() == ModalDialog.ID_OK) {
-            for (final Product product : acquisitionSet) {
-                if (!(VisatApp.getApp().getProductManager().contains(product) || presenter.isListed(product))) {
-                    product.dispose();
+        try {
+            if (dialog.show() == ModalDialog.ID_OK) {
+                for (final Product product : acquisitionSet) {
+                    if (!(VisatApp.getApp().getProductManager().contains(product) || presenter.isListed(product))) {
+                        product.dispose();
+                    }
                 }
-            }
-
-            try {
                 performNoiseReduction(presenter, targetProductSelectorModel);
-            } catch (OperatorException e) {
-                disposeProducts(acquisitionSet);
-                dialog.showErrorDialog(e.getMessage());
-                VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
             }
-        } else {
+        } finally {
             disposeProducts(acquisitionSet);
         }
-    }
-
-    @Override
-    public void updateState() {
-        final Product selectedProduct = getAppContext().getSelectedProduct();
-        final boolean enabled = selectedProduct != null
-                && !(selectedProduct.getProductReader().getInput() instanceof Product)
-                && !(selectedProduct.getProductReader().getInput() instanceof Product[])
-                && CHRIS_TYPES.contains(selectedProduct.getProductType());
-        setEnabled(enabled);
     }
 
     private static void disposeProducts(Product[] products) {
@@ -156,18 +153,26 @@ public class NoiseReductionAction extends AbstractVisatAction {
         getAppContext().getPreferences().setPropertyString(BasicApp.PROPERTY_KEY_APP_LAST_SAVE_DIR, productDir);
 
         final Product[] sourceProducts = presenter.getCheckedProducts();
-        final File[] targetProductFiles = new File[sourceProducts.length];
-        for (int i = 0; i < sourceProducts.length; ++i) {
-            targetProductFiles[i] = createTargetProductFile(productSelectorModel, sourceProducts[i].getName());
+        final HashMap<Product, File> noiseReductionProductsMap = new HashMap<Product, File>(sourceProducts.length);
+        for (Product sourceProduct : sourceProducts) {
+            final File targetProductFile = createTargetProductFile(productSelectorModel, sourceProduct.getName());
+            noiseReductionProductsMap.put(sourceProduct, targetProductFile);
         }
 
         final Map<String, Object> parameterMap = presenter.getDropoutCorrectionParameterMap();
-        new NoiseReductionSwingWorker(sourceProducts, presenter.getDestripingParameterMap(), parameterMap, targetProductFiles, productSelectorModel.getFormatName(), productSelectorModel.isSaveToFileSelected(),
-                productSelectorModel.isOpenInAppSelected()).executeWithBlocking();
+        final NoiseReductionSwingWorker worker = new NoiseReductionSwingWorker(
+                noiseReductionProductsMap,
+                presenter.getListedProducts(),
+                presenter.getDestripingParameterMap(),
+                parameterMap,
+                productSelectorModel.getFormatName(),
+                productSelectorModel.isSaveToFileSelected(),
+                productSelectorModel.isOpenInAppSelected());
+        worker.executeWithBlocking();
     }
 
     private File createTargetProductFile(TargetProductSelectorModel productSelectorModel, String s) {
-        final String fileName = productSelectorModel.getProductFile().getName().replaceAll("\\$\\{source\\}", s);
+        final String fileName = productSelectorModel.getProductFile().getName().replaceAll(SOURCE_NAME_REGEX, s);
         return new File(productSelectorModel.getProductDir(), fileName);
     }
 
@@ -222,27 +227,28 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
     private class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Product> {
 
-        private final Product[] sourceProducts;
+        private final Map<Product, File> noiseReductionProductsMap;
+        private final Product[] destripingFactorsProducts;
         private final Map<String, Object> dfParameterMap;
         private final Map<String, Object> dcParameterMap;
 
-        private final File[] targetFiles;
         private final String targetFormatName;
 
         private final boolean saveToFile;
         private final boolean openInApp;
 
-        public NoiseReductionSwingWorker(Product[] sourceProducts, Map<String, Object> dfParameterMap,
+        public NoiseReductionSwingWorker(Map<Product, File> noiseReductionProductsMap,
+                                         Product[] destripingFactorsProducts,
+                                         Map<String, Object> dfParameterMap,
                                          Map<String, Object> dcParameterMap,
-                                         File[] targetFiles,
                                          String targetFormatName,
                                          boolean saveToFile,
                                          boolean openInApp) {
             super(getAppContext().getApplicationWindow(), "Performing Noise Reduction");
-            this.sourceProducts = sourceProducts;
+            this.noiseReductionProductsMap = noiseReductionProductsMap;
+            this.destripingFactorsProducts = destripingFactorsProducts;
             this.dfParameterMap = dfParameterMap;
             this.dcParameterMap = dcParameterMap;
-            this.targetFiles = targetFiles;
             this.targetFormatName = targetFormatName;
             this.saveToFile = saveToFile;
             this.openInApp = openInApp;
@@ -250,15 +256,13 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
         @Override
         protected Object doInBackground(ProgressMonitor pm) throws Exception {
-            pm.beginTask("Performing noise reduction...", 50 + sourceProducts.length * 10);
+            pm.beginTask("Performing noise reduction...", 50 + noiseReductionProductsMap.size() * 10);
             try {
                 Product factorProduct =
                         GPF.createProduct("chris.ComputeDestripingFactors",
                                 dfParameterMap,
-                                sourceProducts);
-                final String name = FileUtils.getFilenameWithoutExtension(targetFiles[0]);
-                final String extension = FileUtils.getExtension(targetFiles[0]);
-                final File file = new File(targetFiles[0].getParentFile(), name + "_VSC" + extension);
+                                destripingFactorsProducts);
+                final File file = createDestripingFactorsFile();
                 writeProduct(factorProduct, file, false, true, SubProgressMonitor.create(pm, 50));
                 try {
                     factorProduct = ProductIO.readProduct(file, null);
@@ -266,14 +270,24 @@ public class NoiseReductionAction extends AbstractVisatAction {
                     throw new OperatorException(MessageFormat.format("Could not read file ''{0}''.", file.getPath()), e);
                 }
 
-                for (int i = 0; i < sourceProducts.length; ++i) {
-                    performNoiseReduction(sourceProducts[i], factorProduct, targetFiles[i],
+                for (Map.Entry<Product, File> productFileEntry : noiseReductionProductsMap.entrySet()) {
+                    performNoiseReduction(
+                            productFileEntry.getKey(),
+                            factorProduct,
+                            productFileEntry.getValue(),
                             SubProgressMonitor.create(pm, 10));
                 }
             } finally {
                 pm.done();
             }
             return null;
+        }
+
+        private File createDestripingFactorsFile() {
+            final File noiseReduceTargetFile = noiseReductionProductsMap.values().toArray(new File[noiseReductionProductsMap.size()])[0];
+            final String name = FileUtils.getFilenameWithoutExtension(noiseReduceTargetFile);
+            final String extension = FileUtils.getExtension(noiseReduceTargetFile);
+            return new File(noiseReduceTargetFile.getParentFile(), name + "_VSC" + extension);
         }
 
         @Override
@@ -311,10 +325,10 @@ public class NoiseReductionAction extends AbstractVisatAction {
         }
 
         private void writeProduct(final Product targetProduct, final File file, boolean openInApp, boolean saveToFile, ProgressMonitor pm) throws IOException {
-            pm.beginTask("Writing " + targetProduct.getName() + "...", openInApp ? 100 : 95);
             if (saveToFile) {
                 targetProduct.setFileLocation(file);
                 Product writtenProduct = null;
+                pm.beginTask("Writing " + targetProduct.getName() + "...", openInApp ? 100 : 95);
                 try {
                     WriteOp.writeProduct(targetProduct,
                             file,

@@ -55,7 +55,7 @@ class NoiseReductionPresenter {
             }
         }
 
-        productTableModel = new DefaultTableModel(productsData, new String[]{"Reduce", "Product Name"});
+        productTableModel = new DefaultTableModel(productsData, new String[]{"Reduce Noise", "Product Name"});
         productTableSelectionModel = new DefaultListSelectionModel();
         productTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         productTableSelectionModel.addListSelectionListener(new ListSelectionListener() {

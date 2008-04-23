@@ -65,8 +65,8 @@ class NoiseReductionForm extends JPanel {
         TableColumn column1 = acquisitionSetTable.getColumnModel().getColumn(0);
         column1.setCellRenderer(new BooleanCheckBoxCellRenderer());
         column1.setCellEditor(new BooleanCheckBoxCellEditor());
-        column1.setPreferredWidth(60);
-        column1.setMaxWidth(60);
+        column1.setPreferredWidth(90);
+        column1.setMaxWidth(90);
 
         TableColumn column2 = acquisitionSetTable.getColumnModel().getColumn(1);
         column2.setCellRenderer(
@@ -147,7 +147,8 @@ class NoiseReductionForm extends JPanel {
         metadataTable.setName("metadataTable");
 
         targetProductSelector = new TargetProductSelector();
-
+        targetProductSelector.getProductNameLabel().setText("Name pattern:");
+        
         advancedSettingsButton = new JButton();
         advancedSettingsButton.setName("advancedSettingsButton");
 

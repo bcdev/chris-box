@@ -80,6 +80,7 @@ public class ApplyDestripingFactorsOp extends Operator {
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
                             getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
+        targetProduct.setPreferredTileSize(64, 64);
     }
 
     @Override
