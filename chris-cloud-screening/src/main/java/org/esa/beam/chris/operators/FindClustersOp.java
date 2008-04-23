@@ -46,46 +46,29 @@ import java.util.Map;
         description = "Finds clusters for features extracted from TOA reflectances.")
 public class FindClustersOp extends Operator {
 
-    @SourceProduct(alias = "source")
+    @SourceProduct(alias = "source", type = "CHRIS_M[1-5][A0]?_FEAT")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
 
-    @Parameter(alias = "features", defaultValue = "brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
-    private String[] sourceBandNames;
     @Parameter(label = "Number of clusters", defaultValue = "14")
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "20")
     private int iterationCount;
-    @Parameter(label = "Distance threshold", defaultValue = "0.0")
-    private double distanceThreshold;
 
     public FindClustersOp() {
     }
 
-    public FindClustersOp(Product sourceProduct, String[] sourceBandNames, int clusterCount, int iterationCount,
-                          double distanceThreshold) {
+    public FindClustersOp(Product sourceProduct, int clusterCount, int iterationCount) {
         this.sourceProduct = sourceProduct;
-        this.sourceBandNames = sourceBandNames;
         this.clusterCount = clusterCount;
         this.iterationCount = iterationCount;
-        this.distanceThreshold = distanceThreshold;
     }
 
-    private transient Band[] sourceBands;
     private transient Band[] probabilityBands;
 
     @Override
     public void initialize() throws OperatorException {
-        sourceBands = new Band[sourceBandNames.length];
-        for (int i = 0; i < sourceBandNames.length; i++) {
-            final Band sourceBand = sourceProduct.getBand(sourceBandNames[i]);
-            if (sourceBand == null) {
-                throw new OperatorException("source band not found: " + sourceBandNames[i]);
-            }
-            sourceBands[i] = sourceBand;
-        }
-
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
         final String name = sourceProduct.getName().replace("_FEAT", "_CLU");
@@ -144,6 +127,7 @@ public class FindClustersOp extends Operator {
 
         final double[] samples = new double[sceneWidth];
 
+        final Band[] sourceBands = sourceProduct.getBands();
         final double[][] points = new double[sceneWidth * sceneHeight][sourceBands.length];
         final double[] min = new double[sourceBands.length];
         final double[] max = new double[sourceBands.length];
@@ -170,7 +154,7 @@ public class FindClustersOp extends Operator {
             }
         }
 
-        return new Clusterer(points, clusterCount, distanceThreshold);
+        return new Clusterer(points, clusterCount);
     }
 
     public static class Spi extends OperatorSpi {
