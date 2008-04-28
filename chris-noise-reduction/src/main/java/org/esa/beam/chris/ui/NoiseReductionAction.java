@@ -33,7 +33,7 @@ import org.esa.beam.util.io.FileUtils;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
     static {
         CHRIS_TYPES = new ArrayList<String>(7);
         Collections.addAll(CHRIS_TYPES, "CHRIS_M1", "CHRIS_M2", "CHRIS_M3", "CHRIS_M30", "CHRIS_M3A", "CHRIS_M4",
-                "CHRIS_M5");
+                           "CHRIS_M5");
     }
 
     @Override
@@ -107,7 +107,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
                                     "Do you want to overwrite the existing file(s)?";
                             String formatedMessage = MessageFormat.format(message, fileList);
                             final int answer = JOptionPane.showConfirmDialog(this.getJDialog(), formatedMessage,
-                                    DIALOG_TITLE, JOptionPane.YES_NO_OPTION);
+                                                                             DIALOG_TITLE, JOptionPane.YES_NO_OPTION);
                             if (answer != JOptionPane.YES_OPTION) {
                                 return false;
                             }
@@ -162,7 +162,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
         final Map<String, Object> parameterMap = presenter.getDropoutCorrectionParameterMap();
         final NoiseReductionSwingWorker worker = new NoiseReductionSwingWorker(
                 noiseReductionProductsMap,
-                presenter.getListedProducts(),
+                presenter.getSourceProducts(),
                 presenter.getDestripingParameterMap(),
                 parameterMap,
                 productSelectorModel.getFormatName(),
@@ -257,13 +257,14 @@ public class NoiseReductionAction extends AbstractVisatAction {
         @Override
         protected Object doInBackground(ProgressMonitor pm) throws Exception {
             pm.beginTask("Performing noise reduction...", 50 + noiseReductionProductsMap.size() * 10);
+            Product factorProduct = null;
             try {
-                Product factorProduct =
-                        GPF.createProduct("chris.ComputeDestripingFactors",
-                                dfParameterMap,
-                                destripingFactorsProducts);
+                factorProduct = GPF.createProduct("chris.ComputeDestripingFactors",
+                                                  dfParameterMap,
+                                                  destripingFactorsProducts);
                 final File file = createDestripingFactorsFile();
-                writeProduct(factorProduct, file, false, true, SubProgressMonitor.create(pm, 50));
+                writeProduct(factorProduct, file, false, SubProgressMonitor.create(pm, 50));
+                factorProduct.dispose();
                 try {
                     factorProduct = ProductIO.readProduct(file, null);
                 } catch (IOException e) {
@@ -278,6 +279,9 @@ public class NoiseReductionAction extends AbstractVisatAction {
                             SubProgressMonitor.create(pm, 10));
                 }
             } finally {
+                if (factorProduct != null) {
+                    factorProduct.dispose();
+                }
                 pm.done();
             }
             return null;
@@ -315,41 +319,40 @@ public class NoiseReductionAction extends AbstractVisatAction {
             sourceProductMap.put("input", sourceProduct);
             sourceProductMap.put("factors", factorProduct);
             final Product destripedProduct = GPF.createProduct("chris.ApplyDestripingFactors",
-                    new HashMap<String, Object>(0), sourceProductMap);
+                                                               new HashMap<String, Object>(0), sourceProductMap);
 
             final Product targetProduct = GPF.createProduct("chris.CorrectDropouts", dcParameterMap,
-                    destripedProduct);
+                                                            destripedProduct);
 
             targetProduct.setName(FileUtils.getFilenameWithoutExtension(targetFile));
-            writeProduct(targetProduct, targetFile, openInApp, saveToFile, pm);
+            writeProduct(targetProduct, targetFile, openInApp, pm);
+
+            destripedProduct.dispose();
         }
 
-        private void writeProduct(final Product targetProduct, final File file, boolean openInApp, boolean saveToFile, ProgressMonitor pm) throws IOException {
-            if (saveToFile) {
-                targetProduct.setFileLocation(file);
-                Product writtenProduct = null;
-                pm.beginTask("Writing " + targetProduct.getName() + "...", openInApp ? 100 : 95);
-                try {
-                    WriteOp.writeProduct(targetProduct,
-                            file,
-                            targetFormatName, SubProgressMonitor.create(pm, 95));
-                    if (openInApp) {
-                        writtenProduct = ProductIO.readProduct(file, null);
-                        if (writtenProduct == null) {
-                            writtenProduct = targetProduct;
-                        }
-                        publish(writtenProduct);
-                        pm.worked(5);
+        private void writeProduct(final Product targetProduct, final File file, boolean openInApp, ProgressMonitor pm) throws IOException {
+            targetProduct.setFileLocation(file);
+            Product writtenProduct = null;
+            pm.beginTask("Writing " + targetProduct.getName() + "...", openInApp ? 100 : 95);
+            try {
+                WriteOp.writeProduct(targetProduct,
+                                     file,
+                                     targetFormatName, SubProgressMonitor.create(pm, 95));
+                if (openInApp) {
+                    writtenProduct = ProductIO.readProduct(file, null);
+                    if (writtenProduct == null) {
+                        writtenProduct = targetProduct;
                     }
-                } finally {
-                    pm.done();
-                    if (writtenProduct != targetProduct) {
-                        targetProduct.dispose();
-                    }
+                    publish(writtenProduct);
+                    pm.worked(5);
                 }
+            } finally {
+                if (writtenProduct != targetProduct) {
+                    targetProduct.dispose();
+                }
+                pm.done();
             }
         }
-
     }
 
 }

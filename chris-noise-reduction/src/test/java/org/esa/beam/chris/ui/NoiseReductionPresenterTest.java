@@ -42,7 +42,7 @@ public class NoiseReductionPresenterTest extends TestCase {
     public void testConstuctor() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(expectedProducts, new AdvancedSettingsPresenter());
 
-        Product[] actualProducts = nrp.getListedProducts();
+        Product[] actualProducts = nrp.getSourceProducts();
         assertNotNull(actualProducts);
         assertEquals(3, actualProducts.length);
 
@@ -52,7 +52,7 @@ public class NoiseReductionPresenterTest extends TestCase {
 
         int selectionIndex = nrp.getProductTableSelectionModel().getMaxSelectionIndex();
         assertEquals(0, selectionIndex);
-        assertSame(first, nrp.getListedProducts()[selectionIndex]);
+        assertSame(first, nrp.getSourceProducts()[selectionIndex]);
 
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
     }
@@ -72,32 +72,32 @@ public class NoiseReductionPresenterTest extends TestCase {
 
         Product fourth = createChrisDummyProduct("fourth", "chris", "DummyTarget4");
         nrp.addProduct(fourth);
-        assertEquals(4, nrp.getListedProducts().length);
-        assertSame(fourth, nrp.getListedProducts()[3]);
+        assertEquals(4, nrp.getSourceProducts().length);
+        assertSame(fourth, nrp.getSourceProducts()[3]);
         ListSelectionModel selectionModel = nrp.getProductTableSelectionModel();
         assertEquals(3, selectionModel.getMaxSelectionIndex());
 
         nrp.getProductTableSelectionModel().setSelectionInterval(2, 2);
 
         nrp.removeSelectedProduct();
-        assertEquals(3, nrp.getListedProducts().length);
-        assertSame(first, nrp.getListedProducts()[0]);
-        assertSame(second, nrp.getListedProducts()[1]);
-        assertSame(fourth, nrp.getListedProducts()[2]);
+        assertEquals(3, nrp.getSourceProducts().length);
+        assertSame(first, nrp.getSourceProducts()[0]);
+        assertSame(second, nrp.getSourceProducts()[1]);
+        assertSame(fourth, nrp.getSourceProducts()[2]);
         assertEquals(2, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
-        assertEquals(2, nrp.getListedProducts().length);
-        assertSame(first, nrp.getListedProducts()[0]);
-        assertSame(second, nrp.getListedProducts()[1]);
+        assertEquals(2, nrp.getSourceProducts().length);
+        assertSame(first, nrp.getSourceProducts()[0]);
+        assertSame(second, nrp.getSourceProducts()[1]);
         assertEquals(1, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.removeSelectedProduct();
         assertEquals(0, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
-        assertSame(first, nrp.getListedProducts()[0]);
+        assertSame(first, nrp.getSourceProducts()[0]);
 
         nrp.removeSelectedProduct();
-        assertEquals(0, nrp.getListedProducts().length);
+        assertEquals(0, nrp.getSourceProducts().length);
         assertEquals(-1, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
 
         nrp.addProduct(fourth);

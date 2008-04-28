@@ -122,7 +122,7 @@ class NoiseReductionPresenter {
         this.advancedSettingsPresenter = advancedSettingsPresenter;
     }
 
-    public Product[] getListedProducts() {
+    public Product[] getSourceProducts() {
         Vector productVector = getProductTableModel().getDataVector();
         Product[] products = new Product[productVector.size()];
         for (int i = 0; i < productVector.size(); i++) {
@@ -191,7 +191,7 @@ class NoiseReductionPresenter {
     }
 
     void addProduct(Product product) throws NoiseReductionValidationException {
-        Product[] products = getListedProducts();
+        Product[] products = getSourceProducts();
         if (products.length >= 5) {
             throw new NoiseReductionValidationException("Acquisition set already contains five products.");
         }
@@ -282,7 +282,7 @@ class NoiseReductionPresenter {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (presenter.getListedProducts().length == 5) {
+            if (presenter.getSourceProducts().length == 5) {
                 JOptionPane.showMessageDialog((Component) e.getSource(), "You cannot select more than five products.");
                 return;
             }
