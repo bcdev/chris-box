@@ -131,7 +131,7 @@ class NoiseReductionPresenter {
         return products;
     }
 
-    public Product[] getCheckedProducts() {
+    public Product[] getNoiseReductionProducts() {
         final DefaultTableModel tableModel = getProductTableModel();
         final List<Product> productList = new ArrayList<Product>();
 
@@ -180,7 +180,7 @@ class NoiseReductionPresenter {
         return false;
     }
 
-    boolean isListed(Product product) {
+    boolean isSource(Product product) {
         for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
             Product current = (Product) getProductTableModel().getValueAt(i, 1);
             if (current.equals(product)) {
