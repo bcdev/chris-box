@@ -26,9 +26,9 @@ public class MultinormalDistribution implements Distribution {
 
     private final int n;
 
-    private double[] mean;
-    private Eigendecomposition eigendecomposition;
-    private double logNormFactor;
+    private final double[] mean;
+    private final Eigendecomposition eigendecomposition;
+    private final double logNormFactor;
 
     /**
      * Constructs a new multinormal distribution.
@@ -102,9 +102,21 @@ public class MultinormalDistribution implements Distribution {
     }
 
     private static class SymmetricEigenproblemSolver implements EigenproblemSolver {
+        private static final double MAX_CONDITION = 1.0E14;
 
         public Eigendecomposition createEigendecomposition(int n, double[][] symmetricMatrix) {
-            return new SymmetricEigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).eig());
+            final SymmetricEigendecomposition eigendecomposition =
+                    new SymmetricEigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).eig());
+            final double[] d = eigendecomposition.getEigenvalues();
+            final double t = d[n - 1] / MAX_CONDITION - d[0];
+            if (t > 0.0) {
+                for (int i = 0; i < n; ++i) {
+                    symmetricMatrix[i][i] += t;
+                    d[i] += t;
+                }
+            }
+
+            return eigendecomposition;
         }
     }
 
@@ -119,6 +131,10 @@ public class MultinormalDistribution implements Distribution {
 
         public double getEigenvalue(int i) {
             return eigenvalues[i];
+        }
+
+        public double[] getEigenvalues() {
+            return eigenvalues;
         }
 
         public double getV(int i, int j) {

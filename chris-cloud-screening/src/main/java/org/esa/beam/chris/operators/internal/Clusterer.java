@@ -154,7 +154,8 @@ public class Clusterer {
             }
             if (sum > 0.0) {
                 for (int k = 0; k < h.length; ++k) {
-                    h[k][i] /= sum;
+                    final double t = h[k][i] / sum;
+                    h[k][i] = t;
                 }
             } else { // numerical underflow - recompute posterior cluster probabilities
                 final double[] sums = new double[clusterCount];
@@ -169,7 +170,8 @@ public class Clusterer {
                     }
                 }
                 for (int k = 0; k < clusterCount; ++k) {
-                    h[k][i] = 1.0 / (1.0 + sums[k]);
+                    final double t = 1.0 / (1.0 + sums[k]);
+                    h[k][i] = t;
                 }
             }
         }

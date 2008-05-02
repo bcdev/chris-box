@@ -32,6 +32,9 @@ import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * New class.
@@ -46,42 +49,40 @@ import java.util.Map;
         description = "Finds clusters for features extracted from TOA reflectances.")
 public class FindClustersOp extends Operator {
 
-    @SourceProduct(alias = "source")
+    @SourceProduct(alias = "source", type = "CHRIS_M[1-5][A0]?_FEAT")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
 
-    @Parameter(alias = "features", defaultValue = "brightness_vis,brightness_nir,whiteness_vis,whiteness_nir,wv")
-    private String[] sourceBandNames;
     @Parameter(label = "Number of clusters", defaultValue = "14")
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "20")
     private int iterationCount;
-    @Parameter(label = "Distance threshold", defaultValue = "0.0")
-    private double distanceThreshold;
+    private Band[] sourceBands;
 
     public FindClustersOp() {
     }
 
-    public FindClustersOp(Product sourceProduct, String[] sourceBandNames, int clusterCount, int iterationCount,
-                          double distanceThreshold) {
+    public FindClustersOp(Product sourceProduct, int clusterCount, int iterationCount) {
         this.sourceProduct = sourceProduct;
-        this.sourceBandNames = sourceBandNames;
         this.clusterCount = clusterCount;
         this.iterationCount = iterationCount;
-        this.distanceThreshold = distanceThreshold;
     }
 
-    private transient Band[] sourceBands;
     private transient Band[] probabilityBands;
 
     @Override
     public void initialize() throws OperatorException {
-        sourceBands = new Band[sourceBandNames.length];
-        for (int i = 0; i < sourceBandNames.length; i++) {
-            final Band sourceBand = sourceProduct.getBand(sourceBandNames[i]);
+        final List<String> sourceBandNameList = new ArrayList<String>(5);
+        Collections.addAll(sourceBandNameList, "brightness_vis","brightness_nir","whiteness_vis","whiteness_nir");
+        if(sourceProduct.getProductType().matches("CHRIS_M[15]_FEAT")) {
+            sourceBandNameList.add("wv");
+        }
+        sourceBands = new Band[sourceBandNameList.size()];
+        for (int i = 0; i < sourceBandNameList.size(); i++) {
+            final Band sourceBand = sourceProduct.getBand(sourceBandNameList.get(i));
             if (sourceBand == null) {
-                throw new OperatorException("source band not found: " + sourceBandNames[i]);
+                throw new OperatorException("source band not found: " + sourceBandNameList.get(i));
             }
             sourceBands[i] = sourceBand;
         }
@@ -170,7 +171,7 @@ public class FindClustersOp extends Operator {
             }
         }
 
-        return new Clusterer(points, clusterCount, distanceThreshold);
+        return new Clusterer(points, clusterCount);
     }
 
     public static class Spi extends OperatorSpi {

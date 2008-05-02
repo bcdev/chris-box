@@ -211,12 +211,7 @@ public class CloudLabeler {
     }
 
     private Product createClusterProduct() {
-        final Map<String, Object> findClustersOpParameterMap = new HashMap<String, Object>();
-        findClustersOpParameterMap.put("sourceBandNames", new String[]{"brightness_vis",
-                "brightness_nir",
-                "whiteness_vis",
-                "whiteness_nir",
-                "wv"});
+        final Map<String, Object> findClustersOpParameterMap = new HashMap<String, Object>();      
         findClustersOpParameterMap.put("clusterCount", 14);
         findClustersOpParameterMap.put("iterationCount", 40);
 
