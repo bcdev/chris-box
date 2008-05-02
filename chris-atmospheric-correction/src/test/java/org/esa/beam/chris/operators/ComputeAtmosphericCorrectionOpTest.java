@@ -29,7 +29,7 @@ import java.nio.ByteOrder;
 import java.text.MessageFormat;
 
 /**
- * todo - API doc
+ * Tests for atmospheric correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
