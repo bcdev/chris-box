@@ -23,24 +23,41 @@ import junit.framework.TestCase;
  * @version $Revision$ $Date$
  */
 public class RootFinderTest extends TestCase {
+    private RootFinder rootFinder;
 
-    public void testRootFinder() throws Exception {
-        final RootFinder rootFinder = new RootFinder(100);
+    public void testFindRoot() throws Exception {
+        assertEquals(Math.PI / 2.0, rootFinder.findRoot(new Cosine(), 0.0, 2.0), 0.0);
+    }
 
+    public void testFindRootAtIntervalBoundary() throws Exception {
+        assertEquals(0.0, rootFinder.findRoot(new Sine(), 0.0, 1.0), 0.0);
+    }
+
+    public void testFindRootWithIllegalArguments() throws Exception {
         try {
             rootFinder.findRoot(new Cosine(), 0.0, 1.0);
             fail();
         } catch (IllegalArgumentException expected) {
             // ignore
         }
+    }
 
-        assertEquals(Math.PI / 2.0, rootFinder.findRoot(new Cosine(), 0.0, 3.0), 0.0);
+    @Override
+    protected void setUp() throws Exception {
+        rootFinder = new RootFinder(100);
     }
 
     private static class Cosine implements Function {
 
         public double value(double x) {
             return Math.cos(x);
+        }
+    }
+
+    private static class Sine implements Function {
+
+        public double value(double x) {
+            return Math.sin(x);
         }
     }
 }
