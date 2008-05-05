@@ -253,6 +253,7 @@ END
 ;
 ; Retrieves AOT from land targets (modes 1, 3, 4, 5)
 ;********************************************************************************************
+; TODO - implement in Java
 PRO AOT_retr_land, toa_img_arr, ncols, nrows, wl_center, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, aot_gr, msk_arr, mode, wv_val, cld_aot_thre, aot550_arr
 
 common lut_inp, lut1, lut2, num_par, num_wvl_LUT, xnodes, nm_nodes, ndim, lim, lut_cell, x_cell
@@ -375,6 +376,7 @@ END
 ;
 ; Retrieves AOT from water targets (mode 2)
 ;********************************************************************************************
+; TODO - implement in Java
 PRO AOT_retr_water, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini,fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, aot_gr, msk_arr, file_Isc, mode, wv_val, cld_aot_thre, aot550
 
 common lut_inp, lut1, lut2, num_par, num_wvl_LUT, xnodes, nm_nodes, ndim, lim, lut_cell, x_cell
@@ -491,6 +493,7 @@ END
 ; Refines AOT_max value calculated in AOT_retr_land by the inversion of the TOA radiance 
 ;    at 5 reference pixels
 ;********************************************************************************************
+; TODO - implement in Java
 PRO CHRIS_AOT_inv_land, toa_sub, lpw_aot, egl_aot, sab_aot, dn2rad, wl_center, wl_fwhm, aot_gr_inv, aot550, valid_flg
 
 common fits_atm, aot_old
@@ -669,6 +672,7 @@ END
 ;
 ; Returns the value of the Merit Function called by Powell for the AOT inversion
 ;********************************************************************************************
+; TODO - implement in Java
 FUNCTION minim_TOA, x
 common fits, toa, chi_sq
 common fits_atm, vis_old
@@ -724,6 +728,7 @@ END
 ; - No smile correction, WV retrieval and spectral polishing are performed 
 ;         due to the lack of the proper absorption features
 ;********************************************************************************************
+; TODO - implement in Java
 PRO CHRIS_AC_mode234, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, msk_arr, aot550_arr, wv_val, ady_flg, px_size, cld_rfl_thre, refl_img_arr
 
 num_img = n_elements(toa_img_arr[*, 0, 0, 0])
@@ -796,10 +801,11 @@ END
 ; - Smile correction and WV retrieval are performed 
 ; - Spectral polishing, under user command
 ;********************************************************************************************
+; TODO - implement in Java
 PRO CHRIS_AC_mode15, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, msk_arr, cwv_gr, aot550_arr, wv_val, EM_file, wvl_LUT, SpecPol_flg,  ady_flg, px_size, cld_aot_thre, cld_rfl_thre, img_file_arr, wv_arr, refl_img_arr, dwl_arr_sm, cal_coef
 
 ; call to smile processor, set of spectral shift values in the x-direction derived
-smile_processor, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, cld_aot_thre, wvl_LUT, aot550_arr[0], msk_arr, wv_val, dwl_arr_sm
+; smile_processor, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, cld_aot_thre, wvl_LUT, aot550_arr[0], msk_arr, wv_val, dwl_arr_sm
 
 num_img = n_elements(toa_img_arr[*, 0, 0, 0])
 num_bd = n_elements(wl_center)
@@ -988,6 +994,7 @@ END
 ; Retrieves CWV and Reflectance simultaneously
 ; Works on a per-column basis to consider smile
 ;********************************************************************************************
+; TODO - implement in Java
 PRO CHRIS_retrieve_wv_no_dem, toa_sub, mus_inp, lpw_wv_col, edr_wv_col, edf_wv_col, sab_wv_col, wl_center, wv_gr, wv_val, mat_arr, wv_arr, refl_arr
 common chi_sq_wv_refl, lpw_wvc2, egl_wvc2, sab_wvc2, toa_wv, refl_pix, wv_gr2, dim_wv, wv_p, wv_inf
 
@@ -1083,6 +1090,7 @@ END
 ;
 ; Provides Merit Function for WV inversion, called by zbrent
 ;********************************************************************************************
+; TODO - implement in Java
 FUNCTION chisq_CHRIS_WV_refl, wv
 common chi_sq_wv_refl, lpw, egl, sab, toa_AHS, refl_pix, wv_gr, dim_wv, wv_p, wv_inf
 
@@ -1107,184 +1115,11 @@ return, chisq
 END
 
 ;********************************************************************************************
-; smile_processor:
-;
-; Retrieves column-wise spectral channel positions from modes 1 and 5 data 
-;         (O2-A feature at 760nm necessary)
-;********************************************************************************************
-PRO smile_processor, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, cld_aot_thre, wvl_LUT, aot550, msk_arr, wv_val, dwl_arr_sm
-common inputs_shift, wvl, wl_center2, wl_fwhm2, num_bd, lpw, egl, sab, toa, refl_smooth, wh_abs, denom, exp_arr
-
-wvl = wvl_LUT
-wl_center2 = wl_center
-wl_fwhm2 = wl_fwhm
-
-
-ind_pref_arr = [0., -36., 36., -55., 55.] ; image priority in case the 5 observation angles are not acquired
-cnt = 0
-ind = 0
-while cnt ne 1 do begin
-  wh = where(fza_arr eq ind_pref_arr[ind], cnt)
-  ind = ind + 1
-endwhile
-ind_img = ind-1
-
-wh = where(fza_arr eq ind_pref_arr[ind_img]) & ind_img = wh[0]
-
-num_img = n_elements(toa_img_arr[*, 0, 0, 0])
-num_bd = n_elements(wl_center)
-
-toa_img = reform(toa_img_arr[ind_img, *, *, *])
-vza_inp = vza_arr[ind_img]
-sza_inp = sza_arr[ind_img] & mus_inp = cos(sza_inp * !dtor)
-phi_inp = phi_arr[ind_img]
-hsf_inp = hsf_arr[ind_img]
-
-tot_pix = long(ncols) * nrows
-wh_land = where(cld_arr[*, *, ind_img] le cld_aot_thre and msk_arr[*, *, ind_img] eq 1, cnt_land)
-toa_sub = fltarr(cnt_land, num_bd)
-for i = 0, num_bd - 1 do toa_sub[*, i] = toa_img[wh_land + tot_pix * i]
-
-
-sp_resol = abs(mean(wl_center[0:num_bd-2]-wl_center[1:num_bd-1]))
-
-;***********************************************************************************************************************
-
-dim_cwv = n_elements(cwv_gr)
-
-num_wvl_LUT = n_elements(wvl_LUT)
-
-a=interpol_lut(vza_inp, sza_inp, phi_inp, hsf_inp, aot550, wv_val)
-lpw = a[0, *]*1.e+4
-egl = (a[1, *] * mus_inp + a[2, *])*1.e+4
-sab = a[3, *]
-
-;**********************************************************************************
-; Calculate smile
-
-toa_ac_tr = fltarr(ncols, num_bd)
-for ind = 0, ncols - 1 do for i = 0, num_bd - 1 do begin
-  col_arr= toa_img[ind, *, i]
-  wh = where(col_arr ne 0., cnt)
-  if cnt gt 0 then toa_ac_tr[ind, i] = mean(col_arr[wh]) else toa_ac_tr[ind, i] = 0. ; mean spectra in the y-direction to characterize the x-direction
-endfor
-
-;**********************************************************************************
-
-; inputs for response functions, passed by common
-exp_max = 6.
-exp_min = 2.
-exp_arr = exp_max + (exp_min - exp_max) * findgen(num_bd) / (num_bd-1)
-c_arr = (1./(2.^exp_arr*alog(2.)))^(1./exp_arr)
-denom = 1. / (wl_fwhm * c_arr)
-
-wvl_o2 = [749., 779.] ; O2-A feature for characterization
-wh_o2 = where(wl_center ge wvl_o2[0] and wl_center le wvl_o2[1], cnt_o2)
-lim_1 = wh_o2[0]
-lim_2 = wh_o2[cnt_o2 - 1]
-
-norm_int = 1. / (wl_center[lim_2] - wl_center[lim_1])
-
-dwl = fltarr(ncols)
-
-xa_ini = -6. ; ranges for dwl retrieval
-xb_ini = 0.
-xc_ini = 6.
-ftol = 1.e-5 ; convergence value for minF_parabolic
-niter_max = 1.e+3  ; maximum number of iterations for minF_parabolic
-
-for ind = 0, ncols - 1 do begin
-
-  toa = toa_ac_tr[ind, *]
-
-  surf_refl_retriever, 0., surf_refl_ini
-
-  refl_smooth = reform(smooth(surf_refl_ini, 10))  ; smoothed to remove possible spikes due to spectral shift
-
-  t = (surf_refl_ini[lim_2] - surf_refl_ini[lim_1]) * (wl_center[wh_o2] - wl_center[lim_1]) * norm_int + surf_refl_ini[lim_1]
-  refl_smooth[wh_o2]  = t
-
-  minF_parabolic, xa_ini,xb_ini,xc_ini, xmin, fmin, FUNC_NAME='chisq_CHRIS_shift', MAX_ITERATIONS=maxit, TOLERANCE=TOL
-  dwl[ind] = xmin
-
-endfor
-
-dwl_arr_sm = smooth(dwl, sp_resol * 2, /edge)
-
-END
-
-
-;********************************************************************************************
-; chisq_CHRIS_shift:
-;
-; Provides Merit Function for smile characterization, called by minF_parabolic
-;********************************************************************************************
-function chisq_CHRIS_shift, dwl
-common inputs_shift, wvl_LUT, wl_center, wl_fwhm, num_bd, lpw, egl, sab, toa, refl_smooth, wh_o2, denom, exp_arr
-common outputs, surf_refl_retr
-
-lpw_filter = fltarr(num_bd)
-egl_filter = fltarr(num_bd)
-sab_filter = fltarr(num_bd)
-
-dwl=dwl[0]
-for bd = 0, num_bd - 1 do begin
-  wl_center_sh = wl_center + dwl
-  li1 = where (wvl_LUT ge (wl_center_sh[bd] - 2.* wl_fwhm[bd]) and wvl_LUT le (wl_center_sh[bd] + 2.* wl_fwhm[bd]), cnt)
-  if (cnt gt 0) then begin
-    tmp =abs(wl_center_sh[bd] - wvl_LUT[li1])*denom[bd]
-    s = exp(-(tmp^exp_arr[bd]))
-    norm = total(s)
-    lpw_filter[bd] = total(lpw[li1]*s) / norm
-    egl_filter[bd] = total(egl[li1]*s) / norm
-    sab_filter[bd] = total(sab[li1]*s) / norm
-  endif
-endfor
-
-xterm = !pi * (toa - lpw_filter)/egl_filter
-surf_refl_retr = reform(xterm / (1. + sab_filter * xterm))
-
-chi_sq = total((refl_smooth[wh_o2] - surf_refl_retr[wh_o2]) ^ 2)
-
-return, chi_sq
-end
-
-;********************************************************************************************
-; surf_refl_retriever:
-;
-; Provides surface reflectance for a given spectral shift value
-;********************************************************************************************
-pro surf_refl_retriever, dwl , surf_refl
-common inputs_shift, wvl_LUT, wl_center, wl_fwhm, num_bd, lpw, egl, sab, toa, refl_smooth, wh_o2, denom, exp_arr
-
-lpw_filter = fltarr(num_bd)
-egl_filter = fltarr(num_bd)
-sab_filter = fltarr(num_bd)
-
-dwl=dwl[0]
-for bd = 0, num_bd - 1 do begin
-  wl_center_sh = wl_center + dwl
-  li1 = where (wvl_LUT ge (wl_center_sh[bd] - 2.* wl_fwhm[bd]) and wvl_LUT le (wl_center_sh[bd] + 2.* wl_fwhm[bd]), cnt)
-  if (cnt gt 0) then begin
-    tmp =abs(wl_center_sh[bd] - wvl_LUT[li1])*denom[bd]
-    s = exp(-(tmp^exp_arr[bd]))
-    norm = total(s)
-    lpw_filter[bd] = total(lpw[li1]*s) / norm
-    egl_filter[bd] = total(egl[li1]*s) / norm
-    sab_filter[bd] = total(sab[li1]*s) / norm
-  endif
-endfor
-
-xterm = !pi * (toa - lpw_filter)/egl_filter
-surf_refl = xterm / (1. + sab_filter * xterm)
-
-end
-
-;********************************************************************************************
 ; generate_filter:
 ;
 ; Calculates spectral weighting factors used for resampling to CHRIS band setting
 ;********************************************************************************************
+; TODO - implement in Java
 Function generate_filter, wvl_M, wvl, wl_resol
 
 num_wvl_M = n_elements(wvl_M)
@@ -1489,160 +1324,12 @@ return, f_int
 
 END
 
-
-
-pro minF_parabolic, xa,xb,xc, xmin, fmin, FUNC_NAME=func_name,    $
-                                          MAX_ITERATIONS=maxit,   $
-                                          TOLERANCE=TOL,          $
-                                          POINT_NDIM=pn, DIRECTION=dirn
-;+
-; NAME:
-;       MINF_PARABOLIC
-; PURPOSE:
-;       Minimize a function using Brent's method with parabolic interpolation
-; EXPLANATION:
-;       Find a local minimum of a 1-D function up to specified tolerance.
-;       This routine assumes that the function has a minimum nearby.
-;       (recommend first calling minF_bracket, xa,xb,xc, to bracket minimum).
-;       Routine can also be applied to a scalar function of many variables,
-;       for such case the local minimum in a specified direction is found,
-;       This routine is called by minF_conj_grad, to locate minimum in the 
-;       direction of the conjugate gradient of function of many variables.
-;
-; CALLING EXAMPLES:
-;       minF_parabolic, xa,xb,xc, xmin, fmin, FUNC_NAME="name"  ;for 1-D func.
-;  or:
-;       minF_parabolic, xa,xb,xc, xmin, fmin, FUNC="name", $
-;                                         POINT=[0,1,1],   $
-;                                         DIRECTION=[2,1,1]     ;for 3-D func.
-; INPUTS:
-;       xa,xb,xc = scalars, 3 points which bracket location of minimum,
-;               that is, f(xb) < f(xa) and f(xb) < f(xc), so minimum exists.
-;               When working with function of N variables
-;               (xa,xb,xc) are then relative distances from POINT_NDIM,
-;               in the direction specified by keyword DIRECTION,
-;               with scale factor given by magnitude of DIRECTION.
-; INPUT KEYWORDS:
-;      FUNC_NAME = function name (string)
-;               Calling mechanism should be:  F = func_name( px )
-;               where:
-;                       px = scalar or vector of independent variables, input.
-;                       F = scalar value of function at px.
-;
-;      POINT_NDIM = when working with function of N variables,
-;               use this keyword to specify the starting point in N-dim space.
-;               Default = 0, which assumes function is 1-D.
-;      DIRECTION = when working with function of N variables,
-;               use this keyword to specify the direction in N-dim space
-;               along which to bracket the local minimum, (default=1 for 1-D).
-;               (xa, xb, xc, x_min are then relative distances from POINT_NDIM)
-;      MAX_ITER = maximum allowed number iterations, default=100.
-;      TOLERANCE = desired accuracy of minimum location, default=sqrt(1.e-7).
-; OUTPUTS:
-;       xmin = estimated location of minimum.
-;               When working with function of N variables,
-;               xmin is the relative distance from POINT_NDIM,
-;               in the direction specified by keyword DIRECTION,
-;               with scale factor given by magnitude of DIRECTION,
-;               so that min. Loc. Pmin = Point_Ndim + xmin * Direction.
-;       fmin = value of function at xmin (or Pmin).
-; PROCEDURE:
-;       Brent's method to minimize a function by using parabolic interpolation.
-;       Based on function BRENT in Numerical Recipes in FORTRAN (Press et al. 
-;       1992),  sec.10.2 (p. 397).
-; MODIFICATION HISTORY:
-;       Written, Frank Varosi NASA/GSFC 1992.
-;       Converted to IDL V5.0   W. Landsman   September 1997
-;-
-        zeps = 1.e-7                    ;machine epsilon, smallest addition.
-        goldc = 1 - (sqrt(5)-1)/2       ;complement of golden mean.
-
-        if N_elements( TOL ) NE 1 then TOL = sqrt( zeps )
-        if N_elements( maxit ) NE 1 then maxit = 100
-
-        if N_elements( pn ) LE 0 then begin
-                pn = 0
-                dirn = 1
-           endif
-
-        xLo = xa < xc
-        xHi = xa > xc
-        xmin = xb
-        fmin = call_function( func_name, pn + xmin * dirn )
-        xv = xmin  &  xw = xmin
-        fv = fmin  &  fw = fmin
-        es = 0.
-
-        for iter = 1,maxit do begin
-
-                goldstep = 1
-                xm = (xLo + xHi)/2.
-                TOL1 = TOL * abs(xmin) + zeps
-                TOL2 = 2*TOL1
-
-                if ( abs( xmin - xm ) LE ( TOL2 - (xHi-xLo)/2. ) ) then return
-
-                if (abs( es ) GT TOL1) then begin
-
-                        r = (xmin-xw) * (fmin-fv)
-                        q = (xmin-xv) * (fmin-fw)
-                        p = (xmin-xv) * q + (xmin-xw) * r
-                        q = 2 * (q-r)
-                        if (q GT 0) then p = -p
-                        q = abs( q )
-                        etemp = es
-                        es = ds
-
-                        if (p GT q*(xLo-xmin)) AND $
-                           (p LT q*(xHi-xmin)) AND $
-                           (abs( p ) LT abs( q*etemp/2 )) then begin
-                                ds = p/q
-                                xu = xmin + ds
-                                if (xu-xLo LT TOL2) OR (xHi-xu LT TOL2) then $
-                                        ds = TOL1 * (1-2*((xm-xmin) LT 0))
-                                goldstep = 0
-                           endif
-                   endif
-
-                if (goldstep) then begin
-                        if (xmin GE xm) then  es = xLo-xmin  else  es = xHi-xmin
-                        ds = goldc * es
-                   endif
-
-                xu = xmin + (1-2*(ds LT 0)) * ( abs( ds ) > TOL1 )
-                fu = call_function( func_name, pn + xu * dirn )
-
-                if (fu LE fmin) then begin
-
-                        if (xu GE xmin) then xLo=xmin else xHi=xmin
-                        xv = xw  &  fv = fw
-                        xw = xmin  &  fw = fmin
-                        xmin = xu  &  fmin = fu
-                
-                  endif else begin
-
-                        if (xu LT xmin) then xLo=xu else xHi=xu
-
-                        if (fu LE fw) OR (xw EQ xmin) then begin
-
-                                xv = xw  &  fv = fw
-                                xw = xu  &  fw = fu
-
-                          endif else if (fu LE fv) OR (xv EQ xmin) $
-                                                   OR (xv EQ xw) then begin
-                                xv = xu  &  fv = fu
-                           endif
-                   endelse
-          endfor
-
-        message,"exceeded maximum number of iterations: "+strtrim(iter,2),/INFO
-return
-end
 ;********************************************************************************
 ;***
 ;***  varsol: IDL de 6S, da DSOL en forma de Richter
 ;***
 ;********************************************************************************
+; TODO - implement in Java
 PRO varsol, jday, month, dsol
 
 if month gt 2 and month le 8 then J=31*(MONTH-1)-((MONTH-1)/2)-2+JDAY
@@ -1655,248 +1342,12 @@ DSOL = 1./DSOL^0.5
 return
 END
 
-
-pro zensun,day,time,lat,lon,zenith,azimuth,solfac,sunrise,sunset,local=local,$
-            latsun=latsun,lonsun=lonsun
-;+
-; ROUTINE:      zensun
-;
-; PURPOSE:      Compute solar position information as a function of
-;               geographic coordinates, date and time.
-;
-; USEAGE:       zensun,day,time,lat,lon,zenith,azimuth,solfac,sunrise,sunset,
-;                  local=local
-;
-; INPUT:
-;   day         Julian day (positive scalar or vector)
-;               (spring equinox =  80)
-;               (summer solstice= 171)
-;               (fall equinox   = 266)
-;               (winter solstice= 356)
-;
-;   time        Universal Time in hours (scalar or vector)
-;
-;   lat         geographic latitude of point on earth's surface (degrees)
-;
-;   lon         geographic longitude of point on earth's surface (degrees)
-;
-; OUTPUT:
-;
-;   zenith      solar zenith angle (degrees)
-;
-;   azimuth     solar azimuth  (degrees)
-;               Azimuth is measured clockwise from due north
-;
-;   solfac      Solar flux multiplier.  SOLFAC=cosine(ZENITH)/RSUN^2
-;               where rsun is the current earth-sun distance in
-;               astronomical units.
-;
-;               NOTE: SOLFAC is negative when the sun is below the horizon
-;
-;   sunrise     UT of sunrise (hours)
-;   sunset      UT of sunset  (hours)
-;
-;
-; KEYWORD INPUT:
-;
-;   local       if set, TIME is specified as a local time and SUNRISE
-;               and SUNSET are output in terms of local time
-;
-;               NOTE: "local time" is defined as UT + local_offset
-;                     where local_offset is fix((lon+sign(lon)*7.5)/15)
-;                     with -180 < lon < 180
-;
-;                     Be aware, there are no fancy provisions for
-;                     day-light savings time and other such nonsense.
-;
-; KEYWORD OUTPUT:
-;
-;   latsun      the latitude of the sub-solar point (fairly constant over day)
-;               Note that daily_minimum_zenith=abs(latsun-lat)
-;
-;   lonsun      the longitude of the sub-solar point
-;               Note that at 12 noon local time (lon-lonsun)/15. is the
-;               number of minutes by which the sun leads the clock.
-;
-;
-;; EXAMPLE 1:   Compute the solar flux at Palmer Station for day 283
-;
-;               time=findgen(1+24*60)/60
-;               zensun,283,time,-64.767,-64.067,z,a,sf
-;               solflx=sf*s
-;               plot,time,solflx
-;
-;               where s is the TOA solar irradiance at normal incidence:
-;
-;               s=1618.8   ; W/m2/micron for AVHRR1 GTR100
-;               s= 976.9   ; W/m2/micron for AVHRR2 GTR100
-;               s=1685.1   ; W/m2/micron for 410nm GTR100
-;               s= 826.0   ; W/m2/micron for 936nm GTR100
-;               s=1.257e17 ; photons/cm2/s PAR GTR100
-;               s=1372.9   ; w/m2 total broadband
-;
-;
-;; EXAMPLE 2:   Find time of sunrise and sunset for current day
-;
-;     doy=julday()-julday(1,0,1994)
-;     zensun,doy,12,34.456,-119.813,z,a,s,sr,ss,/local &$
-;     zensun,doy,[sr,.5*(sr+ss),ss],34.456,-119.813,z,az,/local &$
-;     print,'sunrise: '+hms(3600*sr)+      ' PST   azimuth angle: ',az(0)  &$
-;     print,'sunset:  '+hms(3600*ss)+      ' PST   azimuth angle: ',az(2)  &$
-;     print,'zenith:  '+hms(1800*(ss+sr))+ ' PST   zenith angle:  ',z(1)
-;
-; PROCEDURE:
-;
-; 1.  Calculate the subsolar point latitude and longitude, based on
-;     DAY and TIME. Since each year is 365.25 days long the exact
-;     value of the declination angle changes from year to year.  For
-;     precise values consult THE AMERICAN EPHEMERIS AND NAUTICAL
-;     ALMANAC published yearly by the U.S. govt. printing office.  The
-;     subsolar coordinates used in this code were provided by a
-;     program written by Jeff Dozier.
-;
-;  2. Given the subsolar latitude and longitude, spherical geometry is
-;     used to find the solar zenith, azimuth and flux multiplier.
-;
-;  AUTHOR:      Paul Ricchiazzi        23oct92
-;               Earth Space Research Group,  UCSB
-;
-;  REVISIONS:
-;
-; jan94: use spline fit to interpolate on EQT and DEC tables
-; jan94: output SUNRISE and SUNSET, allow input/output in terms of local time
-; jan97: declare eqtime and decang as floats.  previous version
-;         this caused small offsets in the time of minimum solar zenith
-;-
-;  eqt = equation of time (minutes)  ; solar longitude correction = -15*eqt
-;  dec = declination angle (degrees) = solar latitude
-;
-; LOWTRAN v7 data (25 points)
-;     The LOWTRAN solar position data is characterized by only 25 points.
-;     This should predict the subsolar angles within one degree.  For
-;     increased accuracy add more data points.
-;
-;nday=[   1.,    9.,   21.,   32.,   44.,   60.,  91.,  121.,  141.,  152.,$
-;       160.,  172.,  182.,  190.,  202.,  213., 244.,  274.,  305.,  309.,$
-;       325.,  335.,  343.,  355.,  366.]
-;
-;eqt=[ -3.23, -6.83,-11.17,-13.57,-14.33,-12.63, -4.2,  2.83,  3.57,  2.45,$
-;       1.10, -1.42, -3.52, -4.93, -6.25, -6.28,-0.25, 10.02, 16.35, 16.38,$
-;       14.3, 11.27,  8.02,  2.32, -3.23]
-;
-;dec=[-23.07,-22.22,-20.08,-17.32,-13.62, -7.88, 4.23, 14.83, 20.03, 21.95,$
-;      22.87, 23.45, 23.17, 22.47, 20.63, 18.23, 8.58, -2.88,-14.18,-15.45,$
-;     -19.75,-21.68,-22.75,-23.43,-23.07]
-;
-; Analemma information from Jeff Dozier
-;     This data is characterized by 74 points
-;
-
-if n_params() eq 0 then begin
-  xhelp,'zensun'
-  return
-endif
-
-nday=[  1.0,   6.0,  11.0,  16.0,  21.0,  26.0,  31.0,  36.0,  41.0,  46.0,$
-       51.0,  56.0,  61.0,  66.0,  71.0,  76.0,  81.0,  86.0,  91.0,  96.0,$
-      101.0, 106.0, 111.0, 116.0, 121.0, 126.0, 131.0, 136.0, 141.0, 146.0,$
-      151.0, 156.0, 161.0, 166.0, 171.0, 176.0, 181.0, 186.0, 191.0, 196.0,$
-      201.0, 206.0, 211.0, 216.0, 221.0, 226.0, 231.0, 236.0, 241.0, 246.0,$
-      251.0, 256.0, 261.0, 266.0, 271.0, 276.0, 281.0, 286.0, 291.0, 296.0,$
-      301.0, 306.0, 311.0, 316.0, 321.0, 326.0, 331.0, 336.0, 341.0, 346.0,$
-      351.0, 356.0, 361.0, 366.0]
-
-eqt=[ -3.23, -5.49, -7.60, -9.48,-11.09,-12.39,-13.34,-13.95,-14.23,-14.19,$
-     -13.85,-13.22,-12.35,-11.26,-10.01, -8.64, -7.18, -5.67, -4.16, -2.69,$
-      -1.29, -0.02,  1.10,  2.05,  2.80,  3.33,  3.63,  3.68,  3.49,  3.09,$
-       2.48,  1.71,  0.79, -0.24, -1.33, -2.41, -3.45, -4.39, -5.20, -5.84,$
-      -6.28, -6.49, -6.44, -6.15, -5.60, -4.82, -3.81, -2.60, -1.19,  0.36,$
-       2.03,  3.76,  5.54,  7.31,  9.04, 10.69, 12.20, 13.53, 14.65, 15.52,$
-      16.12, 16.41, 16.36, 15.95, 15.19, 14.09, 12.67, 10.93,  8.93,  6.70,$
-       4.32,  1.86, -0.62, -3.23]
-
-dec=[-23.06,-22.57,-21.91,-21.06,-20.05,-18.88,-17.57,-16.13,-14.57,-12.91,$
-     -11.16, -9.34, -7.46, -5.54, -3.59, -1.62,  0.36,  2.33,  4.28,  6.19,$
-       8.06,  9.88, 11.62, 13.29, 14.87, 16.34, 17.70, 18.94, 20.04, 21.00,$
-      21.81, 22.47, 22.95, 23.28, 23.43, 23.40, 23.21, 22.85, 22.32, 21.63,$
-      20.79, 19.80, 18.67, 17.42, 16.05, 14.57, 13.00, 11.33,  9.60,  7.80,$
-       5.95,  4.06,  2.13,  0.19, -1.75, -3.69, -5.62, -7.51, -9.36,-11.16,$
-     -12.88,-14.53,-16.07,-17.50,-18.81,-19.98,-20.99,-21.85,-22.52,-23.02,$
-     -23.33,-23.44,-23.35,-23.06]
-
-;
-; compute the subsolar coordinates
-;
-
-tt=((fix(day)+time/24.-1.) mod 365.25) +1.  ;; fractional day number
-                                            ;; with 12am 1jan = 1.
-
-if n_elements(tt) gt 1 then begin
-  eqtime=tt-tt                              ;; this used to be day-day, caused
-  decang=eqtime                             ;; error in eqtime & decang when a
-  ii=sort(tt)                               ;; single integer day was input
-  eqtime(ii)=spline(nday,eqt,tt(ii))/60.
-  decang(ii)=spline(nday,dec,tt(ii))
-endif else begin
-  eqtime=spline(nday,eqt,tt)/60.
-  decang=spline(nday,dec,tt)
-endelse
-latsun=decang
-
-if keyword_set(local) then begin
-  lonorm=((lon + 360 + 180 ) mod 360 ) - 180.
-  tzone=fix((lonorm+7.5)/15)
-  index = where(lonorm lt 0, cnt)
-  if (cnt gt 0) then tzone(index) = fix((lonorm(index)-7.5)/15)
-  ut=(time-tzone+24.) mod 24.                  ; universal time
-  noon=tzone+12.-lonorm/15.                    ; local time of noon
-endif else begin
-  ut=time
-  noon=12.-lon/15.                             ; universal time of noon
-endelse
-
-lonsun=-15.*(ut-12.+eqtime)
-
-; compute the solar zenith, azimuth and flux multiplier
-
-t0=(90.-lat)*!dtor                            ; colatitude of point
-t1=(90.-latsun)*!dtor                         ; colatitude of sun
-
-p0=lon*!dtor                                  ; longitude of point
-p1=lonsun*!dtor                               ; longitude of sun
-
-zz=cos(t0)*cos(t1)+sin(t0)*sin(t1)*cos(p1-p0) ; up          \
-xx=sin(t1)*sin(p1-p0)                         ; east-west    > rotated coor
-yy=sin(t0)*cos(t1)-cos(t0)*sin(t1)*cos(p1-p0) ; north-south /
-
-azimuth=atan(xx,yy)/!dtor                     ; solar azimuth
-zenith=acos(zz)/!dtor                         ; solar zenith
-
-rsun=1.-0.01673*cos(.9856*(tt-2.)*!dtor)      ; earth-sun distance in AU
-solfac=zz/rsun^2                              ; flux multiplier
-
-if n_params() gt 7 then begin
-  ;angsun=6.96e10/(1.5e13*rsun)                ; solar disk half-angle
-  angsun=0.
-  arg=-(sin(angsun)+cos(t0)*cos(t1))/(sin(t0)*sin(t1))
-  sunrise = arg - arg
-  sunset  = arg - arg + 24.
-  index = where(abs(arg) le 1, cnt)
-  if (cnt gt 0) then begin
-    dtime=acos(arg(index))/(!dtor*15)
-    sunrise(index)=noon-dtime-eqtime(index)
-    sunset(index)=noon+dtime-eqtime(index)
-  endif
-endif
-
-return
-end
-
 PRO gfunct, X, A, F, pder
   F = A[0] * X
   pder = X
 END
 
+; TODO - implement in Java
 FUNCTION ZBRENT, x1, x2, FUNC_NAME=func_name,    $
                          MAX_ITERATIONS=maxit, TOLERANCE=TOL
 ;+
