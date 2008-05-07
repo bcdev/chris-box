@@ -48,15 +48,15 @@ class NoiseReductionPresenter {
 
     public NoiseReductionPresenter(Product[] products,
                                    AdvancedSettingsPresenter advancedSettingsPresenter) {
-        Object[][] productsData = new Object[products.length][2];
+        Object[][] productData = new Object[products.length][2];
         if (products.length > 0) {
-            for (int i = 0; i < productsData.length; i++) {
-                productsData[i][0] = true;
-                productsData[i][1] = products[i];
+            for (int i = 0; i < productData.length; i++) {
+                productData[i][0] = true;
+                productData[i][1] = products[i];
             }
         }
 
-        productTableModel = new DefaultTableModel(productsData, new String[]{"Reduce Noise", "Product Name"});
+        productTableModel = new DefaultTableModel(productData, new String[]{"Reduce Noise", "Product Name"});
         productTableSelectionModel = new DefaultListSelectionModel();
         productTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         productTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
@@ -380,6 +380,4 @@ class NoiseReductionPresenter {
 
         return str;
     }
-
-
 }
