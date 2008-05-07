@@ -20,6 +20,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ class NoiseReductionPresenter {
         }
     }
 
-    public Map<String, Object> getDestripingParameterMap() {
+    public Map<String, Object> getDestripingFactorsParameterMap() {
         return advancedSettingsPresenter.getDestripingParameterMap();
     }
 
@@ -122,7 +123,7 @@ class NoiseReductionPresenter {
         this.advancedSettingsPresenter = advancedSettingsPresenter;
     }
 
-    public Product[] getSourceProducts() {
+    public Product[] getDestripingFactorsSourceProducts() {
         Vector productVector = getProductTableModel().getDataVector();
         Product[] products = new Product[productVector.size()];
         for (int i = 0; i < productVector.size(); i++) {
@@ -131,7 +132,7 @@ class NoiseReductionPresenter {
         return products;
     }
 
-    public Product[] getNoiseReductionProducts() {
+    public Product[] getSourceProducts() {
         final DefaultTableModel tableModel = getProductTableModel();
         final List<Product> productList = new ArrayList<Product>();
 
@@ -191,28 +192,24 @@ class NoiseReductionPresenter {
     }
 
     void addProduct(Product product) throws NoiseReductionValidationException {
-        Product[] products = getSourceProducts();
+        Product[] products = getDestripingFactorsSourceProducts();
         if (products.length >= 5) {
             throw new NoiseReductionValidationException("Acquisition set already contains five products.");
         }
-        if (products.length != 0 && !areFromSameAcquisition(products[0], product)) {
-            throw new NoiseReductionValidationException("Product does not belong to the acquisition set.");
+        if (products.length != 0) {
+            final AcquisitionSetProductFilter productFilter = new AcquisitionSetProductFilter(products[0]);
+            if (!productFilter.accept(product)) {
+                throw new NoiseReductionValidationException("Product does not belong to the acquisition set.");
+            }
         }
         if (containsProduct(products, product)) {
             throw new NoiseReductionValidationException("Product is already contained in the acquisition set.");
         }
 
-        if (!NoiseReductionAction.CHRIS_TYPES.contains(product.getProductType())) {
-            StringBuilder sb = new StringBuilder(50);
-            for (java.util.Iterator it = NoiseReductionAction.CHRIS_TYPES.iterator(); it.hasNext();) {
-                String type = (String) it.next();
-                sb.append("\"").append(type).append("\"");
-                if (it.hasNext()) {
-                    sb.append(", ");
-                }
-            }
-            throw new NoiseReductionValidationException(
-                    "Product type '" + product.getProductType() + "'is not valid.");
+        final SourceProductFilter sourceProductFilter = new SourceProductFilter();
+        if (!sourceProductFilter.accept(product)) {
+            throw new NoiseReductionValidationException(MessageFormat.format(
+                    "Product type ''{0}''is not valid.", product.getProductType()));
         }
         DefaultTableModel tableModel = getProductTableModel();
         tableModel.addRow(new Object[]{Boolean.TRUE, product});
@@ -246,27 +243,6 @@ class NoiseReductionPresenter {
         return false;
     }
 
-    static boolean areFromSameAcquisition(Product referenceProduct, Product product) {
-        return product.getProductType().equals(referenceProduct.getProductType()) &&
-                areFromSameAcquisition(referenceProduct.getFileLocation(), product.getFileLocation());
-    }
-
-    static boolean areFromSameAcquisition(File referenceFile, File file) {
-        if (referenceFile != null && file != null) {
-            String[] expectedParts = referenceFile.getName().split("_", 5);
-            String[] actualParts = file.getName().split("_", 5);
-            if (expectedParts.length == 5 && expectedParts.length == actualParts.length) {
-                return expectedParts[0].equals(actualParts[0])
-                        && expectedParts[1].equals(actualParts[1])
-                        && expectedParts[2].equals(actualParts[2])
-                        // actualParts[3] should be different
-                        && expectedParts[4].equals(actualParts[4]);
-            }
-        }
-        return false;
-    }
-
-
     private static class AddProductAction extends AbstractAction {
 
         private static String LAST_OPEN_DIR_KEY = "chris.ui.file.lastOpenDir";
@@ -282,7 +258,7 @@ class NoiseReductionPresenter {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (presenter.getSourceProducts().length == 5) {
+            if (presenter.getDestripingFactorsSourceProducts().length == 5) {
                 JOptionPane.showMessageDialog((Component) e.getSource(), "You cannot select more than five products.");
                 return;
             }

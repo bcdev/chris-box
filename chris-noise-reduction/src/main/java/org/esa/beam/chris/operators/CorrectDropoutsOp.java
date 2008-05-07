@@ -117,7 +117,7 @@ public class CorrectDropoutsOp extends Operator {
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         dropoutCorrection = new DropoutCorrection(neighborhoodType);
-        targetProduct.setPreferredTileSize(64, 64);
+        targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 16);
     }
 
     @Override

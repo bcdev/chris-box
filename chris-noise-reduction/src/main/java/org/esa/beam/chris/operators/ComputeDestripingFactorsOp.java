@@ -140,7 +140,7 @@ public class ComputeDestripingFactorsOp extends Operator {
                             getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE));
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE,
                             getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
-        final StringBuilder sb = new StringBuilder("Applied with ");
+        final StringBuilder sb = new StringBuilder("Computed from ");
         for (int i = 0; i < sourceProducts.length; ++i) {
             if (i > 0) {
                 sb.append(", ");
@@ -159,6 +159,8 @@ public class ComputeDestripingFactorsOp extends Operator {
         if (slitCorrection) {
             slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
         }
+
+        targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 1);
     }
 
     @Override
@@ -462,9 +464,14 @@ public class ComputeDestripingFactorsOp extends Operator {
     // todo -- move
     private static double getAnnotationDouble(Product product, String name) throws OperatorException {
         final String string = getAnnotationString(product, name);
+        final int endIndex = string.trim().indexOf(" ");
 
         try {
-            return Double.parseDouble(string);
+            if (endIndex > 0) {
+                return Double.parseDouble(string.substring(0, endIndex));
+            } else {
+                return Double.parseDouble(string);
+            }
         } catch (Exception e) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
@@ -473,9 +480,14 @@ public class ComputeDestripingFactorsOp extends Operator {
     // todo -- move
     private static int getAnnotationInt(Product product, String name) throws OperatorException {
         final String string = getAnnotationString(product, name);
-
+        final int endIndex = string.trim().indexOf(" ");
+                                   
         try {
-            return Integer.parseInt(string);
+            if (endIndex > 0) {
+                return Integer.parseInt(string.substring(0, endIndex));
+            } else {
+                return Integer.parseInt(string);
+            }
         } catch (Exception e) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }

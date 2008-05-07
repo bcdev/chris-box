@@ -72,7 +72,7 @@ public class ApplyDestripingFactorsOp extends Operator {
 
             final FlagCoding flagCoding = sourceBand.getFlagCoding();
             if (flagCoding != null) {
-                targetBand.setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
+                targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
             }
         }
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
@@ -80,7 +80,7 @@ public class ApplyDestripingFactorsOp extends Operator {
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
                             getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
-        targetProduct.setPreferredTileSize(64, 64);
+        targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 16);
     }
 
     @Override

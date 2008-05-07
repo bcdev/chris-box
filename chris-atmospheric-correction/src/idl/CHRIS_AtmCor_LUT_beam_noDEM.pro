@@ -1347,7 +1347,6 @@ PRO gfunct, X, A, F, pder
   pder = X
 END
 
-; TODO - implement in Java
 FUNCTION ZBRENT, x1, x2, FUNC_NAME=func_name,    $
                          MAX_ITERATIONS=maxit, TOLERANCE=TOL
 ;+
