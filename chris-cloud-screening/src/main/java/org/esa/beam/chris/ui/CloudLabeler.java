@@ -16,8 +16,7 @@
  */
 package org.esa.beam.chris.ui;
 
-import org.esa.beam.chris.operators.ExtractEndmembersOp;
-import org.esa.beam.chris.operators.MakeClusterMapOp;
+import org.esa.beam.chris.operators.*;
 import org.esa.beam.chris.operators.internal.BandFilter;
 import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
@@ -75,14 +74,18 @@ public class CloudLabeler {
     }
 
     public void processLabelingStep(int[] backgroundIndexes) throws OperatorException {
+        int index = 0;
+        final Band[] probBands = new Band[clusterMapProduct.getNumBands() - 1];
         for (Band band : clusterMapProduct.getBands()) {
             if (band.getName().startsWith("prob")) {
-                final MakeClusterMapOp.ProbabilityImageBand probBand = (MakeClusterMapOp.ProbabilityImageBand) band;
-                probBand.update(backgroundIndexes);
+                probBands[index] = band;
+                final ImageBand probBand = (ImageBand) band;
+                probBand.setImage(ClusterProbabilityOpImage.create(probBand, clusterProduct.getBands(), index, backgroundIndexes));
+                index++;
             }
         }
-        final MakeClusterMapOp.MembershipImageBand membershipBand = (MakeClusterMapOp.MembershipImageBand) clusterMapProduct.getBand("membership_mask");
-        membershipBand.update();
+        final Band membershipBand = clusterMapProduct.getBand("membership_mask");
+        membershipBand.setImage(ClusterMapOpImage.create(membershipBand, probBands));
     }
 
     public int[] getCloudClusterIndexes() {
