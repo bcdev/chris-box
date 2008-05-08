@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.RasterDataNode;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.PointOpImage;
@@ -26,6 +27,8 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.util.Vector;
+import java.util.Arrays;
+import java.text.MessageFormat;
 
 /**
  * todo - API doc
@@ -38,13 +41,13 @@ public class ClusterProbabilityOpImage extends PointOpImage {
     private final int correspondingBandIndex;
     private final int[] backgroundBandIndexes;
 
-    public static ClusterProbabilityOpImage create(final ImageLayout imageLayout,
-                                                   final Band[] sourceBands,
-                                                   final int correspondingBandIndex,
-                                                   final int[] backgroundBandIndexes) {
-        final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
+    public static RenderedImage create(ImageLayout imageLayout,
+                                       Band[] sourceBands,
+                                       int correspondingBandIndex,
+                                       int[] backgroundBandIndexes) {
+        final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>(sourceBands.length);
 
-        for (final Band sourceBand : sourceBands) {
+        for (final RasterDataNode sourceBand : sourceBands) {
             sourceImageVector.add(sourceBand.getImage());
         }
 
@@ -72,13 +75,17 @@ public class ClusterProbabilityOpImage extends PointOpImage {
         final RasterAccessor targetAccessor =
                 new RasterAccessor(target, rectangle, formatTags[sources.length], getColorModel());
 
-        switch (targetAccessor.getDataType()) {
+        final int targetDataType = targetAccessor.getDataType();
+        switch (targetDataType) {
             case DataBuffer.TYPE_FLOAT:
                 floatLoop(sourceAccessors, targetAccessor);
                 break;
             case DataBuffer.TYPE_DOUBLE:
                 doubleLoop(sourceAccessors, targetAccessor);
                 break;
+            default:
+                throw new IllegalStateException(MessageFormat.format("Target data type {0} not supported.",
+                                                                     targetDataType));
         }
 
         if (targetAccessor.isDataCopy()) {
@@ -105,13 +112,13 @@ public class ClusterProbabilityOpImage extends PointOpImage {
         int sourceScanlineOffset = sourceBandOffset;
         int targetScanlineOffset = targetBandOffset;
 
+        final float[] sourceSamples = new float[sourceDataArrays.length];
         for (int y = 0; y < target.getHeight(); y++) {
             int sourcePixelOffset = sourceScanlineOffset;
             int targetPixelOffset = targetScanlineOffset;
 
             for (int x = 0; x < target.getWidth(); x++) {
 
-                final float[] sourceSamples = new float[sourceDataArrays.length];
                 for (int i = 0; i < sourceDataArrays.length; i++) {
                     sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
                 }
@@ -144,13 +151,13 @@ public class ClusterProbabilityOpImage extends PointOpImage {
         int sourceScanlineOffset = sourceBandOffset;
         int targetScanlineOffset = targetBandOffset;
 
+        final double[] sourceSamples = new double[sourceDataArrays.length];
         for (int y = 0; y < target.getHeight(); y++) {
             int sourcePixelOffset = sourceScanlineOffset;
             int targetPixelOffset = targetScanlineOffset;
 
             for (int x = 0; x < target.getWidth(); x++) {
 
-                final double[] sourceSamples = new double[sourceDataArrays.length];
                 for (int i = 0; i < sourceDataArrays.length; i++) {
                     sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
                 }
@@ -177,7 +184,11 @@ public class ClusterProbabilityOpImage extends PointOpImage {
             }
         }
 
-        return samples[correspondingBandIndex] / sum;
+         if (sum > 0.0f) {
+            return samples[correspondingBandIndex] / sum;
+        } else {
+            return 0.0f;
+        }
     }
 
     private double renormalize(double[] samples) {

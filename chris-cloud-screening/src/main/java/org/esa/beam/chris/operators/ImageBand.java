@@ -22,6 +22,18 @@ public class ImageBand extends Band {
     @Override
     public void setImage(RenderedImage image) {
         super.setImage(image);
+        reloadData();
+    }
+    @Override
+    public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
+        final Rectangle rectangle = new Rectangle(x, y, w, h);
+        final RenderedImage image = getImage();
+        final Raster raster = image.getData(rectangle);
+
+        raster.getDataElements(x, y, w, h, data.getElems());
+    }
+
+    private void reloadData() {
         if (hasRasterData()) {
             try {
                 readRasterDataFully();
@@ -31,12 +43,4 @@ public class ImageBand extends Band {
         }
     }
 
-    @Override
-    public void readRasterData(int x, int y, int w, int h, ProductData data, ProgressMonitor pm) throws IOException {
-        final Rectangle rectangle = new Rectangle(x, y, w, h);
-        final RenderedImage image = getImage();
-        final Raster raster = image.getData(rectangle);
-
-        raster.getDataElements(x, y, w, h, data.getElems());
-    }
 }

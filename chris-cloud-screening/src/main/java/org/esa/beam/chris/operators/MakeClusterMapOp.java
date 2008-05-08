@@ -55,7 +55,7 @@ public class MakeClusterMapOp extends Operator {
         int height = sourceProduct.getSceneRasterHeight();
         final String name = sourceProduct.getName().replace("_CLU", "_MAP");
         final String type = sourceProduct.getProductType().replace("_CLU", "_MAP");
-        final Product targetProduct = new Product(name, type, width, height);
+        targetProduct = new Product(name, type, width, height);
 
         try {
             final Band[] sourceBands = sourceProduct.getBands();

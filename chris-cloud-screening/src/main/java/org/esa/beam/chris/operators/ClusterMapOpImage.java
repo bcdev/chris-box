@@ -35,7 +35,7 @@ import java.util.Vector;
  */
 public class ClusterMapOpImage extends PointOpImage {
 
-    public static ClusterMapOpImage create(final ImageLayout imageLayout, Band[] sourceBands) {
+    public static RenderedImage create(final ImageLayout imageLayout, Band[] sourceBands) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band sourceBand : sourceBands) {
@@ -101,17 +101,17 @@ public class ClusterMapOpImage extends PointOpImage {
         int sourceScanlineOffset = sourceBandOffset;
         int targetScanlineOffset = targetBandOffset;
 
+        final double[] sourceSamples = new double[sourceDataArrays.length];
         for (int y = 0; y < target.getHeight(); y++) {
             int sourcePixelOffset = sourceScanlineOffset;
             int targetPixelOffset = targetScanlineOffset;
 
             for (int x = 0; x < target.getWidth(); x++) {
 
-                final double[] sourceSamples = new double[sourceDataArrays.length];
                 for (int i = 0; i < sourceDataArrays.length; i++) {
                     sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
                 }
-                targetDataArray[targetPixelOffset] = (byte) indexMax(sourceSamples);
+                targetDataArray[targetPixelOffset] = (byte) findMaxIndex(sourceSamples);
 
                 sourcePixelOffset += sourcePixelStride;
                 targetPixelOffset += targetPixelStride;
@@ -140,17 +140,17 @@ public class ClusterMapOpImage extends PointOpImage {
         int sourceScanlineOffset = sourceBandOffset;
         int targetScanlineOffset = targetBandOffset;
 
+        final double[] sourceSamples = new double[sourceDataArrays.length];
         for (int y = 0; y < target.getHeight(); y++) {
             int sourcePixelOffset = sourceScanlineOffset;
             int targetPixelOffset = targetScanlineOffset;
 
             for (int x = 0; x < target.getWidth(); x++) {
 
-                final double[] sourceSamples = new double[sourceDataArrays.length];
                 for (int i = 0; i < sourceDataArrays.length; i++) {
                     sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
                 }
-                targetDataArray[targetPixelOffset] = indexMax(sourceSamples);
+                targetDataArray[targetPixelOffset] = findMaxIndex(sourceSamples);
 
                 sourcePixelOffset += sourcePixelStride;
                 targetPixelOffset += targetPixelStride;
@@ -179,17 +179,17 @@ public class ClusterMapOpImage extends PointOpImage {
         int sourceScanlineOffset = sourceBandOffset;
         int targetScanlineOffset = targetBandOffset;
 
+        final double[] sourceSamples = new double[sourceDataArrays.length];
         for (int y = 0; y < target.getHeight(); y++) {
             int sourcePixelOffset = sourceScanlineOffset;
             int targetPixelOffset = targetScanlineOffset;
 
             for (int x = 0; x < target.getWidth(); x++) {
 
-                final double[] sourceSamples = new double[sourceDataArrays.length];
                 for (int i = 0; i < sourceDataArrays.length; i++) {
                     sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
                 }
-                targetDataArray[targetPixelOffset] = indexMax(sourceSamples);
+                targetDataArray[targetPixelOffset] = findMaxIndex(sourceSamples);
 
                 sourcePixelOffset += sourcePixelStride;
                 targetPixelOffset += targetPixelStride;
@@ -218,17 +218,17 @@ public class ClusterMapOpImage extends PointOpImage {
         int sourceScanlineOffset = sourceBandOffset;
         int targetScanlineOffset = targetBandOffset;
 
+        final double[] sourceSamples = new double[sourceDataArrays.length];
         for (int y = 0; y < target.getHeight(); y++) {
             int sourcePixelOffset = sourceScanlineOffset;
             int targetPixelOffset = targetScanlineOffset;
 
             for (int x = 0; x < target.getWidth(); x++) {
 
-                final double[] sourceSamples = new double[sourceDataArrays.length];
                 for (int i = 0; i < sourceDataArrays.length; i++) {
                     sourceSamples[i] = sourceDataArrays[i][sourcePixelOffset];
                 }
-                targetDataArray[targetPixelOffset] = indexMax(sourceSamples);
+                targetDataArray[targetPixelOffset] = findMaxIndex(sourceSamples);
 
                 sourcePixelOffset += sourcePixelStride;
                 targetPixelOffset += targetPixelStride;
@@ -239,9 +239,8 @@ public class ClusterMapOpImage extends PointOpImage {
         }
     }
 
-    private static int indexMax(double[] samples) {
+    private static int findMaxIndex(double[] samples) {
         int index = 0;
-
         for (int i = 1; i < samples.length; ++i) {
             if (samples[i] > samples[index]) {
                 index = i;
