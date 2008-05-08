@@ -27,6 +27,7 @@ import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.ImageLayout;
 import java.awt.Color;
+import java.awt.image.RenderedImage;
 
 /**
  * todo - API doc
@@ -67,7 +68,10 @@ public class MakeClusterMapOp extends Operator {
                 targetProduct.addBand(targetBand);
                 probBands[i] = targetBand;
                 ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
-                targetBand.setImage(ClusterProbabilityOpImage.create(imageLayout, sourceBands, i, backgroundClusterIndexes));
+                RenderedImage image = ClusterProbabilityOpImage.create(imageLayout,
+                                                                       sourceBands, i,
+                                                                       backgroundClusterIndexes);
+                targetBand.setImage(image);
             }
             final Band membershipBand = new ImageBand("membership_mask", ProductData.TYPE_INT8, width, height);
             membershipBand.setDescription("Cluster membership mask");
