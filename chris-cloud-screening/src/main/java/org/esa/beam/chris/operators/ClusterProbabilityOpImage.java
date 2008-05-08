@@ -48,13 +48,11 @@ public class ClusterProbabilityOpImage extends PointOpImage {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterProbabilityOpImage(sourceImageVector, imageLayout, correspondingBandIndex, backgroundBandIndexes);
+        return new ClusterProbabilityOpImage(imageLayout, sourceImageVector, correspondingBandIndex, backgroundBandIndexes);
     }
 
-    private ClusterProbabilityOpImage(Vector<RenderedImage> sourceImageVector,
-                                      ImageLayout layout,
-                                      int correspondingBandIndex,
-                                      int[] backgroundBandIndexes) {
+    private ClusterProbabilityOpImage(ImageLayout layout, Vector<RenderedImage> sourceImageVector,
+                                      int correspondingBandIndex, int[] backgroundBandIndexes) {
         super(sourceImageVector, layout, null, true);
 
         this.correspondingBandIndex = correspondingBandIndex;

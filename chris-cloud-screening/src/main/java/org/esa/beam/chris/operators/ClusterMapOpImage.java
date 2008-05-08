@@ -42,11 +42,11 @@ public class ClusterMapOpImage extends PointOpImage {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterMapOpImage(sourceImageVector, imageLayout);
+        return new ClusterMapOpImage(imageLayout, sourceImageVector);
     }
 
-    private ClusterMapOpImage(Vector<RenderedImage> sourceImageVector, ImageLayout layout) {
-        super(sourceImageVector, layout, null, true);
+    private ClusterMapOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector) {
+        super(sourceImageVector, imageLayout, null, true);
     }
 
     @Override
