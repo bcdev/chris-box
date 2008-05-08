@@ -15,7 +15,6 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.PointOpImage;
@@ -36,15 +35,14 @@ import java.util.Vector;
  */
 public class ClusterMapOpImage extends PointOpImage {
 
-    public static ClusterMapOpImage create(Band targetBand, Band[] sourceBands) {
-        final ImageLayout layout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
+    public static ClusterMapOpImage create(final ImageLayout imageLayout, Band[] sourceBands) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band sourceBand : sourceBands) {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterMapOpImage(sourceImageVector, layout);
+        return new ClusterMapOpImage(sourceImageVector, imageLayout);
     }
 
     private ClusterMapOpImage(Vector<RenderedImage> sourceImageVector, ImageLayout layout) {
@@ -65,18 +63,18 @@ public class ClusterMapOpImage extends PointOpImage {
                 new RasterAccessor(target, rectangle, formatTags[sources.length], getColorModel());
 
         switch (targetAccessor.getDataType()) {
-            case DataBuffer.TYPE_BYTE:
-                byteLoop(sourceAccessors, targetAccessor);
-                break;
-            case DataBuffer.TYPE_INT:
-                intLoop(sourceAccessors, targetAccessor);
-                break;
-            case DataBuffer.TYPE_FLOAT:
-                floatLoop(sourceAccessors, targetAccessor);
-                break;
-            case DataBuffer.TYPE_DOUBLE:
-                doubleLoop(sourceAccessors, targetAccessor);
-                break;
+        case DataBuffer.TYPE_BYTE:
+            byteLoop(sourceAccessors, targetAccessor);
+            break;
+        case DataBuffer.TYPE_INT:
+            intLoop(sourceAccessors, targetAccessor);
+            break;
+        case DataBuffer.TYPE_FLOAT:
+            floatLoop(sourceAccessors, targetAccessor);
+            break;
+        case DataBuffer.TYPE_DOUBLE:
+            doubleLoop(sourceAccessors, targetAccessor);
+            break;
         }
 
         if (targetAccessor.isDataCopy()) {

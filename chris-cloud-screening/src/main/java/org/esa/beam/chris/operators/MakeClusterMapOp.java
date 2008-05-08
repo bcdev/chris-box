@@ -14,7 +14,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -24,12 +23,10 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.IntMap;
+import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
-import java.awt.Rectangle;
+import javax.media.jai.ImageLayout;
 import java.awt.Color;
-import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
-import java.io.IOException;
 
 /**
  * todo - API doc
@@ -69,7 +66,8 @@ public class MakeClusterMapOp extends Operator {
                 targetBand.setDescription(sourceBand.getDescription());
                 targetProduct.addBand(targetBand);
                 probBands[i] = targetBand;
-                targetBand.setImage(ClusterProbabilityOpImage.create(targetBand, sourceBands, i, backgroundClusterIndexes));
+                ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
+                targetBand.setImage(ClusterProbabilityOpImage.create(imageLayout, sourceBands, i, backgroundClusterIndexes));
             }
             final Band membershipBand = new ImageBand("membership_mask", ProductData.TYPE_INT8, width, height);
             membershipBand.setDescription("Cluster membership mask");
@@ -83,7 +81,8 @@ public class MakeClusterMapOp extends Operator {
             targetProduct.getIndexCodingGroup().add(indexCoding);
             membershipBand.setSampleCoding(indexCoding);
             membershipBand.setImageInfo(imageInfo);
-            membershipBand.setImage(ClusterMapOpImage.create(membershipBand, probBands));
+            ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(membershipBand);
+            membershipBand.setImage(ClusterMapOpImage.create(imageLayout, probBands));
         } catch (Throwable t) {
             t.printStackTrace();
         }

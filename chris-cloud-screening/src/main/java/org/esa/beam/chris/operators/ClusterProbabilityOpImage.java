@@ -15,7 +15,6 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.PointOpImage;
@@ -39,18 +38,17 @@ public class ClusterProbabilityOpImage extends PointOpImage {
     private final int correspondingBandIndex;
     private final int[] backgroundBandIndexes;
 
-    public static ClusterProbabilityOpImage create(Band targetBand,
-                                                   Band[] sourceBands,
-                                                   int correspondingBandIndex,
-                                                   int[] backgroundBandIndexes) {
-        final ImageLayout layout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
+    public static ClusterProbabilityOpImage create(final ImageLayout imageLayout,
+                                                   final Band[] sourceBands,
+                                                   final int correspondingBandIndex,
+                                                   final int[] backgroundBandIndexes) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band sourceBand : sourceBands) {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterProbabilityOpImage(sourceImageVector, layout, correspondingBandIndex, backgroundBandIndexes);
+        return new ClusterProbabilityOpImage(sourceImageVector, imageLayout, correspondingBandIndex, backgroundBandIndexes);
     }
 
     private ClusterProbabilityOpImage(Vector<RenderedImage> sourceImageVector,

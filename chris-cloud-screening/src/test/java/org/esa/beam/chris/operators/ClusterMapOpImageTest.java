@@ -20,6 +20,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
+import javax.media.jai.ImageLayout;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 
@@ -85,7 +86,8 @@ public class ClusterMapOpImageTest extends TestCase {
                 break;
         }
 
-        return ClusterMapOpImage.create(targetBand, sourceBands);
+        final ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
+        return ClusterMapOpImage.create(imageLayout, sourceBands);
     }
 
     private static Band addSourceBand(Product product, String name, byte[] values) {

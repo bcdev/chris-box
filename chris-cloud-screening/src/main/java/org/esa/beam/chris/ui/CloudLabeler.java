@@ -29,7 +29,9 @@ import org.esa.beam.framework.gpf.operators.common.BandArithmeticOp;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 import org.esa.beam.util.ProductUtils;
+import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
+import javax.media.jai.ImageLayout;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,12 +82,14 @@ public class CloudLabeler {
             if (band.getName().startsWith("prob")) {
                 probBands[index] = band;
                 final ImageBand probBand = (ImageBand) band;
-                probBand.setImage(ClusterProbabilityOpImage.create(probBand, clusterProduct.getBands(), index, backgroundIndexes));
+                ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(probBand);
+                probBand.setImage(ClusterProbabilityOpImage.create(imageLayout, clusterProduct.getBands(), index, backgroundIndexes));
                 index++;
             }
         }
-        final Band membershipBand = clusterMapProduct.getBand("membership_mask");
-        membershipBand.setImage(ClusterMapOpImage.create(membershipBand, probBands));
+        final Band membershipBand = getMembershipBand();
+        ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(membershipBand);
+        membershipBand.setImage(ClusterMapOpImage.create(imageLayout, probBands));
     }
 
     public int[] getCloudClusterIndexes() {
