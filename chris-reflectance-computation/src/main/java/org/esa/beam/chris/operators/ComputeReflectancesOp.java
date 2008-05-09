@@ -45,7 +45,7 @@ public class ComputeReflectancesOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
-    @Parameter(defaultValue = "true")
+    @Parameter(defaultValue = "false")
     private boolean copyRadianceBands;
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
