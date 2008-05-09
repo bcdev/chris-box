@@ -43,7 +43,7 @@
         <action>
             <id>chrisComputeReflectances</id>
             <class>org.esa.beam.chris.ui.ComputeReflectancesAction</class>
-            <text>Compute Reflectances...</text>
+            <text>Compute TOA Reflectances...</text>
             <shortDescr>Compute TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
