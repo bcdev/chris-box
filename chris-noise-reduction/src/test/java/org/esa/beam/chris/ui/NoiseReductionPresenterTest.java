@@ -130,7 +130,7 @@ public class NoiseReductionPresenterTest extends TestCase {
     }
 
     private static Product createChrisDummyProduct(String name, String mode, String targetName) {
-        Product product = new Product(name, "CHRIS_M2", 1, 1);
+        Product product = new Product("CHRIS_BR_123456_"+name+"_21", "CHRIS_M2", 1, 1);
         product.setFileLocation(new File("CHRIS_BR_123456_9876_21.hdf"));
         MetadataElement mphElement = new MetadataElement("MPH");
         mphElement.addAttribute(new MetadataAttribute(ChrisConstants.ATTR_NAME_CHRIS_MODE,
