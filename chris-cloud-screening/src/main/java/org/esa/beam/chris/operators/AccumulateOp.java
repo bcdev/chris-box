@@ -4,6 +4,7 @@ import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -18,22 +19,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OperatorMetadata(alias = "chris.Accumulate",
-        version = "1.0",
-        authors = "Marco Peters, Ralf Quast, Marco Zühlke",
-        copyright = "(c) 2008 Brockmann Consult",
-        description = "Calculates the arithmetic sum (or accumulation) of certain bands.")
+                  version = "1.0",
+                  authors = "Marco Peters, Ralf Quast, Marco Zühlke",
+                  copyright = "(c) 2008 Brockmann Consult",
+                  description = "Calculates the arithmetic sum (or accumulation) of certain bands.")
 public class AccumulateOp extends Operator {
+
+    private static final double THRESHOLD = 0.5;
 
     @SourceProduct(alias = "source")
     private Product sourceProduct;
+
     @TargetProduct(description = "The result of the accumulation.")
     private Product targetProduct;
-
     @Parameter(alias = "sourceBands", description = "Bands being accumulated.", notEmpty = true, notNull = true)
     private String[] sourceBandNames;
     @Parameter(alias = "targetBand", description = "Name of the accumulation band.", notEmpty = true, notNull = true)
     private String accumulationBandName;
 
+    @Parameter(defaultValue = "true")
+    private boolean applyThreshold;
+    
     private transient List<Band> sourceBandList;
 
     public AccumulateOp() {
@@ -53,9 +59,8 @@ public class AccumulateOp extends Operator {
         for (final String name : sourceBandNames) {
             sourceBandList.add(sourceProduct.getBand(name));
         }
-        final Product targetProduct = createTargetProduct();
 
-        setTargetProduct(targetProduct);
+        setTargetProduct(createTargetProduct());
     }
 
     @Override
@@ -63,14 +68,15 @@ public class AccumulateOp extends Operator {
         final int width = targetTile.getRectangle().width;
         final int height = targetTile.getRectangle().height;
 
-        pm.beginTask("Computing band '" + targetBand.getName() + "'...", sourceBandList.size() + width * height);
+        final String taskMessage = MessageFormat.format("Computing band ''{0}''...", targetBand.getName());
+        pm.beginTask(taskMessage, sourceBandList.size() + width * height);
 
         try {
             final List<Tile> sourceTileList = new ArrayList<Tile>(sourceBandList.size());
             for (final Band sourceBand : sourceBandList) {
                 checkForCancelation(pm);
                 final Tile sourceTile = getSourceTile(sourceBand, targetTile.getRectangle(),
-                        SubProgressMonitor.create(pm, 1));
+                                                      SubProgressMonitor.create(pm, 1));
                 sourceTileList.add(sourceTile);
             }
 
@@ -81,7 +87,11 @@ public class AccumulateOp extends Operator {
                 for (final Tile sourceTile : sourceTileList) {
                     sum += sourceTile.getSampleDouble(pos.x, pos.y);
                 }
-                targetTile.setSample(pos.x, pos.y, sum);
+                if (applyThreshold) {
+                    targetTile.setSample(pos.x, pos.y, sum < THRESHOLD ? 0.0 : 1.0);
+                } else {
+                    targetTile.setSample(pos.x, pos.y, sum);
+                }
 
                 pm.worked(1);
             }
@@ -104,13 +114,12 @@ public class AccumulateOp extends Operator {
         final int sceneRasterWidth = sourceProduct.getSceneRasterWidth();
         final int sceneRasterHeight = sourceProduct.getSceneRasterHeight();
         final Product targetProduct = new Product("Accumulation", "Accumulation", sceneRasterWidth,
-                sceneRasterHeight);
+                                                  sceneRasterHeight);
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
-
         // todo - set preferred tile size (?)
-        targetProduct.addBand(accumulationBandName, sourceBandList.get(0).getDataType());
+        targetProduct.addBand(accumulationBandName, ProductData.TYPE_FLOAT64);
 
         return targetProduct;
     }
