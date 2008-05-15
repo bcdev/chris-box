@@ -29,6 +29,7 @@ public class ExclusiveMultiBandFilter implements BandFilter {
         inclusiveMultiBandFilter = new InclusiveMultiBandFilter(wavelengthIntervals);
     }
 
+    @Override
     public boolean accept(Band band) {
         return !inclusiveMultiBandFilter.accept(band);
     }
