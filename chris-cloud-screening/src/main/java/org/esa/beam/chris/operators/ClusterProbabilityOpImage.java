@@ -27,7 +27,6 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.util.Vector;
-import java.util.Arrays;
 import java.text.MessageFormat;
 
 /**
@@ -39,27 +38,27 @@ import java.text.MessageFormat;
 public class ClusterProbabilityOpImage extends PointOpImage {
 
     private final int correspondingBandIndex;
-    private final int[] backgroundBandIndexes;
+    private final int[] rejectedBandIndexes;
 
     public static RenderedImage create(ImageLayout imageLayout,
                                        Band[] sourceBands,
                                        int correspondingBandIndex,
-                                       int[] backgroundBandIndexes) {
+                                       int[] rejectedBandIndexes) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>(sourceBands.length);
 
         for (final RasterDataNode sourceBand : sourceBands) {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterProbabilityOpImage(imageLayout, sourceImageVector, correspondingBandIndex, backgroundBandIndexes);
+        return new ClusterProbabilityOpImage(imageLayout, sourceImageVector, correspondingBandIndex, rejectedBandIndexes);
     }
 
     private ClusterProbabilityOpImage(ImageLayout layout, Vector<RenderedImage> sourceImageVector,
-                                      int correspondingBandIndex, int[] backgroundBandIndexes) {
+                                      int correspondingBandIndex, int[] rejectedBandIndexes) {
         super(sourceImageVector, layout, null, true);
 
         this.correspondingBandIndex = correspondingBandIndex;
-        this.backgroundBandIndexes = backgroundBandIndexes;
+        this.rejectedBandIndexes = rejectedBandIndexes;
     }
 
     @Override
@@ -173,13 +172,13 @@ public class ClusterProbabilityOpImage extends PointOpImage {
     }
 
     private float renormalize(float[] samples) {
-        if (isContained(correspondingBandIndex, backgroundBandIndexes)) {
+        if (isContained(correspondingBandIndex, rejectedBandIndexes)) {
             return 0.0f;
         }
 
         float sum = 0.0f;
         for (int i = 0; i < samples.length; ++i) {
-            if (!isContained(i, backgroundBandIndexes)) {
+            if (!isContained(i, rejectedBandIndexes)) {
                 sum += samples[i];
             }
         }
@@ -192,13 +191,13 @@ public class ClusterProbabilityOpImage extends PointOpImage {
     }
 
     private double renormalize(double[] samples) {
-        if (isContained(correspondingBandIndex, backgroundBandIndexes)) {
+        if (isContained(correspondingBandIndex, rejectedBandIndexes)) {
             return 0.0;
         }
 
         double sum = 0.0;
         for (int i = 0; i < samples.length; ++i) {
-            if (!isContained(i, backgroundBandIndexes)) {
+            if (!isContained(i, rejectedBandIndexes)) {
                 sum += samples[i];
             }
         }
