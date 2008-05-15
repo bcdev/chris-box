@@ -90,15 +90,7 @@ public class ExtractEndmembersOp extends Operator {
     @Override
     public void initialize() throws OperatorException {
         endmembers = calculateEndmembers(ProgressMonitor.NULL);
-        setTargetProduct(reflectanceProduct);
-    }
-
-    @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-    }
-
-    @Override
-    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+        setTargetProduct(new Product("EMPTY", "EMPTY_TYPE", 0, 0));
     }
 
     // todo - refactor
