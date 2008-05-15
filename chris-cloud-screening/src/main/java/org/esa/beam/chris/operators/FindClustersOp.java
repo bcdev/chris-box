@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * New class.
@@ -121,7 +122,8 @@ public class FindClustersOp extends Operator {
                 pm.worked(1);
             }
 
-            final Cluster[] clusters = clusterer.getClusters();
+            final Cluster[] clusters = clusterer.getClusters(new ClusterBrightnessComparator());
+
             for (int i = 0; i < clusterCount; ++i) {
                 final Tile targetTile = targetTileMap.get(probabilityBands[i]);
                 final double[] p = clusters[i].getPosteriorProbabilities();
@@ -174,6 +176,16 @@ public class FindClustersOp extends Operator {
         return new Clusterer(points, clusterCount);
     }
 
+    /**
+     * Cluster comparator.
+     */
+    private static class ClusterBrightnessComparator implements Comparator<Cluster> {
+
+        public int compare(Cluster c1, Cluster c2) {
+            return Double.compare(c2.getMean()[0], c1.getMean()[0]);
+        }
+    }
+    
     public static class Spi extends OperatorSpi {
 
         public Spi() {
