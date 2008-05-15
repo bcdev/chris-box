@@ -33,7 +33,6 @@ import org.esa.beam.unmixing.Endmember;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Extracts endmembers for calculating cloud abundances.
@@ -62,6 +61,8 @@ public class ExtractEndmembersOp extends Operator {
 
     @TargetProperty
     private Endmember[] endmembers;
+    @TargetProperty
+    private String[] reflectanceBandNames;
 
     /**
      * Constructs a new instance of this class.
@@ -89,12 +90,12 @@ public class ExtractEndmembersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        endmembers = calculateEndmembers(ProgressMonitor.NULL);
+        setTargetProperties(ProgressMonitor.NULL);
         setTargetProduct(new Product("EMPTY", "EMPTY_TYPE", 0, 0));
     }
 
     // todo - refactor
-    private Endmember[] calculateEndmembers(ProgressMonitor pm) {
+    private void setTargetProperties(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
         final Band membershipBand = clusterProduct.getBand("membership_mask");
@@ -114,8 +115,14 @@ public class ExtractEndmembersOp extends Operator {
                 {885.0, 985.0},
                 {985.0, 1010.0}});
         final Band[] reflectanceBands = findBands(reflectanceProduct, "reflectance", bandFilter);
+
+        reflectanceBandNames = new String[reflectanceBands.length];
+        for (int i = 0; i < reflectanceBands.length; ++i) {
+            reflectanceBandNames[i] = reflectanceBands[i].getName();
+        }
+
         final double[] wavelengths = getSpectralWavelengths(reflectanceBands);
-        final Endmember[] endmembers = new Endmember[surfaceClusterIndexes.length + 1];
+        endmembers = new Endmember[surfaceClusterIndexes.length + 1];
 
         final int h = membershipBand.getRasterHeight();
         final int w = membershipBand.getRasterWidth();
@@ -191,14 +198,12 @@ public class ExtractEndmembersOp extends Operator {
                 ++j;
             }
         }
-
-        return endmembers;
     }
 
     private static double[] getSpectralWavelengths(Band[] bands) {
         final double[] wavelengths = new double[bands.length];
         for (int i = 0; i < bands.length; ++i) {
-            wavelengths[i] = bands[i].getSpectralWavelength();
+            wavelengths[i] = (double) bands[i].getSpectralWavelength();
         }
         return wavelengths;
     }
