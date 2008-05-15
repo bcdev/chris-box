@@ -75,6 +75,8 @@ public class ClusterMapOpImage extends PointOpImage {
         case DataBuffer.TYPE_DOUBLE:
             doubleLoop(sourceAccessors, targetAccessor);
             break;
+        default:
+            throw new IllegalStateException("Only data types of byte, integer, float and double supported.");
         }
 
         if (targetAccessor.isDataCopy()) {
@@ -241,10 +243,16 @@ public class ClusterMapOpImage extends PointOpImage {
 
     private static int findMaxIndex(double[] samples) {
         int index = 0;
+        boolean allZero = samples[index] == 0.0;
+
         for (int i = 1; i < samples.length; ++i) {
             if (samples[i] > samples[index]) {
                 index = i;
+                allZero = false;
             }
+        }
+        if (allZero) {
+            index = -1;
         }
 
         return index;
