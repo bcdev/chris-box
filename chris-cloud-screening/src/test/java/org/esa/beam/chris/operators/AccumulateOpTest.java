@@ -26,7 +26,7 @@ public class AccumulateOpTest extends TestCase {
     private static final double[] EXPECTED_SUMS_WITH_THRESHOLD_APPLIED = new double[]{
             1.0, 0.0, 1.0, 1.0
     };
-    private static final double PROBABILITY_ACCURACY = 1e-4;
+    private static final double PROBABILITY_ACCURACY = 1.0e-4;
 
 
     public void testInitializeOK() {
