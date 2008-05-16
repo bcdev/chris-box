@@ -44,8 +44,9 @@ import java.util.Map;
  */
 public class NoiseReductionAction extends AbstractVisatAction {
 
+    static final String SOURCE_NAME_PATTERN = "${sourceName}";
+    
     private static final String DIALOG_TITLE = "CHRIS Noise Reduction";
-    private static final String SOURCE_NAME_PATTERN = "${sourceName}";
     private static final String SOURCE_NAME_REGEX = "\\$\\{sourceName\\}";
 
     @Override

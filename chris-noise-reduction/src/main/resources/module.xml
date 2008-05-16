@@ -13,12 +13,11 @@
 
     <changelog>
         <![CDATA[
-        <p>Changes in Version 1.1
-        <ul>
-        <li>[CBOX-37] Memory is not freed when target products are closed</li>
-        <li>[CBOX-38] The noise correction factors product should be displayed optionally</li>
-        <li>[CBOX-45] Support of Mode 30</li>
-        </ul>
+        Changes in Version 1.1<br/>
+        [CBOX-46] Explain ${sourceName} syntax in dialog<br/>
+        [CBOX-45] Support of Mode 30<br/>
+        [CBOX-38] The noise correction factors product should be displayed optionally<br/>
+        [CBOX-37] Memory is not freed when target products are closed<br/>
         ]]>
     </changelog>
 
