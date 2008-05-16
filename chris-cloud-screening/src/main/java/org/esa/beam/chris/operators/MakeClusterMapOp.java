@@ -14,12 +14,17 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.framework.datamodel.*;
+import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.ColorPaletteDef;
+import org.esa.beam.framework.datamodel.ImageInfo;
+import org.esa.beam.framework.datamodel.IndexCoding;
+import org.esa.beam.framework.datamodel.MetadataAttribute;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
-import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.IntMap;
@@ -36,18 +41,18 @@ import java.awt.image.RenderedImage;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.MakeClusterMap",
-        version = "1.0",
-        authors = "Ralf Quast",
-        copyright = "(c) 2008 by Brockmann Consult",
-        description = "Makes the cluster membership map for clusters of features extracted from TOA reflectances.")
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2008 by Brockmann Consult",
+                  description = "Makes the cluster membership map for clusters of features extracted from TOA reflectances.")
 public class MakeClusterMapOp extends Operator {
 
     @SourceProduct(alias = "source")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
-    @Parameter
-    private int[] backgroundClusterIndexes;
+
+    private Band membershipBand;
 
     @Override
     public void initialize() throws OperatorException {
@@ -59,65 +64,42 @@ public class MakeClusterMapOp extends Operator {
 
         try {
             final Band[] sourceBands = sourceProduct.getBands();
-            final Band[] probBands = new Band[sourceBands.length];
+            final Band[] probabilityBands = new Band[sourceBands.length];
             for (int i = 0; i < sourceBands.length; ++i) {
                 final Band sourceBand = sourceBands[i];
 
                 Band targetBand = new ImageBand(sourceBand.getName(), sourceBand.getDataType(), width, height);
                 targetBand.setDescription(sourceBand.getDescription());
                 targetProduct.addBand(targetBand);
-                probBands[i] = targetBand;
+                probabilityBands[i] = targetBand;
                 ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
                 RenderedImage image = ClusterProbabilityOpImage.create(imageLayout,
                                                                        sourceBands, i,
-                                                                       backgroundClusterIndexes);
+                                                                       new int[0]);
                 targetBand.setImage(image);
             }
-            final Band membershipBand = new ImageBand("membership_mask", ProductData.TYPE_INT8, width, height);
-            membershipBand.setDescription("Cluster membership mask");
+            membershipBand = new ImageBand("cluster_map", ProductData.TYPE_INT16, width, height);
+            membershipBand.setDescription("Cluster map");
             targetProduct.addBand(membershipBand);
 
             final IndexCoding indexCoding = new IndexCoding("clusters");
             for (int i = 0; i < sourceBands.length; i++) {
                 indexCoding.addIndex("cluster_" + (i + 1), i, "Cluster label");
             }
-            ImageInfo imageInfo = createIndexedImageInfo(indexCoding);
+            indexCoding.addIndex("unknown", -1, "Unknown");
             targetProduct.getIndexCodingGroup().add(indexCoding);
             membershipBand.setSampleCoding(indexCoding);
-            membershipBand.setImageInfo(imageInfo);
             ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(membershipBand);
-            membershipBand.setImage(ClusterMapOpImage.create(imageLayout, probBands));
-        } catch (Throwable t) {
-            t.printStackTrace();
+            membershipBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
+        } catch (Throwable e) {
+            throw new OperatorException(e);
         }
 
         setTargetProduct(targetProduct);
     }
 
-    private ImageInfo createIndexedImageInfo(IndexCoding indexCoding) {
-        final MetadataAttribute[] attributes = indexCoding.getAttributes();
-        IntMap sampleToIndexMap = new IntMap();
-        int sampleMin = 0;
-        int sampleMax = attributes.length;
-        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[attributes.length];
-        for (int index = 0; index < attributes.length; index++) {
-            MetadataAttribute attribute = attributes[index];
-            final int sample = attribute.getData().getElemInt();
-            sampleToIndexMap.putValue(sample, index);
-            double t = (index + 1.0) / attributes.length;
-            points[index] = new ColorPaletteDef.Point(sample,
-                    new Color((float) (0.5 + 0.5 * Math.sin(Math.PI / 3. + t * 4. * Math.PI)),
-                            (float) (0.5 + 0.5 * Math.sin(Math.PI / 2. + t * 2. * Math.PI)),
-                            (float) (0.5 + 0.5 * Math.sin(Math.PI / 4. + t * 3. * Math.PI))),
-                    attribute.getName());
-        }
-        final ColorPaletteDef def = new ColorPaletteDef(points, true);
-        final ImageInfo imageInfo = new ImageInfo(sampleMin, sampleMax, null, def);
-        imageInfo.setSampleToIndexMap(sampleToIndexMap);
-        return imageInfo;
-    }
-
     public static class Spi extends OperatorSpi {
+
         public Spi() {
             super(MakeClusterMapOp.class);
         }

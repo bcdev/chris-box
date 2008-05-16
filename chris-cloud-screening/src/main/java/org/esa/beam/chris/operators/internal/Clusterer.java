@@ -189,11 +189,15 @@ public class Clusterer {
      * @return the clusters found.
      */
     public Cluster[] getClusters() {
+        return getClusters(new DefaultClusterComparator());
+    }
+
+    public Cluster[] getClusters(Comparator<Cluster> clusterComparator) {
         final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
             clusters[k] = new Cluster(n, points, p[k], h[k], distributions[k]);
         }
-        Arrays.sort(clusters, new ClusterComparator());
+        Arrays.sort(clusters, clusterComparator);
 
         return clusters;
     }
@@ -342,7 +346,7 @@ public class Clusterer {
     /**
      * Cluster comparator.
      */
-    private static class ClusterComparator implements Comparator<Cluster> {
+    private static class DefaultClusterComparator implements Comparator<Cluster> {
 
         public int compare(Cluster c1, Cluster c2) {
             return Double.compare(c2.getPriorProbability(), c1.getPriorProbability());

@@ -20,27 +20,30 @@ public class AccumulateOpTest extends TestCase {
             {0.20, 0.02, 0.05, 0.01},
             {0.41, 0.20, 0.45, 0.50},
     };
-    private static final double[] EXPECTED_SUMS = new double[]{
+    private static final double[] EXPECTED_SUMS_WITHOUT_THRESHOLD_APPLIED = new double[]{
             0.51, 0.40, 0.75, 0.90
+    };
+    private static final double[] EXPECTED_SUMS_WITH_THRESHOLD_APPLIED = new double[]{
+            1.0, 0.0, 1.0, 1.0
     };
     private static final double PROBABILITY_ACCURACY = 1e-4;
 
 
     public void testInitializeOK() {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum", true);
         op.getTargetProduct();
     }
 
     public void testInitializeWithoutReflProduct() {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum", true);
         op.getTargetProduct();
     }
 
     public void testIllegalBandName() {
         Product clusterDummy1 = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        AccumulateOp op = new AccumulateOp(clusterDummy1, new String[]{"band_0", "band_7"}, "");
+        AccumulateOp op = new AccumulateOp(clusterDummy1, new String[]{"band_0", "band_7"}, "", true);
         try {
             op.getTargetProduct();
             fail("OperatorException expected: Band not found");
@@ -51,7 +54,7 @@ public class AccumulateOpTest extends TestCase {
 
     public void testTargetProduct() {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum", true);
 
         final Product targetProduct = op.getTargetProduct();
         assertNull(targetProduct.getGeoCoding());
@@ -61,17 +64,33 @@ public class AccumulateOpTest extends TestCase {
         assertEquals(ProductData.TYPE_FLOAT64, sumBand.getDataType());
     }
 
-    public void testCloudProbabilityBand() throws IOException {
+    public void testCloudProbabilityBandWithThresholdApplied() throws IOException {
         Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
-        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum");
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum", true);
 
         final Product targetProduct = op.getTargetProduct();
         final Band sumBand = targetProduct.getBand("sum");
         double[] samples = new double[PRODUCT_DIMENSION.width * PRODUCT_DIMENSION.height];
         sumBand.readPixels(0, 0, PRODUCT_DIMENSION.width, PRODUCT_DIMENSION.height, samples);
 
-        for (int i = 0; i < EXPECTED_SUMS.length; i++) {
-            final double expectedResult = EXPECTED_SUMS[i];
+        for (int i = 0; i < EXPECTED_SUMS_WITH_THRESHOLD_APPLIED.length; i++) {
+            final double expectedResult = EXPECTED_SUMS_WITH_THRESHOLD_APPLIED[i];
+            final double currentResult = samples[i];
+            assertEquals(expectedResult, currentResult, 0.0);
+        }
+    }
+
+    public void testCloudProbabilityBandWithoutThresholdApplied() throws IOException {
+        Product clusterDummy = createTestProduct(PRODUCT_DIMENSION, TEST_PRODUCT_BAND_COUNT);
+        AccumulateOp op = new AccumulateOp(clusterDummy, new String[]{"band_0", "band_4"}, "sum", false);
+
+        final Product targetProduct = op.getTargetProduct();
+        final Band sumBand = targetProduct.getBand("sum");
+        double[] samples = new double[PRODUCT_DIMENSION.width * PRODUCT_DIMENSION.height];
+        sumBand.readPixels(0, 0, PRODUCT_DIMENSION.width, PRODUCT_DIMENSION.height, samples);
+
+        for (int i = 0; i < EXPECTED_SUMS_WITHOUT_THRESHOLD_APPLIED.length; i++) {
+            final double expectedResult = EXPECTED_SUMS_WITHOUT_THRESHOLD_APPLIED[i];
             final double currentResult = samples[i];
             assertEquals(expectedResult, currentResult, PROBABILITY_ACCURACY);
         }

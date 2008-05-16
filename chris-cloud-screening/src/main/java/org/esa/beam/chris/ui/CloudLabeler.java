@@ -16,27 +16,43 @@
  */
 package org.esa.beam.chris.ui;
 
-import org.esa.beam.chris.operators.*;
-import org.esa.beam.chris.operators.internal.BandFilter;
-import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
+import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.operators.ClusterMapOpImage;
+import org.esa.beam.chris.operators.ClusterProbabilityOpImage;
+import org.esa.beam.chris.operators.ClusterProperties;
+import org.esa.beam.chris.operators.ClusterPropertiesExtractor;
+import org.esa.beam.chris.operators.ExtractEndmembersOp;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.ColorPaletteDef;
+import org.esa.beam.framework.datamodel.ImageInfo;
+import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.datamodel.RasterDataNode;
 import org.esa.beam.framework.gpf.GPF;
+import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.operators.common.BandArithmeticOp;
+import org.esa.beam.framework.ui.product.ProductSceneImage;
+import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
-import org.esa.beam.util.ProductUtils;
+import org.esa.beam.util.IntMap;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.visat.VisatApp;
 
 import javax.media.jai.ImageLayout;
+import javax.media.jai.operator.MultiplyDescriptor;
+import javax.swing.JInternalFrame;
+import java.awt.Color;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
 
 /**
  * Created by marcoz.
@@ -46,203 +62,275 @@ import java.io.IOException;
  */
 public class CloudLabeler {
 
-    private final Product reflectanceProduct;
+    private final Product radianceProduct;
+    private Product reflectanceProduct;
     private Product featureProduct;
     private Product clusterProduct;
     private Product clusterMapProduct;
-    private int[] cloudClusterIndexes;
-    private int[] backgroundClusterIndexes;
-    private int[] surfaceClusterIndexes;
-    private boolean computeAbundances;
+    private ProductSceneView rgbSceneView;
 
-    public CloudLabeler(Product reflectanceProduct) {
-        this.reflectanceProduct = reflectanceProduct;
+
+    public CloudLabeler(Product radianceProduct) {
+        this.radianceProduct = radianceProduct;
     }
 
-    public Band getMembershipBand() {
-        return clusterMapProduct.getBand("membership_mask");
+    public Band getClusterMapBand() {
+        return clusterMapProduct.getBand("cluster_map");
     }
 
-    public void processStepOne() throws OperatorException {
-        // 1. Extract features
-        featureProduct = createFeatureProduct();
-
-        // 2. Find clusters
-        clusterProduct = createClusterProduct();
-
-        // 3. Cluster labeling
-        final int[] backgroundIndexes = new int[0];
-        clusterMapProduct = createClusterMapProduct(backgroundIndexes);
+    public Product getRadianceProduct() {
+        return radianceProduct;
     }
 
-    public void processLabelingStep(int[] backgroundIndexes) throws OperatorException {
-        int index = 0;
-        final Band[] probBands = new Band[clusterMapProduct.getNumBands() - 1];
-        for (Band band : clusterMapProduct.getBands()) {
-            if (band.getName().startsWith("prob")) {
-                probBands[index] = band;
-                final ImageBand probBand = (ImageBand) band;
-                ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(probBand);
-                probBand.setImage(ClusterProbabilityOpImage.create(imageLayout, clusterProduct.getBands(), index, backgroundIndexes));
-                index++;
+    public Band getCloudProductBand() {
+        return radianceProduct.getBand("cloud_product");
+    }
+
+    public void performClusterAnalysis(ProgressMonitor pm) throws OperatorException {
+        try {
+            pm.beginTask("Performing cluster analysis...", 1);
+            // 1. Extract features
+            reflectanceProduct = createReflectanceProduct(radianceProduct);
+            featureProduct = createFeatureProduct(reflectanceProduct);
+
+            // 2. Find clusters
+            clusterProduct = createClusterProduct(featureProduct);
+
+            // 3. Cluster labeling
+            clusterMapProduct = createClusterMapProduct(clusterProduct);
+        } finally {
+            pm.done();
+        }
+    }
+
+    public void createRgbSceneView() throws IOException {
+
+        final RasterDataNode[] rgbBands = getRgbBands(radianceProduct);
+        ProductSceneImage productSceneImage = ProductSceneImage.create(rgbBands[0], rgbBands[1], rgbBands[2],
+                                                                       ProgressMonitor.NULL);
+        rgbSceneView = new ProductSceneView(productSceneImage);
+
+        assignImageInfo(rgbSceneView.getSourceImage());
+    }
+
+    public ProductSceneView getRgbSceneView() {
+        return rgbSceneView;
+    }
+
+    public void assignImageInfo(RenderedImage rgbImage) {
+        final Band[] sourceBands = clusterProduct.getBands();
+        final int[] r = new int[sourceBands.length];
+        final int[] g = new int[sourceBands.length];
+        final int[] b = new int[sourceBands.length];
+        final int[] clusterCount = new int[sourceBands.length];
+
+        final RenderedImage image = getClusterMapBand().getImage();
+        final Raster membershipImageData = image.getData();
+        final Raster rgbImageData = rgbImage.getData();
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                final int clusterIndex = membershipImageData.getSample(x, y, 0);
+                r[clusterIndex] += rgbImageData.getSample(x, y, 0);
+                g[clusterIndex] += rgbImageData.getSample(x, y, 1);
+                b[clusterIndex] += rgbImageData.getSample(x, y, 2);
+                clusterCount[clusterIndex]++;
             }
         }
-        final Band membershipBand = getMembershipBand();
-        ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(membershipBand);
-        membershipBand.setImage(ClusterMapOpImage.create(imageLayout, probBands));
-    }
 
-    public int[] getCloudClusterIndexes() {
-        return cloudClusterIndexes;
-    }
-
-    public int[] getSurfaceClusterIndexes() {
-        return surfaceClusterIndexes;
-    }
-
-    public int[] getBackgroundClusterIndexes() {
-        return backgroundClusterIndexes;
-    }
-
-    public boolean getComputeAbundances() {
-        return computeAbundances;
-    }
-
-    public Product processStepTwo(int[] cloudClusterIndexes, int[] backgroundClusterIndexes, int[] surfaceClusterIndexes, boolean computeAbundances) throws OperatorException {
-        this.cloudClusterIndexes = cloudClusterIndexes;
-        this.backgroundClusterIndexes = backgroundClusterIndexes;
-        this.surfaceClusterIndexes = surfaceClusterIndexes;
-        this.computeAbundances = computeAbundances;
-
-        // 4. Cluster probabilities
-        final Product cloudProbabilityProduct = createCloudProbabilityProduct(cloudClusterIndexes);
-        if (!computeAbundances) {
-            cloudProbabilityProduct.setName(reflectanceProduct.getName()+"_CLOUD");
-            return cloudProbabilityProduct;
+        for (int i = 0; i < clusterCount.length; i++) {
+            if (clusterCount[i] > 0) {
+                r[i] /= clusterCount[i];
+                g[i] /= clusterCount[i];
+                b[i] /= clusterCount[i];
+            }
         }
 
-        // 5. Endmember extraction
-        final ExtractEndmembersOp endmemberOp = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterMapProduct, cloudClusterIndexes,
-                                                                        surfaceClusterIndexes);
-        final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
-
-        // 6. Cloud abundances
-        final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers);
-
-        // 7. Cloud probability * cloud abundance
-        final Product product = createCloudMaskProduct(cloudProbabilityProduct, cloudAbundancesProduct);
-        product.setName(reflectanceProduct.getName()+"_CLOUD");
-        return product;
-    }
-
-    public void addCloudBandToInput(Product cloudProbProduct) {
-        Band targetBand = reflectanceProduct.getBand("cloud_probability");
-        if (targetBand == null) {
-            targetBand = ProductUtils.copyBand("cloud_probability", cloudProbProduct, reflectanceProduct);
+        final MetadataAttribute[] attributes = getClusterMapBand().getIndexCoding().getAttributes();
+        final IntMap sampleToIndexMap = new IntMap();
+        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[attributes.length];
+        for (int index = 0; index < attributes.length; index++) {
+            MetadataAttribute attribute = attributes[index];
+            final int sample = attribute.getData().getElemInt();
+            sampleToIndexMap.putValue(sample, index);
+            final Color color;
+            if (attribute.getName().startsWith("cluster")) {
+                color = new Color(r[index], g[index], b[index]).brighter();
+            } else {
+                color = Color.BLACK;
+            }
+            points[index] = new ColorPaletteDef.Point(sample, color, attribute.getName());
         }
-        Band sourceBand = cloudProbProduct.getBand("cloud_probability");
-        try {
-            sourceBand.readRasterDataFully();
-        } catch (IOException e) {
-            // todo - handle exception here
-            e.printStackTrace();
-        }
-        final ProductData sourceRaster = sourceBand.getRasterData();
-        final ProductData targetRaster = targetBand.createCompatibleSceneRasterData();
-        System.arraycopy(sourceRaster.getElems(), 0, targetRaster.getElems(), 0, sourceRaster.getNumElems());
-        targetBand.setRasterData(targetRaster);
-//        targetBand.setImage(sourceBand.getImage());
+        final ColorPaletteDef def = new ColorPaletteDef(points, true);
+        final ImageInfo imageInfo = new ImageInfo(0, attributes.length, null, def);
+        imageInfo.setSampleToIndexMap(sampleToIndexMap);
+        getClusterMapBand().setImageInfo(imageInfo);
     }
 
-    private Product createCloudMaskProduct(Product cloudProbabilityProduct, Product cloudAbundancesProduct) {
-        BandArithmeticOp.BandDescriptor[] bandDescriptors = new BandArithmeticOp.BandDescriptor[1];
-        bandDescriptors[0] = new BandArithmeticOp.BandDescriptor();
-        bandDescriptors[0].name = "cloud_probability";
-        bandDescriptors[0].expression = "$probability.cloud_probability * $abundance.cloud_abundance";
-        bandDescriptors[0].type = ProductData.TYPESTRING_FLOAT32;
-        final Map<String, Object> cloudMaskParameterMap = new HashMap<String, Object>();
-        cloudMaskParameterMap.put("targetBandDescriptors", bandDescriptors);
-        final Map<String, Product> cloudMaskSourceMap = new HashMap<String, Product>();
-        cloudMaskSourceMap.put("probability", cloudProbabilityProduct);
-        cloudMaskSourceMap.put("abundance", cloudAbundancesProduct);
-        return GPF.createProduct(OperatorSpi.getOperatorAlias(BandArithmeticOp.class),
-                                 cloudMaskParameterMap, cloudMaskSourceMap);
+    public static RasterDataNode[] getRgbBands(Product product) {
+        return new RasterDataNode[]{
+                findBandImage(product, 700.0f),
+                findBandImage(product, 546.0f),
+                findBandImage(product, 435.0f)
+        };
     }
 
-    private Product createCloudAbundancesProduct(Endmember[] endmembers) {
-        final BandFilter bandFilter = new ExclusiveMultiBandFilter(new double[][]{
-                {400.0, 440.0},
-                {590.0, 600.0},
-                {630.0, 636.0},
-                {648.0, 658.0},
-                {686.0, 709.0},
-                {792.0, 799.0},
-                {756.0, 775.0},
-                {808.0, 840.0},
-                {885.0, 985.0},
-                {985.0, 1010.0}});
-        final String[] reflBands = findBandNames(reflectanceProduct, "reflectance_", bandFilter);
-        final Map<String, Object> unmixingParameterMap = new HashMap<String, Object>();
-        unmixingParameterMap.put("sourceBandNames", reflBands);
-        unmixingParameterMap.put("endmembers", endmembers);
-        unmixingParameterMap.put("unmixingModelName", "Fully Constrained LSU");
+    private static Band findBandImage(Product product, float wavelength) {
+        final Band[] bands = product.getBands();
 
-        return GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
-                                 unmixingParameterMap, reflectanceProduct);
-    }
+        float minDist = Float.POSITIVE_INFINITY;
+        Band bestBand = null;
 
-    private Product createCloudProbabilityProduct(int[] cloudClusterIndexes) {
-        final Map<String, Object> accumulateOpParameterMap = new HashMap<String, Object>();
-
-        final String[] bandNames = this.clusterMapProduct.getBandNames();
-        final List<String> bandNameList = new ArrayList<String>();
-        for (int i = 0; i < bandNames.length; ++i) {
-            if (bandNames[i].startsWith("prob")) {
-                if (isContained(i, cloudClusterIndexes)) {
-                    bandNameList.add(bandNames[i]);
+        for (Band band : bands) {
+            if (band.getSpectralBandIndex() != -1) {
+                float currentDist = Math.abs(wavelength - band.getSpectralWavelength());
+                if (minDist > currentDist) {
+                    bestBand = band;
+                    minDist = currentDist;
                 }
             }
         }
-        final String[] cloudProbabilityBandNames = bandNameList.toArray(new String[bandNameList.size()]);
-        accumulateOpParameterMap.put("sourceBands", cloudProbabilityBandNames);
-        accumulateOpParameterMap.put("targetBand", "cloud_probability");
-        // todo - product name and type
 
-        return GPF.createProduct("chris.Accumulate", accumulateOpParameterMap, clusterMapProduct);
+        return bestBand;
     }
 
-    private Product createClusterMapProduct(int[] backgroundIndexes) {
-        final Map<String, Object> clusterMapParameter = new HashMap<String, Object>();
-        clusterMapParameter.put("backgroundClusterIndexes", backgroundIndexes);
-        return GPF.createProduct("chris.MakeClusterMap", clusterMapParameter, clusterProduct);
+    public void performLabelingStep(int[] rejectedIndexes) throws OperatorException {
+        final Band[] probabilityBands = new Band[clusterMapProduct.getNumBands() - 1];
+
+        int index = 0;
+        for (Band band : clusterMapProduct.getBands()) {
+            if (band.getName().startsWith("probability")) {
+                probabilityBands[index] = band;
+                ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(band);
+                band.setImage(ClusterProbabilityOpImage.create(imageLayout, clusterProduct.getBands(), index,
+                                                               rejectedIndexes));
+                index++;
+            }
+        }
+        final Band clusterMapBand = getClusterMapBand();
+        ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(clusterMapBand);
+        clusterMapBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
     }
 
-    private Product createClusterProduct() {
-        final Map<String, Object> findClustersOpParameterMap = new HashMap<String, Object>();      
-        findClustersOpParameterMap.put("clusterCount", 14);
-        findClustersOpParameterMap.put("iterationCount", 40);
+    public void performCloudProductComputation(int[] cloudClusterIndexes, int[] surfaceClusterIndexes, boolean computeAbundances,
+                               ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("Computing cloud product...", 1);
+
+        try {
+            if (computeAbundances && cloudClusterIndexes.length > 0) {
+                // 4. Cluster probabilities
+                final Product cloudProbabilityProduct = createCloudProduct(cloudClusterIndexes, false);
+                // 5. Endmember extraction
+                final Operator endmemberOp = new ExtractEndmembersOp(reflectanceProduct,
+                                                                     featureProduct,
+                                                                     clusterMapProduct,
+                                                                     cloudClusterIndexes,
+                                                                     surfaceClusterIndexes);
+                final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
+                final String[] reflectanceBandNames = (String[]) endmemberOp.getTargetProperty("reflectanceBandNames");
+
+                // 6. Cloud abundances
+                final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers, reflectanceBandNames);
+
+                // 7. Cloud probability * cloud abundance
+                addCloudImageToInput(createCloudProductImage(cloudProbabilityProduct, cloudAbundancesProduct));
+            } else {
+                final Product cloudProbabilityProduct = createCloudProduct(cloudClusterIndexes, true);
+                addCloudImageToInput(cloudProbabilityProduct.getBand("cloud_product").getImage());
+            }
+        } finally {
+            pm.done();
+        }
+    }
+
+    private void addCloudImageToInput(RenderedImage image) {
+        Band targetBand = getCloudProductBand();
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+        if (targetBand == null) {
+            targetBand = radianceProduct.addBand("cloud_product", ProductData.TYPE_FLOAT64);
+            targetBand.setSynthetic(true);
+            targetBand.setDescription("Cloud product");
+        }
+        ProductData rasterData = targetBand.getRasterData();
+        if (rasterData == null) {
+            rasterData = targetBand.createCompatibleRasterData();
+        }
+        final Object data = rasterData.getElems();
+        image.getData().getDataElements(0, 0, width, height, data);
+        targetBand.setRasterData(rasterData);
+        final VisatApp visatApp = VisatApp.getApp();
+        final JInternalFrame targetBandFrame = visatApp.findInternalFrame(targetBand);
+        if (targetBandFrame != null) {
+            visatApp.updateImage((ProductSceneView) targetBandFrame.getContentPane());
+        } else {
+            visatApp.openProductSceneView(targetBand, "");
+        }
+
+    }
+
+    private static RenderedImage createCloudProductImage(Product cloudProbabilityProduct,
+                                                         Product cloudAbundancesProduct) {
+        final RenderedImage cloudProbability = cloudProbabilityProduct.getBand("cloud_product").getImage();
+        final RenderedImage cloudAbundance = cloudAbundancesProduct.getBand("cloud_abundance").getImage();
+        return MultiplyDescriptor.create(cloudProbability, cloudAbundance, null);
+    }
+
+    private Product createCloudAbundancesProduct(Endmember[] endmembers, String[] reflectanceBandNames) {
+        final Map<String, Object> parameterMap = new HashMap<String, Object>(3);
+        parameterMap.put("sourceBandNames", reflectanceBandNames);
+        parameterMap.put("endmembers", endmembers);
+        parameterMap.put("unmixingModelName", "Fully Constrained LSU");
+
+        return GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
+                                 parameterMap, reflectanceProduct);
+    }
+
+    private Product createCloudProduct(int[] cloudClusterIndexes, boolean applyThreshold) {
+        final String[] allBandNames = clusterMapProduct.getBandNames();
+        final List<String> sourceBandNameList = new ArrayList<String>(allBandNames.length);
+        for (int i = 0; i < allBandNames.length; ++i) {
+            if (allBandNames[i].startsWith("probability")) {
+                if (isContained(i, cloudClusterIndexes)) {
+                    sourceBandNameList.add(allBandNames[i]);
+                }
+            }
+        }
+        final String[] sourceBandNames = sourceBandNameList.toArray(new String[sourceBandNameList.size()]);
+
+        final Map<String, Object> parameterMap = new HashMap<String, Object>(2);
+        parameterMap.put("sourceBands", sourceBandNames);
+        parameterMap.put("targetBand", "cloud_product");
+        parameterMap.put("applyThreshold", applyThreshold);
+
+        return GPF.createProduct("chris.Accumulate", parameterMap, clusterMapProduct);
+    }
+
+    private Product createClusterProduct(Product featureProduct) {
+        final Map<String, Object> parameterMap = new HashMap<String, Object>();
+        parameterMap.put("clusterCount", 14);
+        parameterMap.put("iterationCount", 40);
 
         return GPF.createProduct("chris.FindClusters",
-                                 findClustersOpParameterMap,
+                                 parameterMap,
                                  featureProduct);
     }
 
-    private static String[] findBandNames(Product product, String prefix, BandFilter filter) {
-        final List<String> nameList = new ArrayList<String>();
-
-        for (final Band band : product.getBands()) {
-            if (band.getName().startsWith(prefix) && filter.accept(band)) {
-                nameList.add(band.getName());
-            }
-        }
-
-        return nameList.toArray(new String[nameList.size()]);
+    private Product createClusterMapProduct(Product clusterProduct) {
+        final Map<String, Object> emptyMap = Collections.emptyMap();
+        return GPF.createProduct("chris.MakeClusterMap", emptyMap, clusterProduct);
     }
 
-    private Product createFeatureProduct() {
-        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
+    private static Product createReflectanceProduct(Product radianceProduct) {
+        final Map<String, Object> emptyMap = Collections.emptyMap();
+        return GPF.createProduct("chris.ComputeReflectances",
+                                 emptyMap,
+                                 radianceProduct);
+    }
+
+    private static Product createFeatureProduct(Product reflectanceProduct) {
+        final Map<String, Object> emptyMap = Collections.emptyMap();
         return GPF.createProduct("chris.ExtractFeatures",
-                                 parameterMap,
+                                 emptyMap,
                                  reflectanceProduct);
     }
 
@@ -256,18 +344,32 @@ public class CloudLabeler {
         return false;
     }
 
-    public void dispose() {
-        if (featureProduct != null) {
-            featureProduct.dispose();
-            featureProduct = null;
+    public void disposeSourceProducts() {
+        if (clusterMapProduct != null) {
+            clusterMapProduct.dispose();
+            clusterMapProduct = null;
         }
         if (clusterProduct != null) {
             clusterProduct.dispose();
             clusterProduct = null;
         }
-        if (clusterMapProduct != null) {
-            clusterMapProduct.dispose();
-            clusterMapProduct = null;
+        if (featureProduct != null) {
+            featureProduct.dispose();
+            featureProduct = null;
+        }
+        if (reflectanceProduct != null) {
+            reflectanceProduct.dispose();
+            reflectanceProduct = null;
+        }
+    }
+
+    public ClusterProperties getClusterProperties() {
+        final ClusterPropertiesExtractor propertiesExtractor = new ClusterPropertiesExtractor(featureProduct,
+                                                                                              clusterMapProduct);
+        try {
+            return propertiesExtractor.extractClusterProperties(ProgressMonitor.NULL);
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not extract cluster properties.", e);
         }
     }
 }

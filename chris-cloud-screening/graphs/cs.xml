@@ -188,7 +188,7 @@
             </band>
             <band>
                 <product>map</product>
-                <name>membership_mask</name>
+                <name>cluster_map</name>
             </band>
         </parameters>
     </node>

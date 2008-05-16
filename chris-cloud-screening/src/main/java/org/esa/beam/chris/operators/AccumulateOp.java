@@ -45,10 +45,12 @@ public class AccumulateOp extends Operator {
     public AccumulateOp() {
     }
 
-    public AccumulateOp(Product sourceProduct, String[] sourceBandNames, String accumulationBandName) {
+    public AccumulateOp(Product sourceProduct, String[] sourceBandNames, String accumulationBandName,
+                        boolean applyThreshold) {
         this.sourceProduct = sourceProduct;
         this.sourceBandNames = sourceBandNames;
         this.accumulationBandName = accumulationBandName;
+        this.applyThreshold = applyThreshold;
     }
 
     @Override

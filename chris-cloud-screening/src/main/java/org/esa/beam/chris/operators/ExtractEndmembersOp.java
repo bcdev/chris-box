@@ -98,9 +98,9 @@ public class ExtractEndmembersOp extends Operator {
     private void setTargetProperties(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
-        final Band membershipBand = clusterProduct.getBand("membership_mask");
+        final Band clusterMapBand = clusterProduct.getBand("cluster_map");
 
-        final IndexCoding indexCoding = (IndexCoding) membershipBand.getSampleCoding();
+        final IndexCoding indexCoding = (IndexCoding) clusterMapBand.getSampleCoding();
         final String[] labels = indexCoding.getIndexNames();
 
         final BandFilter bandFilter = new ExclusiveMultiBandFilter(new double[][]{
@@ -124,8 +124,8 @@ public class ExtractEndmembersOp extends Operator {
         final double[] wavelengths = getSpectralWavelengths(reflectanceBands);
         endmembers = new Endmember[surfaceClusterIndexes.length + 1];
 
-        final int h = membershipBand.getRasterHeight();
-        final int w = membershipBand.getRasterWidth();
+        final int h = clusterMapBand.getRasterHeight();
+        final int w = clusterMapBand.getRasterWidth();
 
         int cloudEndmemberX = -1;
         int cloudEndmemberY = -1;
@@ -133,7 +133,7 @@ public class ExtractEndmembersOp extends Operator {
 
         for (int y = 0; y < h; ++y) {
             final Rectangle rectangle = new Rectangle(0, y, w, 1);
-            final Tile membershipTile = getSourceTile(membershipBand, rectangle, pm);
+            final Tile membershipTile = getSourceTile(clusterMapBand, rectangle, pm);
             final Tile brightnessTile = getSourceTile(brightnessBand, rectangle, pm);
             final Tile whitenessTile = getSourceTile(whitenessBand, rectangle, pm);
 

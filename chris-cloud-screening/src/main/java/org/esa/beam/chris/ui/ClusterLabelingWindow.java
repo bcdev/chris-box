@@ -14,30 +14,36 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.swing.SwingHelper;
+import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 import com.jidesoft.grid.ColorCellEditor;
 import com.jidesoft.grid.ColorCellRenderer;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.ColorPaletteDef;
-import org.esa.beam.framework.datamodel.ImageInfo;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.ui.product.ProductSceneView;
+import org.esa.beam.framework.datamodel.RasterDataNode;
 import org.esa.beam.framework.ui.PixelPositionListener;
+import org.esa.beam.framework.ui.UIUtils;
+import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
+import javax.swing.event.InternalFrameListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.FlowLayout;
-import java.awt.image.RenderedImage;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.text.NumberFormat;
-import java.util.Arrays;
+import java.awt.image.RenderedImage;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Cluster labeling tool view.
@@ -49,24 +55,114 @@ import java.util.Arrays;
  */
 public class ClusterLabelingWindow extends JDialog {
 
-    private final ProductSceneView productSceneView;
     private final CloudLabeler cloudLabeler;
     private final VisatApp visatApp;
 
     private LabelTableModel tableModel;
     private JCheckBox abundancesCheckBox;
     private JTable table;
+    private PixelPositionListener pixelPositionListener;
+    private JInternalFrame clusterMapFrame;
+    private JInternalFrame rgbFrame;
 
-    public ClusterLabelingWindow(ProductSceneView productSceneView, CloudLabeler cloudLabeler) {
-        super(VisatApp.getApp().getMainFrame(), "CHRIS Cluster Labeling Tool", false);
+    public ClusterLabelingWindow(CloudLabeler cloudLabeler) {
+        super(VisatApp.getApp().getMainFrame(),
+              MessageFormat.format("CHRIS Cluster Labeling Tool - {0}", cloudLabeler.getRadianceProduct().getName()),
+              false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        this.productSceneView = productSceneView;
         this.cloudLabeler = cloudLabeler;
         visatApp = VisatApp.getApp();
         getContentPane().add(createControl());
-        final MyPixelPositionListener listener = new MyPixelPositionListener(cloudLabeler);
-        productSceneView.getImageDisplay().addPixelPositionListener(listener);
+        pixelPositionListener = new ClusterClassSelector(cloudLabeler);
     }
+
+    @Override
+    public void dispose() {
+        closeFrame(clusterMapFrame);
+        clusterMapFrame = null;
+
+        closeFrame(rgbFrame);
+        rgbFrame = null;
+        super.dispose();
+    }
+
+    private void closeFrame(JInternalFrame internalFrame) {
+        if (internalFrame != null) {
+            final ProductSceneView sceneView = getProductSceneView(internalFrame);
+            if (sceneView != null && sceneView.getImageDisplay() != null) {
+                sceneView.getImageDisplay().removePixelPositionListener(pixelPositionListener);
+                visatApp.getDesktopPane().closeFrame(internalFrame);
+            }
+        }
+    }
+
+    @Override
+    public void setVisible(boolean b) {
+        if (b) {
+            if (rgbFrame == null) {
+                final ProductSceneView rgbView = cloudLabeler.getRgbSceneView();
+                final String title = MessageFormat.format("{0} RGB", cloudLabeler.getRadianceProduct().getName());
+                final Icon icon = UIUtils.loadImageIcon("icons/RsBandAsSwath16.gif");
+                rgbView.getScene().setName(title);
+                rgbView.setCommandUIFactory(visatApp.getCommandUIFactory());
+                rgbView.setNoDataOverlayEnabled(false);
+                rgbView.setROIOverlayEnabled(false);
+                rgbView.setGraticuleOverlayEnabled(false);
+                rgbView.setPinOverlayEnabled(false);
+                rgbView.setLayerProperties(visatApp.getPreferences());
+                rgbView.getImageDisplay().addPixelPositionListener(pixelPositionListener);
+                rgbFrame = visatApp.createInternalFrame(title, icon, rgbView, "");
+                rgbFrame.setClosable(false);
+                rgbFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+            }
+
+            final Band clusterMapBand = cloudLabeler.getClusterMapBand();
+            clusterMapFrame = visatApp.findInternalFrame(clusterMapBand);
+            if (clusterMapFrame == null) {
+                InternalFrameListener ifl = new ClusterMapFrameOpenHandler(
+                        clusterMapBand, cloudLabeler.getRadianceProduct().getDisplayName());
+                visatApp.addInternalFrameListener(ifl);
+                visatApp.openProductSceneView(clusterMapBand, "");
+            }
+            pack();
+            SwingHelper.centerComponent(this, VisatApp.getApp().getMainFrame());
+        }
+        super.setVisible(b);
+    }
+
+    private static ProductSceneView getProductSceneView(JInternalFrame internalFrame) {
+        final Container contentPane = internalFrame.getContentPane();
+        if (contentPane instanceof ProductSceneView) {
+            return (ProductSceneView) contentPane;
+        }
+        return null;
+    }
+
+    private class ClusterMapFrameOpenHandler extends InternalFrameAdapter {
+
+        private final Band clusterMapBand;
+        private final String displayName;
+
+        private ClusterMapFrameOpenHandler(Band clusterMapBand, String displayName) {
+            this.clusterMapBand = clusterMapBand;
+            this.displayName = displayName;
+        }
+
+        @Override
+        public void internalFrameOpened(InternalFrameEvent e) {
+            final JInternalFrame internalFrame = e.getInternalFrame();
+            ProductSceneView productSceneView = getProductSceneView(internalFrame);
+            if (productSceneView.getRaster() == clusterMapBand) {
+                clusterMapFrame = internalFrame;
+                clusterMapFrame.setClosable(false);
+                clusterMapFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+                visatApp.removeInternalFrameListener(this);
+                internalFrame.setTitle(displayName + " - Cluster Map");
+                productSceneView.getImageDisplay().addPixelPositionListener(pixelPositionListener);
+            }
+        }
+    }
+
 
     private JComponent createControl() {
 
@@ -74,7 +170,7 @@ public class ClusterLabelingWindow extends JDialog {
         createButton.setMnemonic('M');
         createButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                computeCloudMask();
+                new CloudProductSwingWorker().execute();
                 dispose();
             }
         });
@@ -83,6 +179,7 @@ public class ClusterLabelingWindow extends JDialog {
         closeButton.setMnemonic('C');
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                cloudLabeler.disposeSourceProducts();
                 dispose();
             }
         });
@@ -104,36 +201,31 @@ public class ClusterLabelingWindow extends JDialog {
         buttonRow.add(closeButton);
         buttonRow.add(helpButton);
 
-        tableModel = new LabelTableModel(cloudLabeler.getMembershipBand().getImageInfo());
-        tableModel.addTableModelListener(new TableModelListener() {
-            public void tableChanged(TableModelEvent e) {
-                if (e.getColumn() == 1 || e.getColumn() == 3) {
-                    applyLabeling(e.getColumn() == 1);
-                }
-            }
-        });
-        tableModel.setCloudClusterIndexes(cloudLabeler.getCloudClusterIndexes());
-        tableModel.setBackgroundIndexes(cloudLabeler.getBackgroundClusterIndexes());
+        tableModel = new LabelTableModel(cloudLabeler.getClusterMapBand().getImageInfo());
+        tableModel.setCloudClusterIndexes(new int[0]);
+        tableModel.setRejectedIndexes(new int[0]);
+        tableModel.setClusterProperties(cloudLabeler.getClusterProperties());
         table = new JTable(tableModel);
+        table.getColumnModel().getColumn(4).setCellRenderer(new BrightnessRenderer());
         table.setDefaultRenderer(Double.class, new PercentageRenderer());
         final ColorCellRenderer colorCellRenderer = new ColorCellRenderer();
         colorCellRenderer.setColorValueVisible(false);
         table.setDefaultRenderer(Color.class, colorCellRenderer);
         table.setDefaultEditor(Color.class, new ColorCellEditor());
-
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         final JScrollPane tableScrollPane = new JScrollPane(table);
         tableScrollPane.getViewport().setPreferredSize(table.getPreferredSize());
 
         final JPanel tablePanel = new JPanel(new BorderLayout(2, 2));
         tablePanel.add(tableScrollPane, BorderLayout.CENTER);
-        abundancesCheckBox = new JCheckBox("Perform spectral unmixing on cloud pixel spectra", cloudLabeler.getComputeAbundances());
-        abundancesCheckBox.setToolTipText("Select to weight final cloud probability with cloud pixel spectrum abundances");
+        abundancesCheckBox = new JCheckBox("Perform spectral unmixing on cloud pixel spectra", false);
+        abundancesCheckBox.setToolTipText(
+                "Select to weight final cloud probability with cloud pixel spectrum abundances");
         abundancesCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (abundancesCheckBox.isSelected()) {
                     final String message = "Spectral unmixing is extremely time consuming!";
-                    visatApp.showInfoDialog("CHRIS Cloud Screening", message, "chrisbox.postLabling.showWarning");                    
+                    visatApp.showInfoDialog("CHRIS Cloud Screening", message, "chrisbox.postLabling.showWarning");
                 }
             }
         });
@@ -142,214 +234,135 @@ public class ClusterLabelingWindow extends JDialog {
         mainPanel.add(tablePanel, BorderLayout.CENTER);
         mainPanel.add(buttonRow, BorderLayout.SOUTH);
 
+        tableModel.addTableModelListener(new LableTableModelListener(mainPanel));
+
+        updateAbundancesCheckBox();
         return mainPanel;
     }
 
-    private void applyLabeling(boolean updateColors) {
-        Band membershipBand = cloudLabeler.getMembershipBand();
-        membershipBand.setImageInfo(tableModel.getImageInfo().createDeepCopy());
-        if (!updateColors) {
-            cloudLabeler.processLabelingStep(tableModel.getBackgroundIndexes());
-        }
-        final JInternalFrame internalFrame = visatApp.findInternalFrame(membershipBand);
-        if (internalFrame != null) {
-            final ProductSceneView productSceneView = (ProductSceneView) internalFrame.getContentPane();
-            visatApp.updateImage(productSceneView);
+    private void updateAbundancesCheckBox() {
+        if (tableModel.getCloudIndexes().length > 0) {
+            abundancesCheckBox.setEnabled(true);
+        } else {
+            abundancesCheckBox.setEnabled(false);
+            abundancesCheckBox.setSelected(false);
         }
     }
 
-    private void computeCloudMask() {
-        final int[] backgroundIndexes = tableModel.getBackgroundIndexes();
-        cloudLabeler.processLabelingStep(backgroundIndexes);
-        final int[] cloudClusterIndexes = tableModel.getCloudIndexes();
-        final int[] surfaceClusterIndexes = tableModel.getSurfaceIndexes();
-        final Product cloudMaskProduct = cloudLabeler.processStepTwo(cloudClusterIndexes, backgroundIndexes, surfaceClusterIndexes, abundancesCheckBox.isSelected());
-//        cloudLabeler.addCloudBandToInput(cloudMaskProduct);
-//        cloudMaskProduct.dispose();
-        visatApp.addProduct(cloudMaskProduct);
-    }
 
     public void selectClass(int clusterIndex) {
         table.getSelectionModel().setSelectionInterval(clusterIndex, clusterIndex);
     }
 
-    private static class PercentageRenderer extends DefaultTableCellRenderer {
 
-        private final NumberFormat formatter;
+    private class ClusterClassSelector implements PixelPositionListener {
 
-        public PercentageRenderer() {
-            setHorizontalAlignment(JLabel.RIGHT);
-            formatter = NumberFormat.getPercentInstance();
-            formatter.setMinimumFractionDigits(1);
-            formatter.setMaximumFractionDigits(3);
-        }
-
-        @Override
-        public void setValue(Object value) {
-            setText((value == null) ? "" : formatter.format(value));
-        }
-    }
-
-
-    static class LabelTableModel extends AbstractTableModel {
-
-        private ImageInfo imageInfo;
-        private boolean[] cloud;
-        private boolean[] background;
-        private static final String[] COLUMN_NAMES = new String[]{"Label", "Colour", "Cloud", "Background", "Freq."};
-        private static final Class<?>[] COLUMN_TYPES = new Class<?>[]{String.class, Color.class, Boolean.class,
-                Boolean.class, Double.class};
-
-        private LabelTableModel(ImageInfo imageInfo) {
-            this.imageInfo = imageInfo;
-            final int numPoints = imageInfo.getColorPaletteDef().getNumPoints();
-            cloud = new boolean[numPoints];
-            background = new boolean[numPoints];
-        }
-
-        public ImageInfo getImageInfo() {
-            return imageInfo;
-        }
-
-        public int[] getBackgroundIndexes() {
-            return getSelectedIndexes(background);
-        }
-
-        public int[] getCloudIndexes() {
-            return getSelectedIndexes(cloud);
-        }
-
-        static int[] getSelectedIndexes(boolean[] array) {
-            int[] indexes = new int[array.length];
-            int indexCount = 0;
-            for (int i = 0; i < array.length; i++) {
-                if (array[i]) {
-                    indexes[indexCount] = i;
-                    indexCount++;
-                }
-            }
-            int[] result = new int[indexCount];
-            System.arraycopy(indexes, 0, result, 0, indexCount);
-            return result;
-        }
-
-        static void setSelectedIndexes(boolean[] array, int[] indexes) {
-            Arrays.fill(array, false);
-            if (indexes != null) {
-                for (final int index : indexes) {
-                    if (index >= 0 && index < array.length) {
-                        array[index] = true;
-                    }
-                }
-            }
-        }
-
-        public int[] getSurfaceIndexes() {
-            boolean[] surface = new boolean[cloud.length];
-            for (int i = 0; i < surface.length; i++) {
-                surface[i] = !(cloud[i] || background[i]);
-            }
-            return getSelectedIndexes(surface);
-        }
-
-        @Override
-        public String getColumnName(int columnIndex) {
-            return COLUMN_NAMES[columnIndex];
-        }
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            return COLUMN_TYPES[columnIndex];
-        }
-
-        public int getColumnCount() {
-            return COLUMN_NAMES.length;
-        }
-
-        public int getRowCount() {
-            return imageInfo != null ? imageInfo.getColorPaletteDef().getNumPoints() : 0;
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            final ColorPaletteDef.Point point = imageInfo.getColorPaletteDef().getPointAt(rowIndex);
-            switch (columnIndex) {
-                case 0:
-                    return point.getLabel();
-                case 1:
-                    return point.getColor();
-                case 2:
-                    return cloud[rowIndex];
-                case 3:
-                    return background[rowIndex];
-                case 4:
-                    // todo - return abundance percentage
-                    return 0.0; //imageInfo.getHistogramBins()[rowIndex];
-                default:
-                    return 0;
-            }
-        }
-
-        @Override
-        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-            final ColorPaletteDef.Point point = imageInfo.getColorPaletteDef().getPointAt(rowIndex);
-            switch (columnIndex) {
-                case 0:
-                    point.setLabel((String) aValue);
-                    fireTableCellUpdated(rowIndex, 0);
-                    break;
-                case 1:
-                    point.setColor((Color) aValue);
-                    fireTableCellUpdated(rowIndex, 1);
-                    break;
-                case 2:
-                    cloud[rowIndex] = (Boolean) aValue;
-                    if (cloud[rowIndex] && background[rowIndex]) {
-                        background[rowIndex] = false;
-                        fireTableCellUpdated(rowIndex, 3);
-                    }
-                    fireTableCellUpdated(rowIndex, 2);
-                    break;
-                case 3:
-                    background[rowIndex] = (Boolean) aValue;
-                    if (cloud[rowIndex] && background[rowIndex]) {
-                        cloud[rowIndex] = false;
-                        fireTableCellUpdated(rowIndex, 2);
-                    }
-                    fireTableCellUpdated(rowIndex, 3);
-                    break;
-            }
-        }
-
-        @Override
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex >= 0 && columnIndex <= 3;
-        }
-
-        public void setCloudClusterIndexes(int[] cloudClusterIndexes) {
-            setSelectedIndexes(cloud, cloudClusterIndexes);
-        }
-
-        public void setBackgroundIndexes(int[] backgroundClusterIndexes) {
-            setSelectedIndexes(background, backgroundClusterIndexes);
-        }
-    }
-
-    private class MyPixelPositionListener implements PixelPositionListener {
         private final CloudLabeler cloudLabeler;
 
-        public MyPixelPositionListener(CloudLabeler cloudLabeler) {
+        public ClusterClassSelector(CloudLabeler cloudLabeler) {
             this.cloudLabeler = cloudLabeler;
         }
 
-        public void pixelPosChanged(RenderedImage sourceImage, int pixelX, int pixelY, boolean pixelPosValid, MouseEvent e) {
+        public void pixelPosChanged(RenderedImage sourceImage, int pixelX, int pixelY, boolean pixelPosValid,
+                                    MouseEvent e) {
             if (pixelPosValid) {
-                final int clusterIndex = cloudLabeler.getMembershipBand().getPixelInt(pixelX, pixelY);
-                selectClass(clusterIndex);
+                final int[] clusterIndex = new int[1];
+                try {
+                    cloudLabeler.getClusterMapBand().readPixels(pixelX, pixelY, 1, 1, clusterIndex);
+                } catch (IOException e1) {
+                    //ignore
+                }
+                selectClass(clusterIndex[0]);
             }
         }
 
         public void pixelPosNotAvailable(RenderedImage sourceImage) {
 
         }
+    }
+
+    private class CloudProductSwingWorker extends ProgressMonitorSwingWorker<Object, Object> {
+
+        private CloudProductSwingWorker() {
+            super(visatApp.getMainFrame(), "Computing cloud product...");
+        }
+
+        @Override
+        protected Object doInBackground(ProgressMonitor pm) throws Exception {
+            final int[] cloudClusterIndexes = tableModel.getCloudIndexes();
+            final int[] surfaceClusterIndexes = tableModel.getSurfaceIndexes();
+            cloudLabeler.performCloudProductComputation(cloudClusterIndexes,
+                                        surfaceClusterIndexes,
+                                        abundancesCheckBox.isSelected(), pm);
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            try {
+                get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+                visatApp.showErrorDialog(e.getCause().getMessage());
+            }
+            updateImage(cloudLabeler.getCloudProductBand());
+            cloudLabeler.disposeSourceProducts();
+        }
+
+        private void updateImage(RasterDataNode dataNode) {
+            final JInternalFrame internalFrame = visatApp.findInternalFrame(dataNode);
+            if (internalFrame != null) {
+                final ProductSceneView sceneView = (ProductSceneView) internalFrame.getContentPane();
+                visatApp.updateImage(sceneView);
+            }
+        }
+
+    }
+
+    private class LableTableModelListener implements TableModelListener {
+
+        private final JPanel mainPanel;
+
+        public LableTableModelListener(JPanel mainPanel) {
+            this.mainPanel = mainPanel;
+        }
+
+        public void tableChanged(TableModelEvent e) {
+            if (e.getColumn() == 1) { // color
+                applyLabeling(true);
+            } else if (e.getColumn() == 3) { // rejected
+                applyLabeling(false);
+            } else if (e.getColumn() == 2) { // cloud
+                updateAbundancesCheckBox();
+            }
+        }
+
+        private void applyLabeling(boolean updateColors) {
+            final Cursor oldCursor = mainPanel.getCursor();
+            mainPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            try {
+                if (!updateColors) {
+                    cloudLabeler.performLabelingStep(tableModel.getRejectedIndexes());
+                    tableModel.setClusterProperties(cloudLabeler.getClusterProperties());
+                }
+                Band membershipBand = cloudLabeler.getClusterMapBand();
+                membershipBand.setImageInfo(tableModel.getImageInfo().createDeepCopy());
+                updateImage(membershipBand);
+            } finally {
+                mainPanel.setCursor(oldCursor);
+            }
+        }
+
+        private void updateImage(RasterDataNode dataNode) {
+            final JInternalFrame internalFrame = visatApp.findInternalFrame(dataNode);
+            if (internalFrame != null) {
+                final ProductSceneView sceneView = (ProductSceneView) internalFrame.getContentPane();
+                visatApp.updateImage(sceneView);
+            }
+        }
+
+
     }
 }

@@ -63,7 +63,7 @@ public class ClusterMapOpImageTest extends TestCase {
     private RenderedImage createTestImage(int sourceType, int targetType) {
         final Product product = new Product("C", "CT", 2, 2);
         final Band[] sourceBands = new Band[4];
-        final Band targetBand = product.addBand("membership_mask", targetType);
+        final Band targetBand = product.addBand("cluster_map", targetType);
 
         switch (sourceType) {
             case ProductData.TYPE_INT8:
