@@ -57,7 +57,7 @@ public class FindClustersOp extends Operator {
 
     @Parameter(label = "Number of clusters", defaultValue = "14")
     private int clusterCount;
-    @Parameter(label = "Number of iterations", defaultValue = "20")
+    @Parameter(label = "Number of iterations", defaultValue = "30")
     private int iterationCount;
     private Band[] sourceBands;
 

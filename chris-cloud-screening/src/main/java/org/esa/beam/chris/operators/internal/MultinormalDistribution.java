@@ -37,7 +37,7 @@ public class MultinormalDistribution implements Distribution {
      * @param covariances the distribution covariances.
      */
     public MultinormalDistribution(double[] mean, double[][] covariances) {
-        this(mean.length, mean, covariances, new SymmetricEigenproblemSolver());
+        this(mean.length, mean, covariances, new EigenproblemSolver());
     }
 
     /**
@@ -47,7 +47,7 @@ public class MultinormalDistribution implements Distribution {
      * @param mean        the distribution mean.
      * @param covariances the distribution covariances. Only the upper triangular
      *                    elements are used.
-     * @param solver      the {@link org.esa.beam.chris.operators.internal.MultinormalDistribution.EigenproblemSolver} used for decomposing the covariance matrix.
+     * @param solver      the {@link EigenproblemSolver} used for decomposing the covariance matrix.
      */
     private MultinormalDistribution(int n, double[] mean, double[][] covariances, EigenproblemSolver solver) {
         if (mean.length != n) {
@@ -101,14 +101,14 @@ public class MultinormalDistribution implements Distribution {
         return u;
     }
 
-    private static class SymmetricEigenproblemSolver implements EigenproblemSolver {
+    private static class EigenproblemSolver {
         private static final double MAX_CONDITION = 1.0E14;
 
         public Eigendecomposition createEigendecomposition(int n, double[][] symmetricMatrix) {
-            final SymmetricEigendecomposition eigendecomposition =
-                    new SymmetricEigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).eig());
+            final Eigendecomposition eigendecomposition =
+                    new Eigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).svd());
             final double[] d = eigendecomposition.getEigenvalues();
-            final double t = d[n - 1] / MAX_CONDITION - d[0];
+            final double t = d[0] / MAX_CONDITION - d[n - 1];
             if (t > 0.0) {
                 for (int i = 0; i < n; ++i) {
                     symmetricMatrix[i][i] += t;
@@ -120,12 +120,12 @@ public class MultinormalDistribution implements Distribution {
         }
     }
 
-    private static class SymmetricEigendecomposition implements Eigendecomposition {
+    private static class Eigendecomposition {
         private double[] eigenvalues;
         private double[][] v;
 
-        public SymmetricEigendecomposition(Jama.EigenvalueDecomposition decomposition) {
-            eigenvalues = decomposition.getRealEigenvalues();
+        public Eigendecomposition(Jama.SingularValueDecomposition decomposition) {
+            eigenvalues = decomposition.getSingularValues();
             v = decomposition.getV().getArray();
         }
 
@@ -149,17 +149,5 @@ public class MultinormalDistribution implements Distribution {
 
             return product;
         }
-    }
-
-    private static interface EigenproblemSolver {
-        public Eigendecomposition createEigendecomposition(int n, double[][] matrix);
-    }
-
-    private static interface Eigendecomposition {
-        public double getEigenvalue(int i);
-
-        public double getV(int i, int j);
-
-        public double getEigenvalueProduct();
     }
 }

@@ -46,6 +46,7 @@ public class Clusterer {
      * @param points         the data points.
      * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
+     *
      * @return the cluster decomposition.
      */
     public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount) {
@@ -59,6 +60,7 @@ public class Clusterer {
      * @param clusterCount   the number of clusters.
      * @param iterationCount the number of EM iterations to be made.
      * @param dist           the minimum distance to be exceeded by any pair of initial clusters.
+     *
      * @return the cluster decomposition.
      */
     public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
@@ -129,6 +131,7 @@ public class Clusterer {
      * Finds a collection of clusters.
      *
      * @param iterationCount the number of EM iterations to be made.
+     *
      * @return the cluster decomposition.
      */
     private Cluster[] findClusters(int iterationCount) {
@@ -266,6 +269,7 @@ public class Clusterer {
      *
      * @param x a point.
      * @param y a point.
+     *
      * @return squared Euclidean distance between x and y.
      */
     private double kDist(double[] x, double[] y) {
@@ -307,6 +311,7 @@ public class Clusterer {
      * @param h           the posterior probabilities associated with the data points.
      * @param mean        the mean of the data points.
      * @param covariances the covariances of the data points.
+     *
      * @return the mean posterior probability.
      */
     private double calculateMoments(double[] h, double[] mean, double[][] covariances) {
