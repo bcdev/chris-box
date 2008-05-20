@@ -1,0 +1,13 @@
+ENVI
+description = {Radiance for spectral band 17 - Unit: microWatts/nm/m^2/str - Wavelength: 872.0nm}
+samples = 384
+lines = 64
+bands = 1
+header offset = 0
+file type = ENVI Standard
+data type = 3
+interleave = bsq
+byte order = 1
+wavelength = {872.0}
+data gain values = {1.0}
+data offset values = {0.0}
