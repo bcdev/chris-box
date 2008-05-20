@@ -66,7 +66,7 @@ public class MultinormalDistribution implements Distribution {
         this.mean = mean;
 
         eigendecomposition = solver.createEigendecomposition(n, covariances);
-        logNormFactor = -0.5 * (n * log(2.0 * PI) + log(eigendecomposition.getEigenvalueProduct()));
+        logNormFactor = -0.5 * (n * log(2.0 * PI) + log(det()));
     }
 
     public final double probabilityDensity(double[] y) {
@@ -101,12 +101,47 @@ public class MultinormalDistribution implements Distribution {
         return u;
     }
 
+    private double det() {
+        double product = eigendecomposition.getEigenvalue(0);
+
+        for (int i = 1; i < n; ++i) {
+            product *= eigendecomposition.getEigenvalue(i);
+        }
+
+        return product;
+    }
+
+    private static class Eigendecomposition {
+
+        private double[] eigenvalues;
+        private double[][] v;
+
+        public Eigendecomposition(Jama.SingularValueDecomposition decomposition) {
+            eigenvalues = decomposition.getSingularValues();
+            v = decomposition.getV().getArray();
+        }
+
+        public final double getEigenvalue(int i) {
+            return eigenvalues[i];
+        }
+
+        public final double[] getEigenvalues() {
+            return eigenvalues;
+        }
+
+        public final double getV(int i, int j) {
+            return v[i][j];
+        }
+    }
+
     private static class EigenproblemSolver {
         private static final double MAX_CONDITION = 1.0E14;
 
         public Eigendecomposition createEigendecomposition(int n, double[][] symmetricMatrix) {
             final Eigendecomposition eigendecomposition =
                     new Eigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).svd());
+
+            // ensure proper condition
             final double[] d = eigendecomposition.getEigenvalues();
             final double t = d[0] / MAX_CONDITION - d[n - 1];
             if (t > 0.0) {
@@ -118,36 +153,5 @@ public class MultinormalDistribution implements Distribution {
 
             return eigendecomposition;
         }
-    }
-
-    private static class Eigendecomposition {
-        private double[] eigenvalues;
-        private double[][] v;
-
-        public Eigendecomposition(Jama.SingularValueDecomposition decomposition) {
-            eigenvalues = decomposition.getSingularValues();
-            v = decomposition.getV().getArray();
-        }
-
-        public double getEigenvalue(int i) {
-            return eigenvalues[i];
-        }
-
-        public double[] getEigenvalues() {
-            return eigenvalues;
-        }
-
-        public double getV(int i, int j) {
-            return v[i][j];
-        }
-
-        public double getEigenvalueProduct() {
-            double product = eigenvalues[0];
-            for (int i = 1; i < eigenvalues.length; ++i) {
-                product *= eigenvalues[i];
-            }
-
-            return product;
-        }
-    }
+    }    
 }

@@ -1,14 +1,14 @@
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.ProductData;
 
-import java.awt.image.RenderedImage;
-import java.awt.image.Raster;
 import java.awt.*;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
 import java.io.IOException;
-
-import com.bc.ceres.core.ProgressMonitor;
+import java.text.MessageFormat;
 
 /**
  * User: Marco Peters
@@ -26,13 +26,53 @@ public class ImageBand extends Band {
         super.setImage(image);
         reloadData();
     }
+
     @Override
     public void readRasterData(int offsetX, int offsetY, int width, int height, ProductData rasterData, ProgressMonitor pm) throws IOException {
-        final Rectangle rectangle = new Rectangle(offsetX, offsetY, width, height);
         final RenderedImage image = getImage();
-        final Raster raster = image.getData(rectangle);
+        if (image == null) {
+            throw new IllegalStateException(MessageFormat.format("No image available for band ''{0}''.", getName()));
+        }
 
-        raster.getDataElements(offsetX, offsetY, width, height, rasterData.getElems());
+        final int minTileX = image.getMinTileX();
+        final int minTileY = image.getMinTileY();
+
+        final int numXTiles = image.getNumXTiles();
+        final int numYTiles = image.getNumYTiles();
+
+        final Rectangle targetRectangle = new Rectangle(offsetX, offsetY, width, height);
+
+        pm.beginTask("Reading raster data", numXTiles * numYTiles);
+        try {
+            for (int tileX = minTileX; tileX < minTileX + numXTiles; ++tileX) {
+                for (int tileY = minTileY; tileY < minTileY + numYTiles; ++tileY) {
+                    final Rectangle tileRectangle = new Rectangle(
+                            image.getTileGridXOffset() + tileX * image.getTileWidth(),
+                            image.getTileGridYOffset() + tileY * image.getTileHeight(),
+                            image.getTileWidth(), image.getTileHeight());
+
+                    if (tileRectangle.intersects(targetRectangle)) {
+                        final Raster raster = image.getTile(tileX, tileY);
+
+                        final int minX = raster.getMinX();
+                        final int minY = raster.getMinY();
+                        final int tileWidth = raster.getWidth();
+                        final int tileHeight = raster.getHeight();
+
+                        final Object source = raster.getDataElements(minX, minY, tileWidth, tileHeight, null);
+                        final Object target = rasterData.getElems();
+
+                        for (int i = 0; i < tileHeight; ++i) {
+                            System.arraycopy(source, i * tileWidth, target, (minY + i) * image.getWidth() + minX, tileWidth);
+                        }
+                    }
+                    
+                    pm.worked(1);
+                }
+            }
+        } finally {
+            pm.done();
+        }
     }
 
     private void reloadData() {
@@ -42,56 +82,8 @@ public class ImageBand extends Band {
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
-        }else {
+        } else {
             setRasterData(null);
         }
     }
-
-// might be usefull or not
-//    @Override
-//    public void readRasterDataFully(ProgressMonitor pm) {
-//        final RenderedImage image = getImage();
-//        if (image == null) {
-//            throw new IllegalStateException(MessageFormat.format("No image available for band ''{0}''.", getName()));
-//        }
-//        if (!hasRasterData()) {
-//            setRasterData(createCompatibleRasterData());
-//        }
-//
-//
-//        final int minTileX = image.getMinTileX();
-//        final int minTileY = image.getMinTileY();
-//
-//        final int numXTiles = image.getNumXTiles();
-//        final int numYTiles = image.getNumYTiles();
-//
-//        try {
-//            pm.beginTask("Reading raster data", numXTiles * numYTiles);
-//            for (int tileX = minTileX; tileX < minTileX + numXTiles; ++tileX) {
-//                for (int tileY = minTileY; tileY < minTileY + numYTiles; ++tileY) {
-////                    final Rectangle tileRectangle = new Rectangle(
-////                            image.getTileGridXOffset() + tileX * image.getTileWidth(),
-////                            image.getTileGridYOffset() + tileY * image.getTileHeight(),
-////                            image.getTileWidth(), image.getTileHeight());
-////
-//                    final Raster raster = image.getTile(tileX, tileY);
-//
-//                    final int minX = raster.getMinX();
-//                    final int minY = raster.getMinY();
-//                    final int width = raster.getWidth();
-//                    final int height = raster.getHeight();
-//
-//                    final Object source = raster.getDataElements(minX, minY, width, height, null);
-//                    final Object target = getRasterData().getElems();
-//
-//                    for (int i = 0; i < height; ++i) {
-//                        System.arraycopy(source, i * width, target, (minY + i) * image.getWidth() + minX, width);
-//                    }
-//                    pm.worked(1);
-//                }
-//            }
-//        } finally {
-//            pm.done();
-//        }
-//    }
 }

@@ -44,7 +44,7 @@ import org.esa.beam.visat.VisatApp;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.operator.MultiplyDescriptor;
 import javax.swing.JInternalFrame;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
@@ -247,7 +247,7 @@ public class CloudLabeler {
         final int width = image.getWidth();
         final int height = image.getHeight();
         if (targetBand == null) {
-            targetBand = radianceProduct.addBand("cloud_product", ProductData.TYPE_FLOAT64);
+            targetBand = new Band("cloud_product", ProductData.TYPE_FLOAT64, width, height);
             targetBand.setSynthetic(true);
             targetBand.setDescription("Cloud product");
         }
@@ -258,6 +258,7 @@ public class CloudLabeler {
         final Object data = rasterData.getElems();
         image.getData().getDataElements(0, 0, width, height, data);
         targetBand.setRasterData(rasterData);
+        radianceProduct.addBand(targetBand);
         final VisatApp visatApp = VisatApp.getApp();
         final JInternalFrame targetBandFrame = visatApp.findInternalFrame(targetBand);
         if (targetBandFrame != null) {
@@ -308,7 +309,7 @@ public class CloudLabeler {
     private Product createClusterProduct(Product featureProduct) {
         final Map<String, Object> parameterMap = new HashMap<String, Object>();
         parameterMap.put("clusterCount", 14);
-        parameterMap.put("iterationCount", 40);
+        parameterMap.put("iterationCount", 60);
 
         return GPF.createProduct("chris.FindClusters",
                                  parameterMap,

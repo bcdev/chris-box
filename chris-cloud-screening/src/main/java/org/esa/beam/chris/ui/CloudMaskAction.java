@@ -6,10 +6,12 @@ import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.actions.AbstractVisatAction;
+import org.esa.beam.visat.VisatApp;
 
 import javax.swing.SwingWorker;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -81,10 +83,12 @@ public class CloudMaskAction extends AbstractVisatAction {
             try {
                 final CloudLabeler cloudLabeler = get();
                 final ClusterLabelingWindow labelingWindow = new ClusterLabelingWindow(cloudLabeler);
+
                 labelingWindow.addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosed(WindowEvent e) {
                         activeProductSet.remove(radianceProduct);
+                        VisatApp.getApp().setSelectedProductNode(cloudLabeler.getRadianceProduct());
                     }
                 });
                 labelingWindow.setVisible(true);

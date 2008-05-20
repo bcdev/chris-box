@@ -27,6 +27,8 @@ import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.util.Vector;
 
+import com.bc.ceres.core.ProgressMonitor;
+
 /**
  * Creates a cluster map.
  *

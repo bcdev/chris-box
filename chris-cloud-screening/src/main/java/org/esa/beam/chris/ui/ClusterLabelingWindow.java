@@ -27,16 +27,8 @@ import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
-import javax.swing.event.InternalFrameAdapter;
-import javax.swing.event.InternalFrameEvent;
-import javax.swing.event.InternalFrameListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.FlowLayout;
+import javax.swing.event.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -44,6 +36,9 @@ import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.concurrent.ExecutionException;
+import java.beans.VetoableChangeListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyVetoException;
 
 /**
  * Cluster labeling tool view.
@@ -62,6 +57,8 @@ public class ClusterLabelingWindow extends JDialog {
     private JCheckBox abundancesCheckBox;
     private JTable table;
     private PixelPositionListener pixelPositionListener;
+    private VetoablePsvCloseListener clusterMapCloseListener;
+    private VetoablePsvCloseListener rgbFrameCloseListener;
     private JInternalFrame clusterMapFrame;
     private JInternalFrame rgbFrame;
 
@@ -78,10 +75,16 @@ public class ClusterLabelingWindow extends JDialog {
 
     @Override
     public void dispose() {
-        closeFrame(clusterMapFrame);
+        if (!clusterMapFrame.isClosed()) {
+            clusterMapFrame.removeVetoableChangeListener(clusterMapCloseListener);
+            closeFrame(clusterMapFrame);
+        }
         clusterMapFrame = null;
 
-        closeFrame(rgbFrame);
+        if (!rgbFrame.isClosed()) {
+            rgbFrame.removeVetoableChangeListener(rgbFrameCloseListener);
+            closeFrame(rgbFrame);
+        }
         rgbFrame = null;
         super.dispose();
     }
@@ -111,15 +114,16 @@ public class ClusterLabelingWindow extends JDialog {
                 rgbView.setPinOverlayEnabled(false);
                 rgbView.setLayerProperties(visatApp.getPreferences());
                 rgbView.getImageDisplay().addPixelPositionListener(pixelPositionListener);
+
                 rgbFrame = visatApp.createInternalFrame(title, icon, rgbView, "");
-                rgbFrame.setClosable(false);
-                rgbFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+                rgbFrameCloseListener = new VetoablePsvCloseListener();
+                rgbFrame.addVetoableChangeListener(rgbFrameCloseListener);
             }
 
             final Band clusterMapBand = cloudLabeler.getClusterMapBand();
             clusterMapFrame = visatApp.findInternalFrame(clusterMapBand);
             if (clusterMapFrame == null) {
-                InternalFrameListener ifl = new ClusterMapFrameOpenHandler(
+                InternalFrameListener ifl = new ClusterMapFrameHandler(
                         clusterMapBand, cloudLabeler.getRadianceProduct().getDisplayName());
                 visatApp.addInternalFrameListener(ifl);
                 visatApp.openProductSceneView(clusterMapBand, "");
@@ -138,12 +142,12 @@ public class ClusterLabelingWindow extends JDialog {
         return null;
     }
 
-    private class ClusterMapFrameOpenHandler extends InternalFrameAdapter {
+    private class ClusterMapFrameHandler extends InternalFrameAdapter {
 
         private final Band clusterMapBand;
         private final String displayName;
 
-        private ClusterMapFrameOpenHandler(Band clusterMapBand, String displayName) {
+        private ClusterMapFrameHandler(Band clusterMapBand, String displayName) {
             this.clusterMapBand = clusterMapBand;
             this.displayName = displayName;
         }
@@ -151,18 +155,34 @@ public class ClusterLabelingWindow extends JDialog {
         @Override
         public void internalFrameOpened(InternalFrameEvent e) {
             final JInternalFrame internalFrame = e.getInternalFrame();
-            ProductSceneView productSceneView = getProductSceneView(internalFrame);
+            final ProductSceneView productSceneView = getProductSceneView(internalFrame);
             if (productSceneView.getRaster() == clusterMapBand) {
                 clusterMapFrame = internalFrame;
-                clusterMapFrame.setClosable(false);
-                clusterMapFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+                clusterMapCloseListener = new VetoablePsvCloseListener();
+                clusterMapFrame.addVetoableChangeListener(clusterMapCloseListener);
                 visatApp.removeInternalFrameListener(this);
                 internalFrame.setTitle(displayName + " - Cluster Map");
                 productSceneView.getImageDisplay().addPixelPositionListener(pixelPositionListener);
             }
         }
+
     }
 
+    private class VetoablePsvCloseListener implements VetoableChangeListener {
+
+        public void vetoableChange(PropertyChangeEvent evt) throws PropertyVetoException {
+            if(JInternalFrame.IS_CLOSED_PROPERTY.equals(evt.getPropertyName())) {
+                if ((Boolean) evt.getNewValue()) {
+                    if (visatApp.showQuestionDialog("Do you want to exit the cloud labeling tool?", null) == JOptionPane.NO_OPTION) {
+                        throw new PropertyVetoException("Do not close.", evt);
+                    }else {
+                        dispose();
+                        cloudLabeler.disposeSourceProducts();
+                    }
+                }
+            }
+        }
+    }
 
     private JComponent createControl() {
 
@@ -292,8 +312,8 @@ public class ClusterLabelingWindow extends JDialog {
             final int[] cloudClusterIndexes = tableModel.getCloudIndexes();
             final int[] surfaceClusterIndexes = tableModel.getSurfaceIndexes();
             cloudLabeler.performCloudProductComputation(cloudClusterIndexes,
-                                        surfaceClusterIndexes,
-                                        abundancesCheckBox.isSelected(), pm);
+                                                        surfaceClusterIndexes,
+                                                        abundancesCheckBox.isSelected(), pm);
             return null;
         }
 

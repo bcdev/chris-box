@@ -15,10 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.ColorPaletteDef;
-import org.esa.beam.framework.datamodel.ImageInfo;
 import org.esa.beam.framework.datamodel.IndexCoding;
-import org.esa.beam.framework.datamodel.MetadataAttribute;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
@@ -27,11 +24,9 @@ import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.util.IntMap;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.ImageLayout;
-import java.awt.Color;
 import java.awt.image.RenderedImage;
 
 /**
@@ -52,7 +47,7 @@ public class MakeClusterMapOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
-    private Band membershipBand;
+    private Band clusterMapBand;
 
     @Override
     public void initialize() throws OperatorException {
@@ -78,9 +73,9 @@ public class MakeClusterMapOp extends Operator {
                                                                        new int[0]);
                 targetBand.setImage(image);
             }
-            membershipBand = new ImageBand("cluster_map", ProductData.TYPE_INT16, width, height);
-            membershipBand.setDescription("Cluster map");
-            targetProduct.addBand(membershipBand);
+            clusterMapBand = new ImageBand("cluster_map", ProductData.TYPE_INT16, width, height);
+            clusterMapBand.setDescription("Cluster map");
+            targetProduct.addBand(clusterMapBand);
 
             final IndexCoding indexCoding = new IndexCoding("clusters");
             for (int i = 0; i < sourceBands.length; i++) {
@@ -88,9 +83,9 @@ public class MakeClusterMapOp extends Operator {
             }
             indexCoding.addIndex("unknown", -1, "Unknown");
             targetProduct.getIndexCodingGroup().add(indexCoding);
-            membershipBand.setSampleCoding(indexCoding);
-            ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(membershipBand);
-            membershipBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
+            clusterMapBand.setSampleCoding(indexCoding);
+            ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(clusterMapBand);
+            clusterMapBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
         } catch (Throwable e) {
             throw new OperatorException(e);
         }
