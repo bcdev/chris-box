@@ -85,7 +85,7 @@ public class Clusterer {
      * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
      */
     public Clusterer(double[][] points, int clusterCount, double dist) {
-        this(points, clusterCount, dist, 5489);
+        this(points, clusterCount, dist, 31415);
     }
 
     /**

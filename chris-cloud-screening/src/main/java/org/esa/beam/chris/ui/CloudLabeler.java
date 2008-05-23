@@ -38,6 +38,7 @@ import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 import org.esa.beam.util.IntMap;
+import org.esa.beam.util.ProductUtils;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 import org.esa.beam.visat.VisatApp;
 
@@ -258,7 +259,9 @@ public class CloudLabeler {
         final Object data = rasterData.getElems();
         image.getData().getDataElements(0, 0, width, height, data);
         targetBand.setRasterData(rasterData);
-        radianceProduct.addBand(targetBand);
+        if (!radianceProduct.containsBand(targetBand.getName())) {
+            radianceProduct.addBand(targetBand);
+        }
         final VisatApp visatApp = VisatApp.getApp();
         final JInternalFrame targetBandFrame = visatApp.findInternalFrame(targetBand);
         if (targetBandFrame != null) {

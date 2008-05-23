@@ -66,7 +66,9 @@ public class MultinormalDistribution implements Distribution {
         this.mean = mean;
 
         eigendecomposition = solver.createEigendecomposition(n, covariances);
-        logNormFactor = -0.5 * (n * log(2.0 * PI) + log(det()));
+
+        final double det = product(eigendecomposition.getEigenvalues());
+        logNormFactor = -0.5 * (n * log(2.0 * PI) + log(det));
     }
 
     public final double probabilityDensity(double[] y) {
@@ -101,11 +103,11 @@ public class MultinormalDistribution implements Distribution {
         return u;
     }
 
-    private double det() {
-        double product = eigendecomposition.getEigenvalue(0);
+    private static double product(double[] values) {
+        double product = values[0];
 
-        for (int i = 1; i < n; ++i) {
-            product *= eigendecomposition.getEigenvalue(i);
+        for (int i = 1; i < values.length; ++i) {
+            product *= values[i];
         }
 
         return product;
