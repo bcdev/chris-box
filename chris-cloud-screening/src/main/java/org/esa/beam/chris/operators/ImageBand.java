@@ -28,7 +28,8 @@ public class ImageBand extends Band {
     }
 
     @Override
-    public void readRasterData(int offsetX, int offsetY, int width, int height, ProductData rasterData, ProgressMonitor pm) throws IOException {
+    public void readRasterData(int offsetX, int offsetY, int width, int height, ProductData rasterData,
+                               ProgressMonitor pm) throws IOException {
         final RenderedImage image = getImage();
         if (image == null) {
             throw new IllegalStateException(MessageFormat.format("No image available for band ''{0}''.", getName()));
@@ -51,19 +52,20 @@ public class ImageBand extends Band {
                             image.getTileGridYOffset() + tileY * image.getTileHeight(),
                             image.getTileWidth(), image.getTileHeight());
 
-                    if (tileRectangle.intersects(targetRectangle)) {
-                        final Raster raster = image.getTile(tileX, tileY);
+                    final Rectangle rectangle = targetRectangle.intersection(tileRectangle);
+                    if (!rectangle.isEmpty()) {
+                        final Raster raster = image.getData(rectangle);
 
-                        final int minX = raster.getMinX();
-                        final int minY = raster.getMinY();
-                        final int tileWidth = raster.getWidth();
-                        final int tileHeight = raster.getHeight();
+                        final int x = rectangle.x;
+                        final int y = rectangle.y;
+                        final int w = rectangle.width;
+                        final int h = rectangle.height;
 
-                        final Object source = raster.getDataElements(minX, minY, tileWidth, tileHeight, null);
+                        final Object source = raster.getDataElements(x, y, w, h, null);
                         final Object target = rasterData.getElems();
 
-                        for (int i = 0; i < tileHeight; ++i) {
-                            System.arraycopy(source, i * tileWidth, target, (minY + i) * image.getWidth() + minX, tileWidth);
+                        for (int i = 0; i < h; ++i) {
+                            System.arraycopy(source, i * w, target, (y + i) * width + x, w);
                         }
                     }
                     
