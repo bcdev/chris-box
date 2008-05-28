@@ -32,10 +32,10 @@ import java.util.Map;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ComputeReflectances",
-                  version = "1.0",
-                  authors = "Ralf Quast",
-                  copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
+        version = "1.0",
+        authors = "Ralf Quast",
+        copyright = "(c) 2007 by Brockmann Consult",
+        description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
 public class ComputeReflectancesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
@@ -64,8 +64,8 @@ public class ComputeReflectancesOp extends Operator {
         final String name = sourceProduct.getName().replace("_NR", "_REFL");
         final String type = sourceProduct.getProductType().replace("_NR", "_REFL");
         targetProduct = new Product(name, type,
-                                    sourceProduct.getSceneRasterWidth(),
-                                    sourceProduct.getSceneRasterHeight());
+                sourceProduct.getSceneRasterWidth(),
+                sourceProduct.getSceneRasterHeight());
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
@@ -76,8 +76,8 @@ public class ComputeReflectancesOp extends Operator {
                 if (sourceBand.getName().startsWith("radiance")) {
                     final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
                     final double solarIrradiance = getAverageValue(table,
-                                                                   sourceBand.getSpectralWavelength(),
-                                                                   sourceBand.getSpectralBandwidth());
+                            sourceBand.getSpectralWavelength(),
+                            sourceBand.getSpectralBandwidth());
                     targetBand.setSolarFlux((float) solarIrradiance);
                     sourceBandMap.put(targetBand, sourceBand);
                 }
@@ -86,9 +86,9 @@ public class ComputeReflectancesOp extends Operator {
         for (final Band sourceBand : sourceProduct.getBands()) {
             if (sourceBand.getName().startsWith("radiance")) {
                 final Band targetBand = new Band(sourceBand.getName().replaceFirst("radiance", "reflectance"),
-                                                 ProductData.TYPE_INT16,
-                                                 sourceBand.getSceneRasterWidth(),
-                                                 sourceBand.getSceneRasterHeight());
+                        ProductData.TYPE_INT16,
+                        sourceBand.getSceneRasterWidth(),
+                        sourceBand.getSceneRasterHeight());
 
                 targetBand.setDescription(MessageFormat.format(
                         "Reflectance for spectral band {0}", sourceBand.getSpectralBandIndex() + 1));
@@ -99,27 +99,27 @@ public class ComputeReflectancesOp extends Operator {
                 targetBand.setSpectralWavelength(sourceBand.getSpectralWavelength());
                 targetBand.setSpectralBandwidth(sourceBand.getSpectralBandwidth());
                 final double solarIrradiance = getAverageValue(table,
-                                                               sourceBand.getSpectralWavelength(),
-                                                               sourceBand.getSpectralBandwidth());
+                        sourceBand.getSpectralWavelength(),
+                        sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 targetProduct.addBand(targetBand);
                 sourceBandMap.put(targetBand, sourceBand);
 
                 final double conversionFactor = PI / (cos(toRadians(solarZenithAngle)) * 1000.0 * solarIrradiance);
                 conversionFactorMap.put(targetBand, conversionFactor);
-            }
-        }
-        for (final Band sourceBand : sourceProduct.getBands()) {
-            if (sourceBand.getName().startsWith("mask")) {
+            } else if (sourceBand.getName().startsWith("mask")) {
                 final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
                 final double solarIrradiance = getAverageValue(table,
-                                                               sourceBand.getSpectralWavelength(),
-                                                               sourceBand.getSpectralBandwidth());
+                        sourceBand.getSpectralWavelength(),
+                        sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 final FlagCoding flagCoding = sourceBand.getFlagCoding();
                 if (flagCoding != null) {
-                    targetBand.setFlagCoding(targetProduct.getFlagCoding(flagCoding.getName()));
+                    targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
                 }
+                sourceBandMap.put(targetBand, sourceBand);
+            } else {
+                final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
                 sourceBandMap.put(targetBand, sourceBand);
             }
         }
@@ -169,7 +169,7 @@ public class ComputeReflectancesOp extends Operator {
             for (int y = 0; y < targetTile.getHeight(); ++y) {
                 int sourceIndex = sourceOffset;
                 int targetIndex = targetOffset;
-                
+
                 for (int x = 0; x < targetTile.getWidth(); ++x) {
                     checkForCancelation(pm);
 

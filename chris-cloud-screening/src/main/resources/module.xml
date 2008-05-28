@@ -23,6 +23,9 @@
 	</changelog>
 
 	<dependency>
+		<module>beam-unmix</module>
+	</dependency>
+	<dependency>
 		<module>beam-gpf</module>
 	</dependency>
 	<dependency>
