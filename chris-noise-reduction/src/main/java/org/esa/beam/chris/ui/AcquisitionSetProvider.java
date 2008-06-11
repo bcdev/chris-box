@@ -47,7 +47,7 @@ class AcquisitionSetProvider {
         }
 
         final AcquisitionSetProductFilter productFilter = new AcquisitionSetProductFilter(selectedProduct);
-        for (final Product product : appContext.getProducts()) {
+        for (final Product product : appContext.getProductManager().getProducts()) {
             if (productFilter.accept(product)) {
                 acquisitionSet.add(product);
             }

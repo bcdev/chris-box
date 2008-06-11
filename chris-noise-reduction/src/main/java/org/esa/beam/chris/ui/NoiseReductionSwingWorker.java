@@ -149,7 +149,7 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
     protected void process(List<Product> products) {
         if (addTargetProductsToAppContext) {
             for (Product product : products) {
-                appContext.addProduct(product);
+                appContext.getProductManager().addProduct(product);
             }
         }
     }
@@ -218,7 +218,7 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
 
     private void disposeSourceProductIfNotUsedInAppContext(Product sourceProduct) {
         boolean dispose = true;
-        for (final Product product : appContext.getProducts()) {
+        for (final Product product : appContext.getProductManager().getProducts()) {
             if (sourceProduct == product) {
                 dispose = false;
                 break;
