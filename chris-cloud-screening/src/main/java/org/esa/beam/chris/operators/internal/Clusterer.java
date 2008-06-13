@@ -49,7 +49,7 @@ public class Clusterer {
      *
      * @return the cluster decomposition.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount) {
+    public static ClusterSet findClusters(double[][] points, int clusterCount, int iterationCount) {
         return new Clusterer(points, clusterCount).findClusters(iterationCount);
     }
 
@@ -63,7 +63,7 @@ public class Clusterer {
      *
      * @return the cluster decomposition.
      */
-    public static Cluster[] findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
+    public static ClusterSet findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
         return new Clusterer(points, clusterCount, dist).findClusters(iterationCount);
     }
 
@@ -134,7 +134,7 @@ public class Clusterer {
      *
      * @return the cluster decomposition.
      */
-    private Cluster[] findClusters(int iterationCount) {
+    private ClusterSet findClusters(int iterationCount) {
         while (iterationCount > 0) {
             iterate();
             iterationCount--;
@@ -192,18 +192,18 @@ public class Clusterer {
      *
      * @return the clusters found.
      */
-    public Cluster[] getClusters() {
+    public ClusterSet getClusters() {
         return getClusters(new DefaultClusterComparator());
     }
 
-    public Cluster[] getClusters(Comparator<Cluster> clusterComparator) {
+    public ClusterSet getClusters(Comparator<Cluster> clusterComparator) {
         final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
-            clusters[k] = new Cluster(dimensionCount, points, p[k], h[k], distributions[k]);
+            clusters[k] = new Cluster(distributions[k], p[k]);
         }
         Arrays.sort(clusters, clusterComparator);
 
-        return clusters;
+        return new ClusterSet(clusters);
     }
 
     /**

@@ -38,13 +38,13 @@ public class ClustererTest extends TestCase {
                 2, 2, 2, 3, 3, 3, 3, 3,
         });
 
-        final Cluster[] clusters = Clusterer.findClusters(points, 4, 10, 0.1);
-        assertEquals(4, clusters.length);
+        final ClusterSet clusters = Clusterer.findClusters(points, 4, 10, 0.1);
+        assertEquals(4, clusters.getClusterCount());
 
-        assertEquals(3.0, clusters[0].getMean()[0], 0.01);
-        assertEquals(2.0, clusters[1].getMean()[0], 0.01);
-        assertEquals(1.0, clusters[2].getMean()[0], 0.01);
-        assertEquals(4.0, clusters[3].getMean()[0], 0.01);
+        assertEquals(3.0, clusters.getMean(0)[0], 0.01);
+        assertEquals(2.0, clusters.getMean(1)[0], 0.01);
+        assertEquals(1.0, clusters.getMean(2)[0], 0.01);
+        assertEquals(4.0, clusters.getMean(3)[0], 0.01);
     }
 
     private static double[][] createRandomPoints(double[] doubles) {

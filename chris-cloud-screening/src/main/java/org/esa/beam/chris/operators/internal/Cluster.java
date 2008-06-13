@@ -23,79 +23,27 @@ package org.esa.beam.chris.operators.internal;
  */
 public class Cluster {
 
-    private final int n;
+    final Distribution distribution;
+    final double priorProbability;
 
-    private final double[][] points;
-    private final double p;
-    private final double h[];
-    private final Distribution pdf;
-
-    /**
-     * Constructs a new cluster.
-     *
-     * @param n      the dimension of the point space.
-     * @param points the data points.
-     * @param p      the cluster prior probability.
-     * @param h      the cluster posterior probabilities.
-     * @param pdf    the cluster probability density function.
-     */
-    public Cluster(int n, double[][] points, double p, double[] h, Distribution pdf) {
-        // todo - check arguments
-
-        this.n = n;
-        this.points = points;
-        this.p = p;
-        this.h = h;
-        this.pdf = pdf;
+    public Cluster(Distribution distribution, double priorProbability) {
+        this.priorProbability = priorProbability;
+        this.distribution = distribution;
     }
 
-    /**
-     * Returns the data points.
-     *
-     * @return the data point.
-     */
-    public final double[][] getPoints() {
-        return points;
-    }
-
-    /**
-     * Returns the cluster posterior probabilities.
-     *
-     * @return the cluster posterior probabilities.
-     */
-    public final double[] getPosteriorProbabilities() {
-        return h;
-    }
-    
-    /**
-     * Returns the cluster prior probability.
-     *
-     * @return the cluster prior probability.
-     */
     public final double getPriorProbability() {
-        return p;
+        return priorProbability;
     }
 
-    /**
-     * Returns the cluster probability density for a data point.
-     *
-     * @param point the data point.
-     * @return the cluster probability density.
-     */
-    public final double probabilityDensity(double[] point) {
-        if (point.length != n) {
-            throw new IllegalArgumentException("point.length != n");
-        }
-
-        return pdf.probabilityDensity(point);
+    public final double getLogProbabilityDensity(double[] point) {
+        return distribution.logProbabilityDensity(point);
     }
 
-    /**
-     * Returns the cluster mean.
-     *
-     * @return the cluster mean.
-     */
-    public double[] getMean() {
-        return pdf.getMean();
+    public final double getPprobabilityDensity(double[] point) {
+        return distribution.probabilityDensity(point);
+    }
+
+    public final double[] getMean() {
+        return distribution.getMean();
     }
 }

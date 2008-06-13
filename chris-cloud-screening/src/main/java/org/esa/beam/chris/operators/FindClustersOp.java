@@ -18,6 +18,7 @@ import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.Cluster;
 import org.esa.beam.chris.operators.internal.Clusterer;
+import org.esa.beam.chris.operators.internal.ClusterSet;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -146,7 +147,7 @@ public class FindClustersOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("Computing clusters...", iterationCount+3);
+        pm.beginTask("Computing clusters...", iterationCount+2);
 
         try {
             final int sceneWidth = sourceProduct.getSceneRasterWidth();
@@ -158,34 +159,36 @@ public class FindClustersOp extends Operator {
                 pm.worked(1);
             }
 
-            final Cluster[] clusters;
+            final ClusterSet clusterSet;
             if (clusterComparator == null) {
-                clusters = clusterer.getClusters();
+                clusterSet = clusterer.getClusters();
             } else {
-                clusters = clusterer.getClusters(clusterComparator);
+                clusterSet = clusterer.getClusters(clusterComparator);
             }
 
-            if (includeProbabilities) {
-                for (int i = 0; i < clusterCount; ++i) {
-                    final Tile targetTile = targetTileMap.get(probabilityBands[i]);
-                    final double[] p = clusters[i].getPosteriorProbabilities();
-
-                    for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
-                        for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                            targetTile.setSample(x, y, p[y * sceneWidth + x]);
-                        }
-                    }
-                }
+            final Tile[] sourceTiles = new Tile[sourceBands.length];
+            for (int i = 0; i < sourceTiles.length; i++) {
+                sourceTiles[i] = getSourceTile(sourceBands[i], targetRectangle, ProgressMonitor.NULL);
             }
-            pm.worked(1);
-            final Tile targetTile = targetTileMap.get(clusterMapBand);
+
+            final Tile clusterMapTile = targetTileMap.get(clusterMapBand);
+            final Tile[] targetTiles = new Tile[clusterCount];
+            for (int i = 0; i < targetTiles.length; i++) {
+                targetTiles[i] = targetTileMap.get(probabilityBands[i]);
+            }
+            double[] point = new double[sourceTiles.length];
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                    final double[] samples = new double[clusterCount];
-                    for (int i = 0; i < clusterCount; ++i) {
-                        samples[i] = clusters[i].getPosteriorProbabilities()[y * sceneWidth + x];
+                    for (int i = 0; i < sourceTiles.length; i++) {
+                        point[i] = sourceTiles[i].getSampleDouble(x, y);
                     }
-                    targetTile.setSample(x, y, findMaxIndex(samples));
+                    double p[] = clusterSet.getPosteriorProbabilities(point);
+                    if (includeProbabilities) {
+                        for (int i = 0; i < clusterCount; ++i) {
+                            targetTiles[i].setSample(x, y, p[i]);
+                        }
+                    }
+                    clusterMapTile.setSample(x, y, findMaxIndex(p));
                 }
             }
             pm.worked(1);
@@ -211,33 +214,33 @@ public class FindClustersOp extends Operator {
         final int sceneHeight = sourceProduct.getSceneRasterHeight();
 
         final double[][] points = new double[sceneWidth * sceneHeight][sourceBands.length];
-        final double[] min = new double[sourceBands.length];
-        final double[] max = new double[sourceBands.length];
+//        final double[] min = new double[sourceBands.length];
+//        final double[] max = new double[sourceBands.length];
 
         try {
             pm.beginTask("Extracting data points...", sourceBands.length * sceneHeight);
 
             for (int i = 0; i < sourceBands.length; i++) {
-                min[i] = Double.POSITIVE_INFINITY;
-                max[i] = Double.NEGATIVE_INFINITY;
+//                min[i] = Double.POSITIVE_INFINITY;
+//                max[i] = Double.NEGATIVE_INFINITY;
 
                 for (int y = 0; y < sceneHeight; y++) {
                     final Tile sourceTile = getSourceTile(sourceBands[i], new Rectangle(0, y, sceneWidth, 1), pm);
                     for (int x = 0; x < sceneWidth; x++) {
                         final double sample = sourceTile.getSampleDouble(x, y);
                         points[y * sceneWidth + x][i] = sample;
-                        if (sample < min[i]) {
-                            min[i] = sample;
-                        }
-                        if (sample > max[i]) {
-                            max[i] = sample;
-                        }
+//                        if (sample < min[i]) {
+//                            min[i] = sample;
+//                        }
+//                        if (sample > max[i]) {
+//                            max[i] = sample;
+//                        }
                     }
                     pm.worked(1);
                 }
-                for (int j = 0; j < points.length; ++j) {
-                    points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
-                }
+//                for (int j = 0; j < points.length; ++j) {
+//                    points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
+//                }
             }
         } finally {
             pm.done();
