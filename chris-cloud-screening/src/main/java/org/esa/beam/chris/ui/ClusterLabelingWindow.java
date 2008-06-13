@@ -75,13 +75,13 @@ public class ClusterLabelingWindow extends JDialog {
 
     @Override
     public void dispose() {
-        if (!clusterMapFrame.isClosed()) {
+        if (clusterMapFrame != null && !clusterMapFrame.isClosed()) {
             clusterMapFrame.removeVetoableChangeListener(clusterMapCloseListener);
             closeFrame(clusterMapFrame);
         }
         clusterMapFrame = null;
 
-        if (!rgbFrame.isClosed()) {
+        if (rgbFrame != null && !rgbFrame.isClosed()) {
             rgbFrame.removeVetoableChangeListener(rgbFrameCloseListener);
             closeFrame(rgbFrame);
         }

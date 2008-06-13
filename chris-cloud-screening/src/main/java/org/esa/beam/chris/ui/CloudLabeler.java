@@ -17,18 +17,9 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.ClusterMapOpImage;
-import org.esa.beam.chris.operators.ClusterProbabilityOpImage;
-import org.esa.beam.chris.operators.ClusterProperties;
-import org.esa.beam.chris.operators.ClusterPropertiesExtractor;
-import org.esa.beam.chris.operators.ExtractEndmembersOp;
-import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.ColorPaletteDef;
-import org.esa.beam.framework.datamodel.ImageInfo;
-import org.esa.beam.framework.datamodel.MetadataAttribute;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.datamodel.RasterDataNode;
+import org.esa.beam.chris.operators.*;
+import org.esa.beam.chris.operators.internal.Cluster;
+import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -38,22 +29,18 @@ import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 import org.esa.beam.util.IntMap;
-import org.esa.beam.util.ProductUtils;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 import org.esa.beam.visat.VisatApp;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.operator.MultiplyDescriptor;
-import javax.swing.JInternalFrame;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by marcoz.
@@ -213,7 +200,7 @@ public class CloudLabeler {
     }
 
     public void performCloudProductComputation(int[] cloudClusterIndexes, int[] surfaceClusterIndexes, boolean computeAbundances,
-                               ProgressMonitor pm) throws OperatorException {
+                                               ProgressMonitor pm) throws OperatorException {
         pm.beginTask("Computing cloud product...", 1);
 
         try {
@@ -310,13 +297,29 @@ public class CloudLabeler {
     }
 
     private Product createClusterProduct(Product featureProduct) {
-        final Map<String, Object> parameterMap = new HashMap<String, Object>();
-        parameterMap.put("clusterCount", 14);
-        parameterMap.put("iterationCount", 60);
+        final int clusterCount = 14;
+        final int iterationCount = 60;
+        final boolean includeProbabilities = true;
+        final List<String> sourceBandNameList = new ArrayList<String>(5);
+        Collections.addAll(sourceBandNameList, "brightness_vis", "brightness_nir", "whiteness_vis", "whiteness_nir");
+        if (featureProduct.getProductType().matches("CHRIS_M[15]_FEAT")) {
+            sourceBandNameList.add("wv");
+        }
+        final String[] sourceBandNames = sourceBandNameList.toArray(new String[sourceBandNameList.size()]);
+        final Comparator<Cluster> clusterComparator = new Comparator<Cluster>() {
+            public int compare(Cluster c1, Cluster c2) {
+                return Double.compare(c2.getMean()[0], c1.getMean()[0]);
+            }
+        };
+        final FindClustersOp findClustersOp = new FindClustersOp(
+                featureProduct,
+                clusterCount,
+                iterationCount,
+                sourceBandNames,
+                includeProbabilities,
+                clusterComparator);
 
-        return GPF.createProduct("chris.FindClusters",
-                                 parameterMap,
-                                 featureProduct);
+        return findClustersOp.getTargetProduct();
     }
 
     private Product createClusterMapProduct(Product clusterProduct) {

@@ -59,8 +59,8 @@ public class MakeClusterMapOp extends Operator {
 
         try {
             final Band[] sourceBands = sourceProduct.getBands();
-            final Band[] probabilityBands = new Band[sourceBands.length];
-            for (int i = 0; i < sourceBands.length; ++i) {
+            final Band[] probabilityBands = new Band[sourceBands.length - 1];
+            for (int i = 0; i < sourceBands.length - 1; ++i) {
                 final Band sourceBand = sourceBands[i];
 
                 Band targetBand = new ImageBand(sourceBand.getName(), sourceBand.getDataType(), width, height);
@@ -78,7 +78,7 @@ public class MakeClusterMapOp extends Operator {
             targetProduct.addBand(clusterMapBand);
 
             final IndexCoding indexCoding = new IndexCoding("clusters");
-            for (int i = 0; i < sourceBands.length; i++) {
+            for (int i = 0; i < sourceBands.length - 1; i++) {
                 indexCoding.addIndex("cluster_" + (i + 1), i, "Cluster label");
             }
             indexCoding.addIndex("unknown", -1, "Unknown");
