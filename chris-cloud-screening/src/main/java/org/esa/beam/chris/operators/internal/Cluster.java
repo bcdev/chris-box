@@ -14,6 +14,7 @@
  */
 package org.esa.beam.chris.operators.internal;
 
+
 /**
  * Cluster class.
  *
@@ -65,7 +66,7 @@ public class Cluster {
     public final double[] getPosteriorProbabilities() {
         return h;
     }
-
+    
     /**
      * Returns the cluster prior probability.
      *

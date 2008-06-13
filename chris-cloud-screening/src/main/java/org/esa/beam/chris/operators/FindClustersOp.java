@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.Cluster;
 import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.framework.datamodel.Band;
@@ -31,7 +32,6 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -87,18 +87,7 @@ public class FindClustersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        if (sourceBandNames != null && sourceBandNames.length > 0) {
-            sourceBands = new Band[sourceBandNames.length];
-            for (int i = 0; i < sourceBandNames.length; i++) {
-                final Band sourceBand = sourceProduct.getBand(sourceBandNames[i]);
-                if (sourceBand == null) {
-                    throw new OperatorException("source band not found: " + sourceBandNames[i]);
-                }
-                sourceBands[i] = sourceBand;
-            }
-        } else {
-            sourceBands = sourceProduct.getBands();
-        }
+        sourceBands = collectSourceBands();
 
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
@@ -106,17 +95,10 @@ public class FindClustersOp extends Operator {
         final String type = sourceProduct.getProductType() + "_CLUSTERS";
 
         final Product targetProduct = new Product(name, type, width, height);
-        targetProduct.setPreferredTileSize(width, height);
+        targetProduct.setPreferredTileSize(width, height);  //TODO ????
 
         if (includeProbabilities) {
-            probabilityBands = new Band[clusterCount];
-            for (int i = 0; i < clusterCount; ++i) {
-                final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT32);
-                targetBand.setUnit("dl");
-                targetBand.setDescription("Cluster posterior probabilities");
-
-                probabilityBands[i] = targetBand;
-            }
+            createProbabilityBands(targetProduct);
         }
 
         clusterMapBand = new Band("cluster_map", ProductData.TYPE_INT16, width, height);
@@ -133,13 +115,42 @@ public class FindClustersOp extends Operator {
         setTargetProduct(targetProduct);
     }
 
+    private Band[] collectSourceBands() {
+        Band[] sourceBands;
+        if (sourceBandNames != null && sourceBandNames.length > 0) {
+            sourceBands = new Band[sourceBandNames.length];
+            for (int i = 0; i < sourceBandNames.length; i++) {
+                final Band sourceBand = sourceProduct.getBand(sourceBandNames[i]);
+                if (sourceBand == null) {
+                    throw new OperatorException("source band not found: " + sourceBandNames[i]);
+                }
+                sourceBands[i] = sourceBand;
+            }
+        } else {
+            sourceBands = sourceProduct.getBands();
+        }
+        return sourceBands;
+    }
+
+    private void createProbabilityBands(Product targetProduct) {
+        probabilityBands = new Band[clusterCount];
+        for (int i = 0; i < clusterCount; ++i) {
+            final Band targetBand = targetProduct.addBand("probability_" + i, ProductData.TYPE_FLOAT32);
+            targetBand.setUnit("dl");
+            targetBand.setDescription("Cluster posterior probabilities");
+
+            probabilityBands[i] = targetBand;
+        }
+    }
+
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("Computing clusters...", iterationCount);
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                 ProgressMonitor pm) throws OperatorException {
+        pm.beginTask("Computing clusters...", iterationCount+3);
 
         try {
             final int sceneWidth = sourceProduct.getSceneRasterWidth();
-            final Clusterer clusterer = createClusterer();
+            final Clusterer clusterer = createClusterer(SubProgressMonitor.create(pm, 1));
 
             for (int i = 0; i < iterationCount; ++i) {
                 checkForCancelation(pm);
@@ -166,6 +177,7 @@ public class FindClustersOp extends Operator {
                     }
                 }
             }
+            pm.worked(1);
             final Tile targetTile = targetTileMap.get(clusterMapBand);
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
@@ -176,8 +188,7 @@ public class FindClustersOp extends Operator {
                     targetTile.setSample(x, y, findMaxIndex(samples));
                 }
             }
-        } catch (IOException e) {
-            throw new OperatorException(e);
+            pm.worked(1);
         } finally {
             pm.done();
         }
@@ -195,36 +206,41 @@ public class FindClustersOp extends Operator {
         return index;
     }
 
-    private Clusterer createClusterer() throws IOException {
+    private Clusterer createClusterer(ProgressMonitor pm) {
         final int sceneWidth = sourceProduct.getSceneRasterWidth();
         final int sceneHeight = sourceProduct.getSceneRasterHeight();
-
-        final double[] samples = new double[sceneWidth];
 
         final double[][] points = new double[sceneWidth * sceneHeight][sourceBands.length];
         final double[] min = new double[sourceBands.length];
         final double[] max = new double[sourceBands.length];
 
-        for (int i = 0; i < sourceBands.length; i++) {
-            min[i] = Double.POSITIVE_INFINITY;
-            max[i] = Double.NEGATIVE_INFINITY;
+        try {
+            pm.beginTask("Extracting data points...", sourceBands.length * sceneHeight);
 
-            for (int y = 0; y < sceneHeight; y++) {
-                sourceBands[i].readPixels(0, y, sceneWidth, 1, samples, ProgressMonitor.NULL);
+            for (int i = 0; i < sourceBands.length; i++) {
+                min[i] = Double.POSITIVE_INFINITY;
+                max[i] = Double.NEGATIVE_INFINITY;
 
-                for (int x = 0; x < sceneWidth; x++) {
-                    points[y * sceneWidth + x][i] = samples[x];
-                    if (samples[x] < min[i]) {
-                        min[i] = samples[x];
+                for (int y = 0; y < sceneHeight; y++) {
+                    final Tile sourceTile = getSourceTile(sourceBands[i], new Rectangle(0, y, sceneWidth, 1), pm);
+                    for (int x = 0; x < sceneWidth; x++) {
+                        final double sample = sourceTile.getSampleDouble(x, y);
+                        points[y * sceneWidth + x][i] = sample;
+                        if (sample < min[i]) {
+                            min[i] = sample;
+                        }
+                        if (sample > max[i]) {
+                            max[i] = sample;
+                        }
                     }
-                    if (samples[x] > max[i]) {
-                        max[i] = samples[x];
-                    }
+                    pm.worked(1);
+                }
+                for (int j = 0; j < points.length; ++j) {
+                    points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
                 }
             }
-            for (int j = 0; j < points.length; ++j) {
-                points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
-            }
+        } finally {
+            pm.done();
         }
 
         return new Clusterer(points, clusterCount);

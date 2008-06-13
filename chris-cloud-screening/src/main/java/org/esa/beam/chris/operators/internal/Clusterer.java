@@ -29,8 +29,8 @@ import java.util.Random;
  */
 public class Clusterer {
 
-    private final int m;
-    private final int n;
+    private final int pointCount;
+    private final int dimensionCount;
     private final double[][] points;
     private final int clusterCount;
 
@@ -103,25 +103,25 @@ public class Clusterer {
     /**
      * Constructs a new instance of this class.
      *
-     * @param m            the number of data points.
-     * @param n            the dimension of the point space.
-     * @param points       the data points.
-     * @param clusterCount the number of clusters.
-     * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
-     * @param seed         the seed used for the random initialization of clusters.
+     * @param pointCount     the number of data points.
+     * @param dimensionCount the number of dimension in point space.
+     * @param points         the data points.
+     * @param clusterCount   the number of clusters.
+     * @param dist           the minimum distance to be exceeded by any pair of initial clusters.
+     * @param seed           the seed used for the random initialization of clusters.
      */
-    private Clusterer(int m, int n, double[][] points, int clusterCount, double dist, int seed) {
+    private Clusterer(int pointCount, int dimensionCount, double[][] points, int clusterCount, double dist, int seed) {
         // todo: check arguments
 
-        this.m = m;
-        this.n = n;
+        this.pointCount = pointCount;
+        this.dimensionCount = dimensionCount;
         this.points = points;
         this.clusterCount = clusterCount;
 
         p = new double[clusterCount];
-        h = new double[clusterCount][m];
-        means = new double[clusterCount][n];
-        covariances = new double[clusterCount][n][n];
+        h = new double[clusterCount][pointCount];
+        means = new double[clusterCount][dimensionCount];
+        covariances = new double[clusterCount][dimensionCount][dimensionCount];
         distributions = new Distribution[clusterCount];
 
         initialize(dist, seed);
@@ -155,7 +155,7 @@ public class Clusterer {
             distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
         }
         // E-step
-        for (int i = 0; i < m; ++i) {
+        for (int i = 0; i < pointCount; ++i) {
             double sum = 0.0;
             for (int k = 0; k < clusterCount; ++k) {
                 h[k][i] = p[k] * distributions[k].probabilityDensity(points[i]);
@@ -199,7 +199,7 @@ public class Clusterer {
     public Cluster[] getClusters(Comparator<Cluster> clusterComparator) {
         final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
-            clusters[k] = new Cluster(n, points, p[k], h[k], distributions[k]);
+            clusters[k] = new Cluster(dimensionCount, points, p[k], h[k], distributions[k]);
         }
         Arrays.sort(clusters, clusterComparator);
 
@@ -217,7 +217,7 @@ public class Clusterer {
 
         do {
             kInit(dist, random);
-            for (int i = 0; i < m; ++i) {
+            for (int i = 0; i < pointCount; ++i) {
                 for (int k = 0; k < clusterCount; ++k) {
                     h[k][i] = kDist(means[k], points[i]);
                 }
@@ -248,7 +248,7 @@ public class Clusterer {
         for (int k = 0; k < clusterCount; ++k) {
             boolean accepted = true;
             do {
-                System.arraycopy(points[random.nextInt(m)], 0, means[k], 0, n);
+                System.arraycopy(points[random.nextInt(pointCount)], 0, means[k], 0, dimensionCount);
                 for (int i = 0; i < k; ++i) {
                     accepted = kDist(means[k], means[i]) > dist * dist;
                     if (!accepted) {
@@ -270,7 +270,7 @@ public class Clusterer {
      */
     private double kDist(double[] x, double[] y) {
         double d = 0.0;
-        for (int l = 0; l < n; ++l) {
+        for (int l = 0; l < dimensionCount; ++l) {
             d += (y[l] - x[l]) * (y[l] - x[l]);
         }
 
@@ -286,10 +286,10 @@ public class Clusterer {
         testing:
         for (int k = 0; k < clusterCount; ++k) {
             int memberCount = 0;
-            for (int i = 0; i < m; ++i) {
+            for (int i = 0; i < pointCount; ++i) {
                 if (h[k][i] != 0.0) {
                     ++memberCount;
-                    if (memberCount == Math.max(2, n)) {
+                    if (memberCount == Math.max(2, dimensionCount)) {
                         continue testing;
                     }
                 }
@@ -311,37 +311,37 @@ public class Clusterer {
      * @return the mean posterior probability.
      */
     private double calculateMoments(double[] h, double[] mean, double[][] covariances) {
-        for (int k = 0; k < n; ++k) {
-            for (int l = k; l < n; ++l) {
+        for (int k = 0; k < dimensionCount; ++k) {
+            for (int l = k; l < dimensionCount; ++l) {
                 covariances[k][l] = 0.0;
             }
             mean[k] = 0.0;
         }
         double sum = 0.0;
-        for (int i = 0; i < m; ++i) {
-            for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < pointCount; ++i) {
+            for (int k = 0; k < dimensionCount; ++k) {
                 mean[k] += h[i] * points[i][k];
             }
             sum += h[i];
         }
-        for (int k = 0; k < n; ++k) {
+        for (int k = 0; k < dimensionCount; ++k) {
             mean[k] /= sum;
         }
-        for (int i = 0; i < m; ++i) {
-            for (int k = 0; k < n; ++k) {
-                for (int l = k; l < n; ++l) {
+        for (int i = 0; i < pointCount; ++i) {
+            for (int k = 0; k < dimensionCount; ++k) {
+                for (int l = k; l < dimensionCount; ++l) {
                     covariances[k][l] += h[i] * (points[i][k] - mean[k]) * (points[i][l] - mean[l]);
                 }
             }
         }
-        for (int k = 0; k < n; ++k) {
-            for (int l = k; l < n; ++l) {
+        for (int k = 0; k < dimensionCount; ++k) {
+            for (int l = k; l < dimensionCount; ++l) {
                 covariances[k][l] /= sum;
                 covariances[l][k] = covariances[k][l];
             }
         }
 
-        return sum / m;
+        return sum / pointCount;
     }
 
     /**
