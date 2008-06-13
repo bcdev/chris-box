@@ -48,7 +48,7 @@ import java.util.Map;
                   description = "Finds clusters for features extracted from TOA reflectances.")
 public class FindClustersOp extends Operator {
 
-    @SourceProduct(alias = "source", type = "CHRIS_M[1-5][A0]?_FEAT")
+    @SourceProduct(alias = "source")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
@@ -102,8 +102,8 @@ public class FindClustersOp extends Operator {
 
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
-        final String name = sourceProduct.getName().replace("_FEAT", "_CLU");
-        final String type = sourceProduct.getProductType().replace("_FEAT", "_CLU");
+        final String name = sourceProduct.getName() + "_CLUSTERS";
+        final String type = sourceProduct.getProductType() + "_CLUSTERS";
 
         final Product targetProduct = new Product(name, type, width, height);
         targetProduct.setPreferredTileSize(width, height);
@@ -124,7 +124,7 @@ public class FindClustersOp extends Operator {
         targetProduct.addBand(clusterMapBand);
 
         final IndexCoding indexCoding = new IndexCoding("clusters");
-        for (int i = 0; i < sourceBands.length; i++) {
+        for (int i = 0; i < clusterCount; i++) {
             indexCoding.addIndex("cluster_" + (i + 1), i, "Cluster label");
         }
         targetProduct.getIndexCodingGroup().add(indexCoding);

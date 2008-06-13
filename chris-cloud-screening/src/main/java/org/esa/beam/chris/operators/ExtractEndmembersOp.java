@@ -52,7 +52,7 @@ public class ExtractEndmembersOp extends Operator {
     @SourceProduct(alias = "features")
     private Product featureProduct;
     @SourceProduct(alias = "clusters")
-    private Product clusterProduct;
+    private Product clusterMapProduct;
 
     @Parameter(alias = "cloudClusterIndexes", notEmpty = true, notNull = true)
     private int[] cloudClusterIndexes;
@@ -75,15 +75,15 @@ public class ExtractEndmembersOp extends Operator {
      *
      * @param reflectanceProduct    the reflectance product.
      * @param featureProduct        the feature product.
-     * @param clusterProduct        the cluster product.
+     * @param clusterMapProduct        the cluster product.
      * @param cloudClusterIndexes   the cloud cluster indexes.
      * @param surfaceClusterIndexes the surface cluster indexes.
      */
-    public ExtractEndmembersOp(Product reflectanceProduct, Product featureProduct, Product clusterProduct,
+    public ExtractEndmembersOp(Product reflectanceProduct, Product featureProduct, Product clusterMapProduct,
                                int[] cloudClusterIndexes, int[] surfaceClusterIndexes) {
         this.reflectanceProduct = reflectanceProduct;
         this.featureProduct = featureProduct;
-        this.clusterProduct = clusterProduct;
+        this.clusterMapProduct = clusterMapProduct;
         this.cloudClusterIndexes = cloudClusterIndexes;
         this.surfaceClusterIndexes = surfaceClusterIndexes;
     }
@@ -98,7 +98,7 @@ public class ExtractEndmembersOp extends Operator {
     private void setTargetProperties(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
-        final Band clusterMapBand = clusterProduct.getBand("cluster_map");
+        final Band clusterMapBand = clusterMapProduct.getBand("cluster_map");
 
         final IndexCoding indexCoding = (IndexCoding) clusterMapBand.getSampleCoding();
         final String[] labels = indexCoding.getIndexNames();
@@ -124,20 +124,20 @@ public class ExtractEndmembersOp extends Operator {
         final double[] wavelengths = getSpectralWavelengths(reflectanceBands);
         endmembers = new Endmember[surfaceClusterIndexes.length + 1];
 
-        final int h = clusterMapBand.getRasterHeight();
-        final int w = clusterMapBand.getRasterWidth();
+        final int height = clusterMapBand.getRasterHeight();
+        final int width = clusterMapBand.getRasterWidth();
 
         int cloudEndmemberX = -1;
         int cloudEndmemberY = -1;
         double maxRatio = 0.0;
 
-        for (int y = 0; y < h; ++y) {
-            final Rectangle rectangle = new Rectangle(0, y, w, 1);
+        for (int y = 0; y < height; ++y) {
+            final Rectangle rectangle = new Rectangle(0, y, width, 1);
             final Tile membershipTile = getSourceTile(clusterMapBand, rectangle, pm);
             final Tile brightnessTile = getSourceTile(brightnessBand, rectangle, pm);
             final Tile whitenessTile = getSourceTile(whitenessBand, rectangle, pm);
 
-            for (int x = 0; x < w; ++x) {
+            for (int x = 0; x < width; ++x) {
                 if (isContained(membershipTile.getSampleInt(x, y), cloudClusterIndexes)) {
                     if (whitenessTile.getSampleDouble(x, y) > 0.0) {
                         final double ratio = brightnessTile.getSampleDouble(x, y) / whitenessTile.getSampleDouble(x, y);
@@ -162,19 +162,19 @@ public class ExtractEndmembersOp extends Operator {
         endmembers[0] = em;
 
 
-        final Band[] probabilityBands = findBands(clusterProduct, "probability");
-
+        final Band[] probabilityBands = findBands(clusterMapProduct, "probability");
+        System.out.println("probabilityBands.length = " + probabilityBands.length);
         ///////////////////////
         final double[][] meanReflectances = new double[probabilityBands.length][reflectanceBands.length];
         final int[] count = new int[probabilityBands.length];
 
-        for (int y = 0; y < h; ++y) {
-            final Rectangle rectangle = new Rectangle(0, y, w, 1);
+        for (int y = 0; y < height; ++y) {
+            final Rectangle rectangle = new Rectangle(0, y, width, 1);
 
             for (int k = 0; k < probabilityBands.length; ++k) {
                 if (isContained(k, surfaceClusterIndexes)) {
                     final Tile probabilityTile = getSourceTile(probabilityBands[k], rectangle, pm);
-                    for (int x = 0; x < w; ++x) {
+                    for (int x = 0; x < width; ++x) {
                         if (probabilityTile.getSampleDouble(x, y) > 0.5) {
                             for (int i = 0; i < reflectanceBands.length; ++i) {
                                 final Tile reflectanceTile = getSourceTile(reflectanceBands[i], rectangle, pm);

@@ -14,6 +14,7 @@
  */
 package org.esa.beam.chris.operators;
 
+import org.esa.beam.chris.operators.internal.BandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -28,6 +29,8 @@ import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.ImageLayout;
 import java.awt.image.RenderedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * todo - API doc
@@ -53,14 +56,14 @@ public class MakeClusterMapOp extends Operator {
     public void initialize() throws OperatorException {
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
-        final String name = sourceProduct.getName().replace("_CLU", "_MAP");
-        final String type = sourceProduct.getProductType().replace("_CLU", "_MAP");
-        targetProduct = new Product(name, type, width, height);
+//        final String name = sourceProduct.getName().replace("_CLU", "_MAP");
+//        final String type = sourceProduct.getProductType().replace("_CLU", "_MAP");
+        targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(), width, height);
 
         try {
-            final Band[] sourceBands = sourceProduct.getBands();
-            final Band[] probabilityBands = new Band[sourceBands.length - 1];
-            for (int i = 0; i < sourceBands.length - 1; ++i) {
+            final Band[] sourceBands = findBands(sourceProduct, "probability");
+            final Band[] probabilityBands = new Band[sourceBands.length];
+            for (int i = 0; i < sourceBands.length; ++i) {
                 final Band sourceBand = sourceBands[i];
 
                 Band targetBand = new ImageBand(sourceBand.getName(), sourceBand.getDataType(), width, height);
@@ -78,7 +81,7 @@ public class MakeClusterMapOp extends Operator {
             targetProduct.addBand(clusterMapBand);
 
             final IndexCoding indexCoding = new IndexCoding("clusters");
-            for (int i = 0; i < sourceBands.length - 1; i++) {
+            for (int i = 0; i < sourceBands.length; i++) {
                 indexCoding.addIndex("cluster_" + (i + 1), i, "Cluster label");
             }
             indexCoding.addIndex("unknown", -1, "Unknown");
@@ -98,5 +101,26 @@ public class MakeClusterMapOp extends Operator {
         public Spi() {
             super(MakeClusterMapOp.class);
         }
+    }
+
+    private static Band[] findBands(Product product, String prefix) {
+        return findBands(product, prefix, new BandFilter() {
+            @Override
+            public boolean accept(Band band) {
+                return true;
+            }
+        });
+    }
+
+    private static Band[] findBands(Product product, String prefix, BandFilter filter) {
+        final List<Band> bandList = new ArrayList<Band>();
+
+        for (final Band band : product.getBands()) {
+            if (band.getName().startsWith(prefix) && filter.accept(band)) {
+                bandList.add(band);
+            }
+        }
+
+        return bandList.toArray(new Band[bandList.size()]);
     }
 }

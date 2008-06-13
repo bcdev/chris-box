@@ -18,6 +18,7 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.*;
+import org.esa.beam.chris.operators.internal.BandFilter;
 import org.esa.beam.chris.operators.internal.Cluster;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.GPF;
@@ -106,7 +107,7 @@ public class CloudLabeler {
     }
 
     public void assignImageInfo(RenderedImage rgbImage) {
-        final Band[] sourceBands = clusterProduct.getBands();
+        final Band[] sourceBands = findBands(clusterProduct, "probability");
         final int[] r = new int[sourceBands.length];
         final int[] g = new int[sourceBands.length];
         final int[] b = new int[sourceBands.length];
@@ -189,8 +190,8 @@ public class CloudLabeler {
             if (band.getName().startsWith("probability")) {
                 probabilityBands[index] = band;
                 ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(band);
-                band.setImage(ClusterProbabilityOpImage.create(imageLayout, clusterProduct.getBands(), index,
-                                                               rejectedIndexes));
+                band.setImage(ClusterProbabilityOpImage.create(imageLayout, findBands(clusterProduct, "prob"),
+                                                               index, rejectedIndexes));
                 index++;
             }
         }
@@ -199,7 +200,8 @@ public class CloudLabeler {
         clusterMapBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
     }
 
-    public void performCloudProductComputation(int[] cloudClusterIndexes, int[] surfaceClusterIndexes, boolean computeAbundances,
+    public void performCloudProductComputation(int[] cloudClusterIndexes, int[] surfaceClusterIndexes,
+                                               boolean computeAbundances,
                                                ProgressMonitor pm) throws OperatorException {
         pm.beginTask("Computing cloud product...", 1);
 
@@ -378,5 +380,26 @@ public class CloudLabeler {
         } catch (IOException e) {
             throw new IllegalStateException("Could not extract cluster properties.", e);
         }
+    }
+
+    private static Band[] findBands(Product product, String prefix) {
+        return findBands(product, prefix, new BandFilter() {
+            @Override
+            public boolean accept(Band band) {
+                return true;
+            }
+        });
+    }
+
+    private static Band[] findBands(Product product, String prefix, BandFilter filter) {
+        final List<Band> bandList = new ArrayList<Band>();
+
+        for (final Band band : product.getBands()) {
+            if (band.getName().startsWith(prefix) && filter.accept(band)) {
+                bandList.add(band);
+            }
+        }
+
+        return bandList.toArray(new Band[bandList.size()]);
     }
 }
