@@ -135,8 +135,9 @@ public class Clusterer {
      * @return the cluster decomposition.
      */
     private Cluster[] findClusters(int iterationCount) {
-        while (iterationCount-- > 0) {
+        while (iterationCount > 0) {
             iterate();
+            iterationCount--;
             // todo - notify observer
         }
 
@@ -148,6 +149,11 @@ public class Clusterer {
      * todo - make private when observer notifications implemented
      */
     public void iterate() {
+        // M-step
+        for (int k = 0; k < clusterCount; ++k) {
+            p[k] = calculateMoments(h[k], means[k], covariances[k]);
+            distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
+        }
         // E-step
         for (int i = 0; i < m; ++i) {
             double sum = 0.0;
@@ -177,11 +183,6 @@ public class Clusterer {
                     h[k][i] = t;
                 }
             }
-        }
-        // M-step
-        for (int k = 0; k < clusterCount; ++k) {
-            p[k] = calculateMoments(h[k], means[k], covariances[k]);
-            distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
         }
     }
 
@@ -235,11 +236,6 @@ public class Clusterer {
                 }
             }
         } while (!kStop());
-
-        for (int k = 0; k < clusterCount; ++k) {
-            p[k] = calculateMoments(h[k], means[k], covariances[k]);
-            distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
-        }
     }
 
     /**
