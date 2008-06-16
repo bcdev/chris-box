@@ -43,14 +43,6 @@ public class FindClustersAction extends AbstractVisatAction {
                                                      "Cluster Analysis", 
                                                      "chrisCloudScreeningTools");
         productDialog.show();
-//        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-//
-//        try {
-//            performAction(selectedProduct);
-//        } catch (OperatorException e) {
-//            VisatApp.getApp().showErrorDialog(e.getMessage());
-//            VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
-//        }
     }
 
     @Override

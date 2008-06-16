@@ -63,19 +63,19 @@
 			<helpID>chrisCloudScreeningTools</helpID>
 			<placeAfter>chrisComputeReflectances</placeAfter>
 		</action>
-		<action>
-			<id>chrisFindClusters</id>
-			<class>org.esa.beam.chris.ui.FindClustersAction</class>
-			<text>Find Clusters</text>
-			<shortDescr>
-				Find clusters in the selected CHRIS/PROBA cloud
-				screening feature product
-			</shortDescr>
-			<mnemonic />
-			<parent>chris</parent>
-			<helpID>chrisCloudScreeningTools</helpID>
-			<placeAfter>chrisExtractFeatures</placeAfter>
-		</action>
+		<!--<action>-->
+			<!--<id>chrisFindClusters</id>-->
+			<!--<class>org.esa.beam.chris.ui.FindClustersAction</class>-->
+			<!--<text>Find Clusters</text>-->
+			<!--<shortDescr>-->
+				<!--Find clusters in the selected CHRIS/PROBA cloud-->
+				<!--screening feature product-->
+			<!--</shortDescr>-->
+			<!--<mnemonic />-->
+			<!--<parent>chris</parent>-->
+			<!--<helpID>chrisCloudScreeningTools</helpID>-->
+			<!--<placeAfter>chrisExtractFeatures</placeAfter>-->
+		<!--</action>-->
 		<action>
 			<id>chrisCloudMask</id>
 			<parent>chris</parent>
