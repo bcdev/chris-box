@@ -54,50 +54,13 @@ public class Clusterer {
     }
 
     /**
-     * Finds a collection of clusters for a given set of data points.
-     *
-     * @param points         the data points.
-     * @param clusterCount   the number of clusters.
-     * @param iterationCount the number of EM iterations to be made.
-     * @param dist           the minimum distance to be exceeded by any pair of initial clusters.
-     *
-     * @return the cluster decomposition.
-     */
-    public static ClusterSet findClusters(double[][] points, int clusterCount, int iterationCount, double dist) {
-        return new Clusterer(points, clusterCount, dist).findClusters(iterationCount);
-    }
-
-    /**
      * Constructs a new instance of this class.
      *
      * @param points       the data points.
      * @param clusterCount the number of clusters.
      */
     public Clusterer(double[][] points, int clusterCount) {
-        this(points, clusterCount, 0.0);
-    }
-
-    /**
-     * Constructs a new instance of this class.
-     *
-     * @param points       the data points.
-     * @param clusterCount the number of clusters.
-     * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
-     */
-    public Clusterer(double[][] points, int clusterCount, double dist) {
-        this(points, clusterCount, dist, 31415);
-    }
-
-    /**
-     * Constructs a new instance of this class.
-     *
-     * @param points       the data points.
-     * @param clusterCount the number of clusters.
-     * @param dist         the minimum distance to be exceeded by any pair of initial clusters.
-     * @param seed         the seed used for the random initialization of clusters.
-     */
-    public Clusterer(double[][] points, int clusterCount, double dist, int seed) {
-        this(points.length, points[0].length, points, clusterCount, dist, seed);
+        this(points.length, points[0].length, points, clusterCount, 5489);
     }
 
     /**
@@ -107,10 +70,9 @@ public class Clusterer {
      * @param dimensionCount the number of dimension in point space.
      * @param points         the data points.
      * @param clusterCount   the number of clusters.
-     * @param dist           the minimum distance to be exceeded by any pair of initial clusters.
-     * @param seed           the seed used for the random initialization of clusters.
+     * @param seed           the seed used for random initialization.
      */
-    private Clusterer(int pointCount, int dimensionCount, double[][] points, int clusterCount, double dist, int seed) {
+    private Clusterer(int pointCount, int dimensionCount, double[][] points, int clusterCount, int seed) {
         // todo: check arguments
 
         this.pointCount = pointCount;
@@ -124,7 +86,7 @@ public class Clusterer {
         covariances = new double[clusterCount][dimensionCount][dimensionCount];
         distributions = new Distribution[clusterCount];
 
-        initialize(dist, seed);
+        initialize(new Random(seed));
     }
 
     /**
@@ -146,15 +108,81 @@ public class Clusterer {
 
     /**
      * Carries out a single EM iteration.
-     * todo - make private when observer notifications implemented
      */
     public void iterate() {
-        // M-step
+        stepE();
+        stepM();
+    }
+
+    /**
+     * Returns the clusters found.
+     * todo - make private when observer notifications implemented
+     *
+     * @return the clusters found.
+     */
+    public ClusterSet getClusters() {
+        return getClusters(new PriorProbabilityClusterComparator());
+    }
+
+    public ClusterSet getClusters(Comparator<Cluster> clusterComparator) {
+        final Cluster[] clusters = new Cluster[clusterCount];
         for (int k = 0; k < clusterCount; ++k) {
-            p[k] = calculateMoments(h[k], means[k], covariances[k]);
+            clusters[k] = new Cluster(distributions[k], p[k]);
+        }
+        Arrays.sort(clusters, clusterComparator);
+
+        return new ClusterSet(clusters);
+    }
+
+    /**
+     * Randomly initializes the clusters.
+     *
+     * @param random the random number generator used for initialization.
+     */
+    public void initialize(Random random) {
+        calculateMeans(random);
+
+        for (int k = 0; k < clusterCount; ++k) {
+            calculateCovariances(means[k], covariances[k]);
+            p[k] = 1.0;
             distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
         }
-        // E-step
+    }
+
+    private void calculateMeans(Random random) {
+        for (int k = 0; k < clusterCount; ++k) {
+            boolean accepted = true;
+            do {
+                System.arraycopy(points[random.nextInt(pointCount)], 0, means[k], 0, dimensionCount);
+                for (int i = 0; i < k; ++i) {
+                    accepted = !Arrays.equals(means[k], means[i]);
+                    if (!accepted) {
+                        break;
+                    }
+                }
+            } while (!accepted);
+        }
+    }
+
+    private void calculateCovariances(double[] mean, double[][] covariances) {
+        for (int i = 0; i < pointCount; ++i) {
+            for (int k = 0; k < dimensionCount; ++k) {
+                for (int l = k; l < dimensionCount; ++l) {
+                    covariances[k][l] += (points[i][k] - mean[k]) * (points[i][l] - mean[l]);
+                }
+            }
+        }
+        for (int k = 0; k < dimensionCount; ++k) {
+            for (int l = k; l < dimensionCount; ++l) {
+                covariances[l][k] = covariances[k][l];
+            }
+        }
+    }
+
+    /**
+     * Performs an E-step.
+     */
+    private void stepE() {
         for (int i = 0; i < pointCount; ++i) {
             double sum = 0.0;
             for (int k = 0; k < clusterCount; ++k) {
@@ -187,118 +215,13 @@ public class Clusterer {
     }
 
     /**
-     * Returns the clusters found.
-     * todo - make private when observer notifications implemented
-     *
-     * @return the clusters found.
+     * Performs an M-step.
      */
-    public ClusterSet getClusters() {
-        return getClusters(new DefaultClusterComparator());
-    }
-
-    public ClusterSet getClusters(Comparator<Cluster> clusterComparator) {
-        final Cluster[] clusters = new Cluster[clusterCount];
+    private void stepM() {
         for (int k = 0; k < clusterCount; ++k) {
-            clusters[k] = new Cluster(distributions[k], p[k]);
+            p[k] = calculateMoments(h[k], means[k], covariances[k]);
+            distributions[k] = new MultinormalDistribution(means[k], covariances[k]);
         }
-        Arrays.sort(clusters, clusterComparator);
-
-        return new ClusterSet(clusters);
-    }
-
-    /**
-     * Randomly initializes the clusters using the k-means method.
-     *
-     * @param dist the minimum distance to be exceeded by any pair of initial clusters.
-     * @param seed the seed value used for initializing the random number generator.
-     */
-    private void initialize(double dist, int seed) {
-        final Random random = new Random(seed);
-
-        do {
-            kInit(dist, random);
-            for (int i = 0; i < pointCount; ++i) {
-                for (int k = 0; k < clusterCount; ++k) {
-                    h[k][i] = kDist(means[k], points[i]);
-                }
-                int parent = 0;
-                for (int k = 1; k < clusterCount; ++k) {
-                    if (h[k][i] < h[parent][i]) {
-                        parent = k;
-                    }
-                }
-                for (int k = 0; k < clusterCount; ++k) {
-                    if (parent == k) {
-                        h[k][i] = 1.0;
-                    } else {
-                        h[k][i] = 0.0;
-                    }
-                }
-            }
-        } while (!kStop());
-    }
-
-    /**
-     * Random k-means initialization.
-     *
-     * @param dist   the minimum distance to be exceeded by any pair of initial clusters.
-     * @param random the randm number generator.
-     */
-    private void kInit(double dist, Random random) {
-        for (int k = 0; k < clusterCount; ++k) {
-            boolean accepted = true;
-            do {
-                System.arraycopy(points[random.nextInt(pointCount)], 0, means[k], 0, dimensionCount);
-                for (int i = 0; i < k; ++i) {
-                    accepted = kDist(means[k], means[i]) > dist * dist;
-                    if (!accepted) {
-                        // todo - notify observer
-                        break;
-                    }
-                }
-            } while (!accepted);
-        }
-    }
-
-    /**
-     * Distance measure used by the k-means method.
-     *
-     * @param x a point.
-     * @param y a point.
-     *
-     * @return squared Euclidean distance between x and y.
-     */
-    private double kDist(double[] x, double[] y) {
-        double d = 0.0;
-        for (int l = 0; l < dimensionCount; ++l) {
-            d += (y[l] - x[l]) * (y[l] - x[l]);
-        }
-
-        return d;
-    }
-
-    /**
-     * Tests whether the k-means initialization was successful.
-     *
-     * @return {@code true} when each cluster has enough members, {@code false} otherwise.
-     */
-    private boolean kStop() {
-        testing:
-        for (int k = 0; k < clusterCount; ++k) {
-            int memberCount = 0;
-            for (int i = 0; i < pointCount; ++i) {
-                if (h[k][i] != 0.0) {
-                    ++memberCount;
-                    if (memberCount == Math.max(2, dimensionCount)) {
-                        continue testing;
-                    }
-                }
-            }
-            // todo - notify observer
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -346,8 +269,10 @@ public class Clusterer {
 
     /**
      * Cluster comparator.
+     * <p/>
+     * Compares two clusters according to their prior probability.
      */
-    private static class DefaultClusterComparator implements Comparator<Cluster> {
+    private static class PriorProbabilityClusterComparator implements Comparator<Cluster> {
 
         public int compare(Cluster c1, Cluster c2) {
             return Double.compare(c2.getPriorProbability(), c1.getPriorProbability());

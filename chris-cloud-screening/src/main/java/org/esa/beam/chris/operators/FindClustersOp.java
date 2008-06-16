@@ -150,9 +150,8 @@ public class FindClustersOp extends Operator {
         pm.beginTask("Computing clusters...", iterationCount+2);
 
         try {
-            final int sceneWidth = sourceProduct.getSceneRasterWidth();
             final Clusterer clusterer = createClusterer(SubProgressMonitor.create(pm, 1));
-
+            
             for (int i = 0; i < iterationCount; ++i) {
                 checkForCancelation(pm);
                 clusterer.iterate();

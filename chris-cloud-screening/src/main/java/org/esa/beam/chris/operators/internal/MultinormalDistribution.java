@@ -27,8 +27,9 @@ public class MultinormalDistribution implements Distribution {
     private final int n;
 
     private final double[] mean;
-    private final Eigendecomposition eigendecomposition;
+    private final double[][] covariances;
     private final double logNormFactor;
+    private final Eigendecomposition eigendecomposition;
 
     /**
      * Constructs a new multinormal distribution.
@@ -64,10 +65,21 @@ public class MultinormalDistribution implements Distribution {
 
         this.n = n;
         this.mean = mean;
+        this.covariances = covariances;
 
         eigendecomposition = solver.createEigendecomposition(n, covariances);
+//        final double t = eigenvalues[0] / 1.0E14 - eigenvalues[n - 1];
+//        if (t > 0.0) {
+//            for (int i = 0; i < n; ++i) {
+//                covariances[i][i] += t;
+//                eigenvalues[i] += t;
+//            }
+//        }
 
         final double det = product(eigendecomposition.getEigenvalues());
+        if (det <= 0.0 || Double.isNaN(det)) {
+            throw new IllegalStateException("JAMA-shit! det = " + det);
+        }
         logNormFactor = -0.5 * (n * log(2.0 * PI) + log(det));
     }
 
@@ -118,9 +130,9 @@ public class MultinormalDistribution implements Distribution {
         private double[] eigenvalues;
         private double[][] v;
 
-        public Eigendecomposition(Jama.SingularValueDecomposition decomposition) {
-            eigenvalues = decomposition.getSingularValues();
-            v = decomposition.getV().getArray();
+        public Eigendecomposition(Jama.SingularValueDecomposition svd) {
+            eigenvalues = svd.getSingularValues();
+            v = svd.getV().getArray();
         }
 
         public final double getEigenvalue(int i) {
@@ -137,23 +149,9 @@ public class MultinormalDistribution implements Distribution {
     }
 
     private static class EigenproblemSolver {
-        private static final double MAX_CONDITION = 1.0E14;
 
         public Eigendecomposition createEigendecomposition(int n, double[][] symmetricMatrix) {
-            final Eigendecomposition eigendecomposition =
-                    new Eigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).svd());
-
-            // ensure proper condition
-            final double[] d = eigendecomposition.getEigenvalues();
-            final double t = d[0] / MAX_CONDITION - d[n - 1];
-            if (t > 0.0) {
-                for (int i = 0; i < n; ++i) {
-                    symmetricMatrix[i][i] += t;
-                    d[i] += t;
-                }
-            }
-
-            return eigendecomposition;
+            return new Eigendecomposition(new Jama.Matrix(symmetricMatrix, n, n).svd());
         }
-    }    
+    }
 }

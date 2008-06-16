@@ -72,11 +72,4 @@ public class ClusterSet {
     public double[] getMean(int i) {
         return clusters[i].getMean();
     }
-
-    private static class PriorProbabilityClusterComparator implements Comparator<Cluster> {
-        @Override
-        public int compare(Cluster c1, Cluster c2) {
-            return Double.compare(c2.priorProbability, c1.priorProbability);
-        }
-    }
 }
