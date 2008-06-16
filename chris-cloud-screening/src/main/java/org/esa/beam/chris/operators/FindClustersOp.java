@@ -17,8 +17,8 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.Cluster;
-import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.chris.operators.internal.ClusterSet;
+import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -37,7 +37,7 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
- * New class.
+ * Operator for cluster analysis.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -147,11 +147,11 @@ public class FindClustersOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("Computing clusters...", iterationCount+2);
+        pm.beginTask("Computing clusters...", iterationCount + 2);
 
         try {
             final Clusterer clusterer = createClusterer(SubProgressMonitor.create(pm, 1));
-            
+
             for (int i = 0; i < iterationCount; ++i) {
                 checkForCancelation(pm);
                 clusterer.iterate();
@@ -213,33 +213,19 @@ public class FindClustersOp extends Operator {
         final int sceneHeight = sourceProduct.getSceneRasterHeight();
 
         final double[][] points = new double[sceneWidth * sceneHeight][sourceBands.length];
-//        final double[] min = new double[sourceBands.length];
-//        final double[] max = new double[sourceBands.length];
 
         try {
             pm.beginTask("Extracting data points...", sourceBands.length * sceneHeight);
 
             for (int i = 0; i < sourceBands.length; i++) {
-//                min[i] = Double.POSITIVE_INFINITY;
-//                max[i] = Double.NEGATIVE_INFINITY;
-
                 for (int y = 0; y < sceneHeight; y++) {
                     final Tile sourceTile = getSourceTile(sourceBands[i], new Rectangle(0, y, sceneWidth, 1), pm);
                     for (int x = 0; x < sceneWidth; x++) {
                         final double sample = sourceTile.getSampleDouble(x, y);
                         points[y * sceneWidth + x][i] = sample;
-//                        if (sample < min[i]) {
-//                            min[i] = sample;
-//                        }
-//                        if (sample > max[i]) {
-//                            max[i] = sample;
-//                        }
                     }
                     pm.worked(1);
                 }
-//                for (int j = 0; j < points.length; ++j) {
-//                    points[j][i] = (points[j][i] - min[i]) / (max[i] - min[i]);
-//                }
             }
         } finally {
             pm.done();
