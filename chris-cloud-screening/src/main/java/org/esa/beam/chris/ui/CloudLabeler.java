@@ -143,7 +143,7 @@ public class CloudLabeler {
             sampleToIndexMap.putValue(sample, index);
             final Color color;
             if (attribute.getName().startsWith("cluster")) {
-                color = new Color(r[index], g[index], b[index]).brighter();
+                color = new Color(r[index], g[index], b[index]);
             } else {
                 color = Color.BLACK;
             }
