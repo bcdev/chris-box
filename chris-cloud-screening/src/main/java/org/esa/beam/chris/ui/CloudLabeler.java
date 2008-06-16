@@ -19,8 +19,8 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.*;
 import org.esa.beam.chris.operators.internal.BandFilter;
-import org.esa.beam.cluster.Cluster;
-import org.esa.beam.cluster.FindClustersOp;
+import org.esa.beam.cluster.EMCluster;
+import org.esa.beam.cluster.EMClusterOp;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.Operator;
@@ -309,12 +309,12 @@ public class CloudLabeler {
             sourceBandNameList.add("wv");
         }
         final String[] sourceBandNames = sourceBandNameList.toArray(new String[sourceBandNameList.size()]);
-        final Comparator<Cluster> clusterComparator = new Comparator<Cluster>() {
-            public int compare(Cluster c1, Cluster c2) {
+        final Comparator<EMCluster> clusterComparator = new Comparator<EMCluster>() {
+            public int compare(EMCluster c1, EMCluster c2) {
                 return Double.compare(c2.getMean()[0], c1.getMean()[0]);
             }
         };
-        final FindClustersOp findClustersOp = new FindClustersOp(
+        final EMClusterOp clustersOp = new EMClusterOp(
                 featureProduct,
                 clusterCount,
                 iterationCount,
@@ -322,7 +322,7 @@ public class CloudLabeler {
                 includeProbabilities,
                 clusterComparator);
 
-        return findClustersOp.getTargetProduct();
+        return clustersOp.getTargetProduct();
     }
 
     private Product createClusterMapProduct(Product clusterProduct) {
