@@ -50,6 +50,7 @@ public class Min {
     }
 
     public static boolean findBracket(UnivariateFunction f, Bracket bracket, int maxEvalCount) {
+        // todo - checking
         double leftF = bracket.leftF;
         double rightF = bracket.rightF;
         double centerF;
@@ -119,6 +120,7 @@ public class Min {
     public static boolean brent(UnivariateFunction f, Bracket bracket, int maxIter,
                                 double absoluteAccuracyGoal,
                                 double relativeAccuracyGoal) {
+        // todo - checking
         double u;
         double v = bracket.leftX + GOLDEN * (bracket.rightX - bracket.leftX);
         double w = v;
