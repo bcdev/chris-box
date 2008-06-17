@@ -14,20 +14,36 @@
  */
 package org.esa.beam.chris.operators.internal;
 
+import junit.framework.TestCase;
+
 /**
- * Interface for real-valued functions of a single variable.
+ * todo - add API doc
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
+ * @since BEAM 4.2
  */
-public interface Function {
+public class MinimizerTest extends TestCase {
+    private Minimizer minimizer;
 
-    /**
-     * Returns the value of the function at {@code x}.
-     *
-     * @param x the argument of the function.
-     *
-     * @return the value of the function at {@code x}.
-     */
-    double value(double x);
+    @Override
+    protected void setUp() throws Exception {
+        minimizer = new Minimizer(200);
+    }
+
+    public void testFindMinimum() {
+        final double[] x = new double[]{2.5, 1.7};
+        final double minimum = minimizer.findMinimum(new F(), x);
+
+//        assertEquals(-7.0, minimum, 0.0);
+//        assertEquals(3.0, x[0], 0.0);
+//        assertEquals(2.0, x[1], 0.0);
+    }
+
+    private static class F implements MultivariateFunction {
+
+        public double value(double... x) {
+            return x[0] * (x[0] - x[1] - 4.0) + x[1] * (x[1]  - 1.0);
+        }
+    }
 }

@@ -24,8 +24,9 @@ import java.text.MessageFormat;
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
+ * @since BEAM 4.2
  */
-public class RootFinder {
+public class BrentRootFinder {
     /**
      * Epsilon.
      */
@@ -38,7 +39,7 @@ public class RootFinder {
     /**
      * Constructs a new instance of this class.
      */
-    public RootFinder() {
+    public BrentRootFinder() {
         this(100);
     }
 
@@ -47,7 +48,7 @@ public class RootFinder {
      *
      * @param maxIter the maximum number of iterations being performed.
      */
-    public RootFinder(int maxIter) {
+    public BrentRootFinder(int maxIter) {
         this.maxIter = maxIter;
     }
 
@@ -64,7 +65,7 @@ public class RootFinder {
      * @throws IllegalArgumentException when the endpoints {@code a} and {@code b}
      *                                  do not straddle zero.
      */
-    public final double findRoot(Function f, double a, double b) throws IllegalArgumentException {
+    public final double findRoot(UnivariateFunction f, double a, double b) throws IllegalArgumentException {
         double fa = f.value(a);
         double fb = f.value(b);
 

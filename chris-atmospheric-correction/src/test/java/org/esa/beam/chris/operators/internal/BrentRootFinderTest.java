@@ -17,23 +17,29 @@ package org.esa.beam.chris.operators.internal;
 import junit.framework.TestCase;
 
 /**
- * Tests for class {@link RootFinder}.
+ * Tests for class {@link BrentRootFinder}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
+ * @since BEAM 4.2
  */
-public class RootFinderTest extends TestCase {
-    private RootFinder rootFinder;
+public class BrentRootFinderTest extends TestCase {
+    private BrentRootFinder rootFinder;
 
     public void testFindRoot() throws Exception {
-        assertEquals(Math.PI / 2.0, rootFinder.findRoot(new Cosine(), 0.0, 2.0), 0.0);
+        final double root = rootFinder.findRoot(new Cosine(), 0.0, 2.0);
+        assertEquals(Math.PI / 2.0, root, 0.0);
     }
 
-    public void testFindRootAtIntervalBoundary() throws Exception {
-        assertEquals(0.0, rootFinder.findRoot(new Sine(), 0.0, 1.0), 0.0);
+    public void testFindRootAtBracketingIntervalBoundaries() throws Exception {
+        final double l = rootFinder.findRoot(new Sine(), 0.0, 1.0);
+        assertEquals(0.0, l, 0.0);
+
+        final double r = rootFinder.findRoot(new Sine(), -1.0, 0.0);
+        assertEquals(0.0, r, 0.0);
     }
 
-    public void testFindRootWithIllegalArguments() throws Exception {
+    public void testFindRootNotInBracketingInterval() throws Exception {
         try {
             rootFinder.findRoot(new Cosine(), 0.0, 1.0);
             fail();
@@ -44,17 +50,17 @@ public class RootFinderTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        rootFinder = new RootFinder(100);
+        rootFinder = new BrentRootFinder(100);
     }
 
-    private static class Cosine implements Function {
+    private static class Cosine implements UnivariateFunction {
 
         public double value(double x) {
             return Math.cos(x);
         }
     }
 
-    private static class Sine implements Function {
+    private static class Sine implements UnivariateFunction {
 
         public double value(double x) {
             return Math.sin(x);
