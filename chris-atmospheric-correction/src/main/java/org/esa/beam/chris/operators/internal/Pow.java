@@ -15,7 +15,7 @@
 package org.esa.beam.chris.operators.internal;
 
 /**
- * todo - add API doc
+ * Class with static methods for calculating integral powers.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -55,14 +55,14 @@ public class Pow {
         return x3 * x3 * x;
     }
 
-   public static double pow8(double x) {
+    public static double pow8(double x) {
         final double x2 = x * x;
         final double x4 = x2 * x2;
 
         return x4 * x4;
     }
 
-   public static double pow9(double x) {
+    public static double pow9(double x) {
         final double x2 = x * x;
         final double x4 = x2 * x2;
 
