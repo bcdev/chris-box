@@ -14,30 +14,32 @@
  */
 package org.esa.beam.chris.operators.internal;
 
-import java.util.Arrays;
+import junit.framework.TestCase;
 
 /**
- * Powell minimisation.
+ * todo - add API doc
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-class PowellMinimizer {
-    private final int maxIter;
+public class MultiminTest extends TestCase {
 
-    /**
-     * Constructs a new instance of this class.
-     *
-     * @param maxIter the maximum number of iterations.
-     */
-    public PowellMinimizer(int maxIter) {
-        this.maxIter = maxIter;
+    public void testPowell() {
+        final double[] x = new double[]{0.4, 0.2};
+        final double[][] e = {{1.0, 0.0}, {0.0, 1.0}};
+        final double minimum = Multimin.powell(new F(), 2, x, e, 0.0, 20);
+
+        assertEquals(0.0, minimum, 1.0E-10);
+        assertEquals(1.0, x[0], 1.0E-10);
+        assertEquals(1.0, x[1], 1.0E-10);
     }
 
-    public double findMinimum(MultivariateFunction function, double[] x) {
-        final double[] p = Arrays.copyOf(x, x.length);
+    private static class F implements MultivariateFunction {
 
-        return 0.0;
+        @Override
+        public double value(double... x) {
+            return 100.0 * Pow.pow2(x[1] - x[0] * x[0]) + Pow.pow2(1.0 - x[0]);
+        }
     }
 }

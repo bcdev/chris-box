@@ -26,111 +26,169 @@ import static java.lang.Math.min;
  */
 public class Min {
 
-    public static final double GOLDEN = 0.3819660;
+    private static final double GOLDEN = 0.3819660;
 
+    /**
+     * Brackets a minimum.
+     */
     public static class Bracket {
+        /**
+         * The lower limit of the bracketing interval.
+         */
         public double lowerX;
-        public double lowerF;
+        /**
+         * The upper limit of the bracketing interval.
+         */
         public double upperX;
+        /**
+         * The function value at the lower limit of the bracketing interval.
+         */
+        public double lowerF;
+        /**
+         * The function value at the upper limit of the bracketing interval.
+         */
         public double upperF;
+        /**
+         * An abscissa value within the bracketing interval.
+         */
         public double minimumX;
+        /**
+         * The function value at {@code minimumX}. This value must be less than
+         * both {@code lowerF} and {@code upperF}.
+         */
         public double minimumF;
-    }
 
-    public static boolean bracket(UnivariateFunction f, double lowerX, double upperX, Bracket bracket) {
-        return bracket(f, lowerX, upperX, bracket, 100);
-    }
-
-    public static boolean bracket(UnivariateFunction f, double lowerX, double upperX, Bracket bracket,
-                                  int maxEvalCount) {
-        bracket.lowerX = lowerX;
-        bracket.lowerF = f.value(lowerX);
-
-        bracket.upperX = upperX;
-        bracket.upperF = f.value(upperX);
-
-        return bracket(f, bracket, maxEvalCount);
-    }
-
-    private static boolean bracket(UnivariateFunction f, Bracket bracket, int maxEvalCount) {
-        // todo - checking
-        double lowerF = bracket.lowerF;
-        double upperF = bracket.upperF;
-        double lowerX = bracket.lowerX;
-        double upperX = bracket.upperX;
-
-        double minimumF;
-        double minimumX;
-
-        int evalCount = 0;
-
-        if (upperF >= lowerF) {
-            minimumX = (upperX - lowerX) * GOLDEN + lowerX;
-            evalCount++;
-            minimumF = f.value(minimumX);
-        } else {
-            minimumX = upperX;
-            minimumF = upperF;
-            upperX = (minimumX - lowerX) / GOLDEN + lowerX;
-            evalCount++;
-            upperF = f.value(upperX);
+        /**
+         * Creates a new instance of this class.
+         */
+        public Bracket() {
         }
 
-        do {
-            if (minimumF < lowerF) {
-                if (minimumF < upperF) {
-                    bracket.lowerX = lowerX;
-                    bracket.upperX = upperX;
-                    bracket.minimumX = minimumX;
-                    bracket.lowerF = lowerF;
-                    bracket.upperF = upperF;
-                    bracket.minimumF = minimumF;
-                    return true;
-                } else if (minimumF > upperF) {
-                    lowerX = minimumX;
-                    lowerF = minimumF;
-                    minimumX = upperX;
-                    minimumF = upperF;
-                    upperX = (minimumX - lowerX) / GOLDEN + lowerX;
-                    evalCount++;
-                    upperF = f.value(upperX);
-                } else { // minimumF == upperF
-                    upperX = minimumX;
-                    upperF = minimumF;
-                    minimumX = (upperX - lowerX) * GOLDEN + lowerX;
-                    evalCount++;
-                    minimumF = f.value(minimumX);
-                }
-            } else { // minimumF >= lowerF
-                upperX = minimumX;
-                upperF = minimumF;
-                minimumX = (upperX - lowerX) * GOLDEN + lowerX;
-                evalCount++;
-                minimumF = f.value(minimumX);
+        /**
+         * Creates a new instance of this class.
+         * <p/>
+         * For the purpose of testing only.
+         *
+         * @param lowerX the lower limit of the bracketing interval.
+         * @param upperX the upper limit of the bracketing interval.
+         * @param f      the univariate function.
+         */
+        Bracket(double lowerX, double upperX, UnivariateFunction f) {
+            if (lowerX > upperX) {
+                this.lowerX = upperX;
+                this.upperX = lowerX;
+            } else {
+                this.lowerX = lowerX;
+                this.upperX = upperX;
             }
-        } while (evalCount < maxEvalCount &&
-                (upperX - lowerX) > Constants.SQRT_DBL_EPSILON * ((upperX + lowerX) * 0.5) + Constants.SQRT_DBL_EPSILON);
 
-        bracket.lowerX = lowerX;
-        bracket.upperX = upperX;
-        bracket.lowerF = lowerF;
-        bracket.upperF = upperF;
+            lowerF = f.value(this.lowerX);
+            upperF = f.value(this.upperX);
 
-        bracket.minimumX = minimumX;
-        bracket.minimumF = minimumF;
-
-        return false;
+            minimumX = this.lowerX + GOLDEN * (this.upperX - this.lowerX);
+            minimumF = f.value(this.minimumX);
+        }
     }
 
+    /**
+     * Brackets a minimum for an univariate function.
+     *
+     * @param f       the univariate function.
+     * @param a       the lower initial abscissa value.
+     * @param b       the upper initial abscissa value.
+     * @param bracket the bracket found.
+     *
+     * @return the bracket found.
+     */
+    public static Bracket brack(UnivariateFunction f, double a, double b, Bracket bracket) {
+        double leftX = a;
+        double leftF = f.value(a);
+
+        double centerX = b;
+        double centerF = f.value(b);
+
+        if (centerF > leftF) {
+            final double lx = leftX;
+            final double lf = leftF;
+
+            leftX = centerX;
+            leftF = centerF;
+
+            centerX = lx;
+            centerF = lf;
+        }
+
+        double rightX = centerX + (centerX - leftX) * (1.0 / GOLDEN - 1.0);
+        double rightF = f.value(rightX);
+
+        while (centerF > rightF) {
+            rightX = rightX + (rightX - centerX) * (1.0 / GOLDEN - 1.0);
+            rightF = f.value(rightX);
+        }
+
+        bracket.minimumX = centerX;
+        bracket.minimumF = centerF;
+
+        if (leftX > rightX) {
+            bracket.lowerX = rightX;
+            bracket.lowerF = rightF;
+            bracket.upperX = leftX;
+            bracket.upperF = leftF;
+        } else {
+            bracket.lowerX = leftX;
+            bracket.lowerF = leftF;
+            bracket.upperX = rightX;
+            bracket.upperF = rightF;
+        }
+
+        return bracket;
+    }
+
+    /**
+     * Finds the minimum of an univariate function using Brent's algorithm.
+     * <p/>
+     * Based on code provided by the GNU Scientific Library (GSL).
+     *
+     * @param f                    the univariate function.
+     * @param bracket              the bracket for the minimum being searched.
+     * @param relativeAccuracyGoal the relative accuracy goal for the minimum being searched.
+     *
+     * @return {@code true} on success.
+     */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal) {
         return brent(f, bracket, relativeAccuracyGoal, 1.0E-10);
     }
 
+    /**
+     * Finds the minimum of an univariate function using Brent's algorithm.
+     * <p/>
+     * Based on code provided by the GNU Scientific Library (GSL).
+     *
+     * @param f                    the univariate function.
+     * @param bracket              the bracket for the minimum being searched.
+     * @param relativeAccuracyGoal the relative accuracy goal for the minimum being searched.
+     * @param absoluteAccuracyGoal the relative absolute goal for the minimum being searched.
+     *
+     * @return {@code true} on success.
+     */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
                                 double absoluteAccuracyGoal) {
         return brent(f, bracket, relativeAccuracyGoal, absoluteAccuracyGoal, 100);
     }
 
+    /**
+     * Finds the minimum of an univariate function using Brent's algorithm.
+     * <p/>
+     * Based on code provided by the GNU Scientific Library (GSL).
+     *
+     * @param f                    the univariate function.
+     * @param bracket              the bracket for the minimum being searched.
+     * @param relativeAccuracyGoal the relative accuracy goal for the minimum being searched.
+     * @param absoluteAccuracyGoal the relative absolute goal for the minimum being searched.
+     * @param maxIter              the maximum number of iterations being performed.
+     *
+     * @return {@code true} on success.
+     */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
                                 double absoluteAccuracyGoal, int maxIter) {
         // todo - checking
