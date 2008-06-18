@@ -26,103 +26,116 @@ import static java.lang.Math.min;
  */
 public class Min {
 
-    private static final double GOLDEN = 0.3819660;
-    private static final double SQRT_DBL_EPSILON = Math.sqrt(1.0 / (0x00000001L << 52));
-
+    public static final double GOLDEN = 0.3819660;
 
     public static class Bracket {
-        double leftX;
-        double leftF;
-        double rightX;
-        double rightF;
-        double centerX;
-        double centerF;
+        public double lowerX;
+        public double lowerF;
+        public double upperX;
+        public double upperF;
+        public double minimumX;
+        public double minimumF;
     }
 
-    public static boolean findBracket(UnivariateFunction f, double a, double b, Bracket bracket, int maxEvalCount) {
-        bracket.leftX = a;
-        bracket.leftF = f.value(a);
-
-        bracket.rightX = b;
-        bracket.rightF = f.value(b);
-
-        return findBracket(f, bracket, maxEvalCount);
+    public static boolean bracket(UnivariateFunction f, double lowerX, double upperX, Bracket bracket) {
+        return bracket(f, lowerX, upperX, bracket, 100);
     }
 
-    public static boolean findBracket(UnivariateFunction f, Bracket bracket, int maxEvalCount) {
+    public static boolean bracket(UnivariateFunction f, double lowerX, double upperX, Bracket bracket,
+                                  int maxEvalCount) {
+        bracket.lowerX = lowerX;
+        bracket.lowerF = f.value(lowerX);
+
+        bracket.upperX = upperX;
+        bracket.upperF = f.value(upperX);
+
+        return bracket(f, bracket, maxEvalCount);
+    }
+
+    private static boolean bracket(UnivariateFunction f, Bracket bracket, int maxEvalCount) {
         // todo - checking
-        double leftF = bracket.leftF;
-        double rightF = bracket.rightF;
-        double centerF;
-        double leftX = bracket.leftX;
-        double rightX = bracket.rightX;
-        double centerX;
+        double lowerF = bracket.lowerF;
+        double upperF = bracket.upperF;
+        double lowerX = bracket.lowerX;
+        double upperX = bracket.upperX;
+
+        double minimumF;
+        double minimumX;
 
         int evalCount = 0;
 
-        if (rightF >= leftF) {
-            centerX = (rightX - leftX) * GOLDEN + leftX;
+        if (upperF >= lowerF) {
+            minimumX = (upperX - lowerX) * GOLDEN + lowerX;
             evalCount++;
-            centerF = f.value(centerX);
+            minimumF = f.value(minimumX);
         } else {
-            centerX = rightX;
-            centerF = rightF;
-            rightX = (centerX - leftX) / GOLDEN + leftX;
+            minimumX = upperX;
+            minimumF = upperF;
+            upperX = (minimumX - lowerX) / GOLDEN + lowerX;
             evalCount++;
-            rightF = f.value(rightX);
+            upperF = f.value(upperX);
         }
 
         do {
-            if (centerF < leftF) {
-                if (centerF < rightF) {
-                    bracket.leftX = leftX;
-                    bracket.rightX = rightX;
-                    bracket.centerX = centerX;
-                    bracket.leftF = leftF;
-                    bracket.rightF = rightF;
-                    bracket.centerF = centerF;
+            if (minimumF < lowerF) {
+                if (minimumF < upperF) {
+                    bracket.lowerX = lowerX;
+                    bracket.upperX = upperX;
+                    bracket.minimumX = minimumX;
+                    bracket.lowerF = lowerF;
+                    bracket.upperF = upperF;
+                    bracket.minimumF = minimumF;
                     return true;
-                } else if (centerF > rightF) {
-                    leftX = centerX;
-                    leftF = centerF;
-                    centerX = rightX;
-                    centerF = rightF;
-                    rightX = (centerX - leftX) / GOLDEN + leftX;
+                } else if (minimumF > upperF) {
+                    lowerX = minimumX;
+                    lowerF = minimumF;
+                    minimumX = upperX;
+                    minimumF = upperF;
+                    upperX = (minimumX - lowerX) / GOLDEN + lowerX;
                     evalCount++;
-                    rightF = f.value(rightX);
-                } else { // centerF == rightF
-                    rightX = centerX;
-                    rightF = centerF;
-                    centerX = (rightX - leftX) * GOLDEN + leftX;
+                    upperF = f.value(upperX);
+                } else { // minimumF == upperF
+                    upperX = minimumX;
+                    upperF = minimumF;
+                    minimumX = (upperX - lowerX) * GOLDEN + lowerX;
                     evalCount++;
-                    centerF = f.value(centerX);
+                    minimumF = f.value(minimumX);
                 }
-            } else { // centerF >= leftF
-                rightX = centerX;
-                rightF = centerF;
-                centerX = (rightX - leftX) * GOLDEN + leftX;
+            } else { // minimumF >= lowerF
+                upperX = minimumX;
+                upperF = minimumF;
+                minimumX = (upperX - lowerX) * GOLDEN + lowerX;
                 evalCount++;
-                centerF = f.value(centerX);
+                minimumF = f.value(minimumX);
             }
         } while (evalCount < maxEvalCount &&
-                (rightX - leftX) > SQRT_DBL_EPSILON * ((rightX + leftX) * 0.5) + SQRT_DBL_EPSILON);
+                (upperX - lowerX) > Constants.SQRT_DBL_EPSILON * ((upperX + lowerX) * 0.5) + Constants.SQRT_DBL_EPSILON);
 
-        bracket.leftX = leftX;
-        bracket.rightX = rightX;
-        bracket.centerX = centerX;
-        bracket.leftF = leftF;
-        bracket.rightF = rightF;
-        bracket.centerF = centerF;
+        bracket.lowerX = lowerX;
+        bracket.upperX = upperX;
+        bracket.lowerF = lowerF;
+        bracket.upperF = upperF;
+
+        bracket.minimumX = minimumX;
+        bracket.minimumF = minimumF;
 
         return false;
     }
 
-    public static boolean brent(UnivariateFunction f, Bracket bracket, int maxIter,
-                                double absoluteAccuracyGoal,
-                                double relativeAccuracyGoal) {
+    public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal) {
+        return brent(f, bracket, relativeAccuracyGoal, 1.0E-10);
+    }
+
+    public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
+                                double absoluteAccuracyGoal) {
+        return brent(f, bracket, relativeAccuracyGoal, absoluteAccuracyGoal, 100);
+    }
+
+    public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
+                                double absoluteAccuracyGoal, int maxIter) {
         // todo - checking
         double u;
-        double v = bracket.leftX + GOLDEN * (bracket.rightX - bracket.leftX);
+        double v = bracket.lowerX + GOLDEN * (bracket.upperX - bracket.lowerX);
         double w = v;
 
         double d = 0.0;
@@ -133,15 +146,15 @@ public class Min {
         double fw = fv;
 
         for (int i = 0; i < maxIter; ++i) {
-            final double a = bracket.leftX;
-            final double b = bracket.rightX;
-            final double z = bracket.centerX;
+            final double a = bracket.lowerX;
+            final double b = bracket.upperX;
+            final double z = bracket.minimumX;
 
-            final double fz = bracket.centerF;
+            final double fz = bracket.minimumF;
 
             final double lowerW = (z - a);
             final double upperW = (b - z);
-            final double tolerance = SQRT_DBL_EPSILON * abs(z);
+            final double tolerance = Constants.SQRT_DBL_EPSILON * abs(z);
 
             final double midpoint = 0.5 * (a + b);
 
@@ -187,11 +200,11 @@ public class Min {
 
             if (fu <= fz) {
                 if (u < z) {
-                    bracket.rightX = z;
-                    bracket.rightF = fz;
+                    bracket.upperX = z;
+                    bracket.upperF = fz;
                 } else {
-                    bracket.leftX = z;
-                    bracket.leftF = fz;
+                    bracket.lowerX = z;
+                    bracket.lowerF = fz;
                 }
 
                 v = w;
@@ -199,18 +212,18 @@ public class Min {
                 fv = fw;
                 fw = fz;
 
-                bracket.centerX = u;
-                bracket.centerF = fu;
+                bracket.minimumX = u;
+                bracket.minimumF = fu;
             } else {
                 if (u < z) {
-                    bracket.leftX = u;
-                    bracket.leftF = fu;
+                    bracket.lowerX = u;
+                    bracket.lowerF = fu;
                 } else {
-                    bracket.rightX = u;
-                    bracket.rightF = fu;
+                    bracket.upperX = u;
+                    bracket.upperF = fu;
                 }
             }
-            if (testInterval(bracket.leftX, bracket.rightX, absoluteAccuracyGoal, relativeAccuracyGoal)) {
+            if (testInterval(bracket.lowerX, bracket.upperX, absoluteAccuracyGoal, relativeAccuracyGoal)) {
                 return true;
             }
         }

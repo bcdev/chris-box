@@ -26,17 +26,17 @@ import org.esa.beam.chris.operators.internal.Min.Bracket;
  */
 public class MinTest extends TestCase {
 
-    public void testFindBracket() {
+    public void testBracket() {
         final Bracket bracket = new Bracket();
-        final boolean success = Min.findBracket(new Cosine(), 0.0, 0.5, bracket, 10);
+        final boolean success = Min.bracket(new Cosine(), 0.0, 0.5, bracket, 10);
 
         assertTrue(success);
 
-        assertTrue(bracket.leftX < bracket.centerX);
-        assertTrue(bracket.rightX > bracket.centerX);
+        assertTrue(bracket.lowerX < bracket.minimumX);
+        assertTrue(bracket.upperX > bracket.minimumX);
 
-        assertTrue(bracket.leftF > bracket.centerF);
-        assertTrue(bracket.rightF > bracket.centerF);
+        assertTrue(bracket.lowerF > bracket.minimumF);
+        assertTrue(bracket.upperF > bracket.minimumF);
     }
 
     public void testBrent() {
@@ -44,13 +44,13 @@ public class MinTest extends TestCase {
         final Bracket bracket = new Bracket();
 
         boolean success;
-        success = Min.findBracket(function, 0.0, 0.5, bracket, 10);
+        success = Min.bracket(function, 0.0, 0.5, bracket, 10);
         assertTrue(success);
 
-        success = Min.brent(function, bracket, 100, 0.001, 0.001);
+        success = Min.brent(function, bracket, 0.001, 0.001, 100);
         assertTrue(success);
 
-        assertEquals(Math.PI, bracket.centerX, 0.001);
+        assertEquals(Math.PI, bracket.minimumX, 0.001);
     }
 
 

@@ -14,8 +14,6 @@
  */
 package org.esa.beam.chris.operators.internal;
 
-import junit.framework.TestCase;
-
 /**
  * todo - add API doc
  *
@@ -23,27 +21,7 @@ import junit.framework.TestCase;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class MinimizerTest extends TestCase {
-    private Minimizer minimizer;
-
-    @Override
-    protected void setUp() throws Exception {
-        minimizer = new Minimizer(200);
-    }
-
-    public void testFindMinimum() {
-        final double[] x = new double[]{2.5, 1.7};
-        final double minimum = minimizer.findMinimum(new F(), x);
-
-//        assertEquals(-7.0, minimum, 0.0);
-//        assertEquals(3.0, x[0], 0.0);
-//        assertEquals(2.0, x[1], 0.0);
-    }
-
-    private static class F implements MultivariateFunction {
-
-        public double value(double... x) {
-            return x[0] * (x[0] - x[1] - 4.0) + x[1] * (x[1]  - 1.0);
-        }
-    }
+class Constants {
+    public static final double DBL_EPSILON = 2.2204460492503131e-16;
+    public static final double SQRT_DBL_EPSILON = 1.4901161193847656e-08;
 }

@@ -23,7 +23,7 @@ import java.util.Arrays;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-class Minimizer {
+class PowellMinimizer {
     private final int maxIter;
 
     /**
@@ -31,7 +31,7 @@ class Minimizer {
      *
      * @param maxIter the maximum number of iterations.
      */
-    public Minimizer(int maxIter) {
+    public PowellMinimizer(int maxIter) {
         this.maxIter = maxIter;
     }
 

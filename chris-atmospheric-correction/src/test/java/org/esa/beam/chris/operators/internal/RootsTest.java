@@ -17,40 +17,45 @@ package org.esa.beam.chris.operators.internal;
 import junit.framework.TestCase;
 
 /**
- * Tests for class {@link BrentRootFinder}.
+ * Tests for class {@link Roots}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class BrentRootFinderTest extends TestCase {
-    private BrentRootFinder rootFinder;
+public class RootsTest extends TestCase {
 
-    public void testFindRoot() throws Exception {
-        final double root = rootFinder.findRoot(new Cosine(), 0.0, 2.0);
-        assertEquals(Math.PI / 2.0, root, 0.0);
+    public void testBrent() throws Exception {
+        final Roots.Bracket bracket = new Roots.Bracket(0.0, 2.0);
+        final boolean success = Roots.brent(new Cosine(), bracket, 100);
+
+        assertTrue(success);
+        assertEquals(Math.PI / 2.0, bracket.root, 0.0);
     }
 
-    public void testFindRootAtBracketingIntervalBoundaries() throws Exception {
-        final double l = rootFinder.findRoot(new Sine(), 0.0, 1.0);
-        assertEquals(0.0, l, 0.0);
+    public void testBrentWithRootAtBracketingIntervalLowerLimit() throws Exception {
+        final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
+        final boolean success = Roots.brent(new Sine(), bracket, 100);
 
-        final double r = rootFinder.findRoot(new Sine(), -1.0, 0.0);
-        assertEquals(0.0, r, 0.0);
+        assertTrue(success);
+        assertEquals(0.0, bracket.root, 0.0);
     }
 
-    public void testFindRootNotInBracketingInterval() throws Exception {
+    public void testBrentWithRootAtBracketingIntervalUpperLimit() throws Exception {
+        final Roots.Bracket bracket = new Roots.Bracket(-1.0, 0.0);
+        final boolean success = Roots.brent(new Sine(), bracket, 100);
+
+        assertTrue(success);
+        assertEquals(0.0, bracket.root, 0.0);
+    }
+
+    public void testBrentWithRootNotInBracketingInterval() throws Exception {
         try {
-            rootFinder.findRoot(new Cosine(), 0.0, 1.0);
+            Roots.brent(new Cosine(), new Roots.Bracket(0.0, 1.0), 100);
             fail();
         } catch (IllegalArgumentException expected) {
             // ignore
         }
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        rootFinder = new BrentRootFinder(100);
     }
 
     private static class Cosine implements UnivariateFunction {
