@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * todo - add API doc
+ * Operator for performing the atmospheric correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
