@@ -21,9 +21,13 @@ import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
-import org.esa.beam.framework.gpf.annotations.*;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.Parameter;
+import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -67,9 +71,11 @@ public class PerformAtmosphericCorrectionOp extends Operator {
     private boolean wvMap;
 
     @Parameter(defaultValue = "0.05",
-    description = "Threshold applicable to surface reflectance and WV retrieval.")
+               description = "Threshold applicable to surface reflectance and WV retrieval.")
     private double cldReflThre;
-    
+
+    private transient ModtranLookupTable lut;
+
     @Override
     public void initialize() throws OperatorException {
     }
@@ -77,8 +83,24 @@ public class PerformAtmosphericCorrectionOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
+        // Read MODTRAN lookup table if not already done
+        synchronized (this) {
+            if (lut == null) {
+                try {
+                    lut = new ModtranLookupTableReader().readLookupTable();
+                } catch (IOException e) {
+                    throw new OperatorException(e.getMessage());
+                }
+            }
+        }
 
     }
+
+    @Override
+    public void dispose() {
+        lut = null;
+    }
+
 
     public static class Spi extends OperatorSpi {
 

@@ -22,7 +22,7 @@ import java.text.MessageFormat;
 class ModtranLookupTableReader {
 
     @SuppressWarnings({"ConstantConditions"})
-    public ModtranLookupTable readLookupTable() throws OperatorException {
+    public ModtranLookupTable readLookupTable() throws IOException {
         final ImageInputStream iis = getResourceAsImageInputStream("chrisbox-ac-lut-formatted-1nm.img");
         iis.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 
@@ -77,7 +77,7 @@ class ModtranLookupTableReader {
             return new ModtranLookupTable(parameterCount1, parameterCount2, lut1, lut2,
                                           new Array.Float(wavelengths));
         } catch (Exception e) {
-            throw new OperatorException("could not read MODTRAN lookup table for atmospheric correction", e);
+            throw new IOException("could not read MODTRAN lookup table for atmospheric correction", e);
         } finally {
             try {
                 iis.close();
