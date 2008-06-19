@@ -16,6 +16,7 @@ package org.esa.beam.chris.operators.internal;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
+import java.text.MessageFormat;
 
 /**
  * todo - add API doc
@@ -29,7 +30,11 @@ public class Min {
     private static final double GOLDEN = 0.3819660;
 
     /**
-     * Brackets a minimum.
+     * Container used to bracket a minimum of an univariate function.
+     * <p/>
+     * A minimum of a function f is bracketed by a triple of points, if and only if
+     * the value of f at the inner point is less than the values of f at both outer
+     * points.
      */
     public static class Bracket {
         /**
@@ -51,12 +56,12 @@ public class Min {
         /**
          * An abscissa value within the bracketing interval.
          */
-        public double minimumX;
+        public double innerX;
         /**
-         * The function value at {@code minimumX}. This value must be less than
+         * The function value at {@code innerX}. This value must be less than
          * both {@code lowerF} and {@code upperF}.
          */
-        public double minimumF;
+        public double innerF;
 
         /**
          * Creates a new instance of this class.
@@ -66,8 +71,6 @@ public class Min {
 
         /**
          * Creates a new instance of this class.
-         * <p/>
-         * For the purpose of testing only.
          *
          * @param lowerX the lower limit of the bracketing interval.
          * @param upperX the upper limit of the bracketing interval.
@@ -85,13 +88,14 @@ public class Min {
             lowerF = f.value(this.lowerX);
             upperF = f.value(this.upperX);
 
-            minimumX = this.lowerX + GOLDEN * (this.upperX - this.lowerX);
-            minimumF = f.value(this.minimumX);
+            innerX = this.lowerX + GOLDEN * (this.upperX - this.lowerX);
+            innerF = f.value(this.innerX);
         }
     }
 
     /**
-     * Brackets a minimum for an univariate function.
+     * Brackets a minimum of an univariate function given two initial abscissa
+     * values.
      *
      * @param f       the univariate function.
      * @param a       the lower initial abscissa value.
@@ -101,44 +105,44 @@ public class Min {
      * @return the bracket found.
      */
     public static Bracket brack(UnivariateFunction f, double a, double b, Bracket bracket) {
-        double leftX = a;
-        double leftF = f.value(a);
+        double lowerX = a;
+        double lowerF = f.value(a);
 
-        double centerX = b;
-        double centerF = f.value(b);
+        double innerX = b;
+        double innerF = f.value(b);
 
-        if (centerF > leftF) {
-            final double lx = leftX;
-            final double lf = leftF;
+        if (innerF > lowerF) {
+            final double lx = lowerX;
+            final double lf = lowerF;
 
-            leftX = centerX;
-            leftF = centerF;
+            lowerX = innerX;
+            lowerF = innerF;
 
-            centerX = lx;
-            centerF = lf;
+            innerX = lx;
+            innerF = lf;
         }
 
-        double rightX = centerX + (centerX - leftX) * (1.0 / GOLDEN - 1.0);
-        double rightF = f.value(rightX);
+        double upperX = innerX + (innerX - lowerX) * (1.0 / GOLDEN - 1.0);
+        double upperF = f.value(upperX);
 
-        while (centerF > rightF) {
-            rightX = rightX + (rightX - centerX) * (1.0 / GOLDEN - 1.0);
-            rightF = f.value(rightX);
+        while (innerF > upperF) {
+            upperX = upperX + (upperX - innerX) * (1.0 / GOLDEN - 1.0);
+            upperF = f.value(upperX);
         }
 
-        bracket.minimumX = centerX;
-        bracket.minimumF = centerF;
+        bracket.innerX = innerX;
+        bracket.innerF = innerF;
 
-        if (leftX > rightX) {
-            bracket.lowerX = rightX;
-            bracket.lowerF = rightF;
-            bracket.upperX = leftX;
-            bracket.upperF = leftF;
+        if (lowerX > upperX) {
+            bracket.lowerX = upperX;
+            bracket.lowerF = upperF;
+            bracket.upperX = lowerX;
+            bracket.upperF = lowerF;
         } else {
-            bracket.lowerX = leftX;
-            bracket.lowerF = leftF;
-            bracket.upperX = rightX;
-            bracket.upperF = rightF;
+            bracket.lowerX = lowerX;
+            bracket.lowerF = lowerF;
+            bracket.upperX = upperX;
+            bracket.upperF = upperF;
         }
 
         return bracket;
@@ -154,6 +158,8 @@ public class Min {
      * @param relativeAccuracyGoal the relative accuracy goal for the minimum being searched.
      *
      * @return {@code true} on success.
+     *
+     * @throws IllegalArgumentException if the {@code bracket} is invalid.
      */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal) {
         return brent(f, bracket, relativeAccuracyGoal, 1.0E-10);
@@ -170,6 +176,8 @@ public class Min {
      * @param absoluteAccuracyGoal the relative absolute goal for the minimum being searched.
      *
      * @return {@code true} on success.
+     *
+     * @throws IllegalArgumentException if the {@code bracket} is invalid.
      */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
                                 double absoluteAccuracyGoal) {
@@ -188,10 +196,20 @@ public class Min {
      * @param maxIter              the maximum number of iterations being performed.
      *
      * @return {@code true} on success.
+     *
+     * @throws IllegalArgumentException if the {@code bracket} is invalid.
      */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
                                 double absoluteAccuracyGoal, int maxIter) {
-        // todo - checking
+        if (bracket.innerF >= bracket.lowerF ||
+                bracket.innerF >= bracket.upperF ||
+                bracket.innerX <= bracket.lowerX && bracket.innerX <= bracket.upperX ||
+                bracket.innerX >= bracket.lowerX && bracket.innerX >= bracket.upperX) {
+            throw new IllegalArgumentException(MessageFormat.format(
+                    "The points a = {0}, b = {1}, c = {2} do not bracket a minimum.",
+                    bracket.lowerX, bracket.innerX, bracket.upperX));
+        }
+
         double u;
         double v = bracket.lowerX + GOLDEN * (bracket.upperX - bracket.lowerX);
         double w = v;
@@ -206,9 +224,9 @@ public class Min {
         for (int i = 0; i < maxIter; ++i) {
             final double a = bracket.lowerX;
             final double b = bracket.upperX;
-            final double z = bracket.minimumX;
+            final double z = bracket.innerX;
 
-            final double fz = bracket.minimumF;
+            final double fz = bracket.innerF;
 
             final double lowerW = (z - a);
             final double upperW = (b - z);
@@ -270,8 +288,8 @@ public class Min {
                 fv = fw;
                 fw = fz;
 
-                bracket.minimumX = u;
-                bracket.minimumF = fu;
+                bracket.innerX = u;
+                bracket.innerF = fu;
             } else {
                 if (u < z) {
                     bracket.lowerX = u;

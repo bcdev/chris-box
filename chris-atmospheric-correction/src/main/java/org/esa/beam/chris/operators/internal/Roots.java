@@ -64,7 +64,7 @@ public class Roots {
 
         if ((fa < 0.0 && fb < 0.0) || (fa > 0.0 && fb > 0.0)) {
             throw new IllegalArgumentException(MessageFormat.format(
-                    "endpoints a = {0}, b = {1} do not straddle y = 0.", a, b));
+                    "The endpoints a = {0}, b = {1} do not straddle y = 0.", a, b));
         }
 
         double d = b - a;

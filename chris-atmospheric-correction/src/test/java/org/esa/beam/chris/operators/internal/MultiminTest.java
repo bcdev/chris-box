@@ -24,22 +24,55 @@ import junit.framework.TestCase;
  * @since BEAM 4.2
  */
 public class MultiminTest extends TestCase {
+    private static final double ACCURACY_GOAL = 1.0E-8;
 
-    public void testPowell() {
-        final double[] x = new double[]{0.4, 0.2};
-        final double[][] e = {{1.0, 0.0}, {0.0, 1.0}};
-        final double minimum = Multimin.powell(new F(), 2, x, e, 0.0, 20);
+    public void testPowellCigar() {
+        final double[] x = new double[]{1.0, 1.0, 1.0};
+        final double[][] e = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-        assertEquals(0.0, minimum, 1.0E-10);
-        assertEquals(1.0, x[0], 1.0E-10);
-        assertEquals(1.0, x[1], 1.0E-10);
+        final boolean success = Multimin.powell(new CigarFunction(), x, e, ACCURACY_GOAL, 200);
+        assertTrue(success);
+
+        assertEquals(0.0, x[0], ACCURACY_GOAL);
+        assertEquals(0.0, x[1], ACCURACY_GOAL);
+        assertEquals(0.0, x[2], ACCURACY_GOAL);
     }
 
-    private static class F implements MultivariateFunction {
+    public void testPowellRosenbrock() {
+        final double[] x = new double[]{0.0, 0.0, 0.0};
+        final double[][] e = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
+        final boolean success = Multimin.powell(new RosenbrockFunction(), x, e, ACCURACY_GOAL, 200);
+        assertTrue(success);
+
+        assertEquals(1.0, x[0], ACCURACY_GOAL);
+        assertEquals(1.0, x[1], ACCURACY_GOAL);
+        assertEquals(1.0, x[2], ACCURACY_GOAL);
+    }
+
+    private static class CigarFunction implements MultivariateFunction {
         @Override
         public double value(double... x) {
-            return 100.0 * Pow.pow2(x[1] - x[0] * x[0]) + Pow.pow2(1.0 - x[0]);
+            double sum = 0.0;
+
+            for (int i = 1; i < x.length; ++i) {
+                sum += Pow.pow2(1000.0 * x[i]);
+            }
+
+            return x[0] * x[0] + sum;
+        }
+    }
+
+    private static class RosenbrockFunction implements MultivariateFunction {
+        @Override
+        public double value(double... x) {
+            double sum = 0.0;
+
+            for (int i = 0; i < x.length - 1; ++i) {
+                sum += 100.0 * Pow.pow2(x[i] * x[i] - x[i + 1]) + Pow.pow2(x[i] - 1.0);
+            }
+
+            return sum;
         }
     }
 }

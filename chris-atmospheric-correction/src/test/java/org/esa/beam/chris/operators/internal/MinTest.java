@@ -25,30 +25,51 @@ import org.esa.beam.chris.operators.internal.Min.Bracket;
  * @since BEAM 4.2
  */
 public class MinTest extends TestCase {
+    private static final double ACCURACY_GOAL = 1.0E-6;
 
-    public void testBrack() {
-        final Bracket bracket = Min.brack(new Cosine(), 0.0, 0.5, new Bracket());
+    public void testBrackCos() {
+        final Bracket bracket = Min.brack(new Cos(), 0.0, 0.5, new Bracket());
 
-        assertTrue(bracket.lowerX < bracket.minimumX);
-        assertTrue(bracket.upperX > bracket.minimumX);
+        assertTrue(bracket.lowerX < bracket.innerX);
+        assertTrue(bracket.upperX > bracket.innerX);
 
-        assertTrue(bracket.lowerF > bracket.minimumF);
-        assertTrue(bracket.upperF > bracket.minimumF);
+        assertTrue(bracket.lowerF > bracket.innerF);
+        assertTrue(bracket.upperF > bracket.innerF);
     }
 
-    public void testBrent() {
-        final Cosine function = new Cosine();
-        final Bracket bracket = new Bracket(0.0, 6.0, function);
+    public void testBrackSin() {
+        final Bracket bracket = Min.brack(new Sin(), 0.0, 0.5, new Bracket());
 
-        final Boolean success = Min.brent(function, bracket, 0.001);
+        assertTrue(bracket.lowerX < bracket.innerX);
+        assertTrue(bracket.upperX > bracket.innerX);
+
+        assertTrue(bracket.lowerF > bracket.innerF);
+        assertTrue(bracket.upperF > bracket.innerF);
+    }
+
+    public void testBrentCos() {
+        final UnivariateFunction function = new Cos();
+        final Bracket bracket = new Bracket(2.0, 5.0, function);
+
+        final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
         assertTrue(success);
 
-        assertEquals(Math.PI, bracket.minimumX, 0.001);
-        assertEquals(-1.0, bracket.minimumF, 0.001);
+        assertEquals(Math.PI, bracket.innerX, ACCURACY_GOAL);
+        assertEquals(-1.0, bracket.innerF, ACCURACY_GOAL);
     }
 
+    public void testBrentSin() {
+        final UnivariateFunction function = new Sin();
+        final Bracket bracket = new Bracket(3.0, 6.0, function);
 
-    private static class Cosine implements UnivariateFunction {
+        final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
+        assertTrue(success);
+
+        assertEquals(1.5 * Math.PI, bracket.innerX, ACCURACY_GOAL);
+        assertEquals(-1.0, bracket.innerF, ACCURACY_GOAL);
+    }
+
+    private static class Cos implements UnivariateFunction {
 
         @Override
         public double value(double x) {
@@ -56,7 +77,7 @@ public class MinTest extends TestCase {
         }
     }
 
-    private static class Sine implements UnivariateFunction {
+    private static class Sin implements UnivariateFunction {
 
         @Override
         public double value(double x) {

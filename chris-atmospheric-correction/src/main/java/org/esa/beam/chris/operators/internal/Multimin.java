@@ -30,19 +30,23 @@ public class Multimin {
      * California State Univ. Fullerton).
      *
      * @param f            the multivariate function.
-     * @param n            the number of variables.
      * @param pn           the initial guess of the minimum. On return contains the
-     *                     minimum found.
+     *                     minimum found. The length of this array must be equal to
+     *                     the number of variables in {@code f}.
      * @param u            the initial direction set. On return contains the actual
-     *                     direction set.
-     * @param accuracyGoal
-     * @param maxIter
+     *                     direction set. The number of directions must be equal to
+     *                     the number of variables in {@code f}.
+     * @param accuracyGoal the prescribed accuracy goal.
+     * @param maxIter      the maximum number of iterations.
      *
-     * @return the value of the multivariate function at the minimum found.
+     * @return {@code true} on success.
+     *
+     * @throws IndexOutOfBoundsException if the dimensions of {@code pn} and {@code u}
+     *                                   are not consistent.
      */
-    public static double powell(MultivariateFunction f, int n, double[] pn, double[][] u, double accuracyGoal,
-                                int maxIter) {
-        // todo - checking
+    public static boolean powell(MultivariateFunction f, double[] pn, double[][] u, double accuracyGoal,
+                                 int maxIter) {
+        final int n = pn.length;
 
         final LineMinimizer[] minimizers = new LineMinimizer[n];
         for (int k = 0; k < n; ++k) {
@@ -55,16 +59,15 @@ public class Multimin {
         double zn = f.value(pn);
 
         for (int i = 0; i < maxIter; ++i) {
-            // 1. Initialization
+            // 1. Initialize
             System.arraycopy(pn, 0, p0, 0, n);
             double z0 = zn;
-
             // 2. Successively minimize along all directions
             // 3. Remember magnitude and direction of maximum decrease
             double maxDecrease = 0.0;
             int maxIndex = 0;
             for (int k = 0; k < n; ++k) {
-                final double z = minimizers[k].findMinimum(0.0, 1.0);
+                final double z = minimizers[k].findMinimum(pn);
                 final double d = Math.abs(z - zn);
                 if (d > maxDecrease) {
                     maxIndex = k;
@@ -72,24 +75,31 @@ public class Multimin {
                 }
                 zn = z;
             }
-            // todo - stopping criterion
-            // 4. Extrapolate
+            // 4. Stop if ||pn - p0|| < accuracyGoal
+            double sum = 0.0;
+            for (int k = 0; k < n; ++k) {
+                sum += Pow.pow2(pn[k] - p0[k]);
+            }
+            if (sum < Pow.pow2(accuracyGoal)) {
+                return true;
+            }
+            // 5. Extrapolate
             for (int k = 0; k < n; ++k) {
                 pe[k] = 2.0 * pn[k] - p0[k];
             }
             final double ze = f.value(pe);
-            // 5. When necessary, discard the direction of maximum decrease
+            // 6. When necessary, discard the direction of maximum decrease
             if (ze < z0) {
                 if (2.0 * (z0 - 2.0 * zn + ze) * Pow.pow2(z0 - zn - maxDecrease) < maxDecrease * Pow.pow2(z0 - ze)) {
                     for (int k = 0; k < n; ++k) {
                         u[maxIndex][k] = pn[k] - p0[k];
                     }
-                    zn = minimizers[maxIndex].findMinimum(0.0, 1.0);
+                    zn = minimizers[maxIndex].findMinimum(pn);
                 }
             }
         }
 
-        return zn;
+        return false;
     }
 
     /**
@@ -97,8 +107,6 @@ public class Multimin {
      * line.
      */
     private static class LineMinimizer {
-        private static final double ACCURACY_GOAL = 1.0E-4;
-
         private final F1 f;
         private final double[] p;
         private final double[] u;
@@ -121,25 +129,22 @@ public class Multimin {
         }
 
         /**
-         * Finds a minimum along the abscissa defined by the origin {@code p}
-         * and the direction {@code u}.
-         * <p/>
-         * By calling this method {@code p} is set to the minimum found.
+         * Finds a minimum of {@code f} along the line defined by {@code p}
+         * and {@code u}.
          *
-         * @param a the lower abscissa value.
-         * @param b the upper abscissa value.
+         * @param x the minimum found.
          *
          * @return the value of {@code f} at the minimum found.
          */
-        public double findMinimum(double a, double b) {
-            Min.brack(f, a, b, bracket);
-            Min.brent(f, bracket, ACCURACY_GOAL);
+        public double findMinimum(double[] x) {
+            Min.brack(f, 0.0, 1.0, bracket);
+            Min.brent(f, bracket, 1.0E-6);
 
             for (int i = 0; i < p.length; ++i) {
-                p[i] += u[i] * bracket.minimumX;
+                x[i] = p[i] + u[i] * bracket.innerX;
             }
 
-            return bracket.minimumF;
+            return bracket.innerF;
         }
     }
 
@@ -149,7 +154,6 @@ public class Multimin {
      */
     private static class F1 implements UnivariateFunction {
         private final MultivariateFunction f;
-
         private final double[] p;
         private final double[] u;
 
