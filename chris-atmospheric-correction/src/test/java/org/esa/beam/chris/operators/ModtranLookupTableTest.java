@@ -19,7 +19,7 @@ import org.esa.beam.util.math.MatrixFactory;
 import org.esa.beam.util.math.RowMajorMatrixFactory;
 
 /**
- * Tests for {@link ModtranLookupTable}.
+ * Tests for class {@link ModtranLookupTable}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
