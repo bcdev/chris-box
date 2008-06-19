@@ -35,13 +35,13 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
     static {
         CHRIS_TYPES = new ArrayList<String>();
         Collections.addAll(CHRIS_TYPES,
-                "CHRIS_M1_REFL",
-                "CHRIS_M2_REFL",
-                "CHRIS_M3_REFL",
-                "CHRIS_M30_REFL",
-                "CHRIS_M3A_REFL",
-                "CHRIS_M4_REFL",
-                "CHRIS_M5_REFL");
+                           "CHRIS_M1_REFL",
+                           "CHRIS_M2_REFL",
+                           "CHRIS_M3_REFL",
+                           "CHRIS_M30_REFL",
+                           "CHRIS_M3A_REFL",
+                           "CHRIS_M4_REFL",
+                           "CHRIS_M5_REFL");
     }
 
     @Override
