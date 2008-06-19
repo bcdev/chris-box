@@ -19,7 +19,7 @@ import static java.lang.Math.min;
 import java.text.MessageFormat;
 
 /**
- * todo - add API doc
+ * Methods for finding the minimum of an univariate function.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

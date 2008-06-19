@@ -18,7 +18,7 @@ import junit.framework.TestCase;
 import org.esa.beam.chris.operators.internal.Min.Bracket;
 
 /**
- * todo - add API doc
+ * Tests for class {@link Min}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

@@ -15,14 +15,14 @@
 package org.esa.beam.chris.operators.internal;
 
 /**
- * todo - add API doc
+ * Test functions.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
 class TestFunctions {
-    
+
     static class Cos implements UnivariateFunction {
 
         @Override
@@ -54,7 +54,7 @@ class TestFunctions {
     }
 
     static class Rosenbrock implements MultivariateFunction {
-        
+
         @Override
         public double value(double... x) {
             double sum = 0.0;

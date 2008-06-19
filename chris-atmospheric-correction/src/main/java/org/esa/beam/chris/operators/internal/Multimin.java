@@ -15,7 +15,7 @@
 package org.esa.beam.chris.operators.internal;
 
 /**
- * todo - add API doc
+ * Methods for finding the minimum of an multivariate function.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

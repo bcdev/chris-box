@@ -17,7 +17,7 @@ package org.esa.beam.chris.operators.internal;
 import junit.framework.TestCase;
 
 /**
- * todo - add API doc
+ * Tests for class {@link Multimin}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

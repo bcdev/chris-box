@@ -15,7 +15,8 @@
 package org.esa.beam.chris.operators.internal;
 
 /**
- * todo - add API doc
+ * Some usually machine-specific constants. For Java environments, all constants
+ * are the same.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

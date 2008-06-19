@@ -17,7 +17,7 @@ package org.esa.beam.chris.operators.internal;
 import java.text.MessageFormat;
 
 /**
- * todo - add API doc
+ * Methods for finding the roots of an univariate function.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -25,18 +25,41 @@ import java.text.MessageFormat;
  */
 public class Roots {
 
+    /**
+     * Container for bracketing a root of an univariate function.
+     */
     public static class Bracket {
-
-        public Bracket(double lowerX, double upperX) {
-            this.lowerX = lowerX;
-            this.upperX = upperX;
-
-            root = (lowerX + upperX) / 2;
-        }
-
+        /**
+         * The lower abcissa value of the bracketing interval.
+         */
         public double lowerX;
+        /**
+         * The upper abcissa value of the bracketing interval.
+         */
         public double upperX;
-        public double root;
+        /**
+         * The abcissa value within the bracketing interval which
+         * is used for estimating the root.
+         */
+        public double innerX;
+
+        /**
+         * Constructs a new instance of this class.
+         *
+         * @param lowerX the lower abcissa value of the bracketing interval.
+         * @param upperX the upper abcissa value of the bracketing interval.
+         */
+        public Bracket(double lowerX, double upperX) {
+            if (lowerX > upperX) {
+                this.upperX = lowerX;
+                this.lowerX = upperX;
+            } else {
+                this.lowerX = lowerX;
+                this.upperX = upperX;
+            }
+
+            innerX = (lowerX + upperX) / 2;
+        }
     }
 
     /**
@@ -97,7 +120,7 @@ public class Roots {
             m = 0.5 * (c - b);
 
             if (fb == 0) {
-                bracket.root = b;
+                bracket.innerX = b;
                 bracket.lowerX = b;
                 bracket.upperX = b;
 
@@ -105,7 +128,7 @@ public class Roots {
             }
 
             if (Math.abs(m) <= tol) {
-                bracket.root = b;
+                bracket.innerX = b;
 
                 if (b < c) {
                     bracket.lowerX = b;
@@ -168,7 +191,7 @@ public class Roots {
 
             fb = f.value(b);
 
-            bracket.root = b;
+            bracket.innerX = b;
 
             if ((fb < 0.0 && fc < 0.0) || (fb > 0.0 && fc > 0.0)) {
                 c = a;
