@@ -28,7 +28,7 @@ public class MinTest extends TestCase {
     private static final double ACCURACY_GOAL = 1.0E-6;
 
     public void testBrackCos() {
-        final Bracket bracket = Min.brack(new Cos(), 0.0, 0.5, new Bracket());
+        final Bracket bracket = Min.brack(new TestFunctions.Cos(), 0.0, 0.5, new Bracket());
 
         assertTrue(bracket.lowerX < bracket.innerX);
         assertTrue(bracket.upperX > bracket.innerX);
@@ -38,7 +38,7 @@ public class MinTest extends TestCase {
     }
 
     public void testBrackSin() {
-        final Bracket bracket = Min.brack(new Sin(), 0.0, 0.5, new Bracket());
+        final Bracket bracket = Min.brack(new TestFunctions.Sin(), 0.0, 0.5, new Bracket());
 
         assertTrue(bracket.lowerX < bracket.innerX);
         assertTrue(bracket.upperX > bracket.innerX);
@@ -48,7 +48,7 @@ public class MinTest extends TestCase {
     }
 
     public void testBrentCos() {
-        final UnivariateFunction function = new Cos();
+        final UnivariateFunction function = new TestFunctions.Cos();
         final Bracket bracket = new Bracket(2.0, 5.0, function);
 
         final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
@@ -59,7 +59,7 @@ public class MinTest extends TestCase {
     }
 
     public void testBrentSin() {
-        final UnivariateFunction function = new Sin();
+        final UnivariateFunction function = new TestFunctions.Sin();
         final Bracket bracket = new Bracket(3.0, 6.0, function);
 
         final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
@@ -67,21 +67,5 @@ public class MinTest extends TestCase {
 
         assertEquals(1.5 * Math.PI, bracket.innerX, ACCURACY_GOAL);
         assertEquals(-1.0, bracket.innerF, ACCURACY_GOAL);
-    }
-
-    private static class Cos implements UnivariateFunction {
-
-        @Override
-        public double value(double x) {
-            return Math.cos(x);
-        }
-    }
-
-    private static class Sin implements UnivariateFunction {
-
-        @Override
-        public double value(double x) {
-            return Math.sin(x);
-        }
     }
 }

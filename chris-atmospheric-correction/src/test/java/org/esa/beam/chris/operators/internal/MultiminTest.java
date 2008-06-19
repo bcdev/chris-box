@@ -30,7 +30,7 @@ public class MultiminTest extends TestCase {
         final double[] x = new double[]{1.0, 1.0, 1.0};
         final double[][] e = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-        final boolean success = Multimin.powell(new CigarFunction(), x, e, ACCURACY_GOAL, 200);
+        final boolean success = Multimin.powell(new TestFunctions.Cigar(), x, e, ACCURACY_GOAL, 200);
         assertTrue(success);
 
         assertEquals(0.0, x[0], ACCURACY_GOAL);
@@ -42,37 +42,11 @@ public class MultiminTest extends TestCase {
         final double[] x = new double[]{0.0, 0.0, 0.0};
         final double[][] e = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-        final boolean success = Multimin.powell(new RosenbrockFunction(), x, e, ACCURACY_GOAL, 200);
+        final boolean success = Multimin.powell(new TestFunctions.Rosenbrock(), x, e, ACCURACY_GOAL, 200);
         assertTrue(success);
 
         assertEquals(1.0, x[0], ACCURACY_GOAL);
         assertEquals(1.0, x[1], ACCURACY_GOAL);
         assertEquals(1.0, x[2], ACCURACY_GOAL);
-    }
-
-    private static class CigarFunction implements MultivariateFunction {
-        @Override
-        public double value(double... x) {
-            double sum = 0.0;
-
-            for (int i = 1; i < x.length; ++i) {
-                sum += Pow.pow2(1000.0 * x[i]);
-            }
-
-            return x[0] * x[0] + sum;
-        }
-    }
-
-    private static class RosenbrockFunction implements MultivariateFunction {
-        @Override
-        public double value(double... x) {
-            double sum = 0.0;
-
-            for (int i = 0; i < x.length - 1; ++i) {
-                sum += 100.0 * Pow.pow2(x[i] * x[i] - x[i + 1]) + Pow.pow2(x[i] - 1.0);
-            }
-
-            return sum;
-        }
     }
 }

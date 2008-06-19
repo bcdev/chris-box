@@ -27,7 +27,7 @@ public class RootsTest extends TestCase {
 
     public void testBrent() throws Exception {
         final Roots.Bracket bracket = new Roots.Bracket(0.0, 2.0);
-        final boolean success = Roots.brent(new Cosine(), bracket, 100);
+        final boolean success = Roots.brent(new TestFunctions.Cos(), bracket, 100);
 
         assertTrue(success);
         assertEquals(Math.PI / 2.0, bracket.root, 0.0);
@@ -35,7 +35,7 @@ public class RootsTest extends TestCase {
 
     public void testBrentWithRootAtBracketingIntervalLowerLimit() throws Exception {
         final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
-        final boolean success = Roots.brent(new Sine(), bracket, 100);
+        final boolean success = Roots.brent(new TestFunctions.Sin(), bracket, 100);
 
         assertTrue(success);
         assertEquals(0.0, bracket.root, 0.0);
@@ -43,7 +43,7 @@ public class RootsTest extends TestCase {
 
     public void testBrentWithRootAtBracketingIntervalUpperLimit() throws Exception {
         final Roots.Bracket bracket = new Roots.Bracket(-1.0, 0.0);
-        final boolean success = Roots.brent(new Sine(), bracket, 100);
+        final boolean success = Roots.brent(new TestFunctions.Sin(), bracket, 100);
 
         assertTrue(success);
         assertEquals(0.0, bracket.root, 0.0);
@@ -51,24 +51,10 @@ public class RootsTest extends TestCase {
 
     public void testBrentWithRootNotInBracketingInterval() throws Exception {
         try {
-            Roots.brent(new Cosine(), new Roots.Bracket(0.0, 1.0), 100);
+            Roots.brent(new TestFunctions.Cos(), new Roots.Bracket(0.0, 1.0), 100);
             fail();
         } catch (IllegalArgumentException expected) {
             // ignore
-        }
-    }
-
-    private static class Cosine implements UnivariateFunction {
-
-        public double value(double x) {
-            return Math.cos(x);
-        }
-    }
-
-    private static class Sine implements UnivariateFunction {
-
-        public double value(double x) {
-            return Math.sin(x);
         }
     }
 }
