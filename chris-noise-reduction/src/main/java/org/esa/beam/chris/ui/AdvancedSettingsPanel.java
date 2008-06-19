@@ -1,6 +1,6 @@
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.swing.SwingBindingContext;
+import com.bc.ceres.binding.swing.BindingContext;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -20,10 +20,10 @@ class AdvancedSettingsPanel extends JPanel {
     }
 
     private void bindComponents(AdvancedSettingsPresenter presenter) {
-        SwingBindingContext destripingBinding = new SwingBindingContext(presenter.getDestripingValueContainer());
+        BindingContext destripingBinding = new BindingContext(presenter.getDestripingValueContainer());
         destripingBinding.bind(slitCorrectionCheckBox, "slitCorrection");
         destripingBinding.bind(smoothingOrderSpinner, "smoothingOrder");
-        SwingBindingContext dropoutCorrectionBinding = new SwingBindingContext(presenter.getDropoutCorrectionValueContainer());
+        BindingContext dropoutCorrectionBinding = new BindingContext(presenter.getDropoutCorrectionValueContainer());
         dropoutCorrectionBinding.bind(neighborBandCountComboBox, "neighborBandCount");
         dropoutCorrectionBinding.bind(neighborhoodComboBox, "neighborhoodType");
         neighborhoodComboBox.setRenderer(new DefaultListCellRenderer() {
@@ -58,11 +58,11 @@ class AdvancedSettingsPanel extends JPanel {
         JPanel verticalStripingPanel = new JPanel(new GridBagLayout());
 
         verticalStripingPanel.setBorder(BorderFactory.createTitledBorder(null,
-                                                                         "Destriping",
-                                                                         TitledBorder.DEFAULT_JUSTIFICATION,
-                                                                         TitledBorder.DEFAULT_POSITION,
-                                                                         new Font("Tahoma", 0, 11),
-                                                                         new Color(0, 70, 213)));
+                "Destriping",
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                new Font("Tahoma", 0, 11),
+                new Color(0, 70, 213)));
         slitCorrectionCheckBox.setSelected(true);
         slitCorrectionCheckBox.setText("Apply Slit Correction");
         slitCorrectionCheckBox.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -108,10 +108,10 @@ class AdvancedSettingsPanel extends JPanel {
         JPanel dropoutPanel = new JPanel(new GridBagLayout());
 
         dropoutPanel.setBorder(BorderFactory.createTitledBorder(null, "Dropout Correction",
-                                                                TitledBorder.DEFAULT_JUSTIFICATION,
-                                                                TitledBorder.DEFAULT_POSITION,
-                                                                new Font("Tahoma", 0, 11),
-                                                                new Color(0, 70, 213)));
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                new Font("Tahoma", 0, 11),
+                new Color(0, 70, 213)));
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
