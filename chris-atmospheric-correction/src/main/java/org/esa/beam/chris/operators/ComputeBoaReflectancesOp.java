@@ -79,11 +79,10 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     private transient Band[] radianceBands;
     private transient Band[] maskBands;
+    private transient Band[] reflBands;
     private transient Band cloudProbability;
 
-    private transient Band[] reflBands;
-
-    private transient RenderedImage saturationMask;
+    private transient RenderedImage saturationMaskImage;
     private transient ModtranLookupTable lut;
 
     @Override
@@ -94,7 +93,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         cloudProbability = sourceProduct.getBand("cloud_product");
 
         // saturation mask
-        saturationMask = SaturationMaskOpImage.createImage(maskBands);
+        saturationMaskImage = SaturationMaskOpImage.createImage(maskBands);
 
         final Product targetProduct = createTargetProduct();
         setTargetProduct(targetProduct);
@@ -121,8 +120,9 @@ public class ComputeBoaReflectancesOp extends Operator {
     public void dispose() {
         lut = null;
 
-        saturationMask = null;
+        saturationMaskImage = null;
 
+        reflBands = null;
         maskBands = null;
         radianceBands = null;
     }
@@ -136,6 +136,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         targetProduct.setEndTime(sourceProduct.getEndTime());
 
         // add reflectance bands
+        reflBands = new Band[radianceBands.length];
         for (int i = 0; i < radianceBands.length; i++) {
             final Band radianceBand = radianceBands[i];
             final Band reflBand = new Band(radianceBand.getName().replaceAll("radiance", "refl"),
@@ -171,7 +172,7 @@ public class ComputeBoaReflectancesOp extends Operator {
 
         try {
 
-            final Raster saturationMaskTile = saturationMask.getData(targetRectangle);
+            final Raster saturationMaskTile = saturationMaskImage.getData(targetRectangle);
             final Tile cloudProbabilityTile = getSourceTile(this.cloudProbability, targetRectangle, pm);
 
             for (int i = 0; i < radianceBands.length; i++) {
@@ -181,9 +182,11 @@ public class ComputeBoaReflectancesOp extends Operator {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
-
-                    // todo - invert lambertian equation
-
+                    if (saturationMaskTile.getSample(pos.x, pos.y, 0) != 1) {
+                        if (cloudProbabilityTile.getSampleDouble(pos.x, pos.y) < cloudProbabilityThreshold) {
+                            // todo - invert lambertian equation
+                        }
+                    }
                     if (pos.x == targetRectangle.x) {
                         pm.worked(1);
                     }

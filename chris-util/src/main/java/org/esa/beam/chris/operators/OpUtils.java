@@ -223,8 +223,8 @@ class OpUtils {
      *
      * @return the source tiles.
      */
-    public static Tile[] getSourceTiles(final RasterDataNode[] nodes, Rectangle sourceRectangle, ProgressMonitor pm,
-                                        final String taskName, Operator operator) {
+    private static Tile[] getSourceTiles(final RasterDataNode[] nodes, Rectangle sourceRectangle, ProgressMonitor pm,
+                                         final String taskName, Operator operator) {
         final ProgressMonitor spm = SubProgressMonitor.create(pm, nodes.length);
 
         try {
