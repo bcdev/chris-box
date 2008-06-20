@@ -1,13 +1,19 @@
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.RasterDataNode;
+import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.Tile;
 
 import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
+import java.awt.*;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -20,7 +26,7 @@ import java.util.List;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class OpUtils {
+class OpUtils {
 
     /**
      * Returns an array of bands in a product of interest whose names start with
@@ -166,6 +172,73 @@ public class OpUtils {
             return Integer.parseInt(string);
         } catch (Exception e) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
+        }
+    }
+
+    /**
+     * Returns the central wavelenghts for any spectral bands of interest.
+     *
+     * @param bands the bands of interest.
+     *
+     * @return the central wavelenghts (nm).
+     */
+    public static double[] getCentralWavelenghts(Band[] bands) {
+        final double[] wavelengths = new double[bands.length];
+
+        for (int i = 0; i < bands.length; i++) {
+            wavelengths[i] = bands[i].getSpectralWavelength();
+        }
+
+        return wavelengths;
+    }
+
+    /**
+     * Returns the bandwidths for any spectral bands of interest.
+     *
+     * @param bands the bands of interest.
+     *
+     * @return the bandwidths (nm).
+     */
+    public static double[] getBandwidths(Band[] bands) {
+        final double[] bandwidths = new double[bands.length];
+
+        for (int i = 0; i < bands.length; i++) {
+            bandwidths[i] = bands[i].getSpectralBandwidth();
+        }
+
+        return bandwidths;
+    }
+
+    /**
+     * Returns the source tiles for given raster data nodes.
+     * <p/>
+     * Creates a subprogress monitor from the parent progres monitor supplied, with ticks
+     * equal to the number of tiles requested.
+     *
+     * @param nodes           the raster data nodes.
+     * @param sourceRectangle the source rectangle.
+     * @param pm              the parent progress monitor.
+     * @param taskName        the task name used for the subprogress monitor.
+     * @param operator        the operator.
+     *
+     * @return the source tiles.
+     */
+    public static Tile[] getSourceTiles(final RasterDataNode[] nodes, Rectangle sourceRectangle, ProgressMonitor pm,
+                                        final String taskName, Operator operator) {
+        final ProgressMonitor spm = SubProgressMonitor.create(pm, nodes.length);
+
+        try {
+            spm.beginTask(taskName, nodes.length);
+
+            final Tile[] sourceTiles = new Tile[nodes.length];
+            for (int i = 0; i < nodes.length; i++) {
+                sourceTiles[i] = operator.getSourceTile(nodes[i], sourceRectangle, spm);
+                spm.worked(1);
+            }
+
+            return sourceTiles;
+        } finally {
+            spm.done();
         }
     }
 
