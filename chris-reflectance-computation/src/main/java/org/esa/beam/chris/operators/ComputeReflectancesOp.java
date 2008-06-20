@@ -2,7 +2,10 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.framework.datamodel.*;
+import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.FlagCoding;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -13,11 +16,9 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.io.IOException;
-import java.io.InputStream;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.Calendar;
@@ -32,10 +33,10 @@ import java.util.Map;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ComputeReflectances",
-        version = "1.0",
-        authors = "Ralf Quast",
-        copyright = "(c) 2007 by Brockmann Consult",
-        description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2007 by Brockmann Consult",
+                  description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
 public class ComputeReflectancesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
@@ -56,7 +57,8 @@ public class ComputeReflectancesOp extends Operator {
         sourceBandMap = new HashMap<Band, Band>();
         conversionFactorMap = new HashMap<Band, Double>();
 
-        final double solarZenithAngle = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+        final double solarZenithAngle = OpUtils.getAnnotationDouble(sourceProduct,
+                                                                    ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         final double[][] table = readThuillierTable();
         final int day = getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
@@ -64,8 +66,8 @@ public class ComputeReflectancesOp extends Operator {
         final String name = sourceProduct.getName().replace("_NR", "_REFL");
         final String type = sourceProduct.getProductType().replace("_NR", "_REFL");
         targetProduct = new Product(name, type,
-                sourceProduct.getSceneRasterWidth(),
-                sourceProduct.getSceneRasterHeight());
+                                    sourceProduct.getSceneRasterWidth(),
+                                    sourceProduct.getSceneRasterHeight());
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
@@ -76,8 +78,8 @@ public class ComputeReflectancesOp extends Operator {
                 if (sourceBand.getName().startsWith("radiance")) {
                     final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
                     final double solarIrradiance = getAverageValue(table,
-                            sourceBand.getSpectralWavelength(),
-                            sourceBand.getSpectralBandwidth());
+                                                                   sourceBand.getSpectralWavelength(),
+                                                                   sourceBand.getSpectralBandwidth());
                     targetBand.setSolarFlux((float) solarIrradiance);
                     sourceBandMap.put(targetBand, sourceBand);
                 }
@@ -86,9 +88,9 @@ public class ComputeReflectancesOp extends Operator {
         for (final Band sourceBand : sourceProduct.getBands()) {
             if (sourceBand.getName().startsWith("radiance")) {
                 final Band targetBand = new Band(sourceBand.getName().replaceFirst("radiance", "reflectance"),
-                        ProductData.TYPE_INT16,
-                        sourceBand.getSceneRasterWidth(),
-                        sourceBand.getSceneRasterHeight());
+                                                 ProductData.TYPE_INT16,
+                                                 sourceBand.getSceneRasterWidth(),
+                                                 sourceBand.getSceneRasterHeight());
 
                 targetBand.setDescription(MessageFormat.format(
                         "Reflectance for spectral band {0}", sourceBand.getSpectralBandIndex() + 1));
@@ -99,8 +101,8 @@ public class ComputeReflectancesOp extends Operator {
                 targetBand.setSpectralWavelength(sourceBand.getSpectralWavelength());
                 targetBand.setSpectralBandwidth(sourceBand.getSpectralBandwidth());
                 final double solarIrradiance = getAverageValue(table,
-                        sourceBand.getSpectralWavelength(),
-                        sourceBand.getSpectralBandwidth());
+                                                               sourceBand.getSpectralWavelength(),
+                                                               sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 targetProduct.addBand(targetBand);
                 sourceBandMap.put(targetBand, sourceBand);
@@ -110,8 +112,8 @@ public class ComputeReflectancesOp extends Operator {
             } else if (sourceBand.getName().startsWith("mask")) {
                 final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
                 final double solarIrradiance = getAverageValue(table,
-                        sourceBand.getSpectralWavelength(),
-                        sourceBand.getSpectralBandwidth());
+                                                               sourceBand.getSpectralWavelength(),
+                                                               sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 final FlagCoding flagCoding = sourceBand.getFlagCoding();
                 if (flagCoding != null) {
@@ -195,37 +197,6 @@ public class ComputeReflectancesOp extends Operator {
         }
     }
 
-    /**
-     * Returns a CHRIS annotation for a product of interest.
-     *
-     * @param product the product of interest.
-     * @param name    the name of the CHRIS annotation.
-     *
-     * @return the annotation or {@code null} if the annotation could not be found.
-     *
-     * @throws OperatorException if the annotation could not be read.
-     */
-    // todo -- move
-    private static String getAnnotationString(Product product, String name) throws OperatorException {
-        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-
-        if (element == null) {
-            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
-        }
-        return element.getAttributeString(name, null);
-    }
-
-    // todo -- move
-    private static double getAnnotationDouble(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
-
-        try {
-            return Double.parseDouble(string);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
-        }
-    }
-
     // todo - move or make an averager class
     private static double getAverageValue(double[][] table, double wavelength, double width) {
         final double[] x = table[0];
@@ -281,7 +252,7 @@ public class ComputeReflectancesOp extends Operator {
 
     // todo - generalize
     static double[][] readThuillierTable() throws OperatorException {
-        final ImageInputStream iis = getResourceAsImageInputStream("thuillier.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("thuillier.img");
 
         try {
             final int length = iis.readInt();
@@ -300,31 +271,6 @@ public class ComputeReflectancesOp extends Operator {
             } catch (IOException e) {
                 // ignore
             }
-        }
-    }
-
-    // todo - move
-    /**
-     * Returns an {@link ImageInputStream} for a resource file of interest.
-     *
-     * @param name the name of the resource file of interest.
-     *
-     * @return the image input stream.
-     *
-     * @throws OperatorException if the resource could not be found or the
-     *                           image input stream could not be created.
-     */
-    private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final InputStream is = ComputeReflectancesOp.class.getResourceAsStream(name);
-
-        if (is == null) {
-            throw new OperatorException(MessageFormat.format("resource {0} not found", name));
-        }
-        try {
-            return new FileCacheImageInputStream(is, null);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not create image input stream for resource {0}", name), e);
         }
     }
 

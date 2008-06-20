@@ -19,7 +19,6 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
-import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -78,8 +77,8 @@ public class ApplyDestripingFactorsOp extends Operator {
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
-                            getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
+        OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
+                                    OpUtils.getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
         targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 16);
     }
 
@@ -138,44 +137,13 @@ public class ApplyDestripingFactorsOp extends Operator {
 
     private static void assertValidity(Product product) throws OperatorException {
         try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+            OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not a CHRIS product", product.getName()), e);
         }
         // todo - add further validation criteria
     }
-
-    /**
-     * Returns a CHRIS annotation for a product of interest.
-     *
-     * @param product the product of interest.
-     * @param name    the name of the CHRIS annotation.
-     *
-     * @return the annotation or {@code null} if the annotation could not be found.
-     *
-     * @throws OperatorException if the annotation could not be read.
-     */
-    // todo -- move
-    private static String getAnnotationString(Product product, String name) throws OperatorException {
-        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-
-        if (element == null) {
-            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
-        }
-        return element.getAttributeString(name, null);
-    }
-
-    // todo -- move
-    private static void setAnnotationString(Product product, String name, String value) throws OperatorException {
-        MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-        if (element == null) {
-            element = new MetadataElement(ChrisConstants.MPH_NAME);
-            product.getMetadataRoot().addElement(element);
-        }
-        element.setAttributeString(name, value);
-    }
-
 
     public static class Spi extends OperatorSpi {
 

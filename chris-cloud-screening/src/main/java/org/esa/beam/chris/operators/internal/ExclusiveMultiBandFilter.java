@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators.internal;
 
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.chris.operators.BandFilter;
 
 /**
  * Exclusive multi band filter.

@@ -14,7 +14,7 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.internal.BandFilter;
+import org.esa.beam.chris.operators.BandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -56,12 +56,10 @@ public class MakeClusterMapOp extends Operator {
     public void initialize() throws OperatorException {
         int width = sourceProduct.getSceneRasterWidth();
         int height = sourceProduct.getSceneRasterHeight();
-//        final String name = sourceProduct.getName().replace("_CLU", "_MAP");
-//        final String type = sourceProduct.getProductType().replace("_CLU", "_MAP");
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(), width, height);
 
         try {
-            final Band[] sourceBands = findBands(sourceProduct, "probability");
+            final Band[] sourceBands = OpUtils.findBands(sourceProduct, "probability");
             final Band[] probabilityBands = new Band[sourceBands.length];
             for (int i = 0; i < sourceBands.length; ++i) {
                 final Band sourceBand = sourceBands[i];
@@ -101,26 +99,5 @@ public class MakeClusterMapOp extends Operator {
         public Spi() {
             super(MakeClusterMapOp.class);
         }
-    }
-
-    private static Band[] findBands(Product product, String prefix) {
-        return findBands(product, prefix, new BandFilter() {
-            @Override
-            public boolean accept(Band band) {
-                return true;
-            }
-        });
-    }
-
-    private static Band[] findBands(Product product, String prefix, BandFilter filter) {
-        final List<Band> bandList = new ArrayList<Band>();
-
-        for (final Band band : product.getBands()) {
-            if (band.getName().startsWith(prefix) && filter.accept(band)) {
-                bandList.add(band);
-            }
-        }
-
-        return bandList.toArray(new Band[bandList.size()]);
     }
 }

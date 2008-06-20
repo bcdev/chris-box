@@ -15,7 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.internal.BandFilter;
+import org.esa.beam.chris.operators.BandFilter;
 import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
@@ -114,7 +114,7 @@ public class ExtractEndmembersOp extends Operator {
                 {808.0, 840.0},
                 {885.0, 985.0},
                 {985.0, 1010.0}});
-        final Band[] reflectanceBands = findBands(reflectanceProduct, "reflectance", bandFilter);
+        final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct, "reflectance", bandFilter);
 
         reflectanceBandNames = new String[reflectanceBands.length];
         for (int i = 0; i < reflectanceBands.length; ++i) {
@@ -162,7 +162,7 @@ public class ExtractEndmembersOp extends Operator {
         endmembers[0] = em;
 
 
-        final Band[] probabilityBands = findBands(clusterMapProduct, "probability");
+        final Band[] probabilityBands = OpUtils.findBands(clusterMapProduct, "probability");
         System.out.println("probabilityBands.length = " + probabilityBands.length);
         ///////////////////////
         final double[][] meanReflectances = new double[probabilityBands.length][reflectanceBands.length];
@@ -216,27 +216,6 @@ public class ExtractEndmembersOp extends Operator {
         }
 
         return false;
-    }
-
-    private static Band[] findBands(Product product, String prefix) {
-        return findBands(product, prefix, new BandFilter() {
-            @Override
-            public boolean accept(Band band) {
-                return true;
-            }
-        });
-    }
-
-    private static Band[] findBands(Product product, String prefix, BandFilter filter) {
-        final List<Band> bandList = new ArrayList<Band>();
-
-        for (final Band band : product.getBands()) {
-            if (band.getName().startsWith(prefix) && filter.accept(band)) {
-                bandList.add(band);
-            }
-        }
-
-        return bandList.toArray(new Band[bandList.size()]);
     }
 
     public static class Spi extends OperatorSpi {

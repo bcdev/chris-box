@@ -202,7 +202,7 @@ for ind_img = 0, num_img - 1 do begin
     if cnt gt 0 then msk_arr[i*tot_pix + wh] = 1
   endfor
 
-  if img_cl_mask[ind_img] ne '' then begin
+  if img_cl_mask[ind_img] ne '' then begin                                                                                smooth
     openr, 1, path_dat + img_cl_mask[ind_img]
     readu, 1, dum_img3
     close, 1

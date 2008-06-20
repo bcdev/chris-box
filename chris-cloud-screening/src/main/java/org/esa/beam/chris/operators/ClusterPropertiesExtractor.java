@@ -35,7 +35,7 @@ public class ClusterPropertiesExtractor {
         final int h = clusterMapBand.getRasterHeight();
         final int w = clusterMapBand.getRasterWidth();
 
-        final Band[] probabilityBands = findBands(clusterMapProduct, "probability");
+        final Band[] probabilityBands = OpUtils.findBands(clusterMapProduct, "probability");
 
         final double[] brightnesses = new double[probabilityBands.length];
         final double[] occurrences = new double[probabilityBands.length];
@@ -64,17 +64,4 @@ public class ClusterPropertiesExtractor {
 
         return new ClusterProperties(brightnesses, occurrences);
     }
-
-    private static Band[] findBands(Product product, String prefix) {
-        final List<Band> bandList = new ArrayList<Band>(product.getNumBands());
-
-        for (final Band band : product.getBands()) {
-            if (band.getName().startsWith(prefix)) {
-                bandList.add(band);
-            }
-        }
-
-        return bandList.toArray(new Band[bandList.size()]);
-    }
-
 }

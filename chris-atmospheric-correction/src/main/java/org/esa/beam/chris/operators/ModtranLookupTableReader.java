@@ -37,7 +37,7 @@ class ModtranLookupTableReader {
 
     @SuppressWarnings({"ConstantConditions"})
     public ModtranLookupTable readLookupTable() throws IOException {
-        final ImageInputStream iis = getResourceAsImageInputStream("chrisbox-ac-lut-formatted-1nm.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("chrisbox-ac-lut-formatted-1nm.img");
         iis.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 
         try {
@@ -98,31 +98,6 @@ class ModtranLookupTableReader {
             } catch (IOException e) {
                 // ignore
             }
-        }
-    }
-
-    /**
-     * Returns an {@link javax.imageio.stream.ImageInputStream} for a resource file of interest.
-     *
-     * @param name the name of the resource file of interest.
-     *
-     * @return the image input stream.
-     *
-     * @throws org.esa.beam.framework.gpf.OperatorException
-     *          if the resource could not be found or the
-     *          image input stream could not be created.
-     */
-    private ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final InputStream is = getClass().getResourceAsStream(name);
-
-        if (is == null) {
-            throw new OperatorException(MessageFormat.format("resource {0} not found", name));
-        }
-        try {
-            return new FileCacheImageInputStream(is, null);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not create image input stream for resource {0}", name), e);
         }
     }
 }

@@ -71,8 +71,8 @@ public class PerformAtmosphericCorrectionOp extends Operator {
     private boolean wvMap;
 
     @Parameter(defaultValue = "0.05",
-               description = "Threshold applicable to surface reflectance and WV retrieval.")
-    private double cldReflThre;
+               description = "Cloud probability threshold for generating the cloud mask.")
+    private double cloudProbabilityThreshold;
 
     private transient ModtranLookupTable lut;
 
@@ -81,7 +81,7 @@ public class PerformAtmosphericCorrectionOp extends Operator {
     }
 
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle,
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
         // Read MODTRAN lookup table if not already done
         synchronized (this) {
@@ -101,6 +101,9 @@ public class PerformAtmosphericCorrectionOp extends Operator {
         lut = null;
     }
 
+    private void acMode24(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                 ProgressMonitor pm) {
+    }
 
     public static class Spi extends OperatorSpi {
 

@@ -12,10 +12,10 @@
     <packaging>jar</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
-    <artifactId>chris-noise-reduction</artifactId>
-    <name>CHRIS/PROBA Noise Reduction</name>
-    <version>1.1-SNAPSHOT</version>
-    <description>CHRIS/PROBA Noise Reduction</description>
+    <artifactId>chris-util</artifactId>
+    <name>CHRIS/PROBA Utilities</name>
+    <version>1.0-SNAPSHOT</version>
+    <description>CHRIS/PROBA Utilities</description>
 
     <dependencies>
         <dependency>
@@ -32,20 +32,11 @@
         </dependency>
         <dependency>
             <groupId>org.esa.beam</groupId>
-            <artifactId>beam-gpf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam</groupId>
-            <artifactId>beam-visat</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam</groupId>
             <artifactId>beam-chris-reader</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.esa.beam.chris</groupId>
-            <artifactId>chris-util</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>org.esa.beam</groupId>
+            <artifactId>beam-gpf</artifactId>
         </dependency>
     </dependencies>
 

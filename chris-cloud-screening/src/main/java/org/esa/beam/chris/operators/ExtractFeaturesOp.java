@@ -2,10 +2,12 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.operators.internal.*;
+import org.esa.beam.chris.operators.internal.BandComparator;
+import org.esa.beam.chris.operators.internal.InclusiveBandFilter;
+import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
+import org.esa.beam.chris.operators.internal.StrictlyInclusiveBandFilter;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
@@ -17,11 +19,9 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.io.IOException;
-import java.io.InputStream;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -37,10 +37,10 @@ import java.util.Map;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ExtractFeatures",
-        version = "1.0",
-        authors = "Ralf Quast",
-        copyright = "(c) 2007 by Brockmann Consult",
-        description = "Extracts features from TOA reflectances needed for cloud screening.")
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2007 by Brockmann Consult",
+                  description = "Extracts features from TOA reflectances needed for cloud screening.")
 public class ExtractFeaturesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
@@ -60,7 +60,7 @@ public class ExtractFeaturesOp extends Operator {
     private transient Band wv;
 
     private transient Band[] surfaceBands;
-    private transient Band[] visBands;      
+    private transient Band[] visBands;
     private transient Band[] nirBands;
 
     private transient boolean canComputeAtmosphericFeatures;
@@ -81,25 +81,25 @@ public class ExtractFeaturesOp extends Operator {
 
         if (canComputeAtmosphericFeatures) {
             interpolatorO2 = new BandInterpolator(reflectanceBands,
-                    new double[]{760.625, 755.0, 770.0, 738.0, 755.0, 770.0, 788.0});
+                                                  new double[]{760.625, 755.0, 770.0, 738.0, 755.0, 770.0, 788.0});
             interpolatorWv = new BandInterpolator(reflectanceBands,
-                    new double[]{944.376, 895.0, 960.0, 865.0, 890.0, 985.0, 1100.0});
+                                                  new double[]{944.376, 895.0, 960.0, 865.0, 890.0, 985.0, 1100.0});
             final double[][] transmittanceTable = readTransmittanceTable();
             trO2 = getAverageValue(transmittanceTable, interpolatorO2.getInnerWavelength(),
-                    interpolatorO2.getInnerBandwidth());
+                                   interpolatorO2.getInnerBandwidth());
             trWv = getAverageValue(transmittanceTable, interpolatorWv.getInnerWavelength(),
-                    interpolatorWv.getInnerBandwidth());
+                                   interpolatorWv.getInnerBandwidth());
 
-            final double sza = getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
-            final double vza = getAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE, 0.0);
+            final double sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+            final double vza = OpUtils.getAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE, 0.0);
             mu = 1.0 / (1.0 / cos(toRadians(sza)) + 1.0 / cos(toRadians(vza)));
         }
 
         final String name = sourceProduct.getName().replace("_REFL", "_FEAT");
         final String type = sourceProduct.getProductType().replace("_REFL", "_FEAT");
         targetProduct = new Product(name, type,
-                sourceProduct.getSceneRasterWidth(),
-                sourceProduct.getSceneRasterHeight());
+                                    sourceProduct.getSceneRasterWidth(),
+                                    sourceProduct.getSceneRasterHeight());
 
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
@@ -172,16 +172,16 @@ public class ExtractFeaturesOp extends Operator {
         }
         try {
             computeSurfaceFeatures(br, wh, targetTileMap, targetRectangle, surfaceBands,
-                    SubProgressMonitor.create(pm, 2));
+                                   SubProgressMonitor.create(pm, 2));
             computeSurfaceFeatures(visBr, visWh, targetTileMap, targetRectangle, visBands,
-                    SubProgressMonitor.create(pm, 2));
+                                   SubProgressMonitor.create(pm, 2));
             computeSurfaceFeatures(nirBr, nirWh, targetTileMap, targetRectangle, nirBands,
-                    SubProgressMonitor.create(pm, 2));
+                                   SubProgressMonitor.create(pm, 2));
             if (canComputeAtmosphericFeatures) {
                 computeAtmosphericFeature(o2, targetTileMap, targetRectangle, interpolatorO2, trO2,
-                        SubProgressMonitor.create(pm, 1));
+                                          SubProgressMonitor.create(pm, 1));
                 computeAtmosphericFeature(wv, targetTileMap, targetRectangle, interpolatorWv, trWv,
-                        SubProgressMonitor.create(pm, 1));
+                                          SubProgressMonitor.create(pm, 1));
             }
         } finally {
             pm.done();
@@ -300,7 +300,8 @@ public class ExtractFeaturesOp extends Operator {
     }
 
     private void computeAtmosphericFeature(Band targetBand, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                           BandInterpolator bandInterpolator, double transmittance, ProgressMonitor pm) {
+                                           BandInterpolator bandInterpolator, double transmittance,
+                                           ProgressMonitor pm) {
         pm.beginTask("computing optical path...", targetRectangle.height);
         try {
             final Band sourceBand = bandInterpolator.getInnerBand();
@@ -403,56 +404,9 @@ public class ExtractFeaturesOp extends Operator {
         }
     }
 
-    /**
-     * Returns a CHRIS annotation for a product of interest.
-     *
-     * @param product the product of interest.
-     * @param name    the name of the CHRIS annotation.
-     * @return the annotation or {@code null} if the annotation could not be found.
-     * @throws OperatorException if the annotation could not be read.
-     */
-    // todo -- move
-    private static String getAnnotationString(Product product, String name) throws OperatorException {
-        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-
-        if (element == null) {
-            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
-        }
-        return element.getAttributeString(name, null);
-    }
-
-    // todo -- move
-    private static double getAnnotationDouble(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
-
-        try {
-            return Double.parseDouble(string);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
-        }
-    }
-
-    // todo -- move
-    private static double getAnnotation(Product product, String name, double defaultValue) {
-        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-
-        if (element == null) {
-            return defaultValue;
-        }
-        final String string = element.getAttributeString(name, null);
-        if (string == null) {
-            return defaultValue;
-        }
-        try {
-            return Double.parseDouble(string);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
-        }
-    }
-
     // todo - generalize
     static double[][] readTransmittanceTable() throws OperatorException {
-        final ImageInputStream iis = getResourceAsImageInputStream("nir-transmittance.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("nir-transmittance.img");
 
         try {
             final int length = iis.readInt();
@@ -471,29 +425,6 @@ public class ExtractFeaturesOp extends Operator {
             } catch (IOException e) {
                 // ignore
             }
-        }
-    }
-
-    // todo - move
-    /**
-     * Returns an {@link ImageInputStream} for a resource file of interest.
-     *
-     * @param name the name of the resource file of interest.
-     * @return the image input stream.
-     * @throws OperatorException if the resource could not be found or the
-     *                           image input stream could not be created.
-     */
-    private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final InputStream is = ExtractFeaturesOp.class.getResourceAsStream(name);
-
-        if (is == null) {
-            throw new OperatorException(MessageFormat.format("resource {0} not found", name));
-        }
-        try {
-            return new FileCacheImageInputStream(is, null);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not create image input stream for resource {0}", name), e);
         }
     }
 
@@ -516,7 +447,7 @@ public class ExtractFeaturesOp extends Operator {
 
         public BandInterpolator(Band[] bands, double[] wavelengths) {
             innerBand = findProximateBand(bands, wavelengths[0], new StrictlyInclusiveBandFilter(wavelengths[1],
-                    wavelengths[2]));
+                                                                                                 wavelengths[2]));
 
             infBands = findBands(bands, new StrictlyInclusiveBandFilter(wavelengths[3], wavelengths[4]));
             supBands = findBands(bands, new StrictlyInclusiveBandFilter(wavelengths[5], wavelengths[6]));

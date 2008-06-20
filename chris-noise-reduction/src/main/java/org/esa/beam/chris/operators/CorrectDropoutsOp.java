@@ -85,7 +85,7 @@ public class CorrectDropoutsOp extends Operator {
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
-        spectralBandCount = getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
+        spectralBandCount = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         sourceRciBands = new Band[spectralBandCount];
         sourceMskBands = new Band[spectralBandCount];
@@ -226,45 +226,13 @@ public class CorrectDropoutsOp extends Operator {
 
     private static void assertValidity(Product product) throws OperatorException {
         try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+            OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not a CHRIS product", product.getName()), e);
         }
         // todo - add further validation criteria
     }
-
-    /**
-     * Returns a CHRIS annotation for a product of interest.
-     *
-     * @param product the product of interest.
-     * @param name    the name of the CHRIS annotation.
-     *
-     * @return the annotation or {@code null} if the annotation could not be found.
-     *
-     * @throws OperatorException if the annotation could not be read.
-     */
-    // todo -- move
-    private static String getAnnotationString(Product product, String name) throws OperatorException {
-        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-
-        if (element == null) {
-            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
-        }
-        return element.getAttributeString(name, null);
-    }
-
-    // todo -- move
-    private static int getAnnotationInt(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
-
-        try {
-            return Integer.parseInt(string);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
-        }
-    }
-
 
     public static class Spi extends OperatorSpi {
 

@@ -24,12 +24,17 @@
 
     <modules>
         <module>chris-bootstrap</module>
+        <module>chris-util</module>		
         <module>chris-atmospheric-correction</module>
         <module>chris-cloud-screening</module>
+		<!-- not yet available
         <module>chris-geometric-correction</module>
+		-->
         <module>chris-noise-reduction</module>
         <module>chris-reflectance-computation</module>
+		<!-- not yet available
         <module>chris-aod-retrieval</module>
+		-->
     </modules>
 
     <dependencyManagement>

@@ -34,11 +34,9 @@ import org.esa.beam.framework.gpf.annotations.SourceProducts;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.io.IOException;
-import java.io.InputStream;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -95,7 +93,7 @@ public class ComputeDestripingFactorsOp extends Operator {
             assertValidity(sourceProduct);
         }
 
-        spectralBandCount = getAnnotationInt(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
+        spectralBandCount = OpUtils.getAnnotationInt(sourceProducts[0], ChrisConstants.ATTR_NAME_NUMBER_OF_BANDS);
 
         // set up source bands
         sourceRciBands = new Band[spectralBandCount][sourceProducts.length];
@@ -136,19 +134,19 @@ public class ComputeDestripingFactorsOp extends Operator {
             targetBands[i].setSpectralWavelength(sourceRciBands[i][0].getSpectralWavelength());
         }
 
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE,
-                            getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE));
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE,
-                            getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
+        OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE,
+                                    OpUtils.getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE));
+        OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE,
+                                    OpUtils.getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
         final StringBuilder sb = new StringBuilder("Computed from ");
         for (int i = 0; i < sourceProducts.length; ++i) {
             if (i > 0) {
                 sb.append(", ");
             }
-            sb.append(getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
+            sb.append(OpUtils.getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
             sb.append("°");
         }
-        setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION, sb.toString());
+        OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION, sb.toString());
         final MetadataElement targetBandInfo = new MetadataElement(ChrisConstants.BAND_INFORMATION_NAME);
         ProductUtils.copyMetadata(sourceProducts[0].getMetadataRoot().getElement(ChrisConstants.BAND_INFORMATION_NAME),
                                   targetBandInfo);
@@ -283,7 +281,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         final double[] y = table[1];
 
         // shift and scale the reference profile according to actual temperature
-        final double temperature = getAnnotationDouble(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
+        final double temperature = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE);
         final double scale = G1 * temperature + G2;
         final double shift = S1 * temperature + S2;
         for (int i = 0; i < x.length; ++i) {
@@ -292,7 +290,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         }
 
         int ppc;
-        if ("1".equals(getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE))) {
+        if ("1".equals(OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE))) {
             ppc = 2;
         } else {
             ppc = 1;
@@ -441,7 +439,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         thresholdMap.put("4", 0.08);
         thresholdMap.put("5", 0.08);
 
-        final String mode = getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        final String mode = OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
 
         if (thresholdMap.containsKey(mode)) {
             return thresholdMap.get(mode);
@@ -453,7 +451,7 @@ public class ComputeDestripingFactorsOp extends Operator {
 
     private static void assertValidity(Product product) throws OperatorException {
         try {
-            getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+            OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
                     "product ''{0}'' is not a CHRIS product", product.getName()), e);
@@ -461,71 +459,9 @@ public class ComputeDestripingFactorsOp extends Operator {
         // todo - add further validation criteria
     }
 
-    // todo -- move
-    private static double getAnnotationDouble(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
-        final int endIndex = string.trim().indexOf(" ");
-
-        try {
-            if (endIndex > 0) {
-                return Double.parseDouble(string.substring(0, endIndex));
-            } else {
-                return Double.parseDouble(string);
-            }
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
-        }
-    }
-
-    // todo -- move
-    private static int getAnnotationInt(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
-        final int endIndex = string.trim().indexOf(" ");
-                                   
-        try {
-            if (endIndex > 0) {
-                return Integer.parseInt(string.substring(0, endIndex));
-            } else {
-                return Integer.parseInt(string);
-            }
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
-        }
-    }
-
-    /**
-     * Returns a CHRIS annotation for a product of interest.
-     *
-     * @param product the product of interest.
-     * @param name    the name of the CHRIS annotation.
-     *
-     * @return the annotation or {@code null} if the annotation could not be found.
-     *
-     * @throws OperatorException if the annotation could not be read.
-     */
-    // todo -- move
-    private static String getAnnotationString(Product product, String name) throws OperatorException {
-        final MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-
-        if (element == null) {
-            throw new OperatorException(MessageFormat.format("could not get CHRIS annotation ''{0}''", name));
-        }
-        return element.getAttributeString(name, null);
-    }
-
-    // todo -- move
-    private static void setAnnotationString(Product product, String name, String value) throws OperatorException {
-        MetadataElement element = product.getMetadataRoot().getElement(ChrisConstants.MPH_NAME);
-        if (element == null) {
-            element = new MetadataElement(ChrisConstants.MPH_NAME);
-            product.getMetadataRoot().addElement(element);
-        }
-        element.setAttributeString(name, value);
-    }
-
     // todo - generalize
     static double[][] readSlitVsProfileTable() throws OperatorException {
-        final ImageInputStream iis = getResourceAsImageInputStream("slit-vs-profile.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("slit-vs-profile.img");
 
         try {
             final int length = iis.readInt();
@@ -544,30 +480,6 @@ public class ComputeDestripingFactorsOp extends Operator {
             } catch (IOException e) {
                 // ignore
             }
-        }
-    }
-
-    /**
-     * Returns an {@link ImageInputStream} for a resource file of interest.
-     *
-     * @param name the name of the resource file of interest.
-     *
-     * @return the image input stream.
-     *
-     * @throws OperatorException if the resource could not be found or the
-     *                           image input stream could not be created.
-     */
-    private static ImageInputStream getResourceAsImageInputStream(String name) throws OperatorException {
-        final InputStream is = ComputeDestripingFactorsOp.class.getResourceAsStream(name);
-
-        if (is == null) {
-            throw new OperatorException(MessageFormat.format("resource {0} not found", name));
-        }
-        try {
-            return new FileCacheImageInputStream(is, null);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format(
-                    "could not create image input stream for resource {0}", name), e);
         }
     }
 
