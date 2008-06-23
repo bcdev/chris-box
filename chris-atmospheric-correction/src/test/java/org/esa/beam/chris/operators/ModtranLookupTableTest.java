@@ -47,22 +47,22 @@ public class ModtranLookupTableTest extends TestCase {
 
     private void checkLookupTable1() {
         double[] values;
-        // vza  = 20.0
-        // sza  = 35.0
-        // elev = 0.3   target elevation
-        // aot  = 0.2   AOT at 550nm
-        // raa  = 145.0 relative azimuth angle
+        // vza = 20.0
+        // sza = 35.0
+        // alt = 0.3   target elevation
+        // aot = 0.2   AOT at 550nm
+        // ada = 145.0 relative azimuth angle
         values = lut.getLut1().getValues(20.0, 35.0, 0.3, 0.2, 145.0);
 
         assertEquals(lut.getWavelengthCount(), values.length);
         assertEquals(0.002960650, values[104], 0.5E-8);
         assertEquals(0.000294274, values[472], 0.5E-9);
 
-        // vza  = 40.0
-        // sza  = 55.0
-        // elev = 0.1  target elevation
-        // aot  = 0.3  AOT at 550nm
-        // raa  = 45.0 relative azimuth angle
+        // vza = 40.0
+        // sza = 55.0
+        // alt = 0.1  target elevation
+        // aot = 0.3  AOT at 550nm
+        // ada = 45.0 relative azimuth angle
         values = lut.getLut1().getValues(40.0, 55.0, 0.1, 0.3, 45.0);
 
         assertEquals(lut.getWavelengthCount(), values.length);
@@ -74,11 +74,11 @@ public class ModtranLookupTableTest extends TestCase {
         final MatrixFactory matrixFactory = new RowMajorMatrixFactory();
 
         double[][] values;
-        // vza  = 20.0
-        // sza  = 35.0
-        // elev = 0.3  target elevation
-        // aot  = 0.2  AOT at 550nm
-        // cwv  = 2.0  integrated water vapour
+        // vza = 20.0
+        // sza = 35.0
+        // alt = 0.3  target elevation
+        // aot = 0.2  AOT at 550nm
+        // cwv = 2.0  integrated water vapour
         values = matrixFactory.createMatrix(lut.getWavelengthCount(), lut.getParameterCount2(),
                                             lut.getLut2().getValues(20.0, 35.0, 0.3, 0.2, 2.0));
 
@@ -92,11 +92,11 @@ public class ModtranLookupTableTest extends TestCase {
         assertEquals(0.03657480, values[627][2], 0.5E-7);
         assertEquals(0.07540260, values[627][3], 0.5E-7);
 
-        // vza  = 40.0
-        // sza  = 55.0
-        // elev = 0.1  target elevation
-        // aot  = 0.3  AOT at 550nm
-        // cwv  = 3.0  integrated water vapour
+        // vza = 40.0
+        // sza = 55.0
+        // alt = 0.1  target elevation
+        // aot = 0.3  AOT at 550nm
+        // cwv = 3.0  integrated water vapour
         values = matrixFactory.createMatrix(lut.getWavelengthCount(), lut.getParameterCount2(),
                                             lut.getLut2().getValues(40.0, 55.0, 0.1, 0.3, 3.0));
 

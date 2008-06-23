@@ -3,10 +3,7 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.MetadataElement;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.RasterDataNode;
+import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.Tile;
@@ -17,6 +14,7 @@ import java.awt.*;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -176,6 +174,42 @@ class OpUtils {
     }
 
     /**
+     * Returns the azimuthal difference angle between view and sun directions.
+     *
+     * @param vaa the view azimuth angle (degree).
+     * @param saa the sun azimuth angle (degree).
+     *
+     * @return the azimuthal difference angle (degree).
+     */
+    public static double getAzimuthalDifferenceAngle(double vaa, double saa) {
+        final double ada = Math.abs(vaa - saa);
+
+        if (ada > 180.0) {
+            return 360.0 - ada;
+        }
+
+        return ada;
+    }
+
+    /**
+     * Returns the acquisition day (of year) for a product of interest.
+     *
+     * @param product the product of interst.
+     *
+     * @return the acquisition day (of year).
+     */
+    public static int getAcquisitionDay(Product product) {
+        final ProductData.UTC utc = product.getStartTime();
+
+        if (utc != null) {
+            return utc.getAsCalendar().get(Calendar.DAY_OF_YEAR);
+        } else {
+            throw new OperatorException(MessageFormat.format(
+                    "no date for product ''{0}''", product.getName()));
+        }
+    }
+
+    /**
      * Returns the central wavelenghts for any spectral bands of interest.
      *
      * @param bands the bands of interest.
@@ -207,6 +241,20 @@ class OpUtils {
         }
 
         return bandwidths;
+    }
+
+    /**
+     * Returns the correction factor for the solar irradiance due to the elliptical
+     * orbit of the Sun.
+     *
+     * @param day the day (of year) of interest.
+     *
+     * @return the correction factor.
+     */
+    public static double getSolarIrradianceCorrectionFactor(int day) {
+        final double d = 1.0 - 0.01673 * Math.cos(Math.toRadians(0.9856 * (day - 4)));
+
+        return 1.0 / (d * d);
     }
 
     /**

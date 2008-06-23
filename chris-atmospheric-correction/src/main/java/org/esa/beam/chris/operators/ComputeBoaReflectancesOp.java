@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -82,8 +83,22 @@ public class ComputeBoaReflectancesOp extends Operator {
     private transient Band[] reflBands;
     private transient Band cloudProbability;
 
-    private transient RenderedImage saturationMaskImage;
+    private transient RenderedImage spectrumMaskImage;
+
     private transient ModtranLookupTable lut;
+    private transient double[][] lutFilterMatrix;
+
+    private double vza;
+    private double sza;
+    private double ada;
+    private double alt;
+    private double cwv;
+    private double radianceConversionFactor;
+    private double[][] lutValues;
+
+    private double[] lpwInt;
+    private double[] eglInt;
+    private double[] sabInt;
 
     @Override
     public void initialize() throws OperatorException {
@@ -93,7 +108,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         cloudProbability = sourceProduct.getBand("cloud_product");
 
         // saturation mask
-        saturationMaskImage = SpectrumMaskOpImage.createImage(maskBands);
+        spectrumMaskImage = SpectrumMaskOpImage.createImage(maskBands);
 
         final Product targetProduct = createTargetProduct();
         setTargetProduct(targetProduct);
@@ -102,11 +117,39 @@ public class ComputeBoaReflectancesOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
-        // Read MODTRAN lookup table if not already done
         synchronized (this) {
             if (lut == null) {
                 try {
                     lut = new ModtranLookupTableReader().readLookupTable();
+                    lutFilterMatrix = lut.createFilterMatrix(OpUtils.getCentralWavelenghts(radianceBands),
+                                                             OpUtils.getBandwidths(radianceBands));
+
+                    final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                                   ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
+                    final double saa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                                   ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
+                    vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
+                    sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+                    ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
+                    alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+                    // todo - properly initialize water vapour column
+                    cwv = wvIni;
+
+                    final double cosSza = Math.cos(Math.toRadians(sza));
+
+                    lutValues = lut.getValues(vza, sza, ada, alt, aot550, cwv, lutFilterMatrix);
+                    lpwInt = new double[lutValues.length];
+                    eglInt = new double[lutValues.length];
+                    sabInt = new double[lutValues.length];
+
+                    for (int i = 0; i < lutValues.length; ++i) {
+                        lpwInt[i] = 1.0E4 * lutValues[i][0];
+                        eglInt[i] = 1.0E4 * (lutValues[i][1] * 1.0E4 * cosSza + lutValues[i][2]);
+                        sabInt[i] = lutValues[i][3];
+                    }
+
+                    final int day = OpUtils.getAcquisitionDay(sourceProduct);
+                    radianceConversionFactor = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
                 } catch (IOException e) {
                     throw new OperatorException(e.getMessage());
                 }
@@ -118,9 +161,10 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     @Override
     public void dispose() {
+        lutFilterMatrix = null;
         lut = null;
 
-        saturationMaskImage = null;
+        spectrumMaskImage = null;
 
         reflBands = null;
         maskBands = null;
@@ -171,20 +215,22 @@ public class ComputeBoaReflectancesOp extends Operator {
         pm.beginTask("Computing surface reflectances...", tileWork * reflBands.length);
 
         try {
-
-            final Raster saturationMaskTile = saturationMaskImage.getData(targetRectangle);
+            final Raster saturationMaskTile = spectrumMaskImage.getData(targetRectangle);
             final Tile cloudProbabilityTile = getSourceTile(this.cloudProbability, targetRectangle, pm);
 
             for (int i = 0; i < radianceBands.length; i++) {
+                final Tile sourceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
                 final Tile targetTile = targetTileMap.get(radianceBands[i]);
 
                 for (final Tile.Pos pos : cloudProbabilityTile) {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
-                    if (saturationMaskTile.getSample(pos.x, pos.y, 0) != 1) {
+                    if ((saturationMaskTile.getSample(pos.x, pos.y, 0) & 0x0002) != 2) {
                         if (cloudProbabilityTile.getSampleDouble(pos.x, pos.y) < cloudProbabilityThreshold) {
-                            // todo - invert lambertian equation
+                            final double xterm = Math.PI * (sourceTile.getSampleDouble(pos.x,
+                                                                                       pos.y) * radianceConversionFactor) / eglInt[i];
+                            targetTile.setSample(pos.x, pos.y, xterm / (1.0 + sabInt[i] * xterm));
                         }
                     }
                     if (pos.x == targetRectangle.x) {

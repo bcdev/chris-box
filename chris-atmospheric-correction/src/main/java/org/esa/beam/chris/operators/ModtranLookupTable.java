@@ -46,12 +46,12 @@ class ModtranLookupTable {
     /**
      * Returns an interpolated matrix of output parameters for given input parameters.
      *
-     * @param vza  the view zenith angle (degree).
-     * @param sza  the solar zenith angle (degree).
-     * @param raa  the relative azimuth angle (degree).
-     * @param elev the target elevation (km).
-     * @param aot  the aerosol optical thickness at 550 nm.
-     * @param cwv  the integrated water vapour column (g cm-2).
+     * @param vza the view zenith angle (degree).
+     * @param sza the solar zenith angle (degree).
+     * @param ada the relative azimuth angle (degree).
+     * @param alt the target altitude (km).
+     * @param aot the aerosol optical thickness at 550 nm.
+     * @param cwv the integrated water vapour column (g cm-2).
      *
      * @return the output parameter matrix. The number of rows is equal to {@code wavelenghtCount}
      *         and the number of columns matches {@code parameterCount}. The tabulated atmospheric
@@ -83,9 +83,9 @@ class ModtranLookupTable {
      *         </tr>
      *         </table>
      */
-    public final double[][] getValues(double vza, double sza, double raa, double elev, double aot, double cwv) {
-        final double[] values1 = lut1.getValues(vza, sza, elev, aot, raa);
-        final double[] values2 = lut2.getValues(vza, sza, elev, aot, cwv);
+    public final double[][] getValues(double vza, double sza, double ada, double alt, double aot, double cwv) {
+        final double[] values1 = lut1.getValues(vza, sza, alt, aot, ada);
+        final double[] values2 = lut2.getValues(vza, sza, alt, aot, cwv);
 
         final double[][] matrix = new double[wavelengths.length][parameterCount1 + parameterCount2];
 
@@ -103,8 +103,8 @@ class ModtranLookupTable {
      *
      * @param vza          the view zenith angle (degree).
      * @param sza          the solar zenith angle (degree).
-     * @param raa          the relative azimuth angle (degree).
-     * @param elev         the target elevation (km).
+     * @param ada          the relative azimuth angle (degree).
+     * @param alt          the target altitude (km).
      * @param aot          the aerosol optical thickness at 550 nm.
      * @param cwv          the integrated water vapour column (g cm-2).
      * @param filterMatrix the filter matrix constructed from a set of CHRIS spectral bands.
@@ -112,9 +112,9 @@ class ModtranLookupTable {
      * @return the output parameter matrix. The number of rows is equal to the number of rows in
      *         {@code filterMatrix} and the number of columns matches {@code parameterCount}.
      */
-    public final double[][] getValues(double vza, double sza, double raa, double elev, double aot, double cwv,
+    public final double[][] getValues(double vza, double sza, double ada, double alt, double aot, double cwv,
                                       double[][] filterMatrix) {
-        return multiply(getValues(vza, sza, raa, elev, aot, cwv), filterMatrix);
+        return multiply(getValues(vza, sza, ada, alt, aot, cwv), filterMatrix);
     }
 
     public final int getParameterCount() {
@@ -175,7 +175,8 @@ class ModtranLookupTable {
             // calculate weights for wavelenghts within a spectral band
             for (int k = 0; k < wavelengthCount; ++k) {
                 if (Math.abs(centralWavelengths[i] - wavelengths[k]) <= 2.0 * bandwidths[k]) {
-                    filterMatrix[i][k] = Math.exp(-Math.pow(Math.abs(centralWavelengths[i] - wavelengths[k]) / (bandwidths[i] * cArr[i]), eArr[i]));
+                    filterMatrix[i][k] = Math.exp(-Math.pow(
+                            Math.abs(centralWavelengths[i] - wavelengths[k]) / (bandwidths[i] * cArr[i]), eArr[i]));
                 }
             }
             // normalize weigths

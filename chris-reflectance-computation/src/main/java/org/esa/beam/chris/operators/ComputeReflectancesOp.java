@@ -21,7 +21,6 @@ import java.awt.*;
 import java.io.IOException;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +59,7 @@ public class ComputeReflectancesOp extends Operator {
         final double solarZenithAngle = OpUtils.getAnnotationDouble(sourceProduct,
                                                                     ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         final double[][] table = readThuillierTable();
-        final int day = getAcquisitionDay(sourceProduct);
+        final int day = OpUtils.getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
 
         final String name = sourceProduct.getName().replace("_NR", "_REFL");
@@ -231,22 +230,10 @@ public class ComputeReflectancesOp extends Operator {
     private static void computeSolarIrradianceTable(double[][] table, int day) {
         final double[] irradiances = table[1];
 
-        final double e = 0.01673;
-        final double factor = 1.0 / sqr(1.0 - e * cos(toRadians(0.9856 * (day - 4))));
+        final double factor = OpUtils.getSolarIrradianceCorrectionFactor(day);
 
         for (int i = 0; i < irradiances.length; ++i) {
             irradiances[i] *= factor;
-        }
-    }
-
-    private static int getAcquisitionDay(Product product) {
-        final ProductData.UTC utc = product.getStartTime();
-
-        if (utc != null) {
-            return utc.getAsCalendar().get(Calendar.DAY_OF_YEAR);
-        } else {
-            throw new OperatorException(MessageFormat.format(
-                    "no date for product ''{0}''", product.getName()));
         }
     }
 
@@ -272,10 +259,6 @@ public class ComputeReflectancesOp extends Operator {
                 // ignore
             }
         }
-    }
-
-    private static double sqr(double x) {
-        return x == 0.0 ? 0.0 : x * x;
     }
 
 
