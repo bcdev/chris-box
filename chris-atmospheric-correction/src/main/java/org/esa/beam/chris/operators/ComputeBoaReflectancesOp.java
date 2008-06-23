@@ -93,7 +93,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         cloudProbability = sourceProduct.getBand("cloud_product");
 
         // saturation mask
-        saturationMaskImage = SaturationMaskOpImage.createImage(maskBands);
+        saturationMaskImage = SpectrumMaskOpImage.createImage(maskBands);
 
         final Product targetProduct = createTargetProduct();
         setTargetProduct(targetProduct);
