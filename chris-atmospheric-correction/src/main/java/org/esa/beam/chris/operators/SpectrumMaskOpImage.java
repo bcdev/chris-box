@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.*;
 import java.awt.*;
@@ -41,7 +42,11 @@ class SpectrumMaskOpImage extends PointOpImage {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band maskBand : maskBands) {
-            sourceImageVector.add(maskBand.getImage());
+            RenderedImage image = maskBand.getImage();
+            if (image == null) {
+                image = new RasterDataNodeOpImage(maskBand);
+            }
+            sourceImageVector.add(image);
         }
 
         int w = maskBands[0].getRasterWidth();

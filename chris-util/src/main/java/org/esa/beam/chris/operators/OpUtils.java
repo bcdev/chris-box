@@ -27,6 +27,36 @@ import java.util.List;
 class OpUtils {
 
     /**
+     * Returns the index of the band whose spectral wavelength is closest to the given
+     * wavelength but not farther away than the given tolerance.
+     *
+     * @param bands      the bands.
+     * @param wavelength the wavelength
+     * @param tolerance  the tolerance.
+     *
+     * @return the index of the band index whose spectral wavelength is closest to
+     *         {@code wavelength} or {@code -1} if the band with the closest wavelength
+     *         is farther away than {@code tolerance}.
+     */
+    public static int findBandIndex(final Band[] bands, final double wavelength, final double tolerance) {
+        double minDelta = Math.abs(wavelength - bands[0].getSpectralWavelength());
+        int minIndex = 0;
+
+        for (int i = 1; i < bands.length; ++i) {
+            final double delta = Math.abs(wavelength - bands[i].getSpectralWavelength());
+            if (delta < minDelta) {
+                minDelta = delta;
+                minIndex = i;
+            }
+        }
+        if (minDelta > tolerance) {
+            minIndex = -1;
+        }
+
+        return minIndex;
+    }
+
+    /**
      * Returns an array of bands in a product of interest whose names start with
      * a given prefix.
      *

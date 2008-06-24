@@ -17,6 +17,8 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.util.math.Array;
 import org.esa.beam.util.math.VectorLookupTable;
 
+import static java.lang.Math.*;
+
 /**
  * MODTRAN lookup table used for atmospheric correction.
  *
@@ -148,15 +150,14 @@ class ModtranLookupTable {
     /**
      * Creates a filter matrix for a given set of CHRIS spectral bands.
      *
-     * @param centralWavelengths the central wavelenghts.
-     * @param bandwidths         the bandwidths.
+     * @param bandWavelengths the central wavelenghts.
+     * @param bandwidths      the bandwidths.
      *
      * @return the filter matrix.
      */
-    public final double[][] createFilterMatrix(double[] centralWavelengths, double[] bandwidths) {
+    public final double[][] createFilterMatrix(double[] bandWavelengths, double[] bandwidths) {
         final int wavelengthCount = wavelengths.length;
-        final int bandCount = centralWavelengths.length;
-
+        final int bandCount = bandWavelengths.length;
 
         final double expMax = 6.0;
         final double expMin = 2.0;
@@ -166,17 +167,17 @@ class ModtranLookupTable {
 
         for (int i = 0; i < bandCount; ++i) {
             eArr[i] = expMax + ((expMin - expMax) * i) / (bandCount - 1);
-            cArr[i] = Math.pow(1.0 / (Math.pow(2.0, eArr[i]) * Math.log(2.0)), 1.0 / eArr[i]);
+            cArr[i] = pow(1.0 / (pow(2.0, eArr[i]) * log(2.0)), 1.0 / eArr[i]);
         }
 
         final double[][] filterMatrix = new double[bandCount][wavelengthCount];
 
         for (int i = 0; i < bandCount; ++i) {
-            // calculate weights for wavelenghts within a spectral band
+            // calculate weights
             for (int k = 0; k < wavelengthCount; ++k) {
-                if (Math.abs(centralWavelengths[i] - wavelengths[k]) <= 2.0 * bandwidths[k]) {
-                    filterMatrix[i][k] = Math.exp(-Math.pow(
-                            Math.abs(centralWavelengths[i] - wavelengths[k]) / (bandwidths[i] * cArr[i]), eArr[i]));
+                if (abs(bandWavelengths[i] - wavelengths[k]) <= (2.0 * bandwidths[i])) {
+                    filterMatrix[i][k] = 1.0 / exp(
+                            pow(abs(bandWavelengths[i] - wavelengths[k]) / (bandwidths[i] * cArr[i]), eArr[i]));
                 }
             }
             // normalize weigths

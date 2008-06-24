@@ -63,7 +63,6 @@ public class SpectrumMaskOpImageTest extends TestCase {
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(values));
-        band.setImage(new RasterDataNodeOpImage(band));
 
         return band;
     }

@@ -15,8 +15,10 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
@@ -32,6 +34,7 @@ import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
+import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.Map;
 
@@ -49,7 +52,14 @@ import java.util.Map;
                   description = "Computes surface reflectances from a CHRIS/PROBA RCI with cloud product.")
 public class ComputeBoaReflectancesOp extends Operator {
 
-    private static final double REFL_SCALING_FACTOR = 10000.0;
+    private static final double REFL_SCALING_FACTOR = 1.0E-4;
+    private static final double REFL_NO_DATA_VALUE = -1.0;
+
+    private static final double O2_A_WAVELENGTH = 760.5;
+    private static final double O2_B_WAVELENGTH = 687.5;
+
+    private static final double O2_A_BANDWIDTH = 1.5;
+    private static final double O2_B_BANDWIDTH = 1.5;
 
     @SourceProduct
     private Product sourceProduct;
@@ -76,39 +86,45 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     @Parameter(defaultValue = "0.05",
                description = "Cloud probability threshold for generating the cloud mask.")
-    private double cloudProbabilityThreshold;
 
+    private double cloudProductThreshold;
     private transient Band[] radianceBands;
     private transient Band[] maskBands;
     private transient Band[] reflBands;
-    private transient Band cloudProbability;
+    private transient Band cloudProductBand;
 
-    private transient RenderedImage spectrumMaskImage;
-
+    private transient RenderedImage validMaskImage;
     private transient ModtranLookupTable lut;
-    private transient double[][] lutFilterMatrix;
 
+    private transient double[][] lutFilterMatrix;
     private double vza;
     private double sza;
     private double ada;
     private double alt;
     private double cwv;
-    private double radianceConversionFactor;
-    private double[][] lutValues;
+    private double radianceFactor;
 
+    private double[][] lutValues;
     private double[] lpwInt;
     private double[] eglInt;
+
     private double[] sabInt;
+    private double[] centralWavelenghts;
+    private double[] bandwidths;
+    private int o2a;
+    private int o2b;
 
     @Override
     public void initialize() throws OperatorException {
         // get source bands
         radianceBands = OpUtils.findBands(sourceProduct, "radiance");
         maskBands = OpUtils.findBands(sourceProduct, "mask");
-        cloudProbability = sourceProduct.getBand("cloud_product");
+        cloudProductBand = sourceProduct.getBand("cloud_product");
 
-        // saturation mask
-        spectrumMaskImage = SpectrumMaskOpImage.createImage(maskBands);
+        if (cloudProductBand == null) {
+            throw new OperatorException("band 'cloud_product' does not exists.");
+        }
+        // todo - further validation
 
         final Product targetProduct = createTargetProduct();
         setTargetProduct(targetProduct);
@@ -119,44 +135,23 @@ public class ComputeBoaReflectancesOp extends Operator {
                                  ProgressMonitor pm) throws OperatorException {
         synchronized (this) {
             if (lut == null) {
-                try {
-                    lut = new ModtranLookupTableReader().readLookupTable();
-                    lutFilterMatrix = lut.createFilterMatrix(OpUtils.getCentralWavelenghts(radianceBands),
-                                                             OpUtils.getBandwidths(radianceBands));
-
-                    final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
-                                                                   ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
-                    final double saa = OpUtils.getAnnotationDouble(sourceProduct,
-                                                                   ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
-                    vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
-                    sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
-                    ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
-                    alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
-                    // todo - properly initialize water vapour column
-                    cwv = wvIni;
-
-                    final double cosSza = Math.cos(Math.toRadians(sza));
-
-                    lutValues = lut.getValues(vza, sza, ada, alt, aot550, cwv, lutFilterMatrix);
-                    lpwInt = new double[lutValues.length];
-                    eglInt = new double[lutValues.length];
-                    sabInt = new double[lutValues.length];
-
-                    for (int i = 0; i < lutValues.length; ++i) {
-                        lpwInt[i] = 1.0E4 * lutValues[i][0];
-                        eglInt[i] = 1.0E4 * (lutValues[i][1] * 1.0E4 * cosSza + lutValues[i][2]);
-                        sabInt[i] = lutValues[i][3];
-                    }
-
-                    final int day = OpUtils.getAcquisitionDay(sourceProduct);
-                    radianceConversionFactor = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
-                } catch (IOException e) {
-                    throw new OperatorException(e.getMessage());
-                }
+                init24();
             }
         }
 
-        acMode24(targetTileMap, targetRectangle, pm);
+        computeTileStack24(targetTileMap, targetRectangle, pm);
+
+        // Compute non-reflectance bands
+        for (final Band band : targetTileMap.keySet()) {
+            if (band.getName().startsWith("refl")) {
+                continue;
+            }
+            final Band sourceBand = sourceProduct.getBand(band.getName());
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
+            final Tile targetTile = targetTileMap.get(band);
+
+            targetTile.setRawSamples(sourceTile.getRawSamples());
+        }
     }
 
     @Override
@@ -164,7 +159,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         lutFilterMatrix = null;
         lut = null;
 
-        spectrumMaskImage = null;
+        validMaskImage = null;
 
         reflBands = null;
         maskBands = null;
@@ -181,7 +176,7 @@ public class ComputeBoaReflectancesOp extends Operator {
 
         // add reflectance bands
         reflBands = new Band[radianceBands.length];
-        for (int i = 0; i < radianceBands.length; i++) {
+        for (int i = 0; i < radianceBands.length; ++i) {
             final Band radianceBand = radianceBands[i];
             final Band reflBand = new Band(radianceBand.getName().replaceAll("radiance", "refl"),
                                            ProductData.TYPE_INT16,
@@ -195,14 +190,24 @@ public class ComputeBoaReflectancesOp extends Operator {
             reflBand.setSpectralBandIndex(radianceBand.getSpectralBandIndex());
             reflBand.setSpectralWavelength(radianceBand.getSpectralWavelength());
             reflBand.setSpectralBandwidth(radianceBand.getSpectralBandwidth());
+            reflBand.setGeophysicalNoDataValue(REFL_NO_DATA_VALUE);
+            reflBand.setNoDataValueUsed(true);
             // todo - set solar flux ?
 
             targetProduct.addBand(reflBand);
             reflBands[i] = reflBand;
         }
-
-        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-        // todo - copy mask bands, cloud product
+        // copy all non-radiance bands from source product to target product
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (sourceBand.getName().startsWith("radiance")) {
+                continue;
+            }
+            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+            final FlagCoding flagCoding = sourceBand.getFlagCoding();
+            if (flagCoding != null) {
+                targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
+            }
+        }
 
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
@@ -210,44 +215,138 @@ public class ComputeBoaReflectancesOp extends Operator {
         return targetProduct;
     }
 
-    private void acMode24(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
-        final int tileWork = performAdjacencyCorrection ? targetRectangle.height * 2 : targetRectangle.height;
-        pm.beginTask("Computing surface reflectances...", tileWork * reflBands.length);
+    private void init24() {
+        try {
+            lut = new ModtranLookupTableReader().readLookupTable();
+        } catch (IOException e) {
+            throw new OperatorException(e.getMessage());
+        }
+        // spectrum mask
+        validMaskImage = ValidMaskOpImage.createImage(cloudProductThreshold, cloudProductBand, maskBands);
+
+        centralWavelenghts = OpUtils.getCentralWavelenghts(radianceBands);
+        bandwidths = OpUtils.getBandwidths(radianceBands);
+        lutFilterMatrix = lut.createFilterMatrix(centralWavelenghts, bandwidths);
+
+        final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                       ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
+        final double saa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                       ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
+        vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
+        sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+        ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
+        alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        // todo - properly initialize water vapour column
+        cwv = wvIni;
+
+        final double cosSza = cos(toRadians(sza));
+
+        lutValues = lut.getValues(vza, sza, ada, alt, aot550, cwv, lutFilterMatrix);
+        lpwInt = new double[lutValues.length];
+        eglInt = new double[lutValues.length];
+        sabInt = new double[lutValues.length];
+
+        for (int i = 0; i < lutValues.length; ++i) {
+            lpwInt[i] = 1.0E4 * lutValues[i][0];
+            eglInt[i] = 1.0E4 * (lutValues[i][1] * cosSza + lutValues[i][2]);
+            sabInt[i] = lutValues[i][3];
+        }
+
+        final int day = OpUtils.getAcquisitionDay(sourceProduct);
+        radianceFactor = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
+
+        o2a = OpUtils.findBandIndex(radianceBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
+        o2b = OpUtils.findBandIndex(radianceBands, O2_B_WAVELENGTH, O2_B_BANDWIDTH);
+    }
+
+    private void computeTileStack24(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
+        final int tileWork = targetRectangle.height;
 
         try {
-            final Raster saturationMaskTile = spectrumMaskImage.getData(targetRectangle);
-            final Tile cloudProbabilityTile = getSourceTile(this.cloudProbability, targetRectangle, pm);
+            // Inversion of Lambertian equation
+            ac24(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * reflBands.length));
+            // Polishing of spikes for O2-A and O2-B absorption features
+            if (o2a != -1) {
+                interpolateReflTile(o2a, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
+            }
+            if (o2b != -1) {
+                interpolateReflTile(o2b, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
+            }
+            if (performAdjacencyCorrection) {
+                // todo - adjacency correction
+            }
+        } finally {
+            pm.done();
+        }
+    }
 
-            for (int i = 0; i < radianceBands.length; i++) {
-                final Tile sourceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
-                final Tile targetTile = targetTileMap.get(radianceBands[i]);
+    private void ac24(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
+        try {
+            pm.beginTask("Computing surface reflectances...", targetRectangle.height * reflBands.length);
 
-                for (final Tile.Pos pos : cloudProbabilityTile) {
+            final Raster validMaskRaster = validMaskImage.getData(targetRectangle);
+
+            for (int i = 0; i < reflBands.length; i++) {
+                final Tile radianceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
+                final Tile reflTile = targetTileMap.get(reflBands[i]);
+
+                for (final Tile.Pos pos : reflTile) {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
-                    if ((saturationMaskTile.getSample(pos.x, pos.y, 0) & 0x0002) != 2) {
-                        if (cloudProbabilityTile.getSampleDouble(pos.x, pos.y) < cloudProbabilityThreshold) {
-                            final double xterm = Math.PI * (sourceTile.getSampleDouble(pos.x,
-                                                                                       pos.y) * radianceConversionFactor) / eglInt[i];
-                            targetTile.setSample(pos.x, pos.y, xterm / (1.0 + sabInt[i] * xterm));
-                        }
+
+                    if (validMaskRaster.getSample(pos.x, pos.y, 0) != 0) {
+                        final double radiance = radianceTile.getSampleDouble(pos.x, pos.y);
+                        final double term = PI * (radiance * radianceFactor) / eglInt[i];
+                        final double refl = term / (1.0 + term * sabInt[i]);
+
+                        reflTile.setSample(pos.x, pos.y, refl);
+                    } else {
+                        reflTile.setSample(pos.x, pos.y, REFL_NO_DATA_VALUE);
                     }
-                    if (pos.x == targetRectangle.x) {
+                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
                     }
-                }
-            }
-            // todo - polish spikes for O2-A and O2-B absorption features
-            if (performAdjacencyCorrection) {
-                for (int i = 0; i < radianceBands.length; i++) {
-                    // todo - adjacency correction
                 }
             }
         } finally {
             pm.done();
         }
     }
+
+    private void interpolateReflTile(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                     ProgressMonitor pm) {
+        try {
+            pm.beginTask("Interpolating surface reflectances", targetRectangle.height);
+
+            final Tile innerTile = targetTileMap.get(reflBands[bandIndex]);
+            final Tile lowerTile = targetTileMap.get(reflBands[bandIndex - 1]);
+            final Tile upperTile = targetTileMap.get(reflBands[bandIndex + 1]);
+
+            final double innerWavelength = reflBands[bandIndex].getSpectralWavelength();
+            final double lowerWavelength = reflBands[bandIndex - 1].getSpectralWavelength();
+            final double upperWavelength = reflBands[bandIndex + 1].getSpectralWavelength();
+
+            final double w = (innerWavelength - lowerWavelength) / (upperWavelength - lowerWavelength);
+
+            for (final Tile.Pos pos : innerTile) {
+                if (pos.x == targetRectangle.x) {
+                    checkForCancelation(pm);
+                }
+
+                final double lowerSample = lowerTile.getSampleDouble(pos.x, pos.y);
+                final double upperSample = upperTile.getSampleDouble(pos.x, pos.y);
+                innerTile.setSample(pos.x, pos.y, lowerSample + (upperSample - lowerSample) * w);
+
+                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                    pm.worked(1);
+                }
+            }
+        } finally {
+            pm.done();
+        }
+    }
+
 
     public static class Spi extends OperatorSpi {
 
