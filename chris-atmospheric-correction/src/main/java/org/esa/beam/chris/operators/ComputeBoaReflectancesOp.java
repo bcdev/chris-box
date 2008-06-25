@@ -252,6 +252,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         final double cosSza = cos(toRadians(sza));
 
         lutValues = resampler.resample(lut.getValues(vza, sza, ada, alt, aot550, cwv));
+
         lpwInt = new double[lutValues.length];
         eglInt = new double[lutValues.length];
         sabInt = new double[lutValues.length];

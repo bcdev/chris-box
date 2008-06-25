@@ -17,8 +17,6 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.util.math.Array;
 import org.esa.beam.util.math.VectorLookupTable;
 
-import static java.lang.Math.*;
-
 /**
  * MODTRAN lookup table used for atmospheric correction.
  *
@@ -99,16 +97,40 @@ class ModtranLookupTable {
         return matrix;
     }
 
+    /**
+     * Returns the number of parameters.
+     *
+     * @return the number of parameters.
+     */
     public final int getParameterCount() {
         return parameterCount1 + parameterCount2;
     }
 
+    /**
+     * Returns the number of wavelenghts.
+     *
+     * @return the number of wavelengths.
+     */
     public final int getWavelengthCount() {
         return wavelengths.length;
     }
 
+    /**
+     * Returns the wavelengths.
+     *
+     * @return the wavelengths.
+     */
     public final double[] getWavelengths() {
         return wavelengths.clone();
+    }
+
+    /**
+     * Returns the water vapour dimension.
+     *
+     * @return the water vapour dimension.
+     */
+    public final double[] getDimensionWvc() {
+        return lut2.getDimension(4).getSequence();
     }
 
     final int getParameterCount1() {
