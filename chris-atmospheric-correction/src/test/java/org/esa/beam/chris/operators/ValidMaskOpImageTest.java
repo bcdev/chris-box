@@ -9,7 +9,7 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 
 /**
- * Tests for class {@link ValidMaskOpImage}.
+ * Tests for class {@link AtmosphericCorrectionMaskOpImage}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -41,7 +41,7 @@ public class ValidMaskOpImageTest extends TestCase {
         maskBands[3] = addBand(product, "mask_3", new short[]{0, 0, 0, 0, 0, 0});
         final Band cloudProductBand = addBand(product, "cloud_product", new double[]{0.0, 0.0, 0.0, 0.0, 1.0, 1.0});
 
-        return ValidMaskOpImage.createImage(0.5, cloudProductBand, maskBands);
+        return AtmosphericCorrectionMaskOpImage.createImage(maskBands, cloudProductBand, 0.5);
     }
 
     private static Band addBand(Product product, String name, short[] values) {

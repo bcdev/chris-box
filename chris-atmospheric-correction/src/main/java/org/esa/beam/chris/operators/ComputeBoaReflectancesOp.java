@@ -93,24 +93,27 @@ public class ComputeBoaReflectancesOp extends Operator {
     private transient Band[] reflBands;
     private transient Band cloudProductBand;
 
-    private transient RenderedImage validMaskImage;
+    private transient RenderedImage maskImage;
     private transient ModtranLookupTable lut;
 
     private transient double[][] lutFilterMatrix;
+
     private double vza;
     private double sza;
     private double ada;
     private double alt;
+
     private double cwv;
     private double radianceFactor;
 
     private double[][] lutValues;
+
     private double[] lpwInt;
     private double[] eglInt;
-
     private double[] sabInt;
-    private double[] centralWavelenghts;
-    private double[] bandwidths;
+
+    private double[] radianceWavelenghts;
+    private double[] radianceBandwidths;
     private int o2a;
     private int o2b;
 
@@ -126,6 +129,17 @@ public class ComputeBoaReflectancesOp extends Operator {
         }
         // todo - further validation
 
+        // get annotations
+        final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                       ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
+        final double saa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                       ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
+        vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
+        sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+        ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
+        alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+
+        // create target product
         final Product targetProduct = createTargetProduct();
         setTargetProduct(targetProduct);
     }
@@ -159,7 +173,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         lutFilterMatrix = null;
         lut = null;
 
-        validMaskImage = null;
+        maskImage = null;
 
         reflBands = null;
         maskBands = null;
@@ -222,26 +236,18 @@ public class ComputeBoaReflectancesOp extends Operator {
             throw new OperatorException(e.getMessage());
         }
         // spectrum mask
-        validMaskImage = ValidMaskOpImage.createImage(cloudProductThreshold, cloudProductBand, maskBands);
+        maskImage = AtmosphericCorrectionMaskOpImage.createImage(maskBands, cloudProductBand, cloudProductThreshold);
 
-        centralWavelenghts = OpUtils.getCentralWavelenghts(radianceBands);
-        bandwidths = OpUtils.getBandwidths(radianceBands);
-        lutFilterMatrix = lut.createFilterMatrix(centralWavelenghts, bandwidths);
-
-        final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
-                                                       ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
-        final double saa = OpUtils.getAnnotationDouble(sourceProduct,
-                                                       ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
-        vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
-        sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
-        ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
-        alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        radianceWavelenghts = OpUtils.getCentralWavelenghts(radianceBands);
+        radianceBandwidths = OpUtils.getBandwidths(radianceBands);
+        final Resampler resampler = new Resampler(lut.getWavelengths(), radianceWavelenghts,
+                                                                          radianceBandwidths);
         // todo - properly initialize water vapour column
         cwv = wvIni;
 
         final double cosSza = cos(toRadians(sza));
 
-        lutValues = lut.getValues(vza, sza, ada, alt, aot550, cwv, lutFilterMatrix);
+        lutValues = resampler.resample(lut.getValues(vza, sza, ada, alt, aot550, cwv));
         lpwInt = new double[lutValues.length];
         eglInt = new double[lutValues.length];
         sabInt = new double[lutValues.length];
@@ -284,7 +290,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         try {
             pm.beginTask("Computing surface reflectances...", targetRectangle.height * reflBands.length);
 
-            final Raster validMaskRaster = validMaskImage.getData(targetRectangle);
+            final Raster maskRaster = maskImage.getData(targetRectangle);
 
             for (int i = 0; i < reflBands.length; i++) {
                 final Tile radianceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
@@ -294,8 +300,8 @@ public class ComputeBoaReflectancesOp extends Operator {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
-
-                    if (validMaskRaster.getSample(pos.x, pos.y, 0) != 0) {
+                    final int mask = maskRaster.getSample(pos.x, pos.y, 0);
+                    if (mask == 0 || mask == 256) {
                         final double radiance = radianceTile.getSampleDouble(pos.x, pos.y);
                         final double term = PI * (radiance * radianceFactor) / eglInt[i];
                         final double refl = term / (1.0 + term * sabInt[i]);

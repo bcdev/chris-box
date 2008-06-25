@@ -99,26 +99,6 @@ class ModtranLookupTable {
         return matrix;
     }
 
-    /**
-     * Returns an interpolated matrix of output parameters for given input parameters
-     * and a filter matrix.
-     *
-     * @param vza          the view zenith angle (degree).
-     * @param sza          the solar zenith angle (degree).
-     * @param ada          the relative azimuth angle (degree).
-     * @param alt          the target altitude (km).
-     * @param aot          the aerosol optical thickness at 550 nm.
-     * @param cwv          the integrated water vapour column (g cm-2).
-     * @param filterMatrix the filter matrix constructed from a set of CHRIS spectral bands.
-     *
-     * @return the output parameter matrix. The number of rows is equal to the number of rows in
-     *         {@code filterMatrix} and the number of columns matches {@code parameterCount}.
-     */
-    public final double[][] getValues(double vza, double sza, double ada, double alt, double aot, double cwv,
-                                      double[][] filterMatrix) {
-        return multiply(getValues(vza, sza, ada, alt, aot, cwv), filterMatrix);
-    }
-
     public final int getParameterCount() {
         return parameterCount1 + parameterCount2;
     }
@@ -145,80 +125,5 @@ class ModtranLookupTable {
 
     final VectorLookupTable getLut2() {
         return lut2;
-    }
-
-    /**
-     * Creates a filter matrix for a given set of CHRIS spectral bands.
-     *
-     * @param bandWavelengths the central wavelenghts.
-     * @param bandwidths      the bandwidths.
-     *
-     * @return the filter matrix.
-     */
-    public final double[][] createFilterMatrix(double[] bandWavelengths, double[] bandwidths) {
-        final int wavelengthCount = wavelengths.length;
-        final int bandCount = bandWavelengths.length;
-
-        final double expMax = 6.0;
-        final double expMin = 2.0;
-
-        final double[] eArr = new double[bandCount];
-        final double[] cArr = new double[bandCount];
-
-        for (int i = 0; i < bandCount; ++i) {
-            eArr[i] = expMax + ((expMin - expMax) * i) / (bandCount - 1);
-            cArr[i] = pow(1.0 / (pow(2.0, eArr[i]) * log(2.0)), 1.0 / eArr[i]);
-        }
-
-        final double[][] filterMatrix = new double[bandCount][wavelengthCount];
-
-        for (int i = 0; i < bandCount; ++i) {
-            // calculate weights
-            for (int k = 0; k < wavelengthCount; ++k) {
-                if (abs(bandWavelengths[i] - wavelengths[k]) <= (2.0 * bandwidths[i])) {
-                    filterMatrix[i][k] = 1.0 / exp(
-                            pow(abs(bandWavelengths[i] - wavelengths[k]) / (bandwidths[i] * cArr[i]), eArr[i]));
-                }
-            }
-            // normalize weigths
-            double sum = 0.0;
-            for (int j = 0; j < wavelengthCount; ++j) {
-                sum += filterMatrix[i][j];
-            }
-            if (sum > 0.0) {
-                for (int j = 0; j < wavelengthCount; ++j) {
-                    filterMatrix[i][j] /= sum;
-                }
-            }
-        }
-
-        return filterMatrix;
-    }
-
-    /**
-     * Computes matrix elements by multiplying the columns of the first matrix by the
-     * rows of the second matrix. The second matrix must have the same number of columns
-     * as the first matrix has rows. The resulting matrix has the same number of columns
-     * as the first matrix and the same number of rows as the second matrix.
-     *
-     * @param a the first matrix.
-     * @param b the second matrix
-     *
-     * @return the resutlting matrix.
-     */
-    private static double[][] multiply(double[][] a, double[][] b) {
-        final double[][] c = new double[b.length][a[0].length];
-
-        for (int i = 0; i < b.length; ++i) {
-            for (int k = 0; k < a[0].length; ++k) {
-                double sum = 0.0;
-                for (int l = 0; l < a.length; ++l) {
-                    sum += a[l][k] * b[i][l];
-                }
-                c[i][k] = sum;
-            }
-        }
-
-        return c;
     }
 }

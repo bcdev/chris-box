@@ -12,33 +12,28 @@ import java.util.Collections;
 import java.util.Vector;
 
 /**
- * Creates a valid-pixel mask image.
- * <p/>
- * A pixel is considered as valid if its cloud product value is below the threshold and
- * its mask pixel values do not indicate saturation.
+ * Creates an atmospheric correction mask image.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-class ValidMaskOpImage extends PointOpImage {
+class AtmosphericCorrectionMaskOpImage extends PointOpImage {
 
     private final double cloudProductThreshold;
 
     /**
-     * Creates a valid-pixel mask image from the cloud product threshold, the cloud product
-     * band and the CHRIS mask bands supplied.
-     * <p/>
-     * A pixel is considered as valid if its cloud product value is below the threshold and
-     * its mask pixel values do not indicate uncorrected dropouts or saturation.
+     * Creates an atmospheric correction mask image from CHRIS mask bands and the cloud
+     * product band. The resulting image is obtained by logically adding the mask bands
+     * and setting bit 10 if the value of the cloud product exceeds the threshold.
      *
-     * @param cloudProductThreshold the cloud product threshold.
-     * @param cloudProductBand      the cloud product band.
      * @param maskBands             the mask bands.
+     * @param cloudProductBand      the cloud product band.
+     * @param cloudProductThreshold the cloud product threshold.
      *
      * @return the saturation mask.
      */
-    public static RenderedImage createImage(double cloudProductThreshold, Band cloudProductBand, Band[] maskBands) {
+    public static RenderedImage createImage(Band[] maskBands, Band cloudProductBand, double cloudProductThreshold) {
         final Collection<Band> sourceBandList = new ArrayList<Band>(maskBands.length + 1);
         Collections.addAll(sourceBandList, cloudProductBand);
         Collections.addAll(sourceBandList, maskBands);
@@ -55,15 +50,15 @@ class ValidMaskOpImage extends PointOpImage {
         int w = cloudProductBand.getRasterWidth();
         int h = cloudProductBand.getRasterHeight();
 
-        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_BYTE, w, h, 1, w, new int[]{0});
+        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_SHORT, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        return new ValidMaskOpImage(imageLayout, sourceImageVector, cloudProductThreshold);
+        return new AtmosphericCorrectionMaskOpImage(imageLayout, sourceImageVector, cloudProductThreshold);
     }
 
-    private ValidMaskOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                             double cloudProductThreshold) {
+    private AtmosphericCorrectionMaskOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
+                                             double cloudProductThreshold) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.cloudProductThreshold = cloudProductThreshold;
@@ -75,7 +70,7 @@ class ValidMaskOpImage extends PointOpImage {
         final UnpackedImageData targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_SHORT, true);
         final short[] targetPixels = targetData.getShortData(0);
 
-        computeSurfaceMask(sources, target, rectangle, targetData, targetPixels);
+        computeCloudMask(sources, target, rectangle, targetData, targetPixels);
 
         for (int i = 1; i < sources.length; ++i) {
             final PixelAccessor sourceAccessor = new PixelAccessor(getSourceImage(i));
@@ -91,12 +86,7 @@ class ValidMaskOpImage extends PointOpImage {
                 int targetPixelOffset = targetLineOffset;
 
                 for (int x = 0; x < target.getWidth(); ++x) {
-                    if (targetPixels[targetPixelOffset] == 1) {
-                        if ((sourcePixels[sourcePixelOffset] != 0 && sourcePixels[sourcePixelOffset] != 256)) {
-                            // uncorrected dropout or saturated
-                            targetPixels[targetPixelOffset] = 0;
-                        }
-                    }
+                    targetPixels[targetPixelOffset] |= sourcePixels[sourcePixelOffset];
 
                     sourcePixelOffset += sourceData.pixelStride;
                     targetPixelOffset += targetData.pixelStride;
@@ -110,8 +100,8 @@ class ValidMaskOpImage extends PointOpImage {
         targetAccessor.setPixels(targetData);
     }
 
-    private void computeSurfaceMask(Raster[] sources, WritableRaster target, Rectangle rectangle,
-                                    UnpackedImageData targetData, short[] targetPixels) {
+    private void computeCloudMask(Raster[] sources, WritableRaster target, Rectangle rectangle,
+                                  UnpackedImageData targetData, short[] targetPixels) {
         final PixelAccessor sourceAccessor = new PixelAccessor(getSourceImage(0));
         final UnpackedImageData sourceData = sourceAccessor.getPixels(sources[0], rectangle, DataBuffer.TYPE_DOUBLE,
                                                                       false);
@@ -125,8 +115,8 @@ class ValidMaskOpImage extends PointOpImage {
             int targetPixelOffset = targetLineOffset;
 
             for (int x = 0; x < target.getWidth(); ++x) {
-                if (sourcePixels[sourcePixelOffset] <= cloudProductThreshold) { // surface pixel, not cloud
-                    targetPixels[targetPixelOffset] = 1;
+                if (sourcePixels[sourcePixelOffset] > cloudProductThreshold) { // cloud pixel
+                    targetPixels[targetPixelOffset] = 1024;
                 }
 
                 sourcePixelOffset += sourceData.pixelStride;
