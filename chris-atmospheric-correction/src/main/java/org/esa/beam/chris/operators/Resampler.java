@@ -164,6 +164,7 @@ class Resampler {
                     weights[i][k] = 1.0 / Math.exp(Math.pow(delta / (targetBandwidths[i] * c[i]), e[i]));
                 }
             }
+            // normalize weights
             double sum = 0.0;
             for (int j = 0; j < sourceWavelengthCount; ++j) {
                 sum += weights[i][j];

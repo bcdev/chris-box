@@ -28,10 +28,24 @@ class OpUtils {
 
     /**
      * Returns the index of the band whose spectral wavelength is closest to the given
+     * wavelength.
+     *
+     * @param bands      the bands.
+     * @param wavelength the wavelength.
+     *
+     * @return the index of the band index whose spectral wavelength is closest to the
+     *         given wavelength.
+     */
+    public static int findBandIndex(final Band[] bands, final double wavelength) {
+        return findBandIndex(bands, wavelength, Double.POSITIVE_INFINITY);
+    }
+
+    /**
+     * Returns the index of the band whose spectral wavelength is closest to the given
      * wavelength but not farther away than the given tolerance.
      *
      * @param bands      the bands.
-     * @param wavelength the wavelength
+     * @param wavelength the wavelength.
      * @param tolerance  the tolerance.
      *
      * @return the index of the band index whose spectral wavelength is closest to

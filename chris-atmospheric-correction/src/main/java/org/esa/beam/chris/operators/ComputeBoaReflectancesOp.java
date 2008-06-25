@@ -17,6 +17,7 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.dataio.chris.ChrisConstants;
+import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -61,6 +62,9 @@ public class ComputeBoaReflectancesOp extends Operator {
     private static final double O2_A_BANDWIDTH = 1.5;
     private static final double O2_B_BANDWIDTH = 1.5;
 
+    private static final double RED_WAVELENGTH = 688.0;
+    private static final double NIR_WAVELENGTH = 780.0;
+
     @SourceProduct
     private Product sourceProduct;
 
@@ -93,7 +97,7 @@ public class ComputeBoaReflectancesOp extends Operator {
     private transient Band[] reflBands;
     private transient Band cloudProductBand;
 
-    private transient RenderedImage maskImage;
+    private transient RenderedImage cloudMaskImage;
     private transient ModtranLookupTable lut;
 
     private transient double[][] lutFilterMatrix;
@@ -173,7 +177,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         lutFilterMatrix = null;
         lut = null;
 
-        maskImage = null;
+        cloudMaskImage = null;
 
         reflBands = null;
         maskBands = null;
@@ -236,12 +240,12 @@ public class ComputeBoaReflectancesOp extends Operator {
             throw new OperatorException(e.getMessage());
         }
         // spectrum mask
-        maskImage = AtmosphericCorrectionMaskOpImage.createImage(maskBands, cloudProductBand, cloudProductThreshold);
+        cloudMaskImage = CloudMaskOpImage.createImage(maskBands, cloudProductBand, cloudProductThreshold);
 
         radianceWavelenghts = OpUtils.getCentralWavelenghts(radianceBands);
         radianceBandwidths = OpUtils.getBandwidths(radianceBands);
         final Resampler resampler = new Resampler(lut.getWavelengths(), radianceWavelenghts,
-                                                                          radianceBandwidths);
+                                                  radianceBandwidths);
         // todo - properly initialize water vapour column
         cwv = wvIni;
 
@@ -290,7 +294,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         try {
             pm.beginTask("Computing surface reflectances...", targetRectangle.height * reflBands.length);
 
-            final Raster maskRaster = maskImage.getData(targetRectangle);
+            final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
 
             for (int i = 0; i < reflBands.length; i++) {
                 final Tile radianceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
@@ -300,8 +304,8 @@ public class ComputeBoaReflectancesOp extends Operator {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
-                    final int mask = maskRaster.getSample(pos.x, pos.y, 0);
-                    if (mask == 0 || mask == 256) {
+                    final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                    if (cloudMask == 0 || cloudMask == 256) {
                         final double radiance = radianceTile.getSampleDouble(pos.x, pos.y);
                         final double term = PI * (radiance * radianceFactor) / eglInt[i];
                         final double refl = term / (1.0 + term * sabInt[i]);
