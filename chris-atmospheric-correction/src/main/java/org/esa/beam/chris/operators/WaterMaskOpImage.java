@@ -6,9 +6,6 @@ import org.esa.beam.util.jai.RasterDataNodeOpImage;
 import javax.media.jai.*;
 import java.awt.*;
 import java.awt.image.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Water mask image indicating water surface.
@@ -38,14 +35,13 @@ public class WaterMaskOpImage extends PointOpImage {
      * @return the water mask image.
      */
     public static RenderedImage createImage(Band redBand, Band nirBand, double redIrr, double nirIrr, double sza) {
-        final Collection<Band> sourceBandList = new ArrayList<Band>(2);
-        Collections.addAll(sourceBandList, redBand);
-        Collections.addAll(sourceBandList, nirBand);
-
-        for (final Band band : sourceBandList) {
-            if (band.getImage() == null) {
-                band.setImage(new RasterDataNodeOpImage(band));
-            }
+        RenderedImage redImage = redBand.getImage();
+        if (redImage == null) {
+            redImage = new RasterDataNodeOpImage(redBand);
+        }
+        RenderedImage nirImage = redBand.getImage();
+        if (nirImage == null) {
+            nirImage = new RasterDataNodeOpImage(nirBand);
         }
 
         int w = redBand.getRasterWidth();
@@ -58,8 +54,7 @@ public class WaterMaskOpImage extends PointOpImage {
         final double redScalingFactor = Math.PI / Math.cos(Math.toRadians(sza)) / redIrr;
         final double nirScalingFactor = Math.PI / Math.cos(Math.toRadians(sza)) / nirIrr;
 
-        return new WaterMaskOpImage(redBand.getImage(), nirBand.getImage(), imageLayout, redScalingFactor,
-                                    nirScalingFactor);
+        return new WaterMaskOpImage(redImage, nirImage, imageLayout, redScalingFactor, nirScalingFactor);
     }
 
     private WaterMaskOpImage(RenderedImage redImage, RenderedImage nirImage, ImageLayout imageLayout,
