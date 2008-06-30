@@ -1,5 +1,4 @@
-/* $Id: LegendrePolynomials.java 1226 2007-11-01 12:51:59Z ralf $
- *
+/*
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -13,7 +12,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.operators;
 
 /**
  * Class for calculating Legendre polynomials.
@@ -21,7 +20,7 @@ package org.esa.beam.chris.operators.internal;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-final public class LegendrePolynomials implements Functions {
+final public class LegendrePolynomials implements UnivariateFunctionSequence {
 
     public void calculate(double x, double[] y) {
         if (y.length > 0) {
@@ -40,5 +39,4 @@ final public class LegendrePolynomials implements Functions {
             }
         }
     }
-
 }

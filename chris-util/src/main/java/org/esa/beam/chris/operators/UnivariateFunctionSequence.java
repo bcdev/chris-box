@@ -1,5 +1,4 @@
-/* $Id: Functions.java 1378 2007-11-14 15:32:24Z ralf $
- *
+/*
  * Copyright (C) 2002-2007 by Brockmann Consult
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -13,17 +12,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.operators;
 
 /**
- * Interface representing an infinite sequence of real functions. The
- * interface is suited for families of functions which are defined by
- * recursion, for example Hermite or Legendre polynomials.
+ * Interface representing an infinite sequence of univariate functions.
+ * The interface is suited for families of functions which are defined
+ * by recurrence relations, such as Hermite or Legendre polynomials.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public interface Functions {
+public interface UnivariateFunctionSequence {
 
     /**
      * Evaluates the first n functions at a given abscissa value.
@@ -36,5 +35,4 @@ public interface Functions {
      * @throws NullPointerException if {@code y} is {@code null}.
      */
     void calculate(double x, double[] y) throws NullPointerException;
-
 }
