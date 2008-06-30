@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.operators;
 
 import junit.framework.TestCase;
 
@@ -49,11 +49,11 @@ public class LocalRegressionSmootherTest extends TestCase {
     }
 
     public void testFitHorizontalLine() {
-        final Functions functions = new LegendrePolynomials();
+        final UnivariateFunctionSequence functionSequence = new LegendrePolynomials();
 
         final double[][] p = new double[5][3];
         for (int i = 0; i < 5; ++i) {
-            functions.calculate(i, p[i]);
+            functionSequence.calculate(i, p[i]);
         }
 
         final double[] w = new double[]{0.5, 1.0, 1.0, 1.0, 0.5};
@@ -66,11 +66,11 @@ public class LocalRegressionSmootherTest extends TestCase {
     }
 
     public void testFitInclinedLines() {
-        final Functions functions = new LegendrePolynomials();
+        final UnivariateFunctionSequence functionSequence = new LegendrePolynomials();
 
         final double[][] p = new double[5][3];
         for (int i = 0; i < 5; ++i) {
-            functions.calculate(i, p[i]);
+            functionSequence.calculate(i, p[i]);
         }
 
         final double[] w = new double[]{0.5, 1.0, 1.0, 1.0, 0.5};
@@ -88,11 +88,11 @@ public class LocalRegressionSmootherTest extends TestCase {
     }
 
     public void testFitParabolas() {
-        final Functions functions = new LegendrePolynomials();
+        final UnivariateFunctionSequence functionSequence = new LegendrePolynomials();
 
         final double[][] p = new double[5][3];
         for (int i = 0; i < 5; ++i) {
-            functions.calculate(i, p[i]);
+            functionSequence.calculate(i, p[i]);
         }
 
         final double[] w = new double[]{0.5, 1.0, 1.0, 1.0, 0.5};
@@ -224,5 +224,4 @@ public class LocalRegressionSmootherTest extends TestCase {
         assertEquals(25.0, z[5], 1.0E-10);
         assertEquals(81.0, z[9], 1.0E-10);
     }
-
 }
