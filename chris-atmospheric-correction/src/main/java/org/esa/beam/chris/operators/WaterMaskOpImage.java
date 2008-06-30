@@ -34,14 +34,16 @@ public class WaterMaskOpImage extends PointOpImage {
      *
      * @return the water mask image.
      */
-    public static RenderedImage createImage(Band redBand, Band nirBand, double redIrr, double nirIrr, double sza) {
+    public static OpImage createImage(Band redBand, Band nirBand, double redIrr, double nirIrr, double sza) {
         RenderedImage redImage = redBand.getImage();
         if (redImage == null) {
             redImage = new RasterDataNodeOpImage(redBand);
+            redBand.setImage(redImage);
         }
         RenderedImage nirImage = redBand.getImage();
         if (nirImage == null) {
             nirImage = new RasterDataNodeOpImage(nirBand);
+            nirBand.setImage(nirImage);
         }
 
         int w = redBand.getRasterWidth();
@@ -84,12 +86,12 @@ public class WaterMaskOpImage extends PointOpImage {
         int nirLineOffset = nirData.bandOffsets[0];
         int targetLineOffset = targetData.bandOffsets[0];
 
-        for (int y = 0; y < target.getHeight(); ++y) {
+        for (int y = 0; y < rectangle.height; ++y) {
             int redPixelOffset = redLineOffset;
             int nirPixelOffset = nirLineOffset;
             int targetPixelOffset = targetLineOffset;
 
-            for (int x = 0; x < target.getWidth(); ++x) {
+            for (int x = 0; x < rectangle.width; ++x) {
                 double red = redPixels[redPixelOffset];
                 double nir = nirPixels[nirPixelOffset];
 
