@@ -17,7 +17,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.operators.internal.LocalRegressionSmoother;
+import org.esa.beam.chris.operators.LocalRegressionSmoother;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.Sorter;
 import org.esa.beam.framework.datamodel.Band;
