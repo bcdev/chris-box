@@ -18,10 +18,10 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.*;
-import org.esa.beam.chris.operators.BandFilter;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.EMClusterOp;
 import org.esa.beam.framework.datamodel.*;
+import org.esa.beam.framework.datamodel.RasterDataNode.Stx;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -136,12 +136,10 @@ public class CloudLabeler {
         }
 
         final MetadataAttribute[] attributes = getClusterMapBand().getIndexCoding().getAttributes();
-        final IntMap sampleToIndexMap = new IntMap();
         final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[attributes.length];
         for (int index = 0; index < attributes.length; index++) {
             MetadataAttribute attribute = attributes[index];
             final int sample = attribute.getData().getElemInt();
-            sampleToIndexMap.putValue(sample, index);
             final Color color;
             if (attribute.getName().startsWith("cluster")) {
                 color = new Color(r[index], g[index], b[index]);
@@ -150,9 +148,8 @@ public class CloudLabeler {
             }
             points[index] = new ColorPaletteDef.Point(sample, color, attribute.getName());
         }
-        final ColorPaletteDef def = new ColorPaletteDef(points, true);
-        final ImageInfo imageInfo = new ImageInfo(0, attributes.length, null, def);
-        imageInfo.setSampleToIndexMap(sampleToIndexMap);
+        final ColorPaletteDef def = new ColorPaletteDef(points);
+        final ImageInfo imageInfo = new ImageInfo(def);
         getClusterMapBand().setImageInfo(imageInfo);
     }
 
