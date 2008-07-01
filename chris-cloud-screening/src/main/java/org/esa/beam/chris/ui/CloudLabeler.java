@@ -21,7 +21,6 @@ import org.esa.beam.chris.operators.*;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.EMClusterOp;
 import org.esa.beam.framework.datamodel.*;
-import org.esa.beam.framework.datamodel.RasterDataNode.Stx;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -30,7 +29,6 @@ import org.esa.beam.framework.ui.product.ProductSceneImage;
 import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
-import org.esa.beam.util.IntMap;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 import org.esa.beam.visat.VisatApp;
 
