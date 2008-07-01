@@ -21,11 +21,11 @@ class AdvancedSettingsPanel extends JPanel {
 
     private void bindComponents(AdvancedSettingsPresenter presenter) {
         BindingContext destripingBinding = new BindingContext(presenter.getDestripingValueContainer());
-        destripingBinding.bind(slitCorrectionCheckBox, "slitCorrection");
-        destripingBinding.bind(smoothingOrderSpinner, "smoothingOrder");
+        destripingBinding.bind("slitCorrection", slitCorrectionCheckBox);
+        destripingBinding.bind("smoothingOrder", smoothingOrderSpinner);
         BindingContext dropoutCorrectionBinding = new BindingContext(presenter.getDropoutCorrectionValueContainer());
-        dropoutCorrectionBinding.bind(neighborBandCountComboBox, "neighborBandCount");
-        dropoutCorrectionBinding.bind(neighborhoodComboBox, "neighborhoodType");
+        dropoutCorrectionBinding.bind("neighborBandCount", neighborBandCountComboBox);
+        dropoutCorrectionBinding.bind("neighborhoodType", neighborhoodComboBox);
         neighborhoodComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
