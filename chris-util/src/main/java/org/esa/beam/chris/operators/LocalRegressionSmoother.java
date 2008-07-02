@@ -16,59 +16,74 @@ package org.esa.beam.chris.operators;
 
 import Jama.Matrix;
 import Jama.SingularValueDecomposition;
-import com.bc.ceres.core.Assert;
-
-import java.util.Arrays;
 
 /**
  * Class for performing local regression smoothing.
+ * <p/>
+ * Note that the algorithm is not strictly correct for response values
+ * not corresponding to equidistant predictor values.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
 public class LocalRegressionSmoother {
 
-    private int degree; // the polynomial degree
-    private int span;   // the span
-    private int iter;   // the number of robust regression iterations
+    private final LocalRegressionWeightCalculator regressionWeightCalculator;
 
-    private double[][] p; // the values of the basis functions for all points in the span
-    private double[][] w; // the regression weights for all points in the span
+    private final int degree; // the polynomial degree
+    private final int span;   // the span
+
+    private final int iter;   // the number of robust regression iterations
+    private final double[][] p; // the values of the basis functions for all points in the span
+    private final double[][] w; // the regression weights for all points in the span
 
     /**
      * Constructs a new instance of this class.
      * <p/>
      * Note that no robust regression iterations are carried out.
      *
-     * @param degree the polynomial degree
-     * @param span   the span, must be greater than {@code degree + 2}.
+     * @param regressionWeightCalculator the regression weight calculator.
+     * @param degree                     the polynomial degree.
+     * @param span                       the span, must be greater than {@code degree + 2}.
      *
      * @throws IllegalArgumentException if the polynomial degree is a negative number,
      *                                  or if the span is less than {@code degree + 3}.
      */
-    public LocalRegressionSmoother(int degree, int span) {
-        this(degree, span, 0);
+    public LocalRegressionSmoother(LocalRegressionWeightCalculator regressionWeightCalculator, int degree, int span) {
+        this(regressionWeightCalculator, degree, span, 0);
     }
 
     /**
      * Constructs a new instance of this class.
      *
-     * @param degree the polynomial degree
-     * @param span   the span, must be greater than {@code degree + 2}.
-     * @param iter   the number of robust regression iterations being performed.
+     * @param regressionWeightCalculator the regression weight calculator.
+     * @param degree                     the polynomial degree.
+     * @param span                       the span, must be greater than {@code degree + 2}.
+     * @param iter                       the number of robust regression iterations being performed.
      *
      * @throws IllegalArgumentException if the polynomial degree is a negative number,
      *                                  if the span is less than {@code degree + 3}, or
      *                                  if the number of robust regression is negative.
      */
-    public LocalRegressionSmoother(int degree, int span, int iter) {
+    public LocalRegressionSmoother(LocalRegressionWeightCalculator regressionWeightCalculator, int degree, int span,
+                                   int iter) {
         Assert.argument(degree >= 0, "!(degree >= 0)");
         Assert.argument(span > degree + 2, "!(span > degree + 2)");
         Assert.argument(iter >= 0, "!(iter >= 0)");
 
+        this.regressionWeightCalculator = regressionWeightCalculator;
         this.degree = degree;
         this.span = span;
         this.iter = iter;
+
+        p = new double[span][degree + 1];
+        w = new double[span][span];
+
+        final UnivariateFunctionSequence polynomials = new LegendrePolynomials();
+        for (int i = 0; i < span; ++i) {
+            polynomials.calculate(2.0 * ((double) i / (span - 1)) - 1.0, p[i]);
+            regressionWeightCalculator.calculateRegressionWeights(i, w[i]);
+        }
     }
 
     /**
@@ -94,7 +109,7 @@ public class LocalRegressionSmoother {
      *
      * @return the number of robust regression iterations.
      */
-    public final int getRobustRegressionCount() {
+    public final int getRobustRegressionIterationCount() {
         return iter;
     }
 
@@ -111,7 +126,7 @@ public class LocalRegressionSmoother {
      *                                  if {@code y} and {@code z} are references to
      *                                  the same instance.
      */
-    public void smooth(double[] y, double[] z) {
+    public final void smooth(double[] y, double[] z) {
         Assert.argument(y.length == z.length, "!(y.length == z.length)");
         Assert.argument(y.length >= span, "!(y.length >= span)");
         Assert.argument(y != z, "y == z");
@@ -119,13 +134,10 @@ public class LocalRegressionSmoother {
         final int m = y.length;
         final int n = degree + 1;
 
-        final double[] r = new double[m];    // absolute residuals, robust weights
+        final double[] a = new double[m];    // absolute residuals
+        final double[] r = new double[m];    // robust weights
         final double[] c = new double[n];    // linear coefficients
         final double[] g = new double[span]; // robust regression weights
-
-        if (p == null) {
-            initialize();
-        }
 
         // local regression smoothing
         for (int i = 0, from = 0; i < m; ++i) {
@@ -143,9 +155,9 @@ public class LocalRegressionSmoother {
         // robust smoothing
         for (int k = 0; k < iter; ++k) {
             for (int i = 0; i < m; ++i) {
-                r[i] = Math.abs(z[i] - y[i]);
+                a[i] = Math.abs(z[i] - y[i]);
             }
-            calculateRobustWeights(r);
+            regressionWeightCalculator.calculateRobustRegressionWeights(a, r);
             for (int i = 0, from = 0; i < m; ++i) {
                 if (i > span / 2) {
                     if (from < m - span) {
@@ -162,70 +174,6 @@ public class LocalRegressionSmoother {
                 }
             }
         }
-    }
-
-    /**
-     * Function for calculating the regression weights for the ith point in the span.
-     * <p/>
-     * The weights are equal to the multiplying coefficients of the design matrix of
-     * the corresponding linear regression problem.
-     *
-     * @param i the point index.
-     * @param w the regression weights for the ith point in the span.
-     */
-    protected void calculateRegressionWeights(int i, double[] w) {
-        final int b = Math.max(i, w.length - 1 - i);
-
-        for (int j = 0; j < w.length; ++j) {
-            w[j] = Math.pow(1.0 - Math.pow(Math.abs((double) (i - j) / b), 3.0), 1.5);
-        }
-    }
-
-    /**
-     * Function for calculating the robust weights from the absolute residuals.
-     * <p/>
-     * The weights are equal to the multiplying coefficients of the design matrix of
-     * the corresponding linear regression problem.
-     * For solving the linear regression problem, the rows of the design matrix are
-     * multiplied by these weights.
-     *
-     * @param r the absolute residuals. On return holds the robust weights.
-     */
-    protected void calculateRobustWeights(double[] r) {
-        final double b = 6.0 * median(r);
-
-        for (int i = 0; i < r.length; ++i) {
-            if (r[i] > 0.0) {
-                if (r[i] < b) {
-                    r[i] = (1.0 - (r[i] / b) * (r[i] / b));
-                } else {
-                    r[i] = 0.0;
-                }
-            } else { // vanishing residual (rare case)
-                r[i] = 1.0;
-            }
-        }
-    }
-
-    private void initialize() {
-        final UnivariateFunctionSequence polynomials = new LegendrePolynomials();
-
-        p = new double[span][degree + 1];
-        w = new double[span][span];
-
-        for (int i = 0; i < span; ++i) {
-            final double x = 2.0 * ((double) i / (span - 1)) - 1.0; // mapping onto [-1, 1]
-
-            polynomials.calculate(x, p[i]);
-            calculateRegressionWeights(i, w[i]);
-        }
-    }
-
-    private static double median(double[] values) {
-        final double[] a = Arrays.copyOf(values, values.length);
-        Arrays.sort(a);
-
-        return a[values.length / 2];
     }
 
     private static void fit(double[] y, int from, double[] w, double[] c, double[][] p) {
@@ -346,6 +294,16 @@ public class LocalRegressionSmoother {
             for (int i = 0; i < rank; ++i) {
                 c[j] += v.get(j, i) * s[i];
             }
+        }
+    }
+
+    private static class Assert {
+
+        public static boolean argument(boolean expression, String message) {
+            if (!expression) {
+                throw new IllegalArgumentException(message);
+            }
+            return expression;
         }
     }
 }

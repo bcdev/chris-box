@@ -13,8 +13,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.*;
 import java.util.List;
 
 /**
@@ -27,30 +26,30 @@ import java.util.List;
 class OpUtils {
 
     /**
-     * Returns the index of the band whose spectral wavelength is closest to the given
-     * wavelength.
+     * Returns the index of the band whose central wavelength is closest to
+     * a wavelength of interest.
      *
      * @param bands      the bands.
-     * @param wavelength the wavelength.
+     * @param wavelength the wavelength of interest.
      *
-     * @return the index of the band index whose spectral wavelength is closest to the
-     *         given wavelength.
+     * @return the index of the band index whose spectral wavelength is closest
+     *         to the wavelength of interest.
      */
     public static int findBandIndex(final Band[] bands, final double wavelength) {
         return findBandIndex(bands, wavelength, Double.POSITIVE_INFINITY);
     }
 
     /**
-     * Returns the index of the band whose spectral wavelength is closest to the given
-     * wavelength but not farther away than the given tolerance.
+     * Returns the index of the band whose central wavelength is closest to to
+     * a wavelength of interest, but not farther than the given tolerance.
      *
      * @param bands      the bands.
-     * @param wavelength the wavelength.
+     * @param wavelength the wavelength of interest.
      * @param tolerance  the tolerance.
      *
      * @return the index of the band index whose spectral wavelength is closest to
      *         {@code wavelength} or {@code -1} if the band with the closest wavelength
-     *         is farther away than {@code tolerance}.
+     *         is farther than {@code tolerance}.
      */
     public static int findBandIndex(final Band[] bands, final double wavelength, final double tolerance) {
         double minDelta = Math.abs(wavelength - bands[0].getSpectralWavelength());
@@ -108,6 +107,34 @@ class OpUtils {
         }
 
         return bandList.toArray(new Band[bandList.size()]);
+    }
+
+    /**
+     * Returns an array of bands in a product of interest whose names start with
+     * a given prefix and are accepted by a given band filter.
+     *
+     * @param product the product of interest.
+     * @param prefix  the prefix.
+     * @param filter  the band filter.
+     *
+     * @return the bands found.
+     */
+    public static int[] findBandIndexes(Product product, String prefix, BandFilter filter) {
+        final List<Integer> indexList = new ArrayList<Integer>();
+        final Band[] bands = product.getBands();
+
+        for (int i = 0; i < bands.length; ++i) {
+            if (bands[i].getName().startsWith(prefix) && filter.accept(bands[i])) {
+                indexList.add(i);
+            }
+        }
+
+        final int[] indexes = new int[indexList.size()];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = indexList.get(i);
+        }
+
+        return indexes;
     }
 
     /**

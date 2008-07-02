@@ -27,21 +27,21 @@ public class LocalRegressionSmootherTest extends TestCase {
 
     public void testConstructors() {
         try {
-            new LocalRegressionSmoother(-1, 2);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), -1, 2);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("!(degree >= 0)", e.getMessage());
         }
 
         try {
-            new LocalRegressionSmoother(2, 4);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 2, 4);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("!(span > degree + 2)", e.getMessage());
         }
 
         try {
-            new LocalRegressionSmoother(2, 7, -1);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 2, 7, -1);
             fail();
         } catch (Exception e) {
             assertEquals("!(iter >= 0)", e.getMessage());
@@ -113,7 +113,7 @@ public class LocalRegressionSmootherTest extends TestCase {
         try {
             final double[] z = new double[7];
 
-            new LocalRegressionSmoother(0, 7).smooth(null, z);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 7).smooth(null, z);
             fail();
         } catch (NullPointerException expected) {
         }
@@ -121,7 +121,7 @@ public class LocalRegressionSmootherTest extends TestCase {
         try {
             final double[] y = new double[7];
 
-            new LocalRegressionSmoother(0, 7).smooth(y, null);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 7).smooth(y, null);
             fail();
         } catch (NullPointerException expected) {
         }
@@ -130,7 +130,7 @@ public class LocalRegressionSmootherTest extends TestCase {
             final double[] y = new double[7];
             final double[] z = new double[8];
 
-            new LocalRegressionSmoother(0, 7).smooth(y, z);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 7).smooth(y, z);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("!(y.length == z.length)", e.getMessage());
@@ -140,7 +140,7 @@ public class LocalRegressionSmootherTest extends TestCase {
             final double[] y = new double[6];
             final double[] z = new double[6];
 
-            new LocalRegressionSmoother(0, 7).smooth(y, z);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 7).smooth(y, z);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("!(y.length >= span)", e.getMessage());
@@ -149,7 +149,7 @@ public class LocalRegressionSmootherTest extends TestCase {
         try {
             final double[] y = new double[7];
 
-            new LocalRegressionSmoother(0, 7).smooth(y, y);
+            new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 7).smooth(y, y);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("y == z", e.getMessage());
@@ -171,7 +171,7 @@ public class LocalRegressionSmootherTest extends TestCase {
         y[8] = 1.0;
         y[9] = 1.0;
 
-        new LocalRegressionSmoother(0, 7, 1).smooth(y, z);
+        new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 7, 1).smooth(y, z);
 
         assertEquals(1.0, z[0], 1.0E-10);
         assertEquals(1.0, z[4], 1.0E-10);
@@ -194,7 +194,7 @@ public class LocalRegressionSmootherTest extends TestCase {
         y[8] = 8.0;
         y[9] = 9.0;
 
-        new LocalRegressionSmoother(1, 7, 1).smooth(y, z);
+        new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 1, 7, 1).smooth(y, z);
 
         assertEquals(0.0, z[0], 1.0E-10);
         assertEquals(4.0, z[4], 1.0E-10);
@@ -217,7 +217,7 @@ public class LocalRegressionSmootherTest extends TestCase {
         y[8] = 64.0;
         y[9] = 81.0;
 
-        new LocalRegressionSmoother(2, 7, 1).smooth(y, z);
+        new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 2, 7, 1).smooth(y, z);
 
         assertEquals(0.0, z[0], 1.0E-10);
         assertEquals(16.0, z[4], 1.0E-10);
