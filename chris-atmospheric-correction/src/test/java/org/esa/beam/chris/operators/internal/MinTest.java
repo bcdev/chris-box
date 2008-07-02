@@ -30,21 +30,21 @@ public class MinTest extends TestCase {
     public void testBrackCos() {
         final Bracket bracket = Min.brack(new TestFunctions.Cos(), 0.0, 0.5, new Bracket());
 
-        assertTrue(bracket.lowerX < bracket.innerX);
-        assertTrue(bracket.upperX > bracket.innerX);
+        assertTrue(bracket.lowerX < bracket.minimumX);
+        assertTrue(bracket.upperX > bracket.minimumX);
 
-        assertTrue(bracket.lowerF > bracket.innerF);
-        assertTrue(bracket.upperF > bracket.innerF);
+        assertTrue(bracket.lowerF > bracket.minimumF);
+        assertTrue(bracket.upperF > bracket.minimumF);
     }
 
     public void testBrackSin() {
         final Bracket bracket = Min.brack(new TestFunctions.Sin(), 0.0, 0.5, new Bracket());
 
-        assertTrue(bracket.lowerX < bracket.innerX);
-        assertTrue(bracket.upperX > bracket.innerX);
+        assertTrue(bracket.lowerX < bracket.minimumX);
+        assertTrue(bracket.upperX > bracket.minimumX);
 
-        assertTrue(bracket.lowerF > bracket.innerF);
-        assertTrue(bracket.upperF > bracket.innerF);
+        assertTrue(bracket.lowerF > bracket.minimumF);
+        assertTrue(bracket.upperF > bracket.minimumF);
     }
 
     public void testBrentCos() {
@@ -54,8 +54,8 @@ public class MinTest extends TestCase {
         final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
         assertTrue(success);
 
-        assertEquals(Math.PI, bracket.innerX, ACCURACY_GOAL);
-        assertEquals(-1.0, bracket.innerF, ACCURACY_GOAL);
+        assertEquals(Math.PI, bracket.minimumX, ACCURACY_GOAL);
+        assertEquals(-1.0, bracket.minimumF, ACCURACY_GOAL);
     }
 
     public void testBrentSin() {
@@ -65,7 +65,7 @@ public class MinTest extends TestCase {
         final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
         assertTrue(success);
 
-        assertEquals(1.5 * Math.PI, bracket.innerX, ACCURACY_GOAL);
-        assertEquals(-1.0, bracket.innerF, ACCURACY_GOAL);
+        assertEquals(1.5 * Math.PI, bracket.minimumX, ACCURACY_GOAL);
+        assertEquals(-1.0, bracket.minimumF, ACCURACY_GOAL);
     }
 }

@@ -29,7 +29,7 @@ public class ModtranLookupTableTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-//        lut = new ModtranLookupTableReader().readLookupTable(); // too expensive for unit-testing
+        lut = new ModtranLookupTableReader().readLookupTable(); // too expensive for unit-testing
     }
 
     @Override
@@ -41,7 +41,8 @@ public class ModtranLookupTableTest extends TestCase {
         if (lut != null) {
             checkLookupTable1();
             checkLookupTable2();
-            checkModtranLookupTable();
+//            checkModtranLookupTable();
+            checkModtranLookupTable2();
         }
     }
 
@@ -54,7 +55,7 @@ public class ModtranLookupTableTest extends TestCase {
         // ada = 145.0 relative azimuth angle
         values = lut.getLut1().getValues(20.0, 35.0, 0.3, 0.2, 145.0);
 
-        assertEquals(lut.getWavelengthCount(), values.length);
+        assertEquals(lut.getWavelengths().length, values.length);
         assertEquals(0.002960650, values[104], 0.5E-8);
         assertEquals(0.000294274, values[472], 0.5E-9);
 
@@ -65,7 +66,7 @@ public class ModtranLookupTableTest extends TestCase {
         // ada = 45.0 relative azimuth angle
         values = lut.getLut1().getValues(40.0, 55.0, 0.1, 0.3, 45.0);
 
-        assertEquals(lut.getWavelengthCount(), values.length);
+        assertEquals(lut.getWavelengths().length, values.length);
         assertEquals(0.004093020, values[136], 0.5E-8);
         assertEquals(0.000631324, values[446], 0.5E-9);
     }
@@ -79,7 +80,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3  target elevation
         // aot = 0.2  AOT at 550nm
         // cwv = 2.0  integrated water vapour
-        values = matrixFactory.createMatrix(lut.getWavelengthCount(), lut.getParameterCount2(),
+        values = matrixFactory.createMatrix(lut.getWavelengthCount(), 4,
                                             lut.getLut2().getValues(20.0, 35.0, 0.3, 0.2, 2.0));
 
         assertEquals(0.1084700, values[110][0], 0.5E-6);
@@ -97,7 +98,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // cwv = 3.0  integrated water vapour
-        values = matrixFactory.createMatrix(lut.getWavelengthCount(), lut.getParameterCount2(),
+        values = matrixFactory.createMatrix(lut.getWavelengthCount(), 4,
                                             lut.getLut2().getValues(40.0, 55.0, 0.1, 0.3, 3.0));
 
         assertEquals(0.0756223, values[222][0], 0.5E-7);
@@ -113,12 +114,12 @@ public class ModtranLookupTableTest extends TestCase {
 
     private void checkModtranLookupTable() {
         double[][] matrix;
-        matrix = lut.getValues(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
-        assertEquals(lut.getWavelengthCount(), matrix.length);
+        matrix = lut.getTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
+        assertEquals(lut.getWavelengths().length, matrix.length);
 
         double[] parameters;
         parameters = matrix[70];
-        assertEquals(lut.getParameterCount(), parameters.length);
+        assertEquals(5, parameters.length);
 
         assertEquals(0.00423624, parameters[0], 0.5E-8);
         assertEquals(0.10402400, parameters[1], 0.5E-6);
@@ -126,16 +127,59 @@ public class ModtranLookupTableTest extends TestCase {
         assertEquals(0.17851200, parameters[3], 0.5E-6);
         assertEquals(0.36571800, parameters[4], 0.5E-6);
 
-        matrix = lut.getValues(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
-        assertEquals(lut.getWavelengthCount(), matrix.length);
+        matrix = lut.getTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
+        assertEquals(lut.getWavelengths().length, matrix.length);
 
         parameters = matrix[17];
-        assertEquals(lut.getParameterCount(), parameters.length);
+        assertEquals(5, parameters.length);
 
         assertEquals(0.00809511, parameters[0], 0.5E-8);
         assertEquals(0.03731340, parameters[1], 0.5E-7);
         assertEquals(0.03066440, parameters[2], 0.5E-7);
         assertEquals(0.25710700, parameters[3], 0.5E-6);
         assertEquals(1.00742000, parameters[4], 0.5E-5);
+    }
+
+    private void checkModtranLookupTable2() {
+        double[][] matrix;
+
+        // vza = 20.0
+        // sza = 35.0
+        // ada = 145.0
+        // alt = 0.3  target elevation
+        // aot = 0.2  AOT at 550nm
+        // cwv = 2.0  integrated water vapour
+        matrix = lut.getTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
+        assertEquals(7, matrix.length);
+
+        assertEquals(lut.getWavelengthCount(), matrix[0].length);
+        assertEquals(lut.getWavelengthCount(), matrix[1].length);
+        assertEquals(lut.getWavelengthCount(), matrix[2].length);
+        assertEquals(lut.getWavelengthCount(), matrix[3].length);
+        assertEquals(lut.getWavelengthCount(), matrix[4].length);
+        assertEquals(lut.getWavelengthCount(), matrix[5].length);
+        assertEquals(lut.getWavelengthCount(), matrix[6].length);
+
+        assertEquals(42.3624000, matrix[ModtranLookupTable.LPW][70], 0.5E-4);
+        assertEquals(0.10402400, matrix[1][70], 0.5E-6);
+        assertEquals(0.03887840, matrix[2][70], 0.5E-7);
+        assertEquals(0.17851200, matrix[ModtranLookupTable.SAB][70], 0.5E-6);
+        assertEquals(0.36571800, matrix[4][70], 0.5E-6);
+        assertEquals(1240.89000, matrix[ModtranLookupTable.EGL][70], 0.5E-2);
+
+        // vza = 40.0
+        // sza = 55.0
+        // ada = 45.0
+        // alt = 0.1  target elevation
+        // aot = 0.3  AOT at 550nm
+        // cwv = 3.0  integrated water vapour
+        matrix = lut.getTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
+
+        assertEquals(80.9511000, matrix[ModtranLookupTable.LPW][17], 0.5E-4);
+        assertEquals(0.03731340, matrix[1][17], 0.5E-7);
+        assertEquals(0.03066440, matrix[2][17], 0.5E-7);
+        assertEquals(0.25710700, matrix[ModtranLookupTable.SAB][17], 0.5E-6);
+        assertEquals(1.00742000, matrix[4][17], 0.5E-5);
+        assertEquals(520.664900, matrix[ModtranLookupTable.EGL][17], 0.5E-3);
     }
 }
