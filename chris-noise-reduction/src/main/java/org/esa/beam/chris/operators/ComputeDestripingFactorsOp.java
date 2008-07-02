@@ -17,7 +17,8 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.operators.LocalRegressionSmoother;
+import org.esa.beam.chris.math.LocalRegressionSmoother;
+import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.Sorter;
 import org.esa.beam.framework.datamodel.Band;
@@ -153,7 +154,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         targetProduct.getMetadataRoot().addElement(targetBandInfo);
 
         panorama = new Panorama(sourceProducts);
-        smoother = new LocalRegressionSmoother(2, smoothingOrder, 2);
+        smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 2, smoothingOrder, 2);
         if (slitCorrection) {
             slitNoiseFactors = getSlitNoiseFactors(sourceProducts[0]);
         }

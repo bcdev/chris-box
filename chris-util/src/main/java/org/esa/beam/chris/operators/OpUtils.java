@@ -287,7 +287,7 @@ class OpUtils {
      *
      * @return the central wavelenghts (nm).
      */
-    public static double[] getCentralWavelenghts(Band[] bands) {
+    public static double[] getWavelenghts(Band[] bands) {
         final double[] wavelengths = new double[bands.length];
 
         for (int i = 0; i < bands.length; i++) {

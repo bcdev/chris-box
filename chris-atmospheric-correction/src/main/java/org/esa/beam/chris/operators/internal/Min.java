@@ -56,12 +56,12 @@ public class Min {
         /**
          * An abscissa value within the bracketing interval.
          */
-        public double innerX;
+        public double minimumX;
         /**
          * The function value at {@code innerX}. This value must be less than
          * both {@code lowerF} and {@code upperF}.
          */
-        public double innerF;
+        public double minimumF;
 
         /**
          * Creates a new instance of this class.
@@ -88,8 +88,8 @@ public class Min {
             lowerF = f.value(this.lowerX);
             upperF = f.value(this.upperX);
 
-            innerX = this.lowerX + GOLDEN * (this.upperX - this.lowerX);
-            innerF = f.value(this.innerX);
+            minimumX = this.lowerX + GOLDEN * (this.upperX - this.lowerX);
+            minimumF = f.value(this.minimumX);
         }
     }
 
@@ -108,30 +108,30 @@ public class Min {
         double lowerX = a;
         double lowerF = f.value(a);
 
-        double innerX = b;
-        double innerF = f.value(b);
+        double minimumX = b;
+        double minimumF = f.value(b);
 
-        if (innerF > lowerF) {
+        if (minimumF > lowerF) {
             final double lx = lowerX;
             final double lf = lowerF;
 
-            lowerX = innerX;
-            lowerF = innerF;
+            lowerX = minimumX;
+            lowerF = minimumF;
 
-            innerX = lx;
-            innerF = lf;
+            minimumX = lx;
+            minimumF = lf;
         }
 
-        double upperX = innerX + (innerX - lowerX) * (1.0 / GOLDEN - 1.0);
+        double upperX = minimumX + (minimumX - lowerX) * (1.0 / GOLDEN - 1.0);
         double upperF = f.value(upperX);
 
-        while (innerF > upperF) {
-            upperX = upperX + (upperX - innerX) * (1.0 / GOLDEN - 1.0);
+        while (minimumF > upperF) {
+            upperX = upperX + (upperX - minimumX) * (1.0 / GOLDEN - 1.0);
             upperF = f.value(upperX);
         }
 
-        bracket.innerX = innerX;
-        bracket.innerF = innerF;
+        bracket.minimumX = minimumX;
+        bracket.minimumF = minimumF;
 
         if (lowerX > upperX) {
             bracket.lowerX = upperX;
@@ -201,13 +201,13 @@ public class Min {
      */
     public static boolean brent(UnivariateFunction f, Bracket bracket, double relativeAccuracyGoal,
                                 double absoluteAccuracyGoal, int maxIter) {
-        if (bracket.innerF >= bracket.lowerF ||
-                bracket.innerF >= bracket.upperF ||
-                bracket.innerX <= bracket.lowerX && bracket.innerX <= bracket.upperX ||
-                bracket.innerX >= bracket.lowerX && bracket.innerX >= bracket.upperX) {
+        if (bracket.minimumF >= bracket.lowerF ||
+                bracket.minimumF >= bracket.upperF ||
+                bracket.minimumX <= bracket.lowerX && bracket.minimumX <= bracket.upperX ||
+                bracket.minimumX >= bracket.lowerX && bracket.minimumX >= bracket.upperX) {
             throw new IllegalArgumentException(MessageFormat.format(
                     "The points a = {0}, b = {1}, c = {2} do not bracket a minimum.",
-                    bracket.lowerX, bracket.innerX, bracket.upperX));
+                    bracket.lowerX, bracket.minimumX, bracket.upperX));
         }
 
         double u;
@@ -224,9 +224,9 @@ public class Min {
         for (int i = 0; i < maxIter; ++i) {
             final double a = bracket.lowerX;
             final double b = bracket.upperX;
-            final double z = bracket.innerX;
+            final double z = bracket.minimumX;
 
-            final double fz = bracket.innerF;
+            final double fz = bracket.minimumF;
 
             final double lowerW = (z - a);
             final double upperW = (b - z);
@@ -288,8 +288,8 @@ public class Min {
                 fv = fw;
                 fw = fz;
 
-                bracket.innerX = u;
-                bracket.innerF = fu;
+                bracket.minimumX = u;
+                bracket.minimumF = fu;
             } else {
                 if (u < z) {
                     bracket.lowerX = u;

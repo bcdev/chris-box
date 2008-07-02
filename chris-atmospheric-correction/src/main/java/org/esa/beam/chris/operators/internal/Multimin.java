@@ -141,10 +141,10 @@ public class Multimin {
             Min.brent(f, bracket, 1.0E-6);
 
             for (int i = 0; i < p.length; ++i) {
-                x[i] = p[i] + u[i] * bracket.innerX;
+                x[i] = p[i] + u[i] * bracket.minimumX;
             }
 
-            return bracket.innerF;
+            return bracket.minimumF;
         }
     }
 

@@ -3,6 +3,9 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.chris.operators.internal.Min;
 import org.esa.beam.chris.operators.internal.Pow;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
+import org.esa.beam.chris.math.LocalRegressionSmoother;
+import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
+import org.esa.beam.chris.math.Statistics;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
@@ -26,26 +29,26 @@ class SmileOpImage extends OpImage {
 
     private final double[] nominalWavelengths;
     private final double[] nominalBandwidths;
-    private final BoaReflectanceCalculator boaReflectanceCalculator;
 
+    private final BoaReflectanceCalculator calculator;
     private final int lowerO2;
-    private final int upperO2;
 
+    private final int upperO2;
     private final LocalRegressionSmoother smoother;
 
     /**
      * Creates a new image from the radiance bands of a CHRIS product and the
      * corresponding mask images.
      *
-     * @param radianceBands            the radiance bands.
-     * @param hyperMaskImage           the hyper-spectral quality mask image.
-     * @param cloudMaskImage           the cloud mask image.
-     * @param boaReflectanceCalculator the strategy for calculating BOA reflectances from CHRIS TOA radiances.
+     * @param radianceBands  the radiance bands.
+     * @param hyperMaskImage the hyper-spectral quality mask image.
+     * @param cloudMaskImage the cloud mask image.
+     * @param calculator     the strategy for calculating BOA reflectances from CHRIS TOA radiances.
      *
      * @return the column-wise wavelength shifts.
      */
     public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                                      BoaReflectanceCalculator boaReflectanceCalculator) {
+                                      BoaReflectanceCalculator calculator) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         sourceImageVector.add(hyperMaskImage);
@@ -71,17 +74,16 @@ class SmileOpImage extends OpImage {
         final double[] nominalWavelengths = OpUtils.getWavelenghts(radianceBands);
         final double[] nominalBandwidths = OpUtils.getBandwidths(radianceBands);
 
-        return new SmileOpImage(imageLayout, sourceImageVector, nominalWavelengths, nominalBandwidths,
-                                boaReflectanceCalculator);
+        return new SmileOpImage(imageLayout, sourceImageVector, nominalWavelengths, nominalBandwidths, calculator);
     }
 
     private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, double[] nominalWavelengths,
-                         double[] nominalBandwidths, BoaReflectanceCalculator boaReflectanceCalculator) {
+                         double[] nominalBandwidths, BoaReflectanceCalculator calculator) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.nominalWavelengths = nominalWavelengths;
         this.nominalBandwidths = nominalBandwidths;
-        this.boaReflectanceCalculator = boaReflectanceCalculator;
+        this.calculator = calculator;
 
         int lowerO2 = -1;
         int upperO2 = -1;
@@ -101,7 +103,7 @@ class SmileOpImage extends OpImage {
         this.lowerO2 = lowerO2;
         this.upperO2 = upperO2;
 
-        smoother = new LocalRegressionSmoother(new BoxcarWeightCalculator(), 0, 10);
+        smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 9, 1);
     }
 
     @Override
@@ -132,11 +134,12 @@ class SmileOpImage extends OpImage {
             final UnivariateFunction function = new UnivariateFunction() {
                 @Override
                 public double value(double shift) {
-                    // todo - ask Luis Guanter why not just the O2 bands are used here (rq)
-                    final Resampler resampler = boaReflectanceCalculator.createResampler(nominalWavelengths,
-                                                                                         nominalBandwidths, shift);
-                    boaReflectanceCalculator.calculateBoaReflectances(resampler, meanToaSpectrum, meanBoaSpectrum,
-                                                                      lowerO2, upperO2 + 1);
+                    // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
+                    final Resampler resampler = calculator.createResampler(nominalWavelengths,
+                                                                           nominalBandwidths, shift);
+                    calculator.calculateBoaReflectances(resampler, meanToaSpectrum, meanBoaSpectrum,
+                                                        lowerO2, upperO2 + 1);
+
                     double sum = 0.0;
                     for (int i = lowerO2; i < upperO2 + 1; ++i) {
                         sum += Pow.pow2(trueBoaSpectrum[i] - meanBoaSpectrum[i]);
@@ -221,22 +224,22 @@ class SmileOpImage extends OpImage {
     }
 
     private void computeTrueBoaSpectra(double[][] meanToaSpectra, double[][] trueBoaSpectra) {
-        final Resampler resampler = boaReflectanceCalculator.createResampler(nominalWavelengths, nominalBandwidths);
+        final Resampler resampler = calculator.createResampler(nominalWavelengths, nominalBandwidths);
 
         for (int x = 0; x < trueBoaSpectra.length; ++x) {
             final double[] meanBoaSpectrum = new double[nominalWavelengths.length];
-            boaReflectanceCalculator.calculateBoaReflectances(resampler, meanToaSpectra[x], meanBoaSpectrum);
+            calculator.calculateBoaReflectances(resampler, meanToaSpectra[x], meanBoaSpectrum);
 
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
 
-            // linear interpolation between lower and upper O2 absorption bands
-            // todo - ask Luis Guanter if this is necessary due to non-robust boxcar smoothing (rq)
-            final double w = nominalWavelengths[upperO2] - nominalWavelengths[lowerO2];
-            for (int i = lowerO2 + 1; i < upperO2; ++i) {
-                final double t = (nominalWavelengths[i] - nominalWavelengths[lowerO2]) / w;
-
-                trueBoaSpectra[x][i] = t * trueBoaSpectra[x][upperO2] + (1.0 - t) * trueBoaSpectra[x][lowerO2];
-            }
+//            linear interpolation between lower and upper O2 absorption bands
+//            todo - ask Luis Guanter if this was necessary due to non-robust boxcar smoothing in the prototype (rq)
+//            final double w = nominalWavelengths[upperO2] - nominalWavelengths[lowerO2];
+//            for (int i = lowerO2 + 1; i < upperO2; ++i) {
+//                final double t = (nominalWavelengths[i] - nominalWavelengths[lowerO2]) / w;
+//
+//                trueBoaSpectra[x][i] = t * trueBoaSpectra[x][upperO2] + (1.0 - t) * trueBoaSpectra[x][lowerO2];
+//            }
         }
     }
 }
