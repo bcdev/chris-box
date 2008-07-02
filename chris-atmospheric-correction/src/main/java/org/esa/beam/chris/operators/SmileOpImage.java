@@ -12,7 +12,9 @@ import java.awt.image.*;
 import java.util.Vector;
 
 /**
- * Image with column-wise wavelengths shifts due to the smile effect.
+ * Column-wise wavelengths shifts due to the CHRIS smile effect.
+ * <p/>
+ * Based on Guanter et al. (2006, Appl. Opt. 45, 2360).
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -31,12 +33,21 @@ class SmileOpImage extends OpImage {
 
     private final LocalRegressionSmoother smoother;
 
-    public static OpImage createImage(Band[] radianceBands, Band[] maskBands, Band cloudProductBand,
-                                      double cloudProductThreshold, BoaReflectanceCalculator boaReflectanceCalculator) {
+    /**
+     * Creates a new image from the radiance bands of a CHRIS product and the
+     * corresponding mask images.
+     *
+     * @param radianceBands            the radiance bands.
+     * @param hyperMaskImage           the hyper-spectral quality mask image.
+     * @param cloudMaskImage           the cloud mask image.
+     * @param boaReflectanceCalculator the strategy for calculating BOA reflectances from CHRIS TOA radiances.
+     *
+     * @return the column-wise wavelength shifts.
+     */
+    public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
+                                      BoaReflectanceCalculator boaReflectanceCalculator) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
-        final RenderedImage hyperMaskImage = HyperMaskOpImage.createImage(maskBands);
-        final RenderedImage cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
         sourceImageVector.add(hyperMaskImage);
         sourceImageVector.add(cloudMaskImage);
 
@@ -95,10 +106,6 @@ class SmileOpImage extends OpImage {
 
     @Override
     protected void computeRect(Raster[] sources, WritableRaster target, Rectangle rectangle) {
-        final double[] resampledLpw = new double[nominalWavelengths.length];
-        final double[] resampledEgl = new double[nominalWavelengths.length];
-        final double[] resampledSab = new double[nominalWavelengths.length];
-
         final double[][] meanToaSpectra = new double[rectangle.width][nominalWavelengths.length];
         final double[][] trueBoaSpectra = new double[rectangle.width][nominalWavelengths.length];
 
@@ -127,8 +134,8 @@ class SmileOpImage extends OpImage {
                 public double value(double shift) {
                     final Resampler resampler = boaReflectanceCalculator.createResampler(nominalWavelengths,
                                                                                          nominalBandwidths, shift);
-
-                    boaReflectanceCalculator.calculateBoaReflectances(resampler, meanToaSpectrum, meanBoaSpectrum);
+                    boaReflectanceCalculator.calculateBoaReflectances(resampler, meanToaSpectrum, meanBoaSpectrum,
+                                                                      lowerO2, upperO2 + 1);
                     double sum = 0.0;
                     for (int i = lowerO2; i < upperO2 + 1; ++i) {
                         sum += Pow.pow2(trueBoaSpectrum[i] - meanBoaSpectrum[i]);

@@ -8,7 +8,7 @@ import java.awt.*;
 import java.awt.image.*;
 
 /**
- * Water mask image indicating water surface.
+ * Water mask image.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

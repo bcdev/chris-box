@@ -13,12 +13,34 @@ class Resampler {
     private final int targetWavelengthCount;
     private final double[][] weights;
 
+    /**
+     * Creates a new resampler for resampling spectral quantities given for
+     * certain source wavelengths to specific target bands.
+     *
+     * @param sourceWavelengths the source wavelengths.
+     * @param targetWavelengths the target wavelenghts.
+     * @param targetBandwidths  the target bandwidths.
+     */
     public Resampler(double[] sourceWavelengths, double[] targetWavelengths, double[] targetBandwidths) {
+        this(sourceWavelengths, targetWavelengths, targetBandwidths, 0.0);
+    }
+
+    /**
+     * Creates a new resampler for resampling spectral quantities given for
+     * certain source wavelengths to specific target bands.
+     *
+     * @param sourceWavelengths the source wavelengths.
+     * @param targetWavelengths the target wavelenghts.
+     * @param targetBandwidths  the target bandwidths.
+     * @param targetShift       the target wavelength shift.
+     */
+    public Resampler(double[] sourceWavelengths, double[] targetWavelengths, double[] targetBandwidths,
+                     double targetShift) {
         sourceWavelengthCount = sourceWavelengths.length;
         targetWavelengthCount = targetWavelengths.length;
 
         weights = calculateResamplingWeights(sourceWavelengths, targetWavelengths, targetBandwidths,
-                                             new double[targetWavelengthCount][sourceWavelengthCount]);
+                                             targetShift, new double[targetWavelengthCount][sourceWavelengthCount]);
     }
 
     /**
@@ -52,61 +74,6 @@ class Resampler {
     }
 
     /**
-     * Resamples the given spectral values.
-     *
-     * @param sourceValues the spectral values.
-     *
-     * @return the resampled values.
-     */
-    public double[][] resample(double[][] sourceValues) {
-        return resample(sourceValues, new double[targetWavelengthCount][sourceValues[0].length]);
-    }
-
-    /**
-     * Resamples the given spectral values.
-     *
-     * @param sourceValues the spectral values.
-     * @param targetValues the resampled values (overwritten on output).
-     *
-     * @return the resampled values.
-     */
-    public double[][] resample(double[][] sourceValues, double[][] targetValues) {
-        if (sourceValues.length != sourceWavelengthCount) {
-            throw new IllegalArgumentException("sourceValues.lenght != sourceWavelengthCount");
-        }
-        if (targetValues.length != targetWavelengthCount) {
-            throw new IllegalArgumentException("targetValues.lenght != targetWavelengthCount");
-        }
-
-        return multiply(sourceValues, weights, targetValues);
-    }
-
-    /**
-     * Multiplies the columns of a matrix A by the rows of a matrix B.  The matrix B must
-     * have the same number of columns as A has rows. The resulting matrix C has the same
-     * number of columns as A and the same number of rows as B.
-     *
-     * @param a the matrix A.
-     * @param b the matrix B.
-     * @param c the resulting matrix (overwritten on output).
-     *
-     * @return the resutlting matrix.
-     */
-    private static double[][] multiply(double[][] a, double[][] b, double[][] c) {
-        for (int i = 0; i < b.length; ++i) {
-            for (int k = 0; k < a[0].length; ++k) {
-                double sum = 0.0;
-                for (int l = 0; l < a.length; ++l) {
-                    sum += a[l][k] * b[i][l];
-                }
-                c[i][k] = sum;
-            }
-        }
-
-        return c;
-    }
-
-    /**
      * Multiplies a vector by the rows of a matrix. The resulting vector has the same
      * number of components as the matrix has rows.
      *
@@ -131,18 +98,20 @@ class Resampler {
     /**
      * Calculates the weights for resampling spectral quantities computed at
      * wavelengths {@code sourceWavelenghts}  to spectral bands with central
-     * wavelenghts {@code targetWavelengths} and bandwidths
-     * {@code targetBandwidths}.
+     * wavelenghts {@code targetWavelengths} and bandwidths {@code targetBandwidths}.
      *
      * @param sourceWavelengths the source wavelenghts.
      * @param targetWavelengths the targetWavelengths.
      * @param targetBandwidths  the target bandwidths.
+     * @param targetShift       the target wavelength shift.
      * @param weights           the resampling weights (overwritten on output).
      *
      * @return the resampling weights.
      */
-    private static double[][] calculateResamplingWeights(double[] sourceWavelengths, double[] targetWavelengths,
-                                                         double[] targetBandwidths, double[][] weights) {
+    private static double[][] calculateResamplingWeights(double[] sourceWavelengths,
+                                                         double[] targetWavelengths,
+                                                         double[] targetBandwidths, double targetShift,
+                                                         double[][] weights) {
         final int sourceWavelengthCount = sourceWavelengths.length;
         final int targetWavelengthCount = targetWavelengths.length;
 
@@ -158,10 +127,10 @@ class Resampler {
         }
 
         for (int i = 0; i < targetWavelengthCount; ++i) {
-            for (int k = 0; k < sourceWavelengthCount; ++k) {
-                final double delta = Math.abs(targetWavelengths[i] - sourceWavelengths[k]);
+            for (int j = 0; j < sourceWavelengthCount; ++j) {
+                final double delta = Math.abs(targetWavelengths[i] + targetShift - sourceWavelengths[j]);
                 if (delta <= 2.0 * targetBandwidths[i]) {
-                    weights[i][k] = 1.0 / Math.exp(Math.pow(delta / (targetBandwidths[i] * c[i]), e[i]));
+                    weights[i][j] = 1.0 / Math.exp(Math.pow(delta / (targetBandwidths[i] * c[i]), e[i]));
                 }
             }
             // normalize weights

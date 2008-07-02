@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.util.math.Array;
+import org.esa.beam.util.math.IntervalPartition;
 import org.esa.beam.util.math.VectorLookupTable;
 
 /**
@@ -24,27 +25,33 @@ import org.esa.beam.util.math.VectorLookupTable;
  * @version $Revision$ $Date$
  */
 class ModtranLookupTable {
-    private final int parameterCount1;
-    private final int parameterCount2;
 
+    public static final int VZA = 0;
+    public static final int SZA = 1;
+    public static final int ADA = 2;
+    public static final int ALT = 3;
+    public static final int AOT = 4;
+    public static final int CWV = 5;
+
+    public static final int LPW = 0;
+    public static final int EGL = 5;
+    public static final int SAB = 3;
+
+    private final double[] wavelengths;
     private final VectorLookupTable lut1;
     private final VectorLookupTable lut2;
 
-    private final double[] wavelengths;
+    public ModtranLookupTable(Array wavelengths, VectorLookupTable lut1, VectorLookupTable lut2) {
+        this.wavelengths = new double[wavelengths.getLength()];
 
-    public ModtranLookupTable(int parameterCount1, int parameterCount2, VectorLookupTable lut1,
-                              VectorLookupTable lut2, Array wavelengths) {
-        this.parameterCount1 = parameterCount1;
-        this.parameterCount2 = parameterCount2;
         this.lut1 = lut1;
         this.lut2 = lut2;
 
-        this.wavelengths = new double[wavelengths.getLength()];
         wavelengths.copyTo(0, this.wavelengths, 0, wavelengths.getLength());
     }
 
     /**
-     * Returns an interpolated matrix of output parameters for given input parameters.
+     * Returns an interpolated table of output parameters for given input parameters.
      *
      * @param vza the view zenith angle (degree).
      * @param sza the solar zenith angle (degree).
@@ -53,12 +60,12 @@ class ModtranLookupTable {
      * @param aot the aerosol optical thickness at 550 nm.
      * @param cwv the integrated water vapour column (g cm-2).
      *
-     * @return the output parameter matrix. The number of rows is equal to {@code wavelenghtCount}
-     *         and the number of columns matches {@code parameterCount}. The tabulated atmospheric
-     *         parameters are the following:
+     * @return the output parameter matrix. The number of rows is equal to the number of calculated
+     *         parameters and the number of columns matches the number of spectral wavelenghts. The
+     *         tabulated radiation parameters are the following:
      *         <table>
      *         <tr>
-     *         <td>Column</td>
+     *         <td>Row</td>
      *         <td>Parameter</td>
      *         </tr>
      *         <tr>
@@ -67,11 +74,11 @@ class ModtranLookupTable {
      *         </tr>
      *         <tr>
      *         <td>2</td>
-     *         <td>Directed flux</td>
+     *         <td>Directed transmittance</td>
      *         </tr>
      *         <tr>
      *         <td>3</td>
-     *         <td>Diffuse flux</td>
+     *         <td>Diffuse transmittance</td>
      *         </tr>
      *         <tr>
      *         <td>4</td>
@@ -81,37 +88,43 @@ class ModtranLookupTable {
      *         <td>5</td>
      *         <td>Ratio of diffuse to direct upward transmittance</td>
      *         </tr>
+     *         <tr>
+     *         <td>6</td>
+     *         <td>todo - ask Luis Guanter</td>
+     *         </tr>
      *         </table>
      */
-    public final double[][] getValues(double vza, double sza, double ada, double alt, double aot, double cwv) {
+    public final double[][] getTable(double vza, double sza, double ada, double alt, double aot, double cwv) {
         final double[] values1 = lut1.getValues(vza, sza, alt, aot, ada);
         final double[] values2 = lut2.getValues(vza, sza, alt, aot, cwv);
 
-        final double[][] matrix = new double[wavelengths.length][parameterCount1 + parameterCount2];
+        final int m = 1;
+        final int n = values2.length / wavelengths.length;
 
-        for (int i = 0; i < wavelengths.length; ++i) {
-            System.arraycopy(values1, parameterCount1 * i, matrix[i], 0, parameterCount1);
-            System.arraycopy(values2, parameterCount2 * i, matrix[i], parameterCount1, parameterCount2);
+        final double[][] table = new double[m + n + 2][wavelengths.length];
+
+        for (int j = 0; j < wavelengths.length; ++j) {
+            table[0][j] = values1[j] * 1.0E4;
+        }
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < wavelengths.length; ++j) {
+                table[m + i][j] = values2[j * n + i];
+            }
+        }
+        final double szc = Math.cos(Math.toRadians(sza));
+        for (int j = 0; j < wavelengths.length; ++j) {
+            table[m + n][j] = (table[1][j] * szc + table[2][j]) * 1.0E4;
         }
 
-        return matrix;
+        return table;
     }
 
     /**
-     * Returns the number of parameters.
-     *
-     * @return the number of parameters.
-     */
-    public final int getParameterCount() {
-        return parameterCount1 + parameterCount2;
-    }
-
-    /**
-     * Returns the number of wavelenghts.
+     * Returns the number of wavelengths.
      *
      * @return the number of wavelengths.
      */
-    public final int getWavelengthCount() {
+    public int getWavelengthCount() {
         return wavelengths.length;
     }
 
@@ -125,20 +138,38 @@ class ModtranLookupTable {
     }
 
     /**
-     * Returns the water vapour dimension.
+     * Returns the number of dimensions associated with the lookup table.
      *
-     * @return the water vapour dimension.
+     * @return the number of dimensions.
      */
-    public final double[] getDimensionWvc() {
-        return lut2.getDimension(4).getSequence();
+    public final int getDimensionCount() {
+        return 6;
     }
 
-    final int getParameterCount1() {
-        return parameterCount1;
-    }
-
-    final int getParameterCount2() {
-        return parameterCount2;
+    /**
+     * Returns the the ith dimension associated with the lookup table.
+     *
+     * @param i the index number of the dimension of interest
+     *
+     * @return the ith dimension.
+     */
+    public final IntervalPartition getDimension(int i) {
+        switch (i) {
+            case 0:
+                return lut2.getDimension(0);
+            case 1:
+                return lut2.getDimension(1);
+            case 2:
+                return lut1.getDimension(4);
+            case 3:
+                return lut2.getDimension(2);
+            case 4:
+                return lut2.getDimension(3);
+            case 5:
+                return lut2.getDimension(4);
+            default:
+                throw new IllegalArgumentException("illegal dimension index number");
+        }
     }
 
     final VectorLookupTable getLut1() {

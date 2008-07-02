@@ -86,8 +86,8 @@ class ModtranLookupTableReader {
             final VectorLookupTable lut2 = new VectorLookupTable(wavelengthCount * parameterCount2, values2,
                                                                  partitions2);
 
-            return new ModtranLookupTable(parameterCount1, parameterCount2, lut1, lut2,
-                                          new Array.Float(wavelengths));
+            return new ModtranLookupTable(new Array.Float(wavelengths), lut1, lut2
+            );
         } catch (Exception e) {
             throw new IOException("could not read MODTRAN lookup table for atmospheric correction", e);
         } finally {
