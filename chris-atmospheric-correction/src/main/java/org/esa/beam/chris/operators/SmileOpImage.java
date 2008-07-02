@@ -68,10 +68,10 @@ class SmileOpImage extends OpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        final double[] sourceWavelengths = OpUtils.getCentralWavelenghts(radianceBands);
-        final double[] sourceBandwidths = OpUtils.getBandwidths(radianceBands);
+        final double[] nominalWavelengths = OpUtils.getWavelenghts(radianceBands);
+        final double[] nominalBandwidths = OpUtils.getBandwidths(radianceBands);
 
-        return new SmileOpImage(imageLayout, sourceImageVector, sourceWavelengths, sourceBandwidths,
+        return new SmileOpImage(imageLayout, sourceImageVector, nominalWavelengths, nominalBandwidths,
                                 boaReflectanceCalculator);
     }
 
@@ -132,6 +132,7 @@ class SmileOpImage extends OpImage {
             final UnivariateFunction function = new UnivariateFunction() {
                 @Override
                 public double value(double shift) {
+                    // todo - ask Luis Guanter why not just the O2 bands are used here (rq)
                     final Resampler resampler = boaReflectanceCalculator.createResampler(nominalWavelengths,
                                                                                          nominalBandwidths, shift);
                     boaReflectanceCalculator.calculateBoaReflectances(resampler, meanToaSpectrum, meanBoaSpectrum,
@@ -229,7 +230,7 @@ class SmileOpImage extends OpImage {
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
 
             // linear interpolation between lower and upper O2 absorption bands
-            // todo - ask Luis Guanter if this is necessary due to non-robust boxcar smoothing
+            // todo - ask Luis Guanter if this is necessary due to non-robust boxcar smoothing (rq)
             final double w = nominalWavelengths[upperO2] - nominalWavelengths[lowerO2];
             for (int i = lowerO2 + 1; i < upperO2; ++i) {
                 final double t = (nominalWavelengths[i] - nominalWavelengths[lowerO2]) / w;
