@@ -1,11 +1,9 @@
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.internal.Min;
-import org.esa.beam.chris.operators.internal.Pow;
-import org.esa.beam.chris.operators.internal.UnivariateFunction;
 import org.esa.beam.chris.math.LocalRegressionSmoother;
 import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
-import org.esa.beam.chris.math.Statistics;
+import org.esa.beam.chris.operators.internal.Min;
+import org.esa.beam.chris.operators.internal.UnivariateFunction;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
@@ -15,7 +13,7 @@ import java.awt.image.*;
 import java.util.Vector;
 
 /**
- * Column-wise wavelengths shifts due to the CHRIS smile effect.
+ * Calculates column-wise wavelengths shifts due to the CHRIS smile effect.
  * <p/>
  * Based on Guanter et al. (2006, Appl. Opt. 45, 2360).
  *
@@ -29,26 +27,27 @@ class SmileOpImage extends OpImage {
 
     private final double[] nominalWavelengths;
     private final double[] nominalBandwidths;
+    private final BoaReflectanceCalculatorFactory calculatorFactory;
 
-    private final BoaReflectanceCalculator calculator;
     private final int lowerO2;
-
     private final int upperO2;
+
     private final LocalRegressionSmoother smoother;
 
     /**
      * Creates a new image from the radiance bands of a CHRIS product and the
      * corresponding mask images.
      *
-     * @param radianceBands  the radiance bands.
-     * @param hyperMaskImage the hyper-spectral quality mask image.
-     * @param cloudMaskImage the cloud mask image.
-     * @param calculator     the strategy for calculating BOA reflectances from CHRIS TOA radiances.
+     * @param radianceBands     the radiance bands.
+     * @param hyperMaskImage    the hyper-spectral quality mask image.
+     * @param cloudMaskImage    the cloud mask image.
+     * @param calculatorFactory the factory for creating the strategy for calculating BOA reflectances
+     *                          from TOA radiances.
      *
      * @return the column-wise wavelength shifts.
      */
     public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                                      BoaReflectanceCalculator calculator) {
+                                      BoaReflectanceCalculatorFactory calculatorFactory) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         sourceImageVector.add(hyperMaskImage);
@@ -74,16 +73,17 @@ class SmileOpImage extends OpImage {
         final double[] nominalWavelengths = OpUtils.getWavelenghts(radianceBands);
         final double[] nominalBandwidths = OpUtils.getBandwidths(radianceBands);
 
-        return new SmileOpImage(imageLayout, sourceImageVector, nominalWavelengths, nominalBandwidths, calculator);
+        return new SmileOpImage(imageLayout, sourceImageVector, nominalWavelengths, nominalBandwidths,
+                                calculatorFactory);
     }
 
     private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, double[] nominalWavelengths,
-                         double[] nominalBandwidths, BoaReflectanceCalculator calculator) {
+                         double[] nominalBandwidths, BoaReflectanceCalculatorFactory calculatorFactory) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.nominalWavelengths = nominalWavelengths;
         this.nominalBandwidths = nominalBandwidths;
-        this.calculator = calculator;
+        this.calculatorFactory = calculatorFactory;
 
         int lowerO2 = -1;
         int upperO2 = -1;
@@ -135,17 +135,12 @@ class SmileOpImage extends OpImage {
                 @Override
                 public double value(double shift) {
                     // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
-                    final Resampler resampler = calculator.createResampler(nominalWavelengths,
-                                                                           nominalBandwidths, shift);
-                    calculator.calculateBoaReflectances(resampler, meanToaSpectrum, meanBoaSpectrum,
-                                                        lowerO2, upperO2 + 1);
+                    final BoaReflectanceCalculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
+                                                                                                   nominalBandwidths,
+                                                                                                   shift);
+                    calculator.calculate(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
 
-                    double sum = 0.0;
-                    for (int i = lowerO2; i < upperO2 + 1; ++i) {
-                        sum += Pow.pow2(trueBoaSpectrum[i] - meanBoaSpectrum[i]);
-                    }
-
-                    return sum;
+                    return sumOfSquaredDifferences(trueBoaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
                 }
             };
 
@@ -224,12 +219,13 @@ class SmileOpImage extends OpImage {
     }
 
     private void computeTrueBoaSpectra(double[][] meanToaSpectra, double[][] trueBoaSpectra) {
-        final Resampler resampler = calculator.createResampler(nominalWavelengths, nominalBandwidths);
+        final BoaReflectanceCalculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
+                                                                                       nominalBandwidths);
 
         for (int x = 0; x < trueBoaSpectra.length; ++x) {
             final double[] meanBoaSpectrum = new double[nominalWavelengths.length];
-            calculator.calculateBoaReflectances(resampler, meanToaSpectra[x], meanBoaSpectrum);
 
+            calculator.calculate(meanToaSpectra[x], meanBoaSpectrum);
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
 
 //            linear interpolation between lower and upper O2 absorption bands
@@ -241,5 +237,15 @@ class SmileOpImage extends OpImage {
 //                trueBoaSpectra[x][i] = t * trueBoaSpectra[x][upperO2] + (1.0 - t) * trueBoaSpectra[x][lowerO2];
 //            }
         }
+    }
+
+    private static double sumOfSquaredDifferences(double[] a, double[] b, int from, int to) {
+        double sum = 0.0;
+        for (int i = from; i < to; ++i) {
+            final double d = a[i] - b[i];
+            sum += d * d;
+        }
+
+        return sum;
     }
 }

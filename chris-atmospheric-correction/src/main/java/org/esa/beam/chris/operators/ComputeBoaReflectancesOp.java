@@ -107,7 +107,6 @@ public class ComputeBoaReflectancesOp extends Operator {
     private double alt;
 
     private double cwv;
-    private double toaRadianceMultiplier;
 
     private double[][] lutValuesInt;
 
@@ -122,6 +121,9 @@ public class ComputeBoaReflectancesOp extends Operator {
     private double[] lpw;
     private double[] egl;
     private double[] sab;
+    private BoaReflectanceCalculatorFactory calculatorFactory;
+    private BoaReflectanceCalculator calculator;
+    private double[] lpwCor;
 
     @Override
     public void initialize() throws OperatorException {
@@ -245,7 +247,6 @@ public class ComputeBoaReflectancesOp extends Operator {
         cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
 
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
-        toaRadianceMultiplier = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
 
         radianceWavelenghts = OpUtils.getWavelenghts(radianceBands);
         radianceBandwidths = OpUtils.getBandwidths(radianceBands);
@@ -253,15 +254,9 @@ public class ComputeBoaReflectancesOp extends Operator {
         cwv = wvIni;
 
         final double[][] rtmTable = lut.getTable(vza, sza, ada, alt, aot550, cwv);
-        final Resampler resampler = new Resampler(lut.getWavelengths(), radianceWavelenghts, radianceBandwidths);
-
-        lpwInt = new double[radianceWavelenghts.length];
-        eglInt = new double[radianceWavelenghts.length];
-        sabInt = new double[radianceWavelenghts.length];
-
-        resampler.resample(rtmTable[ModtranLookupTable.LPW], lpwInt);
-        resampler.resample(rtmTable[ModtranLookupTable.EGL], eglInt);
-        resampler.resample(rtmTable[ModtranLookupTable.SAB], sabInt);
+        calculatorFactory = new BoaReflectanceCalculatorFactory(lut.getWavelengths(), rtmTable, day);
+        lpwCor = new double[radianceBands.length];
+        calculator = calculatorFactory.createCalculator(radianceWavelenghts, radianceBandwidths, lpwCor);
 
         o2a = OpUtils.findBandIndex(radianceBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
         o2b = OpUtils.findBandIndex(radianceBands, O2_B_WAVELENGTH, O2_B_BANDWIDTH);
@@ -294,7 +289,7 @@ public class ComputeBoaReflectancesOp extends Operator {
 
             final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
 
-            for (int i = 0; i < reflBands.length; i++) {
+            for (int i = 0; i < reflBands.length; ++i) {
                 final Tile radianceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
                 final Tile reflTile = targetTileMap.get(reflBands[i]);
 
@@ -304,11 +299,10 @@ public class ComputeBoaReflectancesOp extends Operator {
                     }
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
                     if (cloudMask == 0 || cloudMask == 256) {
-                        final double radiance = radianceTile.getSampleDouble(pos.x, pos.y);
-                        final double term = PI * (radiance * toaRadianceMultiplier) / eglInt[i];
-                        final double refl = term / (1.0 + term * sabInt[i]);
+                        final double toa = radianceTile.getSampleDouble(pos.x, pos.y);
+                        final double boa = calculator.calculate(i, toa);
 
-                        reflTile.setSample(pos.x, pos.y, refl);
+                        reflTile.setSample(pos.x, pos.y, boa);
                     } else {
                         reflTile.setSample(pos.x, pos.y, REFL_NO_DATA_VALUE);
                     }

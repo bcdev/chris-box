@@ -9,45 +9,31 @@ package org.esa.beam.chris.operators;
  */
 class BoaReflectanceCalculator {
 
-    private final double[] rtmWavelengths;
-    private final double[][] rtmTable;
+    private final double[] lpw;
+    private final double[] egl;
+    private final double[] sab;
     private final double toaRadianceMultiplier;
 
-    public BoaReflectanceCalculator(double[] rtmWavelengths, double[][] rtmTable) {
-        this(rtmWavelengths, rtmTable, 1.0);
-    }
-
-    public BoaReflectanceCalculator(double[] rtmWavelengths, double[][] rtmTable, double toaRadianceMultiplier) {
-        this.rtmWavelengths = rtmWavelengths;
-        this.rtmTable = rtmTable;
+    BoaReflectanceCalculator(double[] lpw, double[] egl, double[] sab, double toaRadianceMultiplier) {
+        this.lpw = lpw;
+        this.egl = egl;
+        this.sab = sab;
         this.toaRadianceMultiplier = toaRadianceMultiplier;
     }
 
-    public Resampler createResampler(double[] wavelenghts, double[] bandwidths) {
-        return new Resampler(rtmWavelengths, wavelenghts, bandwidths, 0.0);
+    public void calculate(double[] toa, double[] boa) {
+        calculate(toa, boa, 0, toa.length);
     }
 
-    public Resampler createResampler(double[] wavelenghts, double[] bandwidths, double shift) {
-        return new Resampler(rtmWavelengths, wavelenghts, bandwidths, shift);
-    }
-
-    public void calculateBoaReflectances(Resampler resampler, double[] toa, double[] boa) {
-        calculateBoaReflectances(resampler, toa, boa, 0, toa.length);
-    }
-
-    public void calculateBoaReflectances(Resampler resampler, double[] toa, double[] boa, int from, int to) {
-        final double[] lpw = new double[toa.length];
-        final double[] egl = new double[toa.length];
-        final double[] sab = new double[toa.length];
-
-        resampler.resample(rtmTable[ModtranLookupTable.LPW], lpw);
-        resampler.resample(rtmTable[ModtranLookupTable.EGL], egl);
-        resampler.resample(rtmTable[ModtranLookupTable.SAB], sab);
-
+    public void calculate(double[] toa, double[] boa, int from, int to) {
         for (int i = from; i < to; i++) {
-            final double a = Math.PI * (toa[i] * toaRadianceMultiplier - lpw[i]) / egl[i];
-
-            boa[i] = a / (1.0 + a * sab[i]);
+            boa[i] = calculate(i, toa[i]);
         }
+    }
+
+    public double calculate(int i, double toa) {
+        final double a = Math.PI * (toa * toaRadianceMultiplier - lpw[i]) / egl[i];
+
+        return a / (1.0 + a * sab[i]);
     }
 }

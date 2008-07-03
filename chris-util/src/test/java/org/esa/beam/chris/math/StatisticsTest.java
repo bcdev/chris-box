@@ -33,7 +33,6 @@ import junit.framework.TestCase;
 public class StatisticsTest extends TestCase {
 
     private static final double DSQRT_2 = Math.sqrt(2.0);
-    private static final double DSQRT_5 = Math.sqrt(5.0);
 
     public void testCountFloat() {
         try {
@@ -115,47 +114,7 @@ public class StatisticsTest extends TestCase {
         assertEquals(2.0, Statistics.mean(new double[]{1.0, Double.NEGATIVE_INFINITY, 3.0}), 0.0);
     }
 
-    public void testRmsFloat() {
-        try {
-            Statistics.rms((float[]) null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-
-        assertTrue(Float.isNaN(Statistics.rms(new float[]{})));
-        assertTrue(Float.isNaN(Statistics.rms(new float[]{Float.NaN})));
-        assertTrue(Float.isNaN(Statistics.rms(new float[]{Float.POSITIVE_INFINITY})));
-        assertTrue(Float.isNaN(Statistics.rms(new float[]{Float.NEGATIVE_INFINITY})));
-
-        assertEquals(1.0f, Statistics.rms(new float[]{1.0f}), 0.0f);
-        assertEquals((float) DSQRT_5, Statistics.rms(new float[]{1.0f, 3.0f}), 0.0f);
-
-        assertEquals((float) DSQRT_5, Statistics.rms(new float[]{1.0f, Float.NaN, 3.0f}), 0.0f);
-        assertEquals((float) DSQRT_5, Statistics.rms(new float[]{1.0f, Float.POSITIVE_INFINITY, 3.0f}), 0.0f);
-        assertEquals((float) DSQRT_5, Statistics.rms(new float[]{1.0f, Float.NEGATIVE_INFINITY, 3.0f}), 0.0f);
-    }
-
-    public void testRmsDouble() {
-        try {
-            Statistics.rms((double[]) null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-
-        assertTrue(Double.isNaN(Statistics.rms(new double[]{})));
-        assertTrue(Double.isNaN(Statistics.rms(new double[]{Float.NaN})));
-        assertTrue(Double.isNaN(Statistics.rms(new double[]{Float.POSITIVE_INFINITY})));
-        assertTrue(Double.isNaN(Statistics.rms(new double[]{Float.NEGATIVE_INFINITY})));
-
-        assertEquals(1.0, Statistics.rms(new double[]{1.0}), 0.0);
-        assertEquals(DSQRT_5, Statistics.rms(new double[]{1.0, 3.0}), 0.0);
-
-        assertEquals(DSQRT_5, Statistics.rms(new double[]{1.0, Float.NaN, 3.0}), 0.0);
-        assertEquals(DSQRT_5, Statistics.rms(new double[]{1.0, Float.POSITIVE_INFINITY, 3.0}), 0.0);
-        assertEquals(DSQRT_5, Statistics.rms(new double[]{1.0, Float.NEGATIVE_INFINITY, 3.0}), 0.0);
-    }
-
-    public void testStandardCoefficientOfVariationFloat() {
+    public void testCoefficientOfVariationFloat() {
         assertEquals(0.0f, Statistics.cv(new float[]{1.0f, 1.0f}), 0.0f);
         assertEquals(0.0f, Statistics.cv(new float[]{1.0f, 1.0f, 1.0f}), 0.0f);
         assertEquals(0.5f, Statistics.cv(new float[]{1.0f, 2.0f, 3.0f}), 0.0f);
@@ -164,7 +123,7 @@ public class StatisticsTest extends TestCase {
         assertEquals((float) (DSQRT_2 / 2.0), cv, 0.0f);
     }
 
-    public void testStandardCoefficientOfVariationDouble() {
+    public void testCoefficientOfVariationDouble() {
         assertEquals(0.0, Statistics.cv(new double[]{1.0, 1.0}), 0.0);
         assertEquals(0.0, Statistics.cv(new double[]{1.0, 1.0, 1.0}), 0.0);
         assertEquals(0.5, Statistics.cv(new double[]{1.0, 2.0, 3.0}), 0.0);
@@ -367,168 +326,5 @@ public class StatisticsTest extends TestCase {
         assertEquals(2.0, Statistics.median(new double[]{1.0, Double.NaN, 3.0}), 0.0);
         assertEquals(2.0, Statistics.median(new double[]{1.0, Double.POSITIVE_INFINITY, 3.0}), 0.0);
         assertEquals(2.0, Statistics.median(new double[]{1.0, Double.NEGATIVE_INFINITY, 3.0}), 0.0);
-    }
-
-    public void testFittestFloat() {
-        try {
-            Statistics.fittest(null, 0.0);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{}, 0.0f)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{Float.NaN}, 0.0f)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{Float.POSITIVE_INFINITY}, 0.0f)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{Float.NEGATIVE_INFINITY}, 0.0f)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{1.0f}, Float.NaN)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{1.0f}, Float.POSITIVE_INFINITY)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{1.0f}, Float.NEGATIVE_INFINITY)));
-
-        assertEquals(1.0f, Statistics.fittest(new float[]{2.0f, 1.0f, 5.0f}, 0.0f), 0.0f);
-        assertEquals(2.0f, Statistics.fittest(new float[]{2.0f, 1.0f, 5.0f}, 3.0f), 0.0f);
-        assertEquals(5.0f, Statistics.fittest(new float[]{2.0f, 1.0f, 5.0f}, 4.0f), 0.0f);
-
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{2.0f, 1.0f, 5.0f}, Float.NaN)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{2.0f, 1.0f, 5.0f}, Float.POSITIVE_INFINITY)));
-        assertTrue(Float.isNaN(Statistics.fittest(new float[]{2.0f, 1.0f, 5.0f}, Float.NEGATIVE_INFINITY)));
-
-        assertEquals(1.0f, Statistics.fittest(new float[]{Float.NaN, 1.0f, 5.0f}, 0.0f), 0.0f);
-        assertEquals(1.0f, Statistics.fittest(new float[]{Float.POSITIVE_INFINITY, 1.0f, 5.0f}, 0.0f), 0.0f);
-        assertEquals(1.0f, Statistics.fittest(new float[]{Float.NEGATIVE_INFINITY, 1.0f, 5.0f}, 0.0f), 0.0f);
-    }
-
-    public void testFittestDouble() {
-        try {
-            Statistics.fittest(null, 0.0);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{}, 0.0)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{Double.NaN}, 0.0)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{Double.POSITIVE_INFINITY}, 0.0)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{Double.NEGATIVE_INFINITY}, 0.0)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{1.0}, Double.NaN)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{1.0}, Double.POSITIVE_INFINITY)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{1.0}, Double.NEGATIVE_INFINITY)));
-
-        assertEquals(1.0, Statistics.fittest(new double[]{2.0, 1.0, 5.0}, 0.0), 0.0);
-        assertEquals(2.0, Statistics.fittest(new double[]{2.0, 1.0, 5.0}, 3.0), 0.0);
-        assertEquals(5.0, Statistics.fittest(new double[]{2.0, 1.0, 5.0}, 4.0), 0.0);
-
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{2.0, 1.0, 5.0}, Double.NaN)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{2.0, 1.0, 5.0}, Double.POSITIVE_INFINITY)));
-        assertTrue(Double.isNaN(Statistics.fittest(new double[]{2.0, 1.0, 5.0}, Double.NEGATIVE_INFINITY)));
-
-        assertEquals(1.0, Statistics.fittest(new double[]{Double.NaN, 1.0, 5.0}, 0.0), 0.0);
-        assertEquals(1.0, Statistics.fittest(new double[]{Double.POSITIVE_INFINITY, 1.0, 5.0}, 0.0), 0.0);
-        assertEquals(1.0, Statistics.fittest(new double[]{Double.NEGATIVE_INFINITY, 1.0, 5.0}, 0.0), 0.0);
-    }
-
-    public void testMeanRelativeError() {
-        try {
-            Statistics.meanRelativeError(null, new double[]{0});
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.meanRelativeError(new double[]{0}, null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.meanRelativeError(new double[]{0}, new double[]{0, 0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-        try {
-            Statistics.meanRelativeError(new double[]{0, 0}, new double[]{0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-
-        assertEquals(1.0, Statistics.meanRelativeError(new double[]{0.5}, new double[]{1.0}), 0.0);
-        assertEquals(1.5, Statistics.meanRelativeError(new double[]{0.5, 1.5}, new double[]{1.0, 4.5}), 0.0);
-    }
-
-    public void testMedianRelativeError() {
-        try {
-            Statistics.medianRelativeError(null, new double[]{0});
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.medianRelativeError(new double[]{0}, null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.medianRelativeError(new double[]{0}, new double[]{0, 0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-        try {
-            Statistics.medianRelativeError(new double[]{0, 0}, new double[]{0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-
-        assertEquals(1.0, Statistics.medianRelativeError(new double[]{0.5}, new double[]{1.0}), 0.0);
-        assertEquals(1.5, Statistics.medianRelativeError(new double[]{0.5, 1.5}, new double[]{1.0, 4.5}), 0.0);
-        assertEquals(2.0, Statistics.medianRelativeError(new double[]{0.5, 1.0, 1.5}, new double[]{1.0, 3.0, 6.0}),
-                     0.0);
-    }
-
-    public void testMeanRatio() {
-        try {
-            Statistics.meanRatio(null, new double[]{0});
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.meanRatio(new double[]{0}, null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.meanRatio(new double[]{0}, new double[]{0, 0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-        try {
-            Statistics.meanRatio(new double[]{0, 0}, new double[]{0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-
-        assertEquals(2.0, Statistics.meanRatio(new double[]{0.5}, new double[]{1.0}), 0.0);
-        assertEquals(1.0, Statistics.meanRatio(new double[]{0.5, 1.0}, new double[]{1.0, 0.0}), 0.0);
-    }
-
-    public void testMedianRatio() {
-        try {
-            Statistics.medianRatio(null, new double[]{0});
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.medianRatio(new double[]{0}, null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-        try {
-            Statistics.medianRatio(new double[]{0}, new double[]{0, 0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-        try {
-            Statistics.medianRatio(new double[]{0, 0}, new double[]{0});
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
-
-        assertEquals(2.0, Statistics.medianRatio(new double[]{0.5}, new double[]{1.0}), 0.0);
-        assertEquals(1.0, Statistics.medianRatio(new double[]{0.5, 1.0}, new double[]{1.0, 0.0}), 0.0);
-        assertEquals(1.5, Statistics.medianRatio(new double[]{0.5, 1.0, 2.0}, new double[]{1.0, 0.0, 3.0}), 0.0);
     }
 }
