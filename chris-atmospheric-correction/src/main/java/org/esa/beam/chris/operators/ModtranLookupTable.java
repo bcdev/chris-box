@@ -14,9 +14,7 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.util.math.Array;
-import org.esa.beam.util.math.IntervalPartition;
-import org.esa.beam.util.math.VectorLookupTable;
+import org.esa.beam.util.math.*;
 
 /**
  * MODTRAN lookup table used for atmospheric correction.
@@ -38,20 +36,21 @@ class ModtranLookupTable {
     public static final int SAB = 3;
 
     private final double[] wavelengths;
-    private final VectorLookupTable lut1;
-    private final VectorLookupTable lut2;
+    private final VectorLookupTable lutA;
+    private final MatrixLookupTable lutB;
 
-    public ModtranLookupTable(Array wavelengths, VectorLookupTable lut1, VectorLookupTable lut2) {
+    public ModtranLookupTable(Array wavelengths, VectorLookupTable lutA, VectorLookupTable lutB) {
         this.wavelengths = new double[wavelengths.getLength()];
 
-        this.lut1 = lut1;
-        this.lut2 = lut2;
+        this.lutA = lutA;
+        this.lutB = new MatrixLookupTable(4, wavelengths.getLength(), new ColumnMajorMatrixFactory(), lutB);
 
         wavelengths.copyTo(0, this.wavelengths, 0, wavelengths.getLength());
     }
 
     /**
-     * Returns an interpolated table of output parameters for given input parameters.
+     * Returns the table of radiative transfer calculations for the input parameters
+     * supplied as arguments.
      *
      * @param vza the view zenith angle (degree).
      * @param sza the solar zenith angle (degree).
@@ -60,9 +59,10 @@ class ModtranLookupTable {
      * @param aot the aerosol optical thickness at 550 nm.
      * @param cwv the integrated water vapour column (g cm-2).
      *
-     * @return the output parameter matrix. The number of rows is equal to the number of calculated
-     *         parameters and the number of columns matches the number of spectral wavelenghts. The
-     *         tabulated radiation parameters are the following:
+     * @return the table of radiative transfer calculations. The number of rows in the table
+     *         is equal to the number of output parameters defined in the table below, while
+     *         the number of columns matches the number of spectral wavelenghts.
+     *         <p/>
      *         <table>
      *         <tr>
      *         <td>Row</td>
@@ -74,11 +74,11 @@ class ModtranLookupTable {
      *         </tr>
      *         <tr>
      *         <td>2</td>
-     *         <td>Directed transmittance</td>
+     *         <td>Directed flux at ground</td>
      *         </tr>
      *         <tr>
      *         <td>3</td>
-     *         <td>Diffuse transmittance</td>
+     *         <td>Diffuse flux at ground</td>
      *         </tr>
      *         <tr>
      *         <td>4</td>
@@ -90,35 +90,34 @@ class ModtranLookupTable {
      *         </tr>
      *         <tr>
      *         <td>6</td>
-     *         <td>todo - ask Luis Guanter</td>
+     *         <td>Global flux at ground</td>
      *         </tr>
      *         </table>
      */
-    public final double[][] getTable(double vza, double sza, double ada, double alt, double aot, double cwv) {
-        final double[] values1 = lut1.getValues(vza, sza, alt, aot, ada);
-        final double[] values2 = lut2.getValues(vza, sza, alt, aot, cwv);
+    public final double[][] getRtmTable(double vza, double sza, double ada, double alt, double aot, double cwv) {
+        final double[] valuesA = lutA.getValues(vza, sza, alt, aot, ada);
+        final double[][] valuesB = lutB.getValues(vza, sza, alt, aot, cwv);
 
         final int m = 1;
-        final int n = values2.length / wavelengths.length;
+        final int n = valuesB.length;
 
-        final double[][] table = new double[m + n + 2][wavelengths.length];
+        final double[][] table = new double[m + n + 1][wavelengths.length];
 
-        for (int j = 0; j < wavelengths.length; ++j) {
-            table[0][j] = values1[j] * 1.0E4;
-        }
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < wavelengths.length; ++j) {
-                table[m + i][j] = values2[j * n + i];
-            }
-        }
+        table[0] = valuesA;
+        table[1] = valuesB[0];
+        table[2] = valuesB[1];
+        table[3] = valuesB[2];
+        table[4] = valuesB[3];
+
+        // compute global flux at ground
         final double szc = Math.cos(Math.toRadians(sza));
         for (int j = 0; j < wavelengths.length; ++j) {
-            table[m + n][j] = (table[1][j] * szc + table[2][j]) * 1.0E4;
+            table[5][j] = table[1][j] * szc + table[2][j];
         }
 
         return table;
     }
-
+ 
     /**
      * Returns the number of wavelengths.
      *
@@ -155,28 +154,28 @@ class ModtranLookupTable {
      */
     public final IntervalPartition getDimension(int i) {
         switch (i) {
-            case 0:
-                return lut2.getDimension(0);
-            case 1:
-                return lut2.getDimension(1);
-            case 2:
-                return lut1.getDimension(4);
-            case 3:
-                return lut2.getDimension(2);
-            case 4:
-                return lut2.getDimension(3);
-            case 5:
-                return lut2.getDimension(4);
+            case VZA:
+                return lutB.getDimension(0);
+            case SZA:
+                return lutB.getDimension(1);
+            case ADA:
+                return lutA.getDimension(4);
+            case ALT:
+                return lutB.getDimension(2);
+            case AOT:
+                return lutB.getDimension(3);
+            case CWV:
+                return lutB.getDimension(4);
             default:
                 throw new IllegalArgumentException("illegal dimension index number");
         }
     }
 
-    final VectorLookupTable getLut1() {
-        return lut1;
+    final VectorLookupTable getLutA() {
+        return lutA;
     }
 
-    final VectorLookupTable getLut2() {
-        return lut2;
+    final MatrixLookupTable getLutB() {
+        return lutB;
     }
 }

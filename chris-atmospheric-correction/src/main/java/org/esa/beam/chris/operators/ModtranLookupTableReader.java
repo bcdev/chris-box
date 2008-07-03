@@ -31,6 +31,9 @@ import java.nio.ByteOrder;
  */
 class ModtranLookupTableReader {
 
+    // unit conversion constant
+    private static final double DEKA_KILO = 1.0E4;
+
     @SuppressWarnings({"ConstantConditions"})
     public ModtranLookupTable readLookupTable() throws IOException {
         final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("chrisbox-ac-lut-formatted-1nm.img");
@@ -68,25 +71,37 @@ class ModtranLookupTableReader {
             iis.readFully(cwv, 0, cwvCount);
 
             // read number of lookup table parameters
-            final int parameterCount1 = iis.readShort();
-            final int parameterCount2 = iis.readShort();
+            final int parameterCountA = iis.readShort();
+            final int parameterCountB = iis.readShort();
             // read lookup table values
-            final int valueCount1 = parameterCount1 * wavelengthCount * adaCount * aotCount * altCount * szaCount * vzaCount;
-            final int valueCount2 = parameterCount2 * wavelengthCount * cwvCount * aotCount * altCount * szaCount * vzaCount;
-            final float[] values1 = new float[valueCount1];
-            final float[] values2 = new float[valueCount2];
-            iis.readFully(values1, 0, valueCount1);
-            iis.readFully(values2, 0, valueCount2);
+            final int valueCountA = parameterCountA * wavelengthCount * adaCount * aotCount * altCount * szaCount * vzaCount;
+            final int valueCountB = parameterCountB * wavelengthCount * cwvCount * aotCount * altCount * szaCount * vzaCount;
+            final float[] valuesA = new float[valueCountA];
+            final float[] valuesB = new float[valueCountB];
+            iis.readFully(valuesA, 0, valueCountA);
+            iis.readFully(valuesB, 0, valueCountB);
+
+            // scale atmospheric path radiances
+            for (int i = 0; i < valuesA.length; ++i) {
+                valuesA[i] *= DEKA_KILO;
+            }
+            // scale directed and diffuse fluxes
+            for (int i = 0; i < valuesB.length; i += parameterCountB) {
+                final int j = i + 1;
+
+                valuesB[i] *= DEKA_KILO;
+                valuesB[j] *= DEKA_KILO;
+            }
 
             // create lookup tables
-            final IntervalPartition[] partitions1 = IntervalPartition.createArray(vza, sza, alt, aot, ada);
-            final IntervalPartition[] partitions2 = IntervalPartition.createArray(vza, sza, alt, aot, cwv);
-            final VectorLookupTable lut1 = new VectorLookupTable(wavelengthCount * parameterCount1, values1,
-                                                                 partitions1);
-            final VectorLookupTable lut2 = new VectorLookupTable(wavelengthCount * parameterCount2, values2,
-                                                                 partitions2);
+            final IntervalPartition[] partitionsA = IntervalPartition.createArray(vza, sza, alt, aot, ada);
+            final IntervalPartition[] partitionsB = IntervalPartition.createArray(vza, sza, alt, aot, cwv);
+            final VectorLookupTable lutA = new VectorLookupTable(wavelengthCount * parameterCountA, valuesA,
+                                                                 partitionsA);
+            final VectorLookupTable lutB = new VectorLookupTable(wavelengthCount * parameterCountB, valuesB,
+                                                                 partitionsB);
 
-            return new ModtranLookupTable(new Array.Float(wavelengths), lut1, lut2
+            return new ModtranLookupTable(new Array.Float(wavelengths), lutA, lutB
             );
         } catch (Exception e) {
             throw new IOException("could not read MODTRAN lookup table for atmospheric correction", e);

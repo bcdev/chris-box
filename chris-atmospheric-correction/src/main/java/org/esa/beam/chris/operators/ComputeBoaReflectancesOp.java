@@ -34,7 +34,6 @@ import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
-import static java.lang.Math.PI;
 import java.text.MessageFormat;
 import java.util.Map;
 
@@ -253,7 +252,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         // todo - properly initialize water vapour column
         cwv = wvIni;
 
-        final double[][] rtmTable = lut.getTable(vza, sza, ada, alt, aot550, cwv);
+        final double[][] rtmTable = lut.getRtmTable(vza, sza, ada, alt, aot550, cwv);
         calculatorFactory = new BoaReflectanceCalculatorFactory(lut.getWavelengths(), rtmTable, day);
         lpwCor = new double[radianceBands.length];
         calculator = calculatorFactory.createCalculator(radianceWavelenghts, radianceBandwidths, lpwCor);
@@ -300,7 +299,7 @@ public class ComputeBoaReflectancesOp extends Operator {
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
                     if (cloudMask == 0 || cloudMask == 256) {
                         final double toa = radianceTile.getSampleDouble(pos.x, pos.y);
-                        final double boa = calculator.calculate(i, toa);
+                        final double boa = calculator.boaReflectance(i, toa);
 
                         reflTile.setSample(pos.x, pos.y, boa);
                     } else {

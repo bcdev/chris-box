@@ -138,9 +138,15 @@ class SmileOpImage extends OpImage {
                     final BoaReflectanceCalculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
                                                                                                    nominalBandwidths,
                                                                                                    shift);
-                    calculator.calculate(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
+                    calculator.calculateBoaReflectance(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
 
-                    return sumOfSquaredDifferences(trueBoaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
+                    double sum = 0.0;
+                    for (int i = lowerO2; i < upperO2 + 1; ++i) {
+                        final double d = trueBoaSpectrum[i] - meanBoaSpectrum[i];
+                        sum += d * d;
+                    }
+
+                    return sum;
                 }
             };
 
@@ -225,7 +231,7 @@ class SmileOpImage extends OpImage {
         for (int x = 0; x < trueBoaSpectra.length; ++x) {
             final double[] meanBoaSpectrum = new double[nominalWavelengths.length];
 
-            calculator.calculate(meanToaSpectra[x], meanBoaSpectrum);
+            calculator.calculateBoaReflectance(meanToaSpectra[x], meanBoaSpectrum);
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
 
 //            linear interpolation between lower and upper O2 absorption bands
@@ -237,15 +243,5 @@ class SmileOpImage extends OpImage {
 //                trueBoaSpectra[x][i] = t * trueBoaSpectra[x][upperO2] + (1.0 - t) * trueBoaSpectra[x][lowerO2];
 //            }
         }
-    }
-
-    private static double sumOfSquaredDifferences(double[] a, double[] b, int from, int to) {
-        double sum = 0.0;
-        for (int i = from; i < to; ++i) {
-            final double d = a[i] - b[i];
-            sum += d * d;
-        }
-
-        return sum;
     }
 }

@@ -21,17 +21,17 @@ class BoaReflectanceCalculator {
         this.toaRadianceMultiplier = toaRadianceMultiplier;
     }
 
-    public void calculate(double[] toa, double[] boa) {
-        calculate(toa, boa, 0, toa.length);
+    public void calculateBoaReflectance(double[] toa, double[] boa) {
+        calculateBoaReflectance(toa, boa, 0, toa.length);
     }
 
-    public void calculate(double[] toa, double[] boa, int from, int to) {
+    public void calculateBoaReflectance(double[] toa, double[] boa, int from, int to) {
         for (int i = from; i < to; i++) {
-            boa[i] = calculate(i, toa[i]);
+            boa[i] = boaReflectance(i, toa[i]);
         }
     }
 
-    public double calculate(int i, double toa) {
+    public double boaReflectance(int i, double toa) {
         final double a = Math.PI * (toa * toaRadianceMultiplier - lpw[i]) / egl[i];
 
         return a / (1.0 + a * sab[i]);

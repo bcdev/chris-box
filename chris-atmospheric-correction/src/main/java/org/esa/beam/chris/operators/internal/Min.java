@@ -239,6 +239,7 @@ public class Min {
             double r = 0.0;
 
             if (abs(e) > tolerance) {
+                // fit parabola
                 r = (z - w) * (fz - fv);
                 q = (z - v) * (fz - fw);
                 p = (z - v) * q - (z - w) * r;
