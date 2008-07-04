@@ -27,7 +27,7 @@ class SmileOpImage extends OpImage {
 
     private final double[] nominalWavelengths;
     private final double[] nominalBandwidths;
-    private final BoaReflectanceCalculatorFactory calculatorFactory;
+    private final CalculatorFactory calculatorFactory;
 
     private final int lowerO2;
     private final int upperO2;
@@ -47,7 +47,7 @@ class SmileOpImage extends OpImage {
      * @return the column-wise wavelength shifts.
      */
     public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                                      BoaReflectanceCalculatorFactory calculatorFactory) {
+                                      CalculatorFactory calculatorFactory) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         sourceImageVector.add(hyperMaskImage);
@@ -78,7 +78,7 @@ class SmileOpImage extends OpImage {
     }
 
     private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, double[] nominalWavelengths,
-                         double[] nominalBandwidths, BoaReflectanceCalculatorFactory calculatorFactory) {
+                         double[] nominalBandwidths, CalculatorFactory calculatorFactory) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.nominalWavelengths = nominalWavelengths;
@@ -135,10 +135,9 @@ class SmileOpImage extends OpImage {
                 @Override
                 public double value(double shift) {
                     // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
-                    final BoaReflectanceCalculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
-                                                                                                   nominalBandwidths,
-                                                                                                   shift);
-                    calculator.calculateBoaReflectance(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
+                    final Calculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
+                                                                                     nominalBandwidths, shift);
+                    calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
 
                     double sum = 0.0;
                     for (int i = lowerO2; i < upperO2 + 1; ++i) {
@@ -225,13 +224,12 @@ class SmileOpImage extends OpImage {
     }
 
     private void computeTrueBoaSpectra(double[][] meanToaSpectra, double[][] trueBoaSpectra) {
-        final BoaReflectanceCalculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
-                                                                                       nominalBandwidths);
+        final Calculator calculator = calculatorFactory.createCalculator(nominalWavelengths, nominalBandwidths);
 
         for (int x = 0; x < trueBoaSpectra.length; ++x) {
             final double[] meanBoaSpectrum = new double[nominalWavelengths.length];
 
-            calculator.calculateBoaReflectance(meanToaSpectra[x], meanBoaSpectrum);
+            calculator.calculateBoaReflectances(meanToaSpectra[x], meanBoaSpectrum);
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
 
 //            linear interpolation between lower and upper O2 absorption bands

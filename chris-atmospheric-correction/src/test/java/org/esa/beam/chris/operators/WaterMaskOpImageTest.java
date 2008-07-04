@@ -24,19 +24,19 @@ public class WaterMaskOpImageTest extends TestCase {
         final RenderedImage image = createTestImage();
         final Raster raster = image.getData();
 
-        assertEquals(0, raster.getSample(0, 0, 0)); // red < nir
-        assertEquals(1, raster.getSample(1, 0, 0)); // red > nir
-        assertEquals(0, raster.getSample(0, 1, 0)); // red > nir - but not within bounds
-        assertEquals(0, raster.getSample(1, 1, 0)); // red < nir
+        assertEquals(0, raster.getSample(0, 0, 0)); // red < NIR
+        assertEquals(1, raster.getSample(1, 0, 0)); // red > NIR
+        assertEquals(0, raster.getSample(0, 1, 0)); // red > NIR - but NIR too big
+        assertEquals(0, raster.getSample(1, 1, 0)); // red > NIR - but NIR too small
     }
 
     private static RenderedImage createTestImage() {
         final Product product = new Product("test", "test", W, H);
 
-        final Band redBand = addBand(product, "red", new int[]{1, 2, 3, 1});
-        final Band nirBand = addBand(product, "nir", new int[]{2, 1, 2, 2});
+        final Band redBand = addBand(product, "red", new int[]{20, 40, 180, 20});
+        final Band nirBand = addBand(product, "nir", new int[]{40, 20, 160, 10});
 
-        return WaterMaskOpImage.createImage(redBand, nirBand, 40.0 * Math.PI, 20.0 * Math.PI, 0.0);
+        return WaterMaskOpImage.createImage(redBand, nirBand, 0.001, 0.001);
     }
 
     private static Band addBand(Product product, String name, int[] values) {

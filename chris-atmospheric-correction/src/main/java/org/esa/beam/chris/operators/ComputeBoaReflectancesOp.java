@@ -90,13 +90,15 @@ public class ComputeBoaReflectancesOp extends Operator {
                description = "Cloud product threshold for generating the cloud mask.")
     private double cloudProductThreshold;
 
-    private transient Band[] radianceBands;
+    private transient Band[] toaBands;
     private transient Band[] maskBands;
-    private transient Band[] reflBands;
+    private transient Band[] boaBands;
     private transient Band cloudProductBand;
 
+    private transient RenderedImage hyperMaskImage;
     private transient RenderedImage cloudMaskImage;
-    private transient ModtranLookupTable lut;
+
+    private transient RtcTableFactory tableFactory;
 
     private transient double[][] lutFilterMatrix;
 
@@ -113,21 +115,21 @@ public class ComputeBoaReflectancesOp extends Operator {
     private double[] eglInt;
     private double[] sabInt;
 
-    private double[] radianceWavelenghts;
-    private double[] radianceBandwidths;
+    private double[] toaWavelenghts;
+    private double[] toaBandwidths;
     private int o2a;
     private int o2b;
     private double[] lpw;
     private double[] egl;
     private double[] sab;
-    private BoaReflectanceCalculatorFactory calculatorFactory;
-    private BoaReflectanceCalculator calculator;
+    private CalculatorFactory calculatorFactory;
+    private Calculator calculator;
     private double[] lpwCor;
 
     @Override
     public void initialize() throws OperatorException {
         // get source bands
-        radianceBands = OpUtils.findBands(sourceProduct, "radiance");
+        toaBands = OpUtils.findBands(sourceProduct, "radiance");
         maskBands = OpUtils.findBands(sourceProduct, "mask");
         cloudProductBand = sourceProduct.getBand("cloud_product");
 
@@ -155,7 +157,7 @@ public class ComputeBoaReflectancesOp extends Operator {
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
         synchronized (this) {
-            if (lut == null) {
+            if (tableFactory == null) {
                 init24();
             }
         }
@@ -178,13 +180,13 @@ public class ComputeBoaReflectancesOp extends Operator {
     @Override
     public void dispose() {
         lutFilterMatrix = null;
-        lut = null;
+        tableFactory = null;
 
         cloudMaskImage = null;
 
-        reflBands = null;
+        boaBands = null;
         maskBands = null;
-        radianceBands = null;
+        toaBands = null;
     }
 
     private Product createTargetProduct() {
@@ -196,9 +198,9 @@ public class ComputeBoaReflectancesOp extends Operator {
         targetProduct.setEndTime(sourceProduct.getEndTime());
 
         // add reflectance bands
-        reflBands = new Band[radianceBands.length];
-        for (int i = 0; i < radianceBands.length; ++i) {
-            final Band radianceBand = radianceBands[i];
+        boaBands = new Band[toaBands.length];
+        for (int i = 0; i < toaBands.length; ++i) {
+            final Band radianceBand = toaBands[i];
             final Band reflBand = new Band(radianceBand.getName().replaceAll("radiance", "refl"),
                                            ProductData.TYPE_INT16,
                                            radianceBand.getRasterWidth(),
@@ -216,7 +218,7 @@ public class ComputeBoaReflectancesOp extends Operator {
             // todo - set solar flux ?
 
             targetProduct.addBand(reflBand);
-            reflBands[i] = reflBand;
+            boaBands[i] = reflBand;
         }
         // copy all non-radiance bands from source product to target product
         for (final Band sourceBand : sourceProduct.getBands()) {
@@ -238,27 +240,28 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     private void init24() {
         try {
-            lut = new ModtranLookupTableReader().readLookupTable();
+            tableFactory = new ModtranTableReader().createRtcTableFactory();
         } catch (IOException e) {
             throw new OperatorException(e.getMessage());
         }
-        // spectrum mask
+        hyperMaskImage = HyperMaskOpImage.createImage(maskBands);
         cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
 
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
 
-        radianceWavelenghts = OpUtils.getWavelenghts(radianceBands);
-        radianceBandwidths = OpUtils.getBandwidths(radianceBands);
+        toaWavelenghts = OpUtils.getWavelenghts(toaBands);
+        toaBandwidths = OpUtils.getBandwidths(toaBands);
         // todo - properly initialize water vapour column
         cwv = wvIni;
 
-        final double[][] rtmTable = lut.getRtmTable(vza, sza, ada, alt, aot550, cwv);
-        calculatorFactory = new BoaReflectanceCalculatorFactory(lut.getWavelengths(), rtmTable, day);
-        lpwCor = new double[radianceBands.length];
-        calculator = calculatorFactory.createCalculator(radianceWavelenghts, radianceBandwidths, lpwCor);
+        final RtcTable rtcTable = tableFactory.createRtcTable(vza, sza, ada, alt, aot550, cwv);
+        final double toaScaling = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
+        calculatorFactory = new CalculatorFactory(rtcTable, toaScaling);
+        lpwCor = new double[toaBands.length];
+        calculator = calculatorFactory.createCalculator(toaWavelenghts, toaBandwidths, lpwCor);
 
-        o2a = OpUtils.findBandIndex(radianceBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
-        o2b = OpUtils.findBandIndex(radianceBands, O2_B_WAVELENGTH, O2_B_BANDWIDTH);
+        o2a = OpUtils.findBandIndex(toaBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
+        o2b = OpUtils.findBandIndex(toaBands, O2_B_WAVELENGTH, O2_B_BANDWIDTH);
     }
 
     private void computeTileStack24(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
@@ -266,13 +269,13 @@ public class ComputeBoaReflectancesOp extends Operator {
 
         try {
             // Inversion of Lambertian equation
-            ac24(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * reflBands.length));
+            ac24(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * boaBands.length));
             // Polishing of spikes for O2-A and O2-B absorption features
             if (o2a != -1) {
-                interpolateReflTile(o2a, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
+                interpolateBoaTile(o2a, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
             }
             if (o2b != -1) {
-                interpolateReflTile(o2b, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
+                interpolateBoaTile(o2b, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
             }
             if (performAdjacencyCorrection) {
                 // todo - adjacency correction
@@ -284,26 +287,29 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     private void ac24(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
         try {
-            pm.beginTask("Computing surface reflectances...", targetRectangle.height * reflBands.length);
+            pm.beginTask("Computing surface reflectances...", targetRectangle.height * boaBands.length);
 
+            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
             final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
 
-            for (int i = 0; i < reflBands.length; ++i) {
-                final Tile radianceTile = getSourceTile(radianceBands[i], targetRectangle, pm);
-                final Tile reflTile = targetTileMap.get(reflBands[i]);
+            for (int i = 0; i < boaBands.length; ++i) {
+                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, pm);
+                final Tile boaTile = targetTileMap.get(boaBands[i]);
 
-                for (final Tile.Pos pos : reflTile) {
+                for (final Tile.Pos pos : boaTile) {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
+                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
-                    if (cloudMask == 0 || cloudMask == 256) {
-                        final double toa = radianceTile.getSampleDouble(pos.x, pos.y);
-                        final double boa = calculator.boaReflectance(i, toa);
 
-                        reflTile.setSample(pos.x, pos.y, boa);
+                    if (hyperMask == 0 && cloudMask == 0) {
+                        final double toa = toaTile.getSampleDouble(pos.x, pos.y);
+                        final double boa = calculator.getBoaReflectance(i, toa);
+
+                        boaTile.setSample(pos.x, pos.y, boa);
                     } else {
-                        reflTile.setSample(pos.x, pos.y, REFL_NO_DATA_VALUE);
+                        boaTile.setSample(pos.x, pos.y, REFL_NO_DATA_VALUE);
                     }
                     if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
@@ -315,29 +321,29 @@ public class ComputeBoaReflectancesOp extends Operator {
         }
     }
 
-    private void interpolateReflTile(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                     ProgressMonitor pm) {
+    private void interpolateBoaTile(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                    ProgressMonitor pm) {
         try {
             pm.beginTask("Interpolating surface reflectances", targetRectangle.height);
 
-            final Tile innerTile = targetTileMap.get(reflBands[bandIndex]);
-            final Tile lowerTile = targetTileMap.get(reflBands[bandIndex - 1]);
-            final Tile upperTile = targetTileMap.get(reflBands[bandIndex + 1]);
+            final Tile interTile = targetTileMap.get(boaBands[bandIndex]);
+            final Tile lowerTile = targetTileMap.get(boaBands[bandIndex - 1]);
+            final Tile upperTile = targetTileMap.get(boaBands[bandIndex + 1]);
 
-            final double innerWavelength = reflBands[bandIndex].getSpectralWavelength();
-            final double lowerWavelength = reflBands[bandIndex - 1].getSpectralWavelength();
-            final double upperWavelength = reflBands[bandIndex + 1].getSpectralWavelength();
+            final double innerWavelength = boaBands[bandIndex].getSpectralWavelength();
+            final double lowerWavelength = boaBands[bandIndex - 1].getSpectralWavelength();
+            final double upperWavelength = boaBands[bandIndex + 1].getSpectralWavelength();
 
             final double w = (innerWavelength - lowerWavelength) / (upperWavelength - lowerWavelength);
 
-            for (final Tile.Pos pos : innerTile) {
+            for (final Tile.Pos pos : interTile) {
                 if (pos.x == targetRectangle.x) {
                     checkForCancelation(pm);
                 }
 
                 final double lowerSample = lowerTile.getSampleDouble(pos.x, pos.y);
                 final double upperSample = upperTile.getSampleDouble(pos.x, pos.y);
-                innerTile.setSample(pos.x, pos.y, lowerSample + (upperSample - lowerSample) * w);
+                interTile.setSample(pos.x, pos.y, lowerSample + (upperSample - lowerSample) * w);
 
                 if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                     pm.worked(1);
@@ -348,6 +354,10 @@ public class ComputeBoaReflectancesOp extends Operator {
         }
     }
 
+    private void wv(double[] toa) {
+        
+        
+    }
 
     public static class Spi extends OperatorSpi {
 

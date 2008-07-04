@@ -14,33 +14,32 @@ import java.awt.image.*;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class WaterMaskOpImage extends PointOpImage {
+class WaterMaskOpImage extends PointOpImage {
 
     private static final double RED_LOWER_BOUND = 0.01;
     private static final double NIR_LOWER_BOUND = 0.01;
     private static final double NIR_UPPER_BOUND = 0.1;
 
-    private final double redScalingFactor;
-    private final double nirScalingFactor;
+    private final double redScaling;
+    private final double nirScaling;
 
     /**
      * Creates the water mask image.
      *
-     * @param redBand the red band.
-     * @param nirBand the NIR band.
-     * @param redIrr  the solar irradiance in the red.
-     * @param nirIrr  the solar irradiance in the NIR.
-     * @param sza     the solar zenith angle.
+     * @param redBand    the red TOA radiance band.
+     * @param nirBand    the NIR TOA radiance band.
+     * @param redScaling the scaling factor for obtaining TOA reflectances from TOA radiances for the red.
+     * @param nirScaling the scaling factor for obtaining TOA reflectances from TOA radiances for the NIR.
      *
      * @return the water mask image.
      */
-    public static OpImage createImage(Band redBand, Band nirBand, double redIrr, double nirIrr, double sza) {
+    public static OpImage createImage(Band redBand, Band nirBand, double redScaling, double nirScaling) {
         RenderedImage redImage = redBand.getImage();
         if (redImage == null) {
             redImage = new RasterDataNodeOpImage(redBand);
             redBand.setImage(redImage);
         }
-        RenderedImage nirImage = redBand.getImage();
+        RenderedImage nirImage = nirBand.getImage();
         if (nirImage == null) {
             nirImage = new RasterDataNodeOpImage(nirBand);
             nirBand.setImage(nirImage);
@@ -53,18 +52,15 @@ public class WaterMaskOpImage extends PointOpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        final double redScalingFactor = Math.PI / Math.cos(Math.toRadians(sza)) / redIrr;
-        final double nirScalingFactor = Math.PI / Math.cos(Math.toRadians(sza)) / nirIrr;
-
-        return new WaterMaskOpImage(redImage, nirImage, imageLayout, redScalingFactor, nirScalingFactor);
+        return new WaterMaskOpImage(redImage, nirImage, imageLayout, redScaling, nirScaling);
     }
 
     private WaterMaskOpImage(RenderedImage redImage, RenderedImage nirImage, ImageLayout imageLayout,
-                             double redScalingFactor, double nirScalingFactor) {
+                             double redScaling, double nirScaling) {
         super(redImage, nirImage, imageLayout, null, true);
 
-        this.redScalingFactor = redScalingFactor;
-        this.nirScalingFactor = nirScalingFactor;
+        this.redScaling = redScaling;
+        this.nirScaling = nirScaling;
     }
 
     @Override
@@ -95,9 +91,9 @@ public class WaterMaskOpImage extends PointOpImage {
                 double red = redPixels[redPixelOffset];
                 double nir = nirPixels[nirPixelOffset];
 
-                if (redPixels[redPixelOffset] > nirPixels[nirPixelOffset]) {
-                    red *= redScalingFactor;
-                    nir *= nirScalingFactor;
+                if (red > nir) {
+                    red *= redScaling;
+                    nir *= nirScaling;
 
                     if (red > RED_LOWER_BOUND && nir > NIR_LOWER_BOUND && nir < NIR_UPPER_BOUND) {
                         targetPixels[targetPixelOffset] = 1;
