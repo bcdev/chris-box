@@ -9,26 +9,28 @@ package org.esa.beam.chris.operators;
  */
 class CalculatorFactory {
 
-    private final RtcTable rtcTable;
+    private final RtcTable table;
+    private final ResamplerFactory resamplerFactory;
     private final double toaScaling;
 
-    public CalculatorFactory(RtcTable rtcTable, double toaScaling) {
-        this.rtcTable = rtcTable;
+    public CalculatorFactory(RtcTable table, ResamplerFactory resamplerFactory, double toaScaling) {
+        this.table = table;
+        this.resamplerFactory = resamplerFactory;
         this.toaScaling = toaScaling;
     }
 
-    public Calculator createCalculator(double[] wavelengths, double[] bandwidths) {
-        return createCalculator(wavelengths, bandwidths, 0.0);
+    public Calculator createCalculator() {
+        return createCalculator(0.0);
     }
 
-    public Calculator createCalculator(double[] wavelengths, double[] bandwidths, double shift) {
-        return createCalculator(new Resampler(rtcTable.getWavelengths(), wavelengths, bandwidths, shift));
+    public Calculator createCalculator(double shift) {
+        return createCalculator(resamplerFactory.createResampler(shift));
     }
 
-    public Calculator createCalculator(Resampler resampler) {
-        final double[] lpw = resampler.resample(rtcTable.getLpw());
-        final double[] egl = resampler.resample(rtcTable.getEgl());
-        final double[] sab = resampler.resample(rtcTable.getSab());
+    private Calculator createCalculator(Resampler resampler) {
+        final double[] lpw = resampler.resample(table.getLpw());
+        final double[] egl = resampler.resample(table.getEgl());
+        final double[] sab = resampler.resample(table.getSab());
 
         return new Calculator(lpw, egl, sab, toaScaling);
     }

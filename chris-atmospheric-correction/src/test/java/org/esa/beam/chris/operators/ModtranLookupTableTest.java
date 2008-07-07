@@ -34,7 +34,7 @@ public class ModtranLookupTableTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         // too expensive for unit-testing
-        factory = new ModtranLookupTableReader().createRtcTableFactory();
+        factory = new ModtranLookupTableReader().readModtranLookupTable();
     }
 
     public void testLookupTableIntegrity() {

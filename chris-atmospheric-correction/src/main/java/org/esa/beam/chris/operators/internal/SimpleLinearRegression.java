@@ -12,7 +12,12 @@ public class SimpleLinearRegression {
     /**
      * The number of (x, y) pairs.
      */
-    private int count;
+    private final int count;
+    /**
+     * The mask indicating valid (x, y) pairs.
+     */
+    private final boolean[] valid;
+
     /**
      * The y-intercept of the regression line.
      */
@@ -61,12 +66,42 @@ public class SimpleLinearRegression {
      * @throws NullPointerException     if any argument is {@code null}.
      */
     public SimpleLinearRegression(final double[] x, final double[] y) {
+        this(x, y, 0, x.length);
+    }
+
+    /**
+     * Computes a simple linear regression for the ({@code x[i]}, {@code y[i]})
+     * pairs supplied as arguments. Pairs with {@code x[i]} or {@code y[i]} equal
+     * to {@link Double#NaN}, {@link Double#NEGATIVE_INFINITY} or {@link Double#POSITIVE_INFINITY}
+     * are ignored.
+     * <p/>
+     * Note that a minimum of two valid pairs is required to calculate a regression.
+     *
+     * @param x    the values of the independent variable.
+     * @param y    the values of the dependent variable.
+     * @param from the index of the first ({@code x[i]}, {@code y[i]}) pair being considered.
+     * @param to   the index of the final ({@code x[i]}, {@code y[i]}) pair being considered (exclusive).
+     *
+     * @throws IllegalArgumentException if the length of the argument arrays is different.
+     * @throws NullPointerException     if any argument is {@code null}.
+     */
+    public SimpleLinearRegression(final double[] x, final double[] y, int from, int to) {
         ensureNotNullAndEqualLength(x, y);
 
-        final boolean[] valid = new boolean[x.length];
-        count = validate(x, y, valid);
+        if (from < 0) {
+            throw new IllegalArgumentException("from < 0");
+        }
+        if (to < 0) {
+            throw new IllegalArgumentException("to < 0");
+        }
+        if (to > x.length) {
+            throw new IllegalArgumentException("to > x.length");
+        }
 
-        computeRegression(x, y, valid);
+        valid = new boolean[x.length];
+        count = validate(x, y, from, to);
+
+        computeRegression(x, y, from, to);
     }
 
     /**
@@ -133,8 +168,8 @@ public class SimpleLinearRegression {
         return Math.sqrt(getEstimatedVariance() / ssxx);
     }
 
-    private void computeRegression(final double[] x, final double[] y, final boolean[] valid) {
-        for (int i = 0; i < valid.length; ++i) {
+    private void computeRegression(final double[] x, final double[] y, int from, int to) {
+        for (int i = from; i < to; ++i) {
             if (valid[i]) {
                 sx += x[i];
                 sy += y[i];
@@ -144,7 +179,7 @@ public class SimpleLinearRegression {
         final double xm = sx / count;
         final double ym = sy / count;
 
-        for (int i = 0; i < valid.length; ++i) {
+        for (int i = from; i < to; ++i) {
             if (valid[i]) {
                 final double dx = x[i] - xm;
                 final double dy = y[i] - ym;
@@ -158,7 +193,7 @@ public class SimpleLinearRegression {
         b1 = ssxy / ssxx;
         b0 = (sy - b1 * sx) / count;
 
-        for (int i = 0; i < valid.length; ++i) {
+        for (int i = from; i < to; ++i) {
             if (valid[i]) {
                 final double dy = y[i] - (b0 + b1 * x[i]);
 
@@ -183,16 +218,17 @@ public class SimpleLinearRegression {
      * Validates the given ({@code x[i]}, {@code y[i]}) pairs and returns
      * the number of valid pairs.
      *
-     * @param x     the values of the independent variable.
-     * @param y     the corresponding values of the dependent variable.
-     * @param valid the validity mask.
+     * @param x    the values of the independent variable.
+     * @param y    the corresponding values of the dependent variable.
+     * @param from the index of the first ({@code x[i]}, {@code y[i]}) pair being considered.
+     * @param to   the index of the final ({@code x[i]}, {@code y[i]}) pair being considered (exclusive).
      *
-     * @return the number of the valid pairs.
+     * @return the number of valid pairs.
      */
-    private static int validate(final double[] x, final double[] y, final boolean[] valid) {
+    private int validate(final double[] x, final double[] y, int from, int to) {
         int count = 0;
 
-        for (int i = 0; i < valid.length; ++i) {
+        for (int i = from; i < to; ++i) {
             if (isValid(x[i], y[i])) {
                 valid[i] = true;
                 ++count;

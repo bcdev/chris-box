@@ -27,7 +27,7 @@ class SmileOpImage extends OpImage {
     private static final double O2_LOWER_BOUND = 749.0;
     private static final double O2_UPPER_BOUND = 779.0;
 
-    private final CalculatorFactoryA calculatorFactory;
+    private final CalculatorFactory calculatorFactory;
     private final int lowerO2;
     private final int upperO2;
 
@@ -46,7 +46,7 @@ class SmileOpImage extends OpImage {
      * @return the column-wise wavelength shifts.
      */
     public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                                      CalculatorFactoryA calculatorFactory) {
+                                      CalculatorFactory calculatorFactory) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         sourceImageVector.add(hyperMaskImage);
@@ -89,7 +89,7 @@ class SmileOpImage extends OpImage {
     }
 
     private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, int lowerO2, int upperO2,
-                         CalculatorFactoryA calculatorFactory) {
+                         CalculatorFactory calculatorFactory) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.lowerO2 = lowerO2;
@@ -128,8 +128,7 @@ class SmileOpImage extends OpImage {
                 @Override
                 public double value(double shift) {
                     // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
-                    final Calculator calculator = calculatorFactory.createCalculator(
-                            shift);
+                    final Calculator calculator = calculatorFactory.createCalculator(shift);
                     calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
 
                     double sum = 0.0;

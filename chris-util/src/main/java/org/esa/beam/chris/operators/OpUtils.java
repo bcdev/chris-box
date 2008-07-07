@@ -13,7 +13,8 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -236,6 +237,28 @@ class OpUtils {
      */
     public static int getAnnotationInt(Product product, String name) throws OperatorException {
         final String string = getAnnotationString(product, name);
+
+        try {
+            return Integer.parseInt(string);
+        } catch (Exception e) {
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
+        }
+    }
+
+    /**
+     * Returns a CHRIS string annotation as {@code int} value for a product of interest.
+     *
+     * @param product the product of interest.
+     * @param name    the name of the CHRIS annotation.
+     * @param from    the first index of the annotation string to be considered.
+     * @param to      the final index of the annotation string to be considered (exclusive).
+     *
+     * @return the annotation as {@code int} value.
+     *
+     * @throws OperatorException if the annotation could not be found or parsed.
+     */
+    public static int getAnnotationInt(Product product, String name, int from, int to) throws OperatorException {
+        final String string = getAnnotationString(product, name).substring(from, to);
 
         try {
             return Integer.parseInt(string);
