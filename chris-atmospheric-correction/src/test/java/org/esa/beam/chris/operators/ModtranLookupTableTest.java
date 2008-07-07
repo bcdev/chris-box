@@ -22,7 +22,7 @@ import org.esa.beam.util.math.RowMajorMatrixFactory;
  * Tests for class {@link ModtranLookupTable}.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 2459 $ $Date: 2008-07-07 08:46:26 +0200 (Mon, 07 Jul 2008) $
  */
 public class ModtranLookupTableTest extends TestCase {
 
@@ -116,7 +116,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3  target elevation
         // aot = 0.2  AOT at 550nm
         // cwv = 2.0  integrated water vapour
-        table = factory.createRtcTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
+        table = factory.getRtcTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
 
         assertEquals(0.00423624 * DEKA_KILO, table.getLpw(70), 0.5E-8 * DEKA_KILO);
         assertEquals(0.12408900 * DEKA_KILO, table.getEgl(70), 0.5E-6 * DEKA_KILO);
@@ -129,7 +129,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // cwv = 3.0  integrated water vapour
-        table = factory.createRtcTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
+        table = factory.getRtcTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
 
         assertEquals(0.00809511 * DEKA_KILO, table.getLpw(17), 0.5E-8 * DEKA_KILO);
         assertEquals(0.05206649 * DEKA_KILO, table.getEgl(17), 0.5E-7 * DEKA_KILO);

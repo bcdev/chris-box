@@ -19,7 +19,7 @@ class CwvRtcTableFactory {
         rtcTables = new RtcTable[dimension.getCardinal()];
 
         for (int i = 0; i < dimension.getCardinal(); ++i) {
-            rtcTables[i] = factory.createRtcTable(vza, sza, ada, alt, aot, dimension.get(i));
+            rtcTables[i] = factory.getRtcTable(vza, sza, ada, alt, aot, dimension.get(i));
         }
     }
 

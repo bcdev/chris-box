@@ -58,7 +58,7 @@ class ModtranLookupTable {
      *
      * @return the table of radiative transfer calculations.
      */
-    public final RtcTable createRtcTable(double vza, double sza, double ada, double alt, double aot, double cwv) {
+    public final RtcTable getRtcTable(double vza, double sza, double ada, double alt, double aot, double cwv) {
         final double[] valuesA = lutA.getValues(vza, sza, alt, aot, ada);
         final double[][] valuesB = lutB.getValues(vza, sza, alt, aot, cwv);
 

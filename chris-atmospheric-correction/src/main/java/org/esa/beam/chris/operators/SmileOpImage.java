@@ -27,13 +27,10 @@ class SmileOpImage extends OpImage {
     private static final double O2_LOWER_BOUND = 749.0;
     private static final double O2_UPPER_BOUND = 779.0;
 
-    private final double[] nominalWavelengths;
-    private final double[] nominalBandwidths;
-
-    private final CalculatorFactory calculatorFactory;
+    private final CalculatorFactoryA calculatorFactory;
     private final int lowerO2;
-
     private final int upperO2;
+
     private final LocalRegressionSmoother smoother;
 
     /**
@@ -49,7 +46,7 @@ class SmileOpImage extends OpImage {
      * @return the column-wise wavelength shifts.
      */
     public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                                      CalculatorFactory calculatorFactory) {
+                                      CalculatorFactoryA calculatorFactory) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         sourceImageVector.add(hyperMaskImage);
@@ -72,46 +69,40 @@ class SmileOpImage extends OpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        final double[] nominalWavelengths = OpUtils.getWavelenghts(radianceBands);
-        final double[] nominalBandwidths = OpUtils.getBandwidths(radianceBands);
-
-        return new SmileOpImage(imageLayout, sourceImageVector, nominalWavelengths, nominalBandwidths,
-                                calculatorFactory);
-    }
-
-    private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, double[] nominalWavelengths,
-                         double[] nominalBandwidths, CalculatorFactory calculatorFactory) {
-        super(sourceImageVector, imageLayout, null, true);
-
-        this.nominalWavelengths = nominalWavelengths;
-        this.nominalBandwidths = nominalBandwidths;
-        this.calculatorFactory = calculatorFactory;
-
         int lowerO2 = -1;
         int upperO2 = -1;
-        for (int i = 0; i < nominalWavelengths.length; ++i) {
-            if (nominalWavelengths[i] >= O2_LOWER_BOUND) {
+        for (int i = 0; i < radianceBands.length; ++i) {
+            if (radianceBands[i].getSpectralWavelength() >= O2_LOWER_BOUND) {
                 lowerO2 = i;
                 break;
             }
         }
-        for (int i = lowerO2; i < nominalWavelengths.length; ++i) {
-            if (nominalWavelengths[i] <= O2_UPPER_BOUND) {
+        for (int i = lowerO2; i < radianceBands.length; ++i) {
+            if (radianceBands[i].getSpectralWavelength() <= O2_UPPER_BOUND) {
                 upperO2 = i;
             } else {
                 break;
             }
         }
+
+        return new SmileOpImage(imageLayout, sourceImageVector, lowerO2, upperO2, calculatorFactory);
+    }
+
+    private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, int lowerO2, int upperO2,
+                         CalculatorFactoryA calculatorFactory) {
+        super(sourceImageVector, imageLayout, null, true);
+
         this.lowerO2 = lowerO2;
         this.upperO2 = upperO2;
+        this.calculatorFactory = calculatorFactory;
 
         smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 9, 1);
     }
 
     @Override
     protected void computeRect(Raster[] sources, WritableRaster target, Rectangle rectangle) {
-        final double[][] meanToaSpectra = new double[rectangle.width][nominalWavelengths.length];
-        final double[][] trueBoaSpectra = new double[rectangle.width][nominalWavelengths.length];
+        final double[][] meanToaSpectra = new double[rectangle.width][sources.length - 2];
+        final double[][] trueBoaSpectra = new double[rectangle.width][sources.length - 2];
 
         final Min.Bracket bracket = new Min.Bracket();
 
@@ -131,14 +122,14 @@ class SmileOpImage extends OpImage {
         for (int x = 0; x < rectangle.width; ++x) {
             final double[] meanToaSpectrum = meanToaSpectra[x];
             final double[] trueBoaSpectrum = trueBoaSpectra[x];
-            final double[] meanBoaSpectrum = new double[nominalWavelengths.length];
+            final double[] meanBoaSpectrum = new double[sources.length - 2];
 
             final UnivariateFunction function = new UnivariateFunction() {
                 @Override
                 public double value(double shift) {
                     // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
-                    final Calculator calculator = calculatorFactory.createCalculator(nominalWavelengths,
-                                                                                     nominalBandwidths, shift);
+                    final Calculator calculator = calculatorFactory.createCalculator(
+                            shift);
                     calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
 
                     double sum = 0.0;
@@ -226,12 +217,13 @@ class SmileOpImage extends OpImage {
     }
 
     private void computeTrueBoaSpectra(double[][] meanToaSpectra, double[][] trueBoaSpectra) {
-        final Calculator calculator = calculatorFactory.createCalculator(nominalWavelengths, nominalBandwidths);
+        final Calculator calculator = calculatorFactory.createCalculator();
 
-        for (int x = 0; x < trueBoaSpectra.length; ++x) {
-            final double[] meanBoaSpectrum = new double[nominalWavelengths.length];
+        for (int x = 0; x < meanToaSpectra.length; ++x) {
+            final double[] meanToaSpectrum = meanToaSpectra[x];
+            final double[] meanBoaSpectrum = new double[meanToaSpectrum.length];
 
-            calculator.calculateBoaReflectances(meanToaSpectra[x], meanBoaSpectrum);
+            calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum);
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
 
 //            linear interpolation between lower and upper O2 absorption bands

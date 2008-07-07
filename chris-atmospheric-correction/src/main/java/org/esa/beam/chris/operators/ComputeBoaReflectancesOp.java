@@ -131,7 +131,7 @@ public class ComputeBoaReflectancesOp extends Operator {
     private double[] lpw;
     private double[] egl;
     private double[] sab;
-    private CalculatorFactory calculatorFactory;
+    private CalculatorFactoryA calculatorFactory;
     private Calculator calculator;
 
     // indexes for water vapour absorption bands
@@ -268,10 +268,10 @@ public class ComputeBoaReflectancesOp extends Operator {
         // todo - properly initialize water vapour column
         cwv = wvIni;
 
-        final RtcTable rtcTable = table.createRtcTable(vza, sza, ada, alt, aot550, cwv);
+        final RtcTable rtcTable = table.getRtcTable(vza, sza, ada, alt, aot550, cwv);
         final double toaScaling = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
-        calculatorFactory = new CalculatorFactory(rtcTable, toaScaling);
-        calculator = calculatorFactory.createCalculator(boaWavelengths, boaBandwidths);
+        calculatorFactory = new CalculatorFactoryA(rtcTable, toaScaling);
+        calculator = calculatorFactory.createCalculator();
 
         o2a = OpUtils.findBandIndex(toaBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
         o2b = OpUtils.findBandIndex(toaBands, O2_B_WAVELENGTH, O2_B_BANDWIDTH);
@@ -367,7 +367,7 @@ public class ComputeBoaReflectancesOp extends Operator {
         }
     }
 
-    private void wv(final double[] toa, final double[] boa, final WvCalculatorFactory wvCalculatorFactory /* todo - make to field */ ) {
+    private void wv(final double[] toa, final double[] boa, final CalculatorFactoryB wvCalculatorFactory /* todo - make to field */ ) {
         initWvBandIndexes(boaWavelengths); // todo - move to init
 
         final Calculator calculator = wvCalculatorFactory.createCalculator(wvIni);  // todo - move to init
