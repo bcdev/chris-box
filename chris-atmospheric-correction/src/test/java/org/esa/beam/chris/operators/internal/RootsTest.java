@@ -30,7 +30,7 @@ public class RootsTest extends TestCase {
         final boolean success = Roots.brent(new TestFunctions.Cos(), bracket, 100);
 
         assertTrue(success);
-        assertEquals(Math.PI / 2.0, bracket.innerX, 0.0);
+        assertEquals(Math.PI / 2.0, bracket.root, 0.0);
     }
 
     public void testBrentWithRootAtBracketingIntervalLowerLimit() throws Exception {
@@ -38,7 +38,7 @@ public class RootsTest extends TestCase {
         final boolean success = Roots.brent(new TestFunctions.Sin(), bracket, 100);
 
         assertTrue(success);
-        assertEquals(0.0, bracket.innerX, 0.0);
+        assertEquals(0.0, bracket.root, 0.0);
     }
 
     public void testBrentWithRootAtBracketingIntervalUpperLimit() throws Exception {
@@ -46,7 +46,7 @@ public class RootsTest extends TestCase {
         final boolean success = Roots.brent(new TestFunctions.Sin(), bracket, 100);
 
         assertTrue(success);
-        assertEquals(0.0, bracket.innerX, 0.0);
+        assertEquals(0.0, bracket.root, 0.0);
     }
 
     public void testBrentWithRootNotInBracketingInterval() throws Exception {

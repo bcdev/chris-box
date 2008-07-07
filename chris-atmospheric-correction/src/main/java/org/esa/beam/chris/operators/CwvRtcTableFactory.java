@@ -14,8 +14,8 @@ class CwvRtcTableFactory {
     private IntervalPartition dimension;
     private final RtcTable[] rtcTables;
 
-    public CwvRtcTableFactory(RtcTableFactory factory, double vza, double sza, double ada, double alt, double aot) {
-        dimension = factory.getDimension(RtcTableFactory.CWV);
+    public CwvRtcTableFactory(ModtranLookupTable factory, double vza, double sza, double ada, double alt, double aot) {
+        dimension = factory.getDimension(ModtranLookupTable.CWV);
         rtcTables = new RtcTable[dimension.getCardinal()];
 
         for (int i = 0; i < dimension.getCardinal(); ++i) {
@@ -24,12 +24,12 @@ class CwvRtcTableFactory {
     }
 
     public RtcTable createRtcTable(double cwv) {
-        final FracIndex fracIndex = computeFracIndexLog(dimension, cwv);
+        final FI fracIndex = computeFracIndex(dimension, cwv);
 
-        return getRtcTable(fracIndex.i, fracIndex.f);
+        return createRtcTable(fracIndex.i, fracIndex.f);
     }
 
-    private RtcTable getRtcTable(final int i, final double f) {
+    private RtcTable createRtcTable(final int i, final double f) {
         final double[] wavelengths = rtcTables[0].getWavelengths();
 
         final double[] lpw = new double[wavelengths.length];
@@ -45,7 +45,7 @@ class CwvRtcTableFactory {
         return new RtcTable(wavelengths, lpw, egl, sab);
     }
 
-    private static FracIndex computeFracIndexLog(final IntervalPartition partition, final double coordinate) {
+    private static FI computeFracIndex(final IntervalPartition partition, final double coordinate) {
         int lo = 0;
         int hi = partition.getCardinal() - 1;
 
@@ -59,24 +59,33 @@ class CwvRtcTableFactory {
             }
         }
 
-        return new FracIndex(lo, Math.log(coordinate / partition.get(lo)) / Math.log(partition.get(hi) / partition.get(lo)));
+        return new FI(lo, Math.log(coordinate / partition.get(lo)) / Math.log(partition.get(hi) / partition.get(lo)));
     }
 
-    private static class FracIndex {
+    /**
+     * Index with integral and fractional components.
+     */
+    private static class FI {
         /**
          * The integral component.
          */
         public int i;
-
         /**
          * The fractional component.
          */
         public double f;
 
-        public FracIndex(int i, double f) {
+        /**
+         * Constructs a new instance of this class.
+         *
+         * @param i the integral component.
+         * @param f the fractional component.  Note that the fractional component of the
+         *          created instance is set to {@code 0.0} if {@code f < 0.0} and set to
+         *          {@code 1.0} if {@code f > 1.0}.
+         */
+        public FI(int i, double f) {
             this.i = i;
 
-            // truncate the fractional component if less than zero or greater than unity
             if (f < 0.0) {
                 f = 0.0;
             } else if (f > 1.0) {

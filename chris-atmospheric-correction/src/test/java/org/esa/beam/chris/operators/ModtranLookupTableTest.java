@@ -28,17 +28,17 @@ public class ModtranLookupTableTest extends TestCase {
 
     // unit conversion constant
     private static final double DEKA_KILO = 1.0E4;
-    
-    private ModtranLookupTable lut;
+
+    private ModtranLookupTable factory;
 
     @Override
     protected void setUp() throws Exception {
         // too expensive for unit-testing
-        lut = new ModtranLookupTableReader().readLookupTable();
+        factory = new ModtranLookupTableReader().createRtcTableFactory();
     }
 
     public void testLookupTableIntegrity() {
-        if (lut != null) {
+        if (factory != null) {
             checkLookupTableA();
             checkLookupTableB();
             checkModtranLookupTable();
@@ -52,9 +52,8 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3   target elevation
         // aot = 0.2   AOT at 550nm
         // ada = 145.0 relative azimuth angle
-        values = lut.getLutA().getValues(20.0, 35.0, 0.3, 0.2, 145.0);
+        values = factory.getLutA().getValues(20.0, 35.0, 0.3, 0.2, 145.0);
 
-        assertEquals(lut.getWavelengths().length, values.length);
         assertEquals(0.002960650 * DEKA_KILO, values[104], 0.5E-8 * DEKA_KILO);
         assertEquals(0.000294274 * DEKA_KILO, values[472], 0.5E-9 * DEKA_KILO);
 
@@ -63,9 +62,8 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // ada = 45.0 relative azimuth angle
-        values = lut.getLutA().getValues(40.0, 55.0, 0.1, 0.3, 45.0);
+        values = factory.getLutA().getValues(40.0, 55.0, 0.1, 0.3, 45.0);
 
-        assertEquals(lut.getWavelengths().length, values.length);
         assertEquals(0.004093020 * DEKA_KILO, values[136], 0.5E-8 * DEKA_KILO);
         assertEquals(0.000631324 * DEKA_KILO, values[446], 0.5E-9 * DEKA_KILO);
     }
@@ -79,7 +77,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3  target elevation
         // aot = 0.2  AOT at 550nm
         // cwv = 2.0  integrated water vapour
-        values = lut.getLutB().getValues(20.0, 35.0, 0.3, 0.2, 2.0);
+        values = factory.getLutB().getValues(20.0, 35.0, 0.3, 0.2, 2.0);
 
         assertEquals(0.1084700 * DEKA_KILO, values[0][110], 0.5E-5 * DEKA_KILO);
         assertEquals(0.0333388 * DEKA_KILO, values[1][110], 0.5E-7 * DEKA_KILO);
@@ -96,7 +94,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // cwv = 3.0  integrated water vapour
-        values = lut.getLutB().getValues(40.0, 55.0, 0.1, 0.3, 3.0);
+        values = factory.getLutB().getValues(40.0, 55.0, 0.1, 0.3, 3.0);
 
         assertEquals(0.0756223 * DEKA_KILO, values[0][222], 0.5E-7 * DEKA_KILO);
         assertEquals(0.0227272 * DEKA_KILO, values[1][222], 0.5E-7 * DEKA_KILO);
@@ -110,7 +108,7 @@ public class ModtranLookupTableTest extends TestCase {
     }
 
     private void checkModtranLookupTable() {
-        double[][] matrix;
+        RtcTable table;
 
         // vza = 20.0
         // sza = 35.0
@@ -118,22 +116,12 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3  target elevation
         // aot = 0.2  AOT at 550nm
         // cwv = 2.0  integrated water vapour
-        matrix = lut.getRtmTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
-        assertEquals(6, matrix.length);
+        table = factory.createRtcTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
 
-        assertEquals(lut.getWavelengthCount(), matrix[0].length);
-        assertEquals(lut.getWavelengthCount(), matrix[1].length);
-        assertEquals(lut.getWavelengthCount(), matrix[2].length);
-        assertEquals(lut.getWavelengthCount(), matrix[3].length);
-        assertEquals(lut.getWavelengthCount(), matrix[4].length);
-        assertEquals(lut.getWavelengthCount(), matrix[5].length);
-
-        assertEquals(0.00423624 * DEKA_KILO, matrix[ModtranLookupTable.LPW][70], 0.5E-8 * DEKA_KILO);
-        assertEquals(0.10402400 * DEKA_KILO, matrix[1][70], 0.5E-6 * DEKA_KILO);
-        assertEquals(0.03887840 * DEKA_KILO, matrix[2][70], 0.5E-7 * DEKA_KILO);
-        assertEquals(0.17851200, matrix[ModtranLookupTable.SAB][70], 0.5E-6);
-        assertEquals(0.36571800, matrix[4][70], 0.5E-6);
-        assertEquals(0.12408900 * DEKA_KILO, matrix[ModtranLookupTable.EGL][70], 0.5E-6 * DEKA_KILO);
+        assertEquals(0.00423624 * DEKA_KILO, table.getLpw(70), 0.5E-8 * DEKA_KILO);
+        assertEquals(0.12408900 * DEKA_KILO, table.getEgl(70), 0.5E-6 * DEKA_KILO);
+        assertEquals(0.17851200, table.getSab(70), 0.5E-6);
+//        assertEquals(0.36571800, table.getRat(70), 0.5E-6);
 
         // vza = 40.0
         // sza = 55.0
@@ -141,13 +129,11 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // cwv = 3.0  integrated water vapour
-        matrix = lut.getRtmTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
+        table = factory.createRtcTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
 
-        assertEquals(0.00809511 * DEKA_KILO, matrix[ModtranLookupTable.LPW][17], 0.5E-8 * DEKA_KILO);
-        assertEquals(0.03731340 * DEKA_KILO, matrix[1][17], 0.5E-7 * DEKA_KILO);
-        assertEquals(0.03066440 * DEKA_KILO, matrix[2][17], 0.5E-7 * DEKA_KILO);
-        assertEquals(0.25710700, matrix[ModtranLookupTable.SAB][17], 0.5E-6);
-        assertEquals(1.00742000, matrix[4][17], 0.5E-5);
-        assertEquals(0.05206649 * DEKA_KILO, matrix[ModtranLookupTable.EGL][17], 0.5E-7 * DEKA_KILO);
+        assertEquals(0.00809511 * DEKA_KILO, table.getLpw(17), 0.5E-8 * DEKA_KILO);
+        assertEquals(0.05206649 * DEKA_KILO, table.getEgl(17), 0.5E-7 * DEKA_KILO);
+        assertEquals(0.25710700, table.getSab(17), 0.5E-6);
+//        assertEquals(1.00742000, table.getRat(17), 0.5E-5);
     }
 }

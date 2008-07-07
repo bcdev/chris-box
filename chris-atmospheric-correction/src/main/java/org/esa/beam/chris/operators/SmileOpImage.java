@@ -22,16 +22,18 @@ import java.util.Vector;
  * @since BEAM 4.2
  */
 class SmileOpImage extends OpImage {
+    private static final int MAX_ITER = 1000;
+
     private static final double O2_LOWER_BOUND = 749.0;
     private static final double O2_UPPER_BOUND = 779.0;
 
     private final double[] nominalWavelengths;
     private final double[] nominalBandwidths;
+
     private final CalculatorFactory calculatorFactory;
-
     private final int lowerO2;
-    private final int upperO2;
 
+    private final int upperO2;
     private final LocalRegressionSmoother smoother;
 
     /**
@@ -150,7 +152,7 @@ class SmileOpImage extends OpImage {
             };
 
             Min.brack(function, -6.0, 6.0, bracket);
-            Min.brent(function, bracket, 1.0E-5, 1.0E-5, 1000);
+            Min.brent(function, bracket, 1.0E-5, 1.0E-5, MAX_ITER);
             targetPixels[targetColumnOffset] = bracket.minimumX;
 
             targetColumnOffset += targetData.pixelStride;

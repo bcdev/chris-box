@@ -22,33 +22,13 @@ class CalculatorFactory {
     }
 
     public Calculator createCalculator(double[] wavelengths, double[] bandwidths, double shift) {
-        final Resampler resampler = new Resampler(rtcTable.getWavelengths(), wavelengths, bandwidths, shift);
-
-        final double[] lpw = new double[wavelengths.length];
-        final double[] egl = new double[wavelengths.length];
-        final double[] sab = new double[wavelengths.length];
-
-        resampler.resample(rtcTable.getLpw(), lpw);
-        resampler.resample(rtcTable.getEgl(), egl);
-        resampler.resample(rtcTable.getSab(), sab);
-
-        return new Calculator(lpw, egl, sab, toaScaling);
+        return createCalculator(new Resampler(rtcTable.getWavelengths(), wavelengths, bandwidths, shift));
     }
 
-    public Calculator createCalculator(double[] wavelengths, double[] bandwidths, double[] lpwCor) {
-        final Resampler resampler = new Resampler(rtcTable.getWavelengths(), wavelengths, bandwidths);
-
-        final double[] lpw = new double[wavelengths.length];
-        final double[] egl = new double[wavelengths.length];
-        final double[] sab = new double[wavelengths.length];
-
-        resampler.resample(rtcTable.getLpw(), lpw);
-        resampler.resample(rtcTable.getEgl(), egl);
-        resampler.resample(rtcTable.getSab(), sab);
-
-        for (int i = 0; i < lpw.length; i++) {
-            lpw[i] -= lpwCor[i];
-        }
+    public Calculator createCalculator(Resampler resampler) {
+        final double[] lpw = resampler.resample(rtcTable.getLpw());
+        final double[] egl = resampler.resample(rtcTable.getEgl());
+        final double[] sab = resampler.resample(rtcTable.getSab());
 
         return new Calculator(lpw, egl, sab, toaScaling);
     }

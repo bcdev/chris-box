@@ -41,7 +41,7 @@ public class Roots {
          * The abcissa value within the bracketing interval which
          * is used for estimating the root.
          */
-        public double innerX;
+        public double root;
 
         /**
          * Constructs a new instance of this class.
@@ -58,7 +58,7 @@ public class Roots {
                 this.upperX = upperX;
             }
 
-            innerX = (lowerX + upperX) / 2;
+            root = (lowerX + upperX) / 2;
         }
     }
 
@@ -120,7 +120,7 @@ public class Roots {
             m = 0.5 * (c - b);
 
             if (fb == 0) {
-                bracket.innerX = b;
+                bracket.root = b;
                 bracket.lowerX = b;
                 bracket.upperX = b;
 
@@ -128,7 +128,7 @@ public class Roots {
             }
 
             if (Math.abs(m) <= tol) {
-                bracket.innerX = b;
+                bracket.root = b;
 
                 if (b < c) {
                     bracket.lowerX = b;
@@ -191,7 +191,7 @@ public class Roots {
 
             fb = f.value(b);
 
-            bracket.innerX = b;
+            bracket.root = b;
 
             if ((fb < 0.0 && fc < 0.0) || (fb > 0.0 && fc > 0.0)) {
                 c = a;

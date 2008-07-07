@@ -29,6 +29,9 @@ import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
+import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
+import org.esa.beam.chris.operators.internal.Roots;
+import org.esa.beam.chris.operators.internal.UnivariateFunction;
 
 import java.awt.*;
 import java.awt.image.Raster;
@@ -36,6 +39,7 @@ import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Operator for performing the CHRIS atmospheric correction.
@@ -62,6 +66,10 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     private static final double RED_WAVELENGTH = 688.0;
     private static final double NIR_WAVELENGTH = 780.0;
+
+    private static final double WV_A_LOWER_BOUND = 770.0;
+    private static final double WV_A_UPPER_BOUND = 890.0;
+    private static final double WV_B_UPPER_BOUND = 921.0;
 
     @SourceProduct
     private Product sourceProduct;
@@ -98,7 +106,7 @@ public class ComputeBoaReflectancesOp extends Operator {
     private transient RenderedImage hyperMaskImage;
     private transient RenderedImage cloudMaskImage;
 
-    private transient RtcTableFactory tableFactory;
+    private transient ModtranLookupTable table;
 
     private transient double[][] lutFilterMatrix;
 
@@ -115,8 +123,9 @@ public class ComputeBoaReflectancesOp extends Operator {
     private double[] eglInt;
     private double[] sabInt;
 
-    private double[] toaWavelenghts;
-    private double[] toaBandwidths;
+    private double[] boaWavelengths;
+    private double[] boaBandwidths;
+
     private int o2a;
     private int o2b;
     private double[] lpw;
@@ -124,7 +133,12 @@ public class ComputeBoaReflectancesOp extends Operator {
     private double[] sab;
     private CalculatorFactory calculatorFactory;
     private Calculator calculator;
-    private double[] lpwCor;
+
+    // indexes for water vapour absorption bands
+    private int lowerWva;
+    private int upperWva;
+    private int upperWvb;
+    private static final int WV_MAX_ITER = 10000;
 
     @Override
     public void initialize() throws OperatorException {
@@ -157,7 +171,7 @@ public class ComputeBoaReflectancesOp extends Operator {
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
         synchronized (this) {
-            if (tableFactory == null) {
+            if (table == null) {
                 init24();
             }
         }
@@ -180,7 +194,7 @@ public class ComputeBoaReflectancesOp extends Operator {
     @Override
     public void dispose() {
         lutFilterMatrix = null;
-        tableFactory = null;
+        table = null;
 
         cloudMaskImage = null;
 
@@ -240,7 +254,7 @@ public class ComputeBoaReflectancesOp extends Operator {
 
     private void init24() {
         try {
-            tableFactory = new ModtranTableReader().createRtcTableFactory();
+            table = new ModtranLookupTableReader().createRtcTableFactory();
         } catch (IOException e) {
             throw new OperatorException(e.getMessage());
         }
@@ -249,16 +263,15 @@ public class ComputeBoaReflectancesOp extends Operator {
 
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
 
-        toaWavelenghts = OpUtils.getWavelenghts(toaBands);
-        toaBandwidths = OpUtils.getBandwidths(toaBands);
+        boaWavelengths = OpUtils.getWavelenghts(toaBands);
+        boaBandwidths = OpUtils.getBandwidths(toaBands);
         // todo - properly initialize water vapour column
         cwv = wvIni;
 
-        final RtcTable rtcTable = tableFactory.createRtcTable(vza, sza, ada, alt, aot550, cwv);
+        final RtcTable rtcTable = table.createRtcTable(vza, sza, ada, alt, aot550, cwv);
         final double toaScaling = 0.001 / OpUtils.getSolarIrradianceCorrectionFactor(day);
         calculatorFactory = new CalculatorFactory(rtcTable, toaScaling);
-        lpwCor = new double[toaBands.length];
-        calculator = calculatorFactory.createCalculator(toaWavelenghts, toaBandwidths, lpwCor);
+        calculator = calculatorFactory.createCalculator(boaWavelengths, boaBandwidths);
 
         o2a = OpUtils.findBandIndex(toaBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
         o2b = OpUtils.findBandIndex(toaBands, O2_B_WAVELENGTH, O2_B_BANDWIDTH);
@@ -354,9 +367,77 @@ public class ComputeBoaReflectancesOp extends Operator {
         }
     }
 
-    private void wv(double[] toa) {
-        
-        
+    private void wv(final double[] toa, final double[] boa, final WvCalculatorFactory wvCalculatorFactory /* todo - make to field */ ) {
+        initWvBandIndexes(boaWavelengths); // todo - move to init
+
+        final Calculator calculator = wvCalculatorFactory.createCalculator(wvIni);  // todo - move to init
+        calculator.calculateBoaReflectances(toa, boa, lowerWva, upperWva + 1);
+
+        final double[] wvaWavelengths = Arrays.copyOfRange(boaWavelengths, lowerWva, upperWva); // todo - move to init
+        final double[] wvaBoa = Arrays.copyOfRange(boa, lowerWva, upperWva); // todo - move to init
+
+        final SimpleLinearRegression linearRegression = new SimpleLinearRegression(wvaWavelengths, wvaBoa);
+        final double a = linearRegression.getSlope();
+        final double b = linearRegression.getIntercept();
+
+        for (int i = upperWva + 1; i < upperWvb + 1; ++i) {
+            boa[i] = a * boaWavelengths[i] + b;
+        }
+
+        // todo - move to init
+        final double min = this.table.getDimension(ModtranLookupTable.CWV).getMin();
+        final double max = this.table.getDimension(ModtranLookupTable.CWV).getMax();
+
+        final Roots.Bracket bracket = new Roots.Bracket(min, max);
+        final double[] sim = new double[toa.length];
+
+        final UnivariateFunction function = new UnivariateFunction() {
+            @Override
+            public double value(double cwv) {
+                wvCalculatorFactory.createCalculator(cwv).calculateToaRadiances(boa, sim, upperWva + 1, upperWvb + 1);
+
+                double sum = 0.0;
+                for (int i = upperWva + 1; i < upperWvb + 1; ++i) {
+                    sum += toa[i] - sim[i];
+                }
+
+                return sum;
+            }
+        };
+
+        Roots.brent(function, bracket, WV_MAX_ITER);
+        wvCalculatorFactory.createCalculator(bracket.root).calculateBoaReflectances(toa, boa);
+    }
+
+    private void initWvBandIndexes(double[] wavelengths) {
+        int lowerWva = -1;
+        int upperWva = -1;
+        int upperWvb = -1;
+
+        for (int i = 0; i < wavelengths.length; ++i) {
+            if (wavelengths[i] >= WV_A_LOWER_BOUND) {
+                lowerWva = i;
+                break;
+            }
+        }
+        for (int i = lowerWva; i < wavelengths.length; ++i) {
+            if (wavelengths[i] <= WV_A_UPPER_BOUND) {
+                upperWva = i;
+            } else {
+                break;
+            }
+        }
+        for (int i = upperWva; i < wavelengths.length; ++i) {
+            if (wavelengths[i] <= WV_B_UPPER_BOUND) {
+                upperWvb = i;
+            } else {
+                break;
+            }
+        }
+
+        this.lowerWva = lowerWva;
+        this.upperWva = upperWva;
+        this.upperWvb = upperWvb;
     }
 
     public static class Spi extends OperatorSpi {
