@@ -16,9 +16,6 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.math.LocalRegressionSmoother;
-import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
-import org.esa.beam.chris.math.Statistics;
 import org.esa.beam.chris.operators.internal.Roots;
 import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
@@ -200,26 +197,31 @@ public class ComputeBoaReflectancesOp extends Operator {
 
         // create calculator factory
         final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot550, cwvIni);
-        final CalculatorFactory calculatorFactory = new CalculatorFactory(table, resamplerFactory, toaScaling);
+        final CalculatorFactory calculatorFactory = new CalculatorFactory(table, toaScaling);
 
         mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
+
+        final double smileCorrection;
+        if (mode == 1 || mode == 5) {
+            final SmileCorrectionCalculator scc = new SmileCorrectionCalculator();
+            smileCorrection = scc.calculate(toaBands, hyperMaskImage, cloudMaskImage, resamplerFactory,
+                                            calculatorFactory);
+        } else {
+            smileCorrection = 0.0;
+        }
+        final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
 
         // create atmospheric correction
         switch (mode) {
             case 1:
             case 3:
             case 5:
-                double smileCorrection = 0.0;
-                if (mode == 1 || mode == 5) {
-                    smileCorrection = calculateSmileCorrection(calculatorFactory);
-                }
-                final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
-                ac = new Ac135(new CalculatorFactoryCwv(modtranLookupTable, resampler, vza, sza, ada, alt,
-                                                        aot550, toaScaling));
+                ac = new Ac135(new CalculatorFactoryCwv(modtranLookupTable, resampler, vza, sza, ada, alt, aot550,
+                                                        toaScaling));
                 break;
             case 2:
             case 4:
-                ac = new Ac24(calculatorFactory.createCalculator());
+                ac = new Ac24(calculatorFactory.createCalculator(resampler));
                 break;
         }
 
@@ -275,24 +277,6 @@ public class ComputeBoaReflectancesOp extends Operator {
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
         return targetProduct;
-    }
-
-    private double calculateSmileCorrection(CalculatorFactory calculatorFactory) {
-        final LocalRegressionSmoother smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0,
-                                                                             27);
-        final RenderedImage image = SmileOpImage.createImage(toaBands, hyperMaskImage, cloudMaskImage,
-                                                             calculatorFactory);
-
-        final Raster raster = image.getData();
-        final int w = raster.getWidth();
-
-        final double[] columnarCorrections = new double[w];
-        final double[] smoothedCorrections = new double[w];
-
-        raster.getPixels(0, 0, w, 1, columnarCorrections);
-        smoother.smooth(columnarCorrections, smoothedCorrections);
-
-        return Statistics.mean(smoothedCorrections);
     }
 
     private interface Ac {

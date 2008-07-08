@@ -22,20 +22,20 @@ class SmileCorrectionCalculator {
         smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 27);
     }
 
-    public double calculateCorrection(Band[] toaRadianceBands, RenderedImage hyperMaskImage,
-                                      RenderedImage cloudMaskImage, CalculatorFactory calculatorFactory) {
-        final RenderedImage smileImage = SmileOpImage.createImage(toaRadianceBands, hyperMaskImage, cloudMaskImage,
-                                                                  calculatorFactory);
+    public double calculate(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
+                            ResamplerFactory resamplerFactory, CalculatorFactory calculatorFactory
+    ) {
+        final RenderedImage smileImage = SmileOpImage.createImage(radianceBands, hyperMaskImage, cloudMaskImage,
+                                                                  resamplerFactory, calculatorFactory);
 
         final Raster raster = smileImage.getData();
         final int w = raster.getWidth();
 
-        final double[] originalShifts = new double[w];
-        raster.getPixels(0, 0, w, 1, originalShifts);
+        final double[] columnarCorrections = new double[w];
+        raster.getPixels(0, 0, w, 1, columnarCorrections);
+        final double[] smoothedCorrections = new double[w];
+        smoother.smooth(columnarCorrections, smoothedCorrections);
 
-        final double[] smoothedShifts = new double[w];
-        smoother.smooth(originalShifts, smoothedShifts);
-
-        return Statistics.mean(smoothedShifts);
+        return Statistics.mean(smoothedCorrections);
     }
 }

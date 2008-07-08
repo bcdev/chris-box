@@ -27,9 +27,11 @@ class SmileOpImage extends OpImage {
     private static final double O2_LOWER_BOUND = 749.0;
     private static final double O2_UPPER_BOUND = 779.0;
 
-    private final CalculatorFactory calculatorFactory;
     private final int lowerO2;
     private final int upperO2;
+
+    private final ResamplerFactory resamplerFactory;
+    private final CalculatorFactory calculatorFactory;
 
     private final LocalRegressionSmoother smoother;
 
@@ -40,13 +42,14 @@ class SmileOpImage extends OpImage {
      * @param radianceBands     the radiance bands.
      * @param hyperMaskImage    the hyper-spectral quality mask image.
      * @param cloudMaskImage    the cloud mask image.
+     * @param resamplerFactory  the resampler factory.
      * @param calculatorFactory the factory for creating the strategy for calculating BOA reflectances
      *                          from TOA radiances.
      *
      * @return the column-wise wavelength shifts.
      */
     public static OpImage createImage(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                                      CalculatorFactory calculatorFactory) {
+                                      ResamplerFactory resamplerFactory, CalculatorFactory calculatorFactory) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         sourceImageVector.add(hyperMaskImage);
@@ -85,15 +88,17 @@ class SmileOpImage extends OpImage {
             }
         }
 
-        return new SmileOpImage(imageLayout, sourceImageVector, lowerO2, upperO2, calculatorFactory);
+        return new SmileOpImage(imageLayout, sourceImageVector, lowerO2, upperO2, resamplerFactory, calculatorFactory);
     }
 
     private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, int lowerO2, int upperO2,
-                         CalculatorFactory calculatorFactory) {
+                         ResamplerFactory resamplerFactory, CalculatorFactory calculatorFactory) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.lowerO2 = lowerO2;
         this.upperO2 = upperO2;
+
+        this.resamplerFactory = resamplerFactory;
         this.calculatorFactory = calculatorFactory;
 
         smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 9, 1);
@@ -128,7 +133,8 @@ class SmileOpImage extends OpImage {
                 @Override
                 public double value(double shift) {
                     // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
-                    final Calculator calculator = calculatorFactory.createCalculator(shift);
+                    final Resampler resampler = resamplerFactory.createResampler(shift);
+                    final Calculator calculator = calculatorFactory.createCalculator(resampler);
                     calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
 
                     double sum = 0.0;
@@ -216,7 +222,8 @@ class SmileOpImage extends OpImage {
     }
 
     private void computeTrueBoaSpectra(double[][] meanToaSpectra, double[][] trueBoaSpectra) {
-        final Calculator calculator = calculatorFactory.createCalculator();
+        final Resampler resampler = resamplerFactory.createResampler(0.0);
+        final Calculator calculator = calculatorFactory.createCalculator(resampler);
 
         for (int x = 0; x < meanToaSpectra.length; ++x) {
             final double[] meanToaSpectrum = meanToaSpectra[x];
