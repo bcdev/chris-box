@@ -14,8 +14,6 @@
  */
 package org.esa.beam.chris.operators.internal;
 
-import java.text.MessageFormat;
-
 /**
  * Methods for finding the roots of an univariate function.
  *
@@ -27,6 +25,9 @@ public class Roots {
 
     /**
      * Container for bracketing a root of an univariate function.
+     * <p/>
+     * Note that a root of an univariate function is bracketed if and only if the
+     * endpoints of the bracketing interval do straddle zero.
      */
     public static class Bracket {
         /**
@@ -60,6 +61,21 @@ public class Roots {
 
             root = (lowerX + upperX) / 2;
         }
+
+        /**
+         * Tests if a root of an univariate function is bracketed.
+         *
+         * @param f the univariate function.
+         *
+         * @return {@code true}, if the end points of the bracket do straddle
+         *         zero, {code false} otherwise.
+         */
+        public boolean isBracket(UnivariateFunction f) {
+            final double lowerF = f.value(lowerX);
+            final double upperF = f.value(upperX);
+
+            return !(lowerF < 0.0 && upperF < 0.0 || lowerF > 0.0 && upperF > 0.0);
+        }
     }
 
     /**
@@ -72,11 +88,8 @@ public class Roots {
      * @param maxIter the maximum number of iterations.
      *
      * @return {@code true} on success.
-     *
-     * @throws IllegalArgumentException when the endpoints {@code a} and {@code b}
-     *                                  do not straddle zero.
      */
-    public static boolean brent(UnivariateFunction f, Bracket bracket, int maxIter) throws IllegalArgumentException {
+    public static boolean brent(UnivariateFunction f, Bracket bracket, int maxIter) {
         double a = bracket.lowerX;
         double b = bracket.upperX;
         double c = b;
@@ -84,11 +97,6 @@ public class Roots {
         double fa = f.value(a);
         double fb = f.value(b);
         double fc = fb;
-
-        if ((fa < 0.0 && fb < 0.0) || (fa > 0.0 && fb > 0.0)) {
-            throw new IllegalArgumentException(MessageFormat.format(
-                    "The endpoints a = {0}, b = {1} do not straddle y = 0.", a, b));
-        }
 
         double d = b - a;
         double e = b - a;

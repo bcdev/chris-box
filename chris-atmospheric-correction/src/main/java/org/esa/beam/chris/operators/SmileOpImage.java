@@ -87,7 +87,7 @@ class SmileOpImage extends OpImage {
                 break;
             }
         }
-
+        
         return new SmileOpImage(imageLayout, sourceImageVector, lowerO2, upperO2, resamplerFactory, calculatorFactory);
     }
 
@@ -147,7 +147,7 @@ class SmileOpImage extends OpImage {
                 }
             };
 
-            Min.brack(function, -6.0, 6.0, bracket);
+            Min.brack(function, 0.0, 1.0, bracket);
             Min.brent(function, bracket, 1.0E-5, 1.0E-5, MAX_ITER);
             targetPixels[targetColumnOffset] = bracket.minimumX;
 
