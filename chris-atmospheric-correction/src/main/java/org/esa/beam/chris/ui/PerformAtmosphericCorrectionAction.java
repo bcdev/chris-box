@@ -39,7 +39,7 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
                         getAppContext(),
                         "Atmospheric Correction",
                         "chrisAtmosphericCorrectionTool");
-        dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
+//        dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
         dialog.show();
     }
 

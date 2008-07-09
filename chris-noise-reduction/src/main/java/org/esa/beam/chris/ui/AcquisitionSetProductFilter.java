@@ -15,7 +15,7 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.ui.ProductFilter;
+import org.esa.beam.framework.datamodel.ProductFilter;
 
 /**
  * Acquisition set product filter.

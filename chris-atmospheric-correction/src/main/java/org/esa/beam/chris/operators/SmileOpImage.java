@@ -101,7 +101,7 @@ class SmileOpImage extends OpImage {
         this.resamplerFactory = resamplerFactory;
         this.calculatorFactory = calculatorFactory;
 
-        smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 9, 1);
+        smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 9, 2);
     }
 
     @Override
@@ -233,15 +233,6 @@ class SmileOpImage extends OpImage {
 
             calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum);
             smoother.smooth(meanBoaSpectrum, trueBoaSpectra[x]);
-
-//            linear interpolation between lower and upper O2 absorption bands
-//            todo - ask Luis Guanter if this was necessary due to non-robust boxcar smoothing in the prototype (rq)
-//            final double w = nominalWavelengths[upperO2] - nominalWavelengths[lowerO2];
-//            for (int i = lowerO2 + 1; i < upperO2; ++i) {
-//                final double t = (nominalWavelengths[i] - nominalWavelengths[lowerO2]) / w;
-//
-//                trueBoaSpectra[x][i] = t * trueBoaSpectra[x][upperO2] + (1.0 - t) * trueBoaSpectra[x][lowerO2];
-//            }
         }
     }
 }

@@ -33,9 +33,9 @@ class SmileCorrectionCalculator {
 
         final double[] columnarCorrections = new double[w];
         raster.getPixels(0, 0, w, 1, columnarCorrections);
-        final double[] smoothedCorrections = new double[w];
-        smoother.smooth(columnarCorrections, smoothedCorrections);
+//        final double[] smoothedCorrections = new double[w];
+//        smoother.smooth(columnarCorrections, smoothedCorrections);
 
-        return Statistics.mean(smoothedCorrections);
+        return Statistics.median(columnarCorrections);
     }
 }

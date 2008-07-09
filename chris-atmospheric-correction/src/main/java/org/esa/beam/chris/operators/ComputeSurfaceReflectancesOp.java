@@ -57,10 +57,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     // target band names
     private static final String RHO_SURF = "rho_surf";
     private static final String RHO_MASK = "rho_mask";
-    private static final String WV_BAND_NAME = "water_vapour";
+    private static final String WATER_VAPOUR = "water_vapour";
 
+    // target band scaling factors
     private static final double RHO_SURF_SCALING_FACTOR = 1.0E-4;
-    private static final double WV_SCALING_FACTOR = 1.0E-4;
+    private static final double WV_SCALING_FACTOR = 2.0E-4;
+
+    // target band valid-pixel expression
+    private static final String VALID_PIXEL_EXPRESSION = "(" + RHO_MASK + " & 515) == 0";
 
     private static final double RED_WAVELENGTH = 688.0;
     private static final double NIR_WAVELENGTH = 780.0;
@@ -152,7 +156,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         // compute remaining bands
         for (final Band targetBand : targetTileMap.keySet()) {
             final String name = targetBand.getName();
-            if (name.startsWith(RHO_SURF) || name.equals(WV_BAND_NAME) || name.equals(RHO_MASK)) {
+            if (name.startsWith(RHO_SURF) || name.equals(WATER_VAPOUR) || name.equals(RHO_MASK)) {
                 continue;
             }
 
@@ -182,6 +186,72 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         toaBands = null;
         toaMaskBands = null;
         cloudProductBand = null;
+    }
+
+    private Product createTargetProduct() {
+        final int w = sourceProduct.getSceneRasterWidth();
+        final int h = sourceProduct.getSceneRasterHeight();
+
+        final Product targetProduct = new Product("CHRIS_SURFACE_REFL", "CHRIS_SURFACE_REFL", w, h);
+        // set start and stop times
+        targetProduct.setStartTime(sourceProduct.getStartTime());
+        targetProduct.setEndTime(sourceProduct.getEndTime());
+        // copy flag codings
+        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+
+        // add surface reflectance bands
+        rhoBands = new Band[toaBands.length];
+        for (int i = 0; i < toaBands.length; ++i) {
+            final Band toaBand = toaBands[i];
+            final String boaBandName = toaBand.getName().replaceAll("radiance", RHO_SURF);
+            final Band boaBand = new Band(boaBandName, ProductData.TYPE_INT16, w, h);
+
+            boaBand.setDescription(MessageFormat.format("Surface reflectance for spectral band {0}", i + 1));
+            boaBand.setUnit("dl");
+            boaBand.setScalingFactor(RHO_SURF_SCALING_FACTOR);
+            boaBand.setValidPixelExpression(VALID_PIXEL_EXPRESSION);
+            boaBand.setSpectralBandIndex(toaBand.getSpectralBandIndex());
+            boaBand.setSpectralWavelength(toaBand.getSpectralWavelength());
+            boaBand.setSpectralBandwidth(toaBand.getSpectralBandwidth());
+            // todo - set solar flux ?
+
+            targetProduct.addBand(boaBand);
+            rhoBands[i] = boaBand;
+        }
+        // copy all non-radiance bands from source product to target product
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (sourceBand.getName().startsWith("radiance")) {
+                continue;
+            }
+            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+            final FlagCoding flagCoding = sourceBand.getFlagCoding();
+            if (flagCoding != null) {
+                targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
+            }
+        }
+
+        // add mask band
+        rhoMaskBand = targetProduct.addBand(RHO_MASK, ProductData.TYPE_INT16);
+
+        // add water vapour band, if applicable
+        if (mode == 1 || mode == 3 || mode == 5) {
+            if (generateWvMap) {
+                wvBand = new Band(WATER_VAPOUR, ProductData.TYPE_INT16, w, h);
+                wvBand.setUnit("g cm-2");
+                wvBand.setScalingFactor(WV_SCALING_FACTOR);
+                wvBand.setValidPixelExpression(VALID_PIXEL_EXPRESSION);
+
+                targetProduct.addBand(wvBand);
+            }
+        }
+
+        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+
+        // set preferred tile size
+        targetProduct.setPreferredTileSize(64, 64);
+        
+        return targetProduct;
     }
 
     private void initialize2() {
@@ -251,69 +321,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         if (cwvIni == 0.0) {
             // todo - properly initialize water vapour column
         }
-    }
-
-    private Product createTargetProduct() {
-        final int w = sourceProduct.getSceneRasterWidth();
-        final int h = sourceProduct.getSceneRasterHeight();
-
-        final Product targetProduct = new Product("CHRIS_SURFACE_REFL", "CHRIS_SURFACE_REFL", w, h);
-        // set start and stop times
-        targetProduct.setStartTime(sourceProduct.getStartTime());
-        targetProduct.setEndTime(sourceProduct.getEndTime());
-        // copy flag codings
-        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-
-        // add surface reflectance bands
-        rhoBands = new Band[toaBands.length];
-        for (int i = 0; i < toaBands.length; ++i) {
-            final Band toaBand = toaBands[i];
-            final String boaBandName = toaBand.getName().replaceAll("radiance", RHO_SURF);
-            final Band boaBand = new Band(boaBandName, ProductData.TYPE_INT16, w, h);
-
-            boaBand.setDescription(MessageFormat.format("Surface reflectance for spectral band {0}", i + 1));
-            boaBand.setUnit("dl");
-            boaBand.setScalingFactor(RHO_SURF_SCALING_FACTOR);
-            boaBand.setValidPixelExpression("ac_mask == 0");
-            boaBand.setSpectralBandIndex(toaBand.getSpectralBandIndex());
-            boaBand.setSpectralWavelength(toaBand.getSpectralWavelength());
-            boaBand.setSpectralBandwidth(toaBand.getSpectralBandwidth());
-            // todo - set solar flux ?
-
-            targetProduct.addBand(boaBand);
-            rhoBands[i] = boaBand;
-        }
-        // copy all non-radiance bands from source product to target product
-        for (final Band sourceBand : sourceProduct.getBands()) {
-            if (sourceBand.getName().startsWith("radiance")) {
-                continue;
-            }
-            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-            final FlagCoding flagCoding = sourceBand.getFlagCoding();
-            if (flagCoding != null) {
-                targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
-            }
-        }
-
-        // add mask band
-        rhoMaskBand = targetProduct.addBand(RHO_MASK, ProductData.TYPE_INT16);
-
-        // add water vapour band, if applicable
-        if (mode == 1 || mode == 3 || mode == 5) {
-            if (generateWvMap) {
-                wvBand = new Band(WV_BAND_NAME, ProductData.TYPE_INT16, w, h);
-                wvBand.setUnit("g cm-2");
-                wvBand.setScalingFactor(WV_SCALING_FACTOR);
-                wvBand.setValidPixelExpression(MessageFormat.format("{0} == 0", RHO_MASK));
-
-                targetProduct.addBand(wvBand);
-            }
-        }
-
-        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
-        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-
-        return targetProduct;
     }
 
     private interface Ac {
@@ -454,8 +461,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final Calculator calculator = calculatorFactory.createCalculator(cwvIni);
             calculator.calculateBoaReflectances(toa, rho, lowerWva, upperWva + 1);
 
-            final SimpleLinearRegression lg = new SimpleLinearRegression(nominalWavelengths, rho, lowerWva,
-                                                                         upperWva + 1);
+            final SimpleLinearRegression lg = new SimpleLinearRegression(nominalWavelengths, rho,
+                                                                         lowerWva, upperWva + 1);
             final double a = lg.getSlope();
             final double b = lg.getIntercept();
 
