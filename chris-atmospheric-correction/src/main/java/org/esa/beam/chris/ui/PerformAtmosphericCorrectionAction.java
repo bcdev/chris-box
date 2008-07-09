@@ -14,7 +14,9 @@
  */
 package org.esa.beam.chris.ui;
 
+import org.esa.beam.chris.operators.ComputeSurfaceReflectancesOp;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.gpf.ui.SingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
@@ -32,10 +34,11 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
     public void actionPerformed(CommandEvent commandEvent) {
         final String sourceProductName = VisatApp.getApp().getSelectedProduct().getName();
         final SingleTargetProductDialog dialog =
-                new DefaultSingleTargetProductDialog("chris.ComputeBoaReflectances",
-                                                     getAppContext(),
-                                                     "Atmospheric Correction",
-                                                     "chrisAtmosphericCorrectionTool");
+                new DefaultSingleTargetProductDialog(
+                        OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
+                        getAppContext(),
+                        "Atmospheric Correction",
+                        "chrisAtmosphericCorrectionTool");
         dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
         dialog.show();
     }
