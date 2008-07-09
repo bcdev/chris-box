@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: ApplyDestripingFactorsOp.java 2293 2008-06-20 11:30:35Z ralf $
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *

@@ -7,7 +7,7 @@ import org.esa.beam.chris.operators.BandFilter;
  * New class.
  *
  * @author Ralf Quast
- * @version $Revision: 1753 $ $Date$
+ * @version $Revision$ $Date$
  */
 public class InclusiveMultiBandFilter implements BandFilter {
 

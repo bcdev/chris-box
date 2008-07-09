@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: NoiseReductionAction.java 2087 2008-05-16 16:15:46Z marcop $
  *
  * Copyright (C) 2002-2007 by Brockmann Consult
  *

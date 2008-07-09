@@ -6,7 +6,7 @@ import org.esa.beam.framework.datamodel.Band;
  * Band filter interface.
  *
  * @author Ralf Quast
- * @version $Revision: 1864 $ $Date: 2008-03-07 15:16:02 +0100 (Fri, 07 Mar 2008) $
+ * @version $Revision$ $Date$
  */
 public interface BandFilter {
 

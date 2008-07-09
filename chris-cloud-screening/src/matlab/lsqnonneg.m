@@ -45,7 +45,7 @@ function [x,resnorm,resid,exitflag,output,lambda] = lsqnonneg(C,d,x0,options)
 %   See also LSCOV, SLASH.
 
 %   Copyright 1984-2006 The MathWorks, Inc. 
-%   $Revision: 1.15.4.7 $  $Date: 2006/05/19 20:17:32 $
+%   $Revision$  $Date$
 
 % Reference:
 %  Lawson and Hanson, "Solving Least Squares Problems", Prentice-Hall, 1974.
