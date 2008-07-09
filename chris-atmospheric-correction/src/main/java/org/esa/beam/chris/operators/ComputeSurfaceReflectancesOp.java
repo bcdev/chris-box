@@ -20,10 +20,8 @@ import org.esa.beam.chris.operators.internal.Roots;
 import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.FlagCoding;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.dataio.chris.Flags;
+import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -65,6 +63,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     // target band valid-pixel expression
     private static final String VALID_PIXEL_EXPRESSION = "(" + RHO_MASK + " & 515) == 0";
+
+    // cloud flag constants
+    private static final String CLOUD_FLAG_NAME = "cloud";
+    private static final String CLOUD_FLAG_DESCRIPTION = "Cloud pixel";
+    private static final int CLOUD_FLAG_MASK = 0x200;
+    private static final Color CLOUD_FLAG_COLOR = Color.WHITE;
+    private static final float CLOUD_FLAG_TRANSPARENCY = 0.5f;
 
     private static final double RED_WAVELENGTH = 670.0;
     private static final double NIR_WAVELENGTH = 780.0;
@@ -233,7 +238,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         // add mask band
         rhoMaskBand = targetProduct.addBand(RHO_MASK, ProductData.TYPE_INT16);
-        
+
         // add water vapour band, if applicable
         if (mode == 1 || mode == 3 || mode == 5) {
             if (generateWvMap) {
@@ -249,9 +254,32 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
+        // add flag coding
+        final FlagCoding flagCoding = new FlagCoding("CHRIS_RHO_MASK");
+        for (final Flags flag : Flags.values()) {
+            flagCoding.addFlag(flag.toString(), flag.getMask(), flag.getDescription());
+        }
+        flagCoding.addFlag(CLOUD_FLAG_NAME, CLOUD_FLAG_MASK, CLOUD_FLAG_DESCRIPTION);
+        targetProduct.getFlagCodingGroup().add(flagCoding);
+        rhoMaskBand.setSampleCoding(flagCoding);
+
+        // add bitmask definitions
+        for (final Flags flag : Flags.values()) {
+            targetProduct.addBitmaskDef(new BitmaskDef(RHO_MASK + "_" + flag.toString(),
+                                                       flag.getDescription(),
+                                                       RHO_MASK + "." + flag.toString(),
+                                                       flag.getColor(),
+                                                       flag.getTransparency()));
+        }
+        targetProduct.addBitmaskDef(new BitmaskDef(RHO_MASK + "_" + CLOUD_FLAG_NAME,
+                                                   CLOUD_FLAG_DESCRIPTION,
+                                                   RHO_MASK + "." + CLOUD_FLAG_NAME,
+                                                   CLOUD_FLAG_COLOR,
+                                                   CLOUD_FLAG_TRANSPARENCY));
+        
         // set preferred tile size
         targetProduct.setPreferredTileSize(64, 64);
-        
+
         return targetProduct;
     }
 
@@ -438,7 +466,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
 
-                    if (hyperMask != 1 && hyperMask != 2 && cloudMask == 0) {
+                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
                         for (int i = 0; i < toaTiles.length; i++) {
                             toa[i] = toaTiles[i].getSampleDouble(pos.x, pos.y);
                         }
@@ -449,9 +477,9 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         if (wvTile != null) {
                             wvTile.setSample(pos.x, pos.y, wv);
                         }
-                    } else {
-                        rhoMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
                     }
+                    rhoMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
+
                     if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
                     }
@@ -561,14 +589,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                         final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
 
-                        if (hyperMask != 1 && hyperMask != 2 && cloudMask == 0) {
+                        if ((hyperMask & 3) == 0 && cloudMask == 0) {
                             final double toa = toaTile.getSampleDouble(pos.x, pos.y);
                             final double rho = calculator.getBoaReflectance(i, toa);
 
                             rhoTile.setSample(pos.x, pos.y, rho);
-                        } else {
-                            rhoMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
                         }
+                        rhoMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
+
                         if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                             pm.worked(1);
                         }

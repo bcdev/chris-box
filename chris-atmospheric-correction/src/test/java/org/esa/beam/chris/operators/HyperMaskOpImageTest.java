@@ -41,13 +41,13 @@ public class HyperMaskOpImageTest extends TestCase {
         assertEquals(0, raster.getSample(0, 0, 0));
         assertEquals(1, raster.getSample(1, 0, 0));
         assertEquals(2, raster.getSample(0, 1, 0));
-        assertEquals(3, raster.getSample(1, 1, 0));
+        assertEquals(259, raster.getSample(1, 1, 0));
     }
 
     private static RenderedImage createTestImage() {
         final Product product = new Product("test", "test", W, H);
 
-        addBand(product, "mask_0", new short[]{0, 0, 0, 2});
+        addBand(product, "mask_0", new short[]{0, 0, 0, 256});
         addBand(product, "mask_1", new short[]{0, 1, 0, 2});
         addBand(product, "mask_2", new short[]{0, 0, 2, 0});
         addBand(product, "mask_3", new short[]{0, 0, 0, 1});
