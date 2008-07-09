@@ -87,7 +87,7 @@ class SmileOpImage extends OpImage {
                 break;
             }
         }
-        
+
         return new SmileOpImage(imageLayout, sourceImageVector, lowerO2, upperO2, resamplerFactory, calculatorFactory);
     }
 
@@ -132,7 +132,6 @@ class SmileOpImage extends OpImage {
             final UnivariateFunction function = new UnivariateFunction() {
                 @Override
                 public double value(double shift) {
-                    // todo - ask Luis Guanter why not just the O2 bands are used here - would improve speed (rq)
                     final Resampler resampler = resamplerFactory.createResampler(shift);
                     final Calculator calculator = calculatorFactory.createCalculator(resampler);
                     calculator.calculateBoaReflectances(meanToaSpectrum, meanBoaSpectrum, lowerO2, upperO2 + 1);
@@ -174,17 +173,17 @@ class SmileOpImage extends OpImage {
         final UnpackedImageData hyperMaskData;
         final UnpackedImageData cloudMaskData;
 
-        final byte[] hyperMaskPixels;
-        final byte[] cloudMaskPixels;
+        final short[] hyperMaskPixels;
+        final short[] cloudMaskPixels;
 
         hyperMaskAccessor = new PixelAccessor(getSourceImage(0));
         cloudMaskAccessor = new PixelAccessor(getSourceImage(1));
 
-        hyperMaskData = hyperMaskAccessor.getPixels(sources[0], rectangle, DataBuffer.TYPE_BYTE, false);
-        cloudMaskData = cloudMaskAccessor.getPixels(sources[1], rectangle, DataBuffer.TYPE_BYTE, false);
+        hyperMaskData = hyperMaskAccessor.getPixels(sources[0], rectangle, DataBuffer.TYPE_SHORT, false);
+        cloudMaskData = cloudMaskAccessor.getPixels(sources[1], rectangle, DataBuffer.TYPE_SHORT, false);
 
-        hyperMaskPixels = hyperMaskData.getByteData(0);
-        cloudMaskPixels = cloudMaskData.getByteData(0);
+        hyperMaskPixels = hyperMaskData.getShortData(0);
+        cloudMaskPixels = cloudMaskData.getShortData(0);
 
         for (int i = 2; i < sources.length; ++i) {
             final PixelAccessor radianceAccessor;
@@ -202,7 +201,10 @@ class SmileOpImage extends OpImage {
                 int count = 0;
 
                 for (int y = 0; y < rectangle.height; ++y) {
-                    if (hyperMaskPixels[sourcePixelOffset] == 0 && cloudMaskPixels[sourcePixelOffset] == 0) {
+                    final short hyperMaskPixel = hyperMaskPixels[sourcePixelOffset];
+                    final short cloudMaskPixel = cloudMaskPixels[sourcePixelOffset];
+                    
+                    if (hyperMaskPixel != 1 && hyperMaskPixel != 2 && cloudMaskPixel == 0) {
                         final int radiance = radiancePixels[sourcePixelOffset];
 
                         if (radiance > 0) {

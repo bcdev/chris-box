@@ -54,7 +54,7 @@ class HyperMaskOpImage extends PointOpImage {
         int w = maskBands[0].getRasterWidth();
         int h = maskBands[1].getRasterHeight();
 
-        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_BYTE, w, h, 1, w, new int[]{0});
+        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_SHORT, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
@@ -69,11 +69,11 @@ class HyperMaskOpImage extends PointOpImage {
     protected void computeRect(Raster[] sources, WritableRaster target, Rectangle rectangle) {
         final PixelAccessor targetAccessor;
         final UnpackedImageData targetData;
-        final byte[] targetPixels;
+        final short[] targetPixels;
 
         targetAccessor = new PixelAccessor(getSampleModel(), getColorModel());
-        targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_BYTE, true);
-        targetPixels = targetData.getByteData(0);
+        targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_SHORT, true);
+        targetPixels = targetData.getShortData(0);
 
         for (int i = 0; i < sources.length; ++i) {
             final PixelAccessor sourceAccessor;
@@ -92,7 +92,7 @@ class HyperMaskOpImage extends PointOpImage {
                 int targetPixelOffset = targetLineOffset;
 
                 for (int x = 0; x < rectangle.width; ++x) {
-                    targetPixels[targetPixelOffset] |= sourcePixels[sourcePixelOffset] & 255;
+                    targetPixels[targetPixelOffset] |= sourcePixels[sourcePixelOffset];
 
                     sourcePixelOffset += sourceData.pixelStride;
                     targetPixelOffset += targetData.pixelStride;

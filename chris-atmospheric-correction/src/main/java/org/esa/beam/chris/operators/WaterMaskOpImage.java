@@ -48,7 +48,7 @@ class WaterMaskOpImage extends PointOpImage {
         int w = redBand.getRasterWidth();
         int h = redBand.getRasterHeight();
 
-        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_BYTE, w, h, 1, w, new int[]{0});
+        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_SHORT, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
@@ -75,8 +75,8 @@ class WaterMaskOpImage extends PointOpImage {
         final int[] nirPixels = nirData.getIntData(0);
 
         final PixelAccessor targetAccessor = new PixelAccessor(getSampleModel(), getColorModel());
-        final UnpackedImageData targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_BYTE, true);
-        final byte[] targetPixels = targetData.getByteData(0);
+        final UnpackedImageData targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_SHORT, true);
+        final short[] targetPixels = targetData.getShortData(0);
 
         int redLineOffset = redData.bandOffsets[0];
         int nirLineOffset = nirData.bandOffsets[0];
@@ -96,7 +96,7 @@ class WaterMaskOpImage extends PointOpImage {
                     nir *= nirScaling;
 
                     if (red > RED_LOWER_BOUND && nir > NIR_LOWER_BOUND && nir < NIR_UPPER_BOUND) {
-                        targetPixels[targetPixelOffset] = 1;
+                        targetPixels[targetPixelOffset] = 1024;
                     }
                 }
 

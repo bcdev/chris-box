@@ -27,7 +27,7 @@ public class CloudMaskOpImageTest extends TestCase {
         assertEquals(0, raster.getSample(0, 0, 0));
         assertEquals(0, raster.getSample(1, 0, 0)); 
         assertEquals(0, raster.getSample(0, 1, 0));
-        assertEquals(1, raster.getSample(1, 1, 0));
+        assertEquals(512, raster.getSample(1, 1, 0));
     }
 
     private static RenderedImage createTestImage() {

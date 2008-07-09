@@ -47,7 +47,7 @@ public class HyperMaskOpImageTest extends TestCase {
     private static RenderedImage createTestImage() {
         final Product product = new Product("test", "test", W, H);
 
-        addBand(product, "mask_0", new short[]{0, 0, 0, 256});
+        addBand(product, "mask_0", new short[]{0, 0, 0, 2});
         addBand(product, "mask_1", new short[]{0, 1, 0, 2});
         addBand(product, "mask_2", new short[]{0, 0, 2, 0});
         addBand(product, "mask_3", new short[]{0, 0, 0, 1});

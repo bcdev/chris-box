@@ -413,7 +413,7 @@ public class ComputeBoaReflectancesOp extends Operator {
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
 
-                    if (hyperMask == 0 && cloudMask == 0) {
+                    if (hyperMask != 1 && hyperMask != 2 && cloudMask == 0) {
                         for (int i = 0; i < toaTiles.length; i++) {
                             toa[i] = toaTiles[i].getSampleDouble(pos.x, pos.y);
                         }
@@ -425,7 +425,7 @@ public class ComputeBoaReflectancesOp extends Operator {
                             wvTile.setSample(pos.x, pos.y, wv);
                         }
                     } else {
-                        acMaskTile.setSample(pos.x, pos.y, 1);
+                        acMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
                     }
                     if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
@@ -536,13 +536,13 @@ public class ComputeBoaReflectancesOp extends Operator {
                         final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                         final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
 
-                        if (hyperMask == 0 && cloudMask == 0) {
+                        if (hyperMask != 1 && hyperMask != 2 && cloudMask == 0) {
                             final double toa = toaTile.getSampleDouble(pos.x, pos.y);
                             final double boa = calculator.getBoaReflectance(i, toa);
 
                             boaTile.setSample(pos.x, pos.y, boa);
                         } else {
-                            acMaskTile.setSample(pos.x, pos.y, 1);
+                            acMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
                         }
                         if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                             pm.worked(1);

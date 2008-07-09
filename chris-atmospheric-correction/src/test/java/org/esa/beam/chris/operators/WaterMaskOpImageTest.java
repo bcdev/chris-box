@@ -25,7 +25,7 @@ public class WaterMaskOpImageTest extends TestCase {
         final Raster raster = image.getData();
 
         assertEquals(0, raster.getSample(0, 0, 0)); // red < NIR
-        assertEquals(1, raster.getSample(1, 0, 0)); // red > NIR
+        assertEquals(1024, raster.getSample(1, 0, 0)); // red > NIR
         assertEquals(0, raster.getSample(0, 1, 0)); // red > NIR - but NIR too big
         assertEquals(0, raster.getSample(1, 1, 0)); // red > NIR - but NIR too small
     }
