@@ -81,7 +81,6 @@
             <helpId>chrisCloudScreeningTools</helpId>
             <placeAfter>chrisFindClusters</placeAfter>
         </action>
-
     </extension>
 
     <extension point="beam-ui:helpSets">
