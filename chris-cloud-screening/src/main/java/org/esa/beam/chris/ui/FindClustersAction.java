@@ -1,8 +1,6 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
@@ -10,7 +8,6 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -41,6 +38,7 @@ public class FindClustersAction extends AbstractVisatAction {
                                                      getAppContext(),
                                                      "Cluster Analysis",
                                                      "chrisCloudScreeningTools");
+        
         productDialog.show();
     }
 
@@ -51,24 +49,5 @@ public class FindClustersAction extends AbstractVisatAction {
                 && CHRIS_TYPES.contains(selectedProduct.getProductType());
 
         setEnabled(enabled);
-    }
-
-    private static void performAction(Product sourceProduct) throws OperatorException {
-        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
-
-        final StringBuilder name = new StringBuilder(sourceProduct.getName());
-        final int pos = name.lastIndexOf("_FEAT");
-        if (pos != -1) {
-            name.replace(pos, pos + 5, "_CLU");
-        } else {
-            name.append("_CLU");
-        }
-        final String[] features = {"brightness_vis", "brightness_nir", "whiteness_vis", "whiteness_nir", "wv"};
-        parameterMap.put("features", features);
-        parameterMap.put("clusterCount", 14);
-        final Product targetProduct = GPF.createProduct("chris.FindClusters",
-                                                        parameterMap,
-                                                        sourceProduct);
-        VisatApp.getApp().addProduct(targetProduct);
     }
 }

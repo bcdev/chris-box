@@ -23,16 +23,10 @@
     </changelog>
 
     <dependency>
-        <module>ceres-core</module>
-    </dependency>
-    <dependency>
-        <module>beam-core</module>
-    </dependency>
-    <dependency>
         <module>beam-chris-reader</module>
     </dependency>
     <dependency>
-        <module>beam-cluster</module>
+        <module>beam-cluster-analysis</module>
     </dependency>
     <dependency>
         <module>beam-gpf</module>
