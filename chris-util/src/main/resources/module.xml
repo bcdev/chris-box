@@ -21,10 +21,13 @@
     </changelog>
 
     <dependency>
-        <module>beam-gpf</module>
+        <module>beam-core</module>
     </dependency>
     <dependency>
         <module>beam-chris-reader</module>
+    </dependency>
+    <dependency>
+        <module>beam-gpf</module>
     </dependency>
 
     <categories>Application,Processor,CHRIS</categories>
