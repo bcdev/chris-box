@@ -29,7 +29,7 @@ import java.io.IOException;
  * about 140 K of heap space.
  *
  * @author Ralf Quast
- * @version $Revision: 2459 $ $Date: 2008-07-07 08:46:26 +0200 (Mon, 07 Jul 2008) $
+ * @version $Revision$ $Date$
  */
 public class ModtranLookupTableTest extends TestCase {
     // unit conversion constant
@@ -77,8 +77,6 @@ public class ModtranLookupTableTest extends TestCase {
     }
 
     private void checkLookupTableB() {
-        final MatrixFactory matrixFactory = new RowMajorMatrixFactory();
-
         double[][] values;
         // vza = 20.0
         // sza = 35.0
