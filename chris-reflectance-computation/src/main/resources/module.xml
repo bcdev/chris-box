@@ -30,7 +30,10 @@
         <module>beam-visat</module>
         <optional>true</optional>
     </dependency>
-
+    <dependency>
+        <module>chris-util</module>
+    </dependency>
+ 
     <categories>Application,Processor,CHRIS</categories>
 
     <extension point="beam-visat:actions">

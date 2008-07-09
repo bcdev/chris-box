@@ -298,8 +298,7 @@ class OpUtils {
         if (utc != null) {
             return utc.getAsCalendar().get(Calendar.DAY_OF_YEAR);
         } else {
-            throw new OperatorException(MessageFormat.format(
-                    "no date for product ''{0}''", product.getName()));
+            throw new OperatorException(MessageFormat.format("no date for product ''{0}''", product.getName()));
         }
     }
 

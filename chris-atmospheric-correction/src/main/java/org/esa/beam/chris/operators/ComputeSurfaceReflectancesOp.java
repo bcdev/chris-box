@@ -317,9 +317,12 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 break;
         }
 
-        // initialize water vapour column if non-zero
+        // initialize water vapour column, if zero
         if (cwvIni == 0.0) {
-            // todo - properly initialize water vapour column
+            final double cwvMin = 0.5;
+            final double cwvMax = 2.0;
+
+            cwvIni = (cwvMax - cwvMin) * Math.sin(day * Math.PI / 365);
         }
     }
 
