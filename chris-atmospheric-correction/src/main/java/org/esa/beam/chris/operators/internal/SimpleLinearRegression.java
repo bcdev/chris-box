@@ -10,46 +10,33 @@ package org.esa.beam.chris.operators.internal;
  */
 public class SimpleLinearRegression {
     /**
-     * The number of (x, y) pairs.
+     * The number of valid (x, y) pairs.
      */
     private final int count;
     /**
-     * The mask indicating valid (x, y) pairs.
-     */
-    private final boolean[] valid;
-
-    /**
      * The y-intercept of the regression line.
      */
-    private double b0;
+    private final double b0;
     /**
      * The slope of the regression line.
      */
-    private double b1;
+    private final double b1;
     /**
      * The sum of all x values.
      */
-    private double sx;
-    /**
-     * The sum of all y values.
-     */
-    private double sy;
+    private final double sx;
     /**
      * A helper variable storing an intermediate result.
      */
-    private double ssyy;
+    private final double ssyy;
     /**
      * A helper variable storing an intermediate result.
      */
-    private double ssxy;
-    /**
-     * A helper variable storing an intermediate result.
-     */
-    private double ssxx;
+    private final double ssxx;
     /**
      * The sum of squared errors.
      */
-    private double sse;
+    private final double sse;
 
     /**
      * Computes a simple linear regression for the ({@code x[i]}, {@code y[i]})
@@ -98,10 +85,55 @@ public class SimpleLinearRegression {
             throw new IllegalArgumentException("to > x.length");
         }
 
-        valid = new boolean[x.length];
-        count = validate(x, y, from, to);
+        final boolean[] valid = new boolean[x.length];
+        count = validate(x, y, valid, from, to);
 
-        computeRegression(x, y, from, to);
+        double sx = 0.0;
+        double sy = 0.0;
+
+        for (int i = from; i < to; ++i) {
+            if (valid[i]) {
+                sx += x[i];
+                sy += y[i];
+            }
+        }
+
+        this.sx = sx;
+
+        final double xm = sx / count;
+        final double ym = sy / count;
+
+        double ssxx = 0.0;
+        double ssxy = 0.0;
+        double ssyy = 0.0;
+
+        for (int i = from; i < to; ++i) {
+            if (valid[i]) {
+                final double dx = x[i] - xm;
+                final double dy = y[i] - ym;
+
+                ssxx += dx * dx;
+                ssxy += dx * dy;
+                ssyy += dy * dy;
+            }
+        }
+
+        this.ssxx = ssxx;
+        this.ssyy = ssyy;
+
+        b1 = ssxy / ssxx;
+        b0 = (sy - b1 * sx) / count;
+
+        double sse = 0.0;
+
+        for (int i = from; i < to; ++i) {
+            if (valid[i]) {
+                final double dy = y[i] - (b0 + b1 * x[i]);
+                sse += dy * dy;
+            }
+        }
+
+        this.sse = sse;
     }
 
     /**
@@ -168,40 +200,6 @@ public class SimpleLinearRegression {
         return Math.sqrt(getEstimatedVariance() / ssxx);
     }
 
-    private void computeRegression(final double[] x, final double[] y, int from, int to) {
-        for (int i = from; i < to; ++i) {
-            if (valid[i]) {
-                sx += x[i];
-                sy += y[i];
-            }
-        }
-
-        final double xm = sx / count;
-        final double ym = sy / count;
-
-        for (int i = from; i < to; ++i) {
-            if (valid[i]) {
-                final double dx = x[i] - xm;
-                final double dy = y[i] - ym;
-
-                ssxx += dx * dx;
-                ssxy += dx * dy;
-                ssyy += dy * dy;
-            }
-        }
-
-        b1 = ssxy / ssxx;
-        b0 = (sy - b1 * sx) / count;
-
-        for (int i = from; i < to; ++i) {
-            if (valid[i]) {
-                final double dy = y[i] - (b0 + b1 * x[i]);
-
-                sse += dy * dy;
-            }
-        }
-    }
-
     private static void ensureNotNullAndEqualLength(final double[] x, final double[] y) {
         if (x == null) {
             throw new NullPointerException("x == null");
@@ -214,18 +212,7 @@ public class SimpleLinearRegression {
         }
     }
 
-    /**
-     * Validates the given ({@code x[i]}, {@code y[i]}) pairs and returns
-     * the number of valid pairs.
-     *
-     * @param x    the values of the independent variable.
-     * @param y    the corresponding values of the dependent variable.
-     * @param from the index of the first ({@code x[i]}, {@code y[i]}) pair being considered.
-     * @param to   the index of the final ({@code x[i]}, {@code y[i]}) pair being considered (exclusive).
-     *
-     * @return the number of valid pairs.
-     */
-    private int validate(final double[] x, final double[] y, int from, int to) {
+    private int validate(final double[] x, final double[] y, boolean[] valid, int from, int to) {
         int count = 0;
 
         for (int i = from; i < to; ++i) {

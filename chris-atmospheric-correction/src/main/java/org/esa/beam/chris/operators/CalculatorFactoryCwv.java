@@ -9,7 +9,7 @@ package org.esa.beam.chris.operators;
  */
 public class CalculatorFactoryCwv {
 
-    private double[] cwvDimension;
+    private final double[] cwv;
 
     private final double[][] lpw;
     private final double[][] egl;
@@ -18,17 +18,17 @@ public class CalculatorFactoryCwv {
     private final double toaScaling;
 
     public CalculatorFactoryCwv(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza, double sza,
-                              double ada, double alt, double aot, double toaScaling) {
-        cwvDimension = modtranLookupTable.getDimension(ModtranLookupTable.CWV).getSequence();
+                                double ada, double alt, double aot, double toaScaling) {
+        cwv = modtranLookupTable.getDimension(ModtranLookupTable.CWV).getSequence();
 
-        lpw = new double[cwvDimension.length][];
-        egl = new double[cwvDimension.length][];
-        sab = new double[cwvDimension.length][];
+        lpw = new double[cwv.length][];
+        egl = new double[cwv.length][];
+        sab = new double[cwv.length][];
 
         this.toaScaling = toaScaling;
 
-        for (int i = 0; i < cwvDimension.length; ++i) {
-            final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot, cwvDimension[i]);
+        for (int i = 0; i < cwv.length; ++i) {
+            final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot, cwv[i]);
 
             lpw[i] = resampler.resample(table.getLpw());
             egl[i] = resampler.resample(table.getEgl());
@@ -40,6 +40,14 @@ public class CalculatorFactoryCwv {
         final FI fracIndex = toFracIndex(cwv);
 
         return createCalculator(fracIndex.i, fracIndex.f);
+    }
+
+    public final double getCwvMin() {
+        return cwv[0];
+    }
+
+    public final double getCwvMax() {
+        return cwv[cwv.length - 1];
     }
 
     private Calculator createCalculator(final int i, final double f) {
@@ -60,19 +68,19 @@ public class CalculatorFactoryCwv {
 
     private FI toFracIndex(final double coordinate) {
         int lo = 0;
-        int hi = cwvDimension.length - 1;
+        int hi = cwv.length - 1;
 
         while (hi > lo + 1) {
             final int m = (lo + hi) >> 1;
 
-            if (coordinate < cwvDimension[m]) {
+            if (coordinate < cwv[m]) {
                 hi = m;
             } else {
                 lo = m;
             }
         }
 
-        return new FI(lo, Math.log(coordinate / cwvDimension[lo]) / Math.log(cwvDimension[hi] / cwvDimension[lo]));
+        return new FI(lo, Math.log(coordinate / cwv[lo]) / Math.log(cwv[hi] / cwv[lo]));
     }
 
     /**

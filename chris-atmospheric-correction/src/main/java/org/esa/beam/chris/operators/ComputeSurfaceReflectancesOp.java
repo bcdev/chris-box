@@ -119,12 +119,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private transient Band wvBand;
 
     private transient RenderedImage hyperMaskImage;
-
     private transient RenderedImage cloudMaskImage;
+    
     private transient ModtranLookupTable modtranLookupTable;
 
     private transient int mode;
-    private transient double[] nominalWavelengths;
+    private transient double[] targetWavelengths;
+
     private transient Ac ac;
 
     @Override
@@ -179,7 +180,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         modtranLookupTable = null;
 
         mode = 0;
-        nominalWavelengths = null;
+        targetWavelengths = null;
 
         hyperMaskImage = null;
         cloudMaskImage = null;
@@ -276,7 +277,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                                                    RHO_MASK + "." + CLOUD_FLAG_NAME,
                                                    CLOUD_FLAG_COLOR,
                                                    CLOUD_FLAG_TRANSPARENCY));
-        
+
         // set preferred tile size
         targetProduct.setPreferredTileSize(64, 64);
 
@@ -293,12 +294,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         // create mask images
         hyperMaskImage = HyperMaskOpImage.createImage(toaMaskBands);
         cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
-
-        // create resampler factory
-        nominalWavelengths = OpUtils.getWavelenghts(toaBands);
-        final ResamplerFactory resamplerFactory = new ResamplerFactory(modtranLookupTable.getWavelengths(),
-                                                                       nominalWavelengths,
-                                                                       OpUtils.getBandwidths(toaBands));
 
         // get annotations
         final double vaa = 0.0;
@@ -318,6 +313,19 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
         final double toaScaling = 1.0E-3 / OpUtils.getSolarIrradianceCorrectionFactor(day);
 
+        // initialize water vapour column, if zero
+        if (cwvIni == 0.0) {
+            final double cwvMin = 0.5;
+            final double cwvMax = 2.0;
+
+            cwvIni = (cwvMax - cwvMin) * Math.sin(day * Math.PI / 365);
+        }
+
+        // create resampler factory
+        targetWavelengths = OpUtils.getWavelenghts(toaBands);
+        final ResamplerFactory resamplerFactory = new ResamplerFactory(modtranLookupTable.getWavelengths(),
+                                                                       targetWavelengths,
+                                                                       OpUtils.getBandwidths(toaBands));
         // create calculator factory
         final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot550, cwvIni);
         final CalculatorFactory calculatorFactory = new CalculatorFactory(table, toaScaling);
@@ -333,33 +341,20 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
 
         // create atmospheric correction
-        switch (mode) {
-            case 1:
-            case 3:
-            case 5:
-                ac = new Ac135(new CalculatorFactoryCwv(modtranLookupTable, resampler, vza, sza, ada, alt, aot550,
-                                                        toaScaling));
-                break;
-            case 2:
-            case 4:
-                ac = new Ac24(calculatorFactory.createCalculator(resampler));
-                break;
-        }
-
-        // initialize water vapour column, if zero
-        if (cwvIni == 0.0) {
-            final double cwvMin = 0.5;
-            final double cwvMax = 2.0;
-
-            cwvIni = (cwvMax - cwvMin) * Math.sin(day * Math.PI / 365);
+        if (mode == 1 || mode == 3 || mode == 5) {
+            ac = new Ac1(new CalculatorFactoryCwv(modtranLookupTable, resampler, vza, sza, ada, alt, aot550,
+                                                  toaScaling));
+        } else if (mode == 2 || mode == 4) {
+            ac = new Ac2(calculatorFactory.createCalculator(resampler));
         }
     }
 
     private interface Ac {
         void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm);
+
     }
 
-    private class Ac135 implements Ac {
+    private class Ac1 implements Ac {
 
         private static final int WV_RETRIEVAL_MAX_ITER = 10000;
 
@@ -369,39 +364,32 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         private final CalculatorFactoryCwv calculatorFactory;
 
-        // minimum and maximum water vapour columns
-        private final double cwvMin;
-        private final double cwvMax;
-
         // indexes for water vapour absorption bands
         private final int lowerWva;
         private final int upperWva;
         private final int upperWvb;
 
-        private Ac135(CalculatorFactoryCwv calculatorFactory) {
+        private Ac1(CalculatorFactoryCwv calculatorFactory) {
             this.calculatorFactory = calculatorFactory;
-
-            cwvMin = modtranLookupTable.getDimension(ModtranLookupTable.CWV).getMin();
-            cwvMax = modtranLookupTable.getDimension(ModtranLookupTable.CWV).getMax();
 
             int lowerWva = -1;
             int upperWva = -1;
             int upperWvb = -1;
-            for (int i = 0; i < nominalWavelengths.length; ++i) {
-                if (nominalWavelengths[i] >= WV_A_LOWER_BOUND) {
+            for (int i = 0; i < targetWavelengths.length; ++i) {
+                if (targetWavelengths[i] >= WV_A_LOWER_BOUND) {
                     lowerWva = i;
                     break;
                 }
             }
-            for (int i = lowerWva + 1; i < nominalWavelengths.length; ++i) {
-                if (nominalWavelengths[i] <= WV_A_UPPER_BOUND) {
+            for (int i = lowerWva + 1; i < targetWavelengths.length; ++i) {
+                if (targetWavelengths[i] <= WV_A_UPPER_BOUND) {
                     upperWva = i;
                 } else {
                     break;
                 }
             }
-            for (int i = upperWva + 1; i < nominalWavelengths.length; ++i) {
-                if (nominalWavelengths[i] <= WV_B_UPPER_BOUND) {
+            for (int i = upperWva + 1; i < targetWavelengths.length; ++i) {
+                if (targetWavelengths[i] <= WV_B_UPPER_BOUND) {
                     upperWvb = i;
                 } else {
                     break;
@@ -493,16 +481,17 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final Calculator calculator = calculatorFactory.createCalculator(cwvIni);
             calculator.calculateBoaReflectances(toa, rho, lowerWva, upperWva + 1);
 
-            final SimpleLinearRegression lg = new SimpleLinearRegression(nominalWavelengths, rho,
+            final SimpleLinearRegression lg = new SimpleLinearRegression(targetWavelengths, rho,
                                                                          lowerWva, upperWva + 1);
             final double a = lg.getSlope();
             final double b = lg.getIntercept();
 
             for (int i = upperWva + 1; i < upperWvb + 1; ++i) {
-                rho[i] = a * nominalWavelengths[i] + b;
+                rho[i] = a * targetWavelengths[i] + b;
             }
 
-            final Roots.Bracket bracket = new Roots.Bracket(cwvMin, cwvMax);
+            final Roots.Bracket bracket = new Roots.Bracket(calculatorFactory.getCwvMin(),
+                                                            calculatorFactory.getCwvMax());
             final double[] sim = new double[toa.length];
 
             final UnivariateFunction function = new UnivariateFunction() {
@@ -527,7 +516,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         }
     }
 
-    private class Ac24 implements Ac {
+    private class Ac2 implements Ac {
 
         private static final double O2_A_WAVELENGTH = 760.5;
         private static final double O2_B_WAVELENGTH = 687.5;
@@ -541,7 +530,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         private final int o2a;
         private final int o2b;
 
-        private Ac24(Calculator calculator) {
+        private Ac2(Calculator calculator) {
             this.calculator = calculator;
 
             o2a = OpUtils.findBandIndex(toaBands, O2_A_WAVELENGTH, O2_A_BANDWIDTH);
