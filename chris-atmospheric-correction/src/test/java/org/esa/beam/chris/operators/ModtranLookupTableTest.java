@@ -15,34 +15,42 @@
 package org.esa.beam.chris.operators;
 
 import junit.framework.TestCase;
+import junit.framework.TestResult;
 import org.esa.beam.util.math.MatrixFactory;
 import org.esa.beam.util.math.RowMajorMatrixFactory;
 
+import java.io.IOException;
+
 /**
  * Tests for class {@link ModtranLookupTable}.
+ * <p/>
+ * Note that the {@link TestCase#run()} method  is overridden in order to
+ * deactivate the tests defined in this class. Running the tests requires
+ * about 140 K of heap space.
  *
  * @author Ralf Quast
  * @version $Revision: 2459 $ $Date: 2008-07-07 08:46:26 +0200 (Mon, 07 Jul 2008) $
  */
 public class ModtranLookupTableTest extends TestCase {
-
     // unit conversion constant
     private static final double DEKA_KILO = 1.0E4;
 
     private ModtranLookupTable factory;
 
     @Override
-    protected void setUp() throws Exception {
-        // too expensive for unit-testing
-        // factory = new ModtranLookupTableReader().readModtranLookupTable();
+    public void run(TestResult result) {
+//        super.run(result);  // uncomment this line in order to run the tests
+    }
+
+    @Override
+    protected void setUp() throws IOException {
+        factory = new ModtranLookupTableReader().readModtranLookupTable();
     }
 
     public void testLookupTableIntegrity() {
-        if (factory != null) {
-            checkLookupTableA();
-            checkLookupTableB();
-            checkModtranLookupTable();
-        }
+        checkLookupTableA();
+        checkLookupTableB();
+        checkModtranLookupTable();
     }
 
     private void checkLookupTableA() {
