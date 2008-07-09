@@ -66,7 +66,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     // target band valid-pixel expression
     private static final String VALID_PIXEL_EXPRESSION = "(" + RHO_MASK + " & 515) == 0";
 
-    private static final double RED_WAVELENGTH = 688.0;
+    private static final double RED_WAVELENGTH = 670.0;
     private static final double NIR_WAVELENGTH = 780.0;
 
     @SourceProduct
@@ -191,11 +191,12 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private Product createTargetProduct() {
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
-
         final Product targetProduct = new Product("CHRIS_SURFACE_REFL", "CHRIS_SURFACE_REFL", w, h);
+
         // set start and stop times
         targetProduct.setStartTime(sourceProduct.getStartTime());
         targetProduct.setEndTime(sourceProduct.getEndTime());
+
         // copy flag codings
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
 
@@ -232,7 +233,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         // add mask band
         rhoMaskBand = targetProduct.addBand(RHO_MASK, ProductData.TYPE_INT16);
-
+        
         // add water vapour band, if applicable
         if (mode == 1 || mode == 3 || mode == 5) {
             if (generateWvMap) {
