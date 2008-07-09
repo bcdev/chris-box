@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * New class.
@@ -40,7 +39,7 @@ public class FindClustersAction extends AbstractVisatAction {
         final DefaultSingleTargetProductDialog productDialog =
                 new DefaultSingleTargetProductDialog("chris.FindClusters",
                                                      getAppContext(),
-                                                     "Cluster Analysis", 
+                                                     "Cluster Analysis",
                                                      "chrisCloudScreeningTools");
         productDialog.show();
     }

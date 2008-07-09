@@ -20,14 +20,12 @@ import javax.media.jai.ImageLayout;
 import javax.media.jai.PointOpImage;
 import javax.media.jai.RasterAccessor;
 import javax.media.jai.RasterFormatTag;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.util.Vector;
-
-import com.bc.ceres.core.ProgressMonitor;
 
 /**
  * Creates a cluster map.
@@ -65,20 +63,20 @@ public class ClusterMapOpImage extends PointOpImage {
                 new RasterAccessor(target, rectangle, formatTags[sources.length], getColorModel());
 
         switch (targetAccessor.getDataType()) {
-        case DataBuffer.TYPE_BYTE:
-            byteLoop(sourceAccessors, targetAccessor);
-            break;
-        case DataBuffer.TYPE_INT:
-            intLoop(sourceAccessors, targetAccessor);
-            break;
-        case DataBuffer.TYPE_FLOAT:
-            floatLoop(sourceAccessors, targetAccessor);
-            break;
-        case DataBuffer.TYPE_DOUBLE:
-            doubleLoop(sourceAccessors, targetAccessor);
-            break;
-        default:
-            throw new IllegalStateException("Only data types of byte, integer, float and double supported.");
+            case DataBuffer.TYPE_BYTE:
+                byteLoop(sourceAccessors, targetAccessor);
+                break;
+            case DataBuffer.TYPE_INT:
+                intLoop(sourceAccessors, targetAccessor);
+                break;
+            case DataBuffer.TYPE_FLOAT:
+                floatLoop(sourceAccessors, targetAccessor);
+                break;
+            case DataBuffer.TYPE_DOUBLE:
+                doubleLoop(sourceAccessors, targetAccessor);
+                break;
+            default:
+                throw new IllegalStateException("Only data types of byte, integer, float and double supported.");
         }
 
         if (targetAccessor.isDataCopy()) {

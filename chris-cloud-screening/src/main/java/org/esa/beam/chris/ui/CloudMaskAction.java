@@ -5,25 +5,20 @@ import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.command.CommandEvent;
-import org.esa.beam.visat.actions.AbstractVisatAction;
 import org.esa.beam.visat.VisatApp;
+import org.esa.beam.visat.actions.AbstractVisatAction;
 
-import javax.swing.SwingWorker;
+import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowStateListener;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
  * Action for masking clouds.
  *
  * @author Marco Peters
- * @author Marco Zühlke
+ * @author Marco Zuehlke
  */
 public class CloudMaskAction extends AbstractVisatAction {
 

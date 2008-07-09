@@ -68,7 +68,7 @@ public class ImageBand extends Band {
                             System.arraycopy(source, i * w, target, (y + i) * width + x, w);
                         }
                     }
-                    
+
                     pm.worked(1);
                 }
             }

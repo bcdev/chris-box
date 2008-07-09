@@ -91,7 +91,8 @@ public class ExtractFeaturesOp extends Operator {
                                    interpolatorWv.getInnerBandwidth());
 
             final double sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
-            final double vza = OpUtils.getAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE, 0.0);
+            final double vza = OpUtils.getAnnotation(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE,
+                                                     0.0);
             mu = 1.0 / (1.0 / cos(toRadians(sza)) + 1.0 / cos(toRadians(vza)));
         }
 
@@ -391,7 +392,8 @@ public class ExtractFeaturesOp extends Operator {
         double sum = 0.0;
 
         for (int i = 1; i < reflectances.length; ++i) {
-            sum += 0.5 * (abs(reflectances[i] - brightness) + abs(reflectances[i - 1] - brightness)) * (wavelengths[i] - wavelengths[i - 1]);
+            sum += 0.5 * (abs(reflectances[i] - brightness) + abs(
+                    reflectances[i - 1] - brightness)) * (wavelengths[i] - wavelengths[i - 1]);
         }
 
         return sum / (wavelengths[wavelengths.length - 1] - wavelengths[0]);

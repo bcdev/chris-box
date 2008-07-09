@@ -14,7 +14,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.BandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -29,8 +28,6 @@ import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.ImageLayout;
 import java.awt.image.RenderedImage;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * todo - API doc

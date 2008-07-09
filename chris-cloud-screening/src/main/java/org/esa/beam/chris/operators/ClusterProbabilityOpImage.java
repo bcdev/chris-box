@@ -21,13 +21,13 @@ import javax.media.jai.ImageLayout;
 import javax.media.jai.PointOpImage;
 import javax.media.jai.RasterAccessor;
 import javax.media.jai.RasterFormatTag;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
-import java.util.Vector;
 import java.text.MessageFormat;
+import java.util.Vector;
 
 /**
  * todo - API doc
@@ -50,7 +50,8 @@ public class ClusterProbabilityOpImage extends PointOpImage {
             sourceImageVector.add(sourceBand.getImage());
         }
 
-        return new ClusterProbabilityOpImage(imageLayout, sourceImageVector, correspondingBandIndex, rejectedBandIndexes);
+        return new ClusterProbabilityOpImage(imageLayout, sourceImageVector, correspondingBandIndex,
+                                             rejectedBandIndexes);
     }
 
     private ClusterProbabilityOpImage(ImageLayout layout, Vector<RenderedImage> sourceImageVector,
@@ -183,7 +184,7 @@ public class ClusterProbabilityOpImage extends PointOpImage {
             }
         }
 
-         if (sum > 0.0f) {
+        if (sum > 0.0f) {
             return samples[correspondingBandIndex] / sum;
         } else {
             return 0.0f;

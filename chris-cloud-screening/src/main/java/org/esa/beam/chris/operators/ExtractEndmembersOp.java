@@ -15,7 +15,6 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.BandFilter;
 import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
@@ -30,9 +29,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProperty;
 import org.esa.beam.unmixing.Endmember;
 
-import java.awt.Rectangle;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.*;
 
 /**
  * Extracts endmembers for calculating cloud abundances.
@@ -41,10 +38,10 @@ import java.util.List;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ExtractEndmembers",
-        version = "1.0",
-        authors = "Ralf Quast, Marco Zühlke",
-        copyright = "(c) 2008 Brockmann Consult",
-        description = "Extracts endmembers for calculating cloud abundances.")
+                  version = "1.0",
+                  authors = "Ralf Quast, Marco Zühlke",
+                  copyright = "(c) 2008 Brockmann Consult",
+                  description = "Extracts endmembers for calculating cloud abundances.")
 public class ExtractEndmembersOp extends Operator {
 
     @SourceProduct(alias = "reflectances")
@@ -75,7 +72,7 @@ public class ExtractEndmembersOp extends Operator {
      *
      * @param reflectanceProduct    the reflectance product.
      * @param featureProduct        the feature product.
-     * @param clusterMapProduct        the cluster product.
+     * @param clusterMapProduct     the cluster product.
      * @param cloudClusterIndexes   the cloud cluster indexes.
      * @param surfaceClusterIndexes the surface cluster indexes.
      */

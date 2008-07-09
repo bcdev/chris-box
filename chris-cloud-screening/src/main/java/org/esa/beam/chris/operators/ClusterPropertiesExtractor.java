@@ -4,8 +4,6 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.io.IOException;
 
 /**

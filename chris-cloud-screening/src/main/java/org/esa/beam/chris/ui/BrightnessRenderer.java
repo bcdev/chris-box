@@ -1,13 +1,13 @@
 package org.esa.beam.chris.ui;
 
+import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.JLabel;
 import java.text.NumberFormat;
 
 /**
  * User: Marco Peters
-* Date: 15.05.2008
-*/
+ * Date: 15.05.2008
+ */
 class BrightnessRenderer extends DefaultTableCellRenderer {
 
     private final NumberFormat formatter;

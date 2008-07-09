@@ -39,7 +39,7 @@ public class AccumulateOp extends Operator {
 
     @Parameter(defaultValue = "true")
     private boolean applyThreshold;
-    
+
     private transient List<Band> sourceBandList;
 
     public AccumulateOp() {
