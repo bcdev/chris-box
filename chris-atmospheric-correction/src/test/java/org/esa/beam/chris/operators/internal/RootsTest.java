@@ -26,35 +26,43 @@ import junit.framework.TestCase;
 public class RootsTest extends TestCase {
 
     public void testBrent() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Cos();
         final Roots.Bracket bracket = new Roots.Bracket(0.0, 2.0);
-        final boolean success = Roots.brent(new TestFunctions.Cos(), bracket, 100);
+        final boolean success = Roots.brent(f, bracket, 100);
 
         assertTrue(success);
         assertEquals(Math.PI / 2.0, bracket.root, 0.0);
     }
 
     public void testBrentWithRootAtBracketingIntervalLowerLimit() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Sin();
         final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
-        final boolean success = Roots.brent(new TestFunctions.Sin(), bracket, 100);
+        final boolean success = Roots.brent(f, bracket, 100);
 
         assertTrue(success);
         assertEquals(0.0, bracket.root, 0.0);
     }
 
     public void testBrentWithRootAtBracketingIntervalUpperLimit() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Sin();
         final Roots.Bracket bracket = new Roots.Bracket(-1.0, 0.0);
-        final boolean success = Roots.brent(new TestFunctions.Sin(), bracket, 100);
+        final boolean success = Roots.brent(f, bracket, 100);
 
         assertTrue(success);
         assertEquals(0.0, bracket.root, 0.0);
     }
 
     public void testBrentWithRootNotInBracketingInterval() throws Exception {
-        try {
-            Roots.brent(new TestFunctions.Cos(), new Roots.Bracket(0.0, 1.0), 100);
-            fail();
-        } catch (IllegalArgumentException expected) {
-            // ignore
-        }
+        final UnivariateFunction f = new TestFunctions.Cos();
+        final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
+
+        // the bracketing interval does not bracket a root
+        assertFalse(bracket.isBracket(f));
+
+        final boolean success = Roots.brent(f, bracket, 100);
+        // the bracketing interval does not bracket a root, but Brent's
+        // algorithm returns the value which is closest to the root
+        assertTrue(success);
+        assertEquals(1.0, bracket.root, 0.0);
     }
 }
