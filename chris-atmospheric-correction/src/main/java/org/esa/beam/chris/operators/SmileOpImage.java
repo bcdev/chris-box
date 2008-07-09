@@ -43,8 +43,8 @@ class SmileOpImage extends OpImage {
      * @param hyperMaskImage    the hyper-spectral quality mask image.
      * @param cloudMaskImage    the cloud mask image.
      * @param resamplerFactory  the resampler factory.
-     * @param calculatorFactory the factory for creating the strategy for calculating BOA reflectances
-     *                          from TOA radiances.
+     * @param calculatorFactory the factory for creating the strategy for calculating
+     *                          surface reflectances from TOA radiances.
      *
      * @return the column-wise wavelength shifts.
      */
@@ -203,7 +203,7 @@ class SmileOpImage extends OpImage {
                 for (int y = 0; y < rectangle.height; ++y) {
                     final short hyperMaskPixel = hyperMaskPixels[sourcePixelOffset];
                     final short cloudMaskPixel = cloudMaskPixels[sourcePixelOffset];
-                    
+
                     if (hyperMaskPixel != 1 && hyperMaskPixel != 2 && cloudMaskPixel == 0) {
                         final int radiance = radiancePixels[sourcePixelOffset];
 

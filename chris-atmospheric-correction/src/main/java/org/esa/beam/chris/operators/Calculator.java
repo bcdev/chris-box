@@ -22,13 +22,13 @@ class Calculator {
         this.toaScaling = toaScaling;
     }
 
-    public void calculateBoaReflectances(double[] toa, double[] boa) {
-        calculateBoaReflectances(toa, boa, 0, toa.length);
+    public void calculateBoaReflectances(double[] toa, double[] rho) {
+        calculateBoaReflectances(toa, rho, 0, toa.length);
     }
 
-    public void calculateBoaReflectances(double[] toa, double[] boa, int from, int to) {
+    public void calculateBoaReflectances(double[] toa, double[] rho, int from, int to) {
         for (int i = from; i < to; i++) {
-            boa[i] = getBoaReflectance(i, toa[i]);
+            rho[i] = getBoaReflectance(i, toa[i]);
         }
     }
 
@@ -38,17 +38,17 @@ class Calculator {
         return a / (1.0 + a * sab[i]);
     }
 
-    public void calculateToaRadiances(double[] boa, double[] toa) {
-        calculateToaRadiances(boa, toa, 0, boa.length);
+    public void calculateToaRadiances(double[] rho, double[] toa) {
+        calculateToaRadiances(rho, toa, 0, rho.length);
     }
 
-    public void calculateToaRadiances(double[] boa, double[] toa, int from, int to) {
+    public void calculateToaRadiances(double[] rho, double[] toa, int from, int to) {
         for (int i = from; i < to; i++) {
-            toa[i] = getToaRadiance(i, boa[i]);
+            toa[i] = getToaRadiance(i, rho[i]);
         }
     }
 
-    public double getToaRadiance(int i, double boa) {
-        return (lpw[i] + boa * (egl[i] / (Math.PI * (1.0 - sab[i] * boa)))) / toaScaling;
+    public double getToaRadiance(int i, double rho) {
+        return (lpw[i] + rho * (egl[i] / (Math.PI * (1.0 - sab[i] * rho)))) / toaScaling;
     }
 }
