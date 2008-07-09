@@ -1,7 +1,7 @@
 package org.esa.beam.chris.operators.internal;
 
-import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.chris.operators.BandFilter;
+import org.esa.beam.framework.datamodel.Band;
 
 /**
  * New class.
