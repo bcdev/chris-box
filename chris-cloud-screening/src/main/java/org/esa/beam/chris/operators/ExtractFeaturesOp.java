@@ -6,6 +6,8 @@ import org.esa.beam.chris.operators.internal.BandComparator;
 import org.esa.beam.chris.operators.internal.InclusiveBandFilter;
 import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
 import org.esa.beam.chris.operators.internal.StrictlyInclusiveBandFilter;
+import org.esa.beam.chris.util.BandFilter;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
@@ -408,7 +410,8 @@ public class ExtractFeaturesOp extends Operator {
 
     // todo - generalize
     static double[][] readTransmittanceTable() throws OperatorException {
-        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("nir-transmittance.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ExtractFeaturesOp.class,
+                                                                           "nir-transmittance.img");
 
         try {
             final int length = iis.readInt();

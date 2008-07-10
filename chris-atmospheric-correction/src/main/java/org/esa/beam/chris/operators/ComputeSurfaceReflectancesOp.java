@@ -19,8 +19,8 @@ import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.Roots;
 import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.dataio.chris.Flags;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -31,6 +31,7 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
 
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
@@ -255,7 +256,9 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     private void initialize2() {
         try {
-            modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
+            final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(getClass(),
+                                                                               "chrisbox-ac-lut-formatted-1nm.img");
+            modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable(iis);
         } catch (IOException e) {
             throw new OperatorException(e.getMessage());
         }

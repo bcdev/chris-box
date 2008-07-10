@@ -16,9 +16,9 @@ package org.esa.beam.chris.operators;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
-import org.esa.beam.util.math.MatrixFactory;
-import org.esa.beam.util.math.RowMajorMatrixFactory;
+import org.esa.beam.chris.util.OpUtils;
 
+import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
 
 /**
@@ -44,7 +44,9 @@ public class ModtranLookupTableTest extends TestCase {
 
     @Override
     protected void setUp() throws IOException {
-        factory = new ModtranLookupTableReader().readModtranLookupTable();
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeSurfaceReflectancesOp.class,
+                                                                           "chrisbox-ac-lut-formatted-1nm.img");
+        factory = new ModtranLookupTableReader().readModtranLookupTable(iis);
     }
 
     public void testLookupTableIntegrity() {

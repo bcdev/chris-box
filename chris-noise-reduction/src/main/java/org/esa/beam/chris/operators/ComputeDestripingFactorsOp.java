@@ -17,8 +17,9 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.math.LocalRegressionSmoother;
-import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
+import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.chris.util.math.LocalRegressionSmoother;
+import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.Sorter;
 import org.esa.beam.framework.datamodel.Band;
@@ -136,9 +137,11 @@ public class ComputeDestripingFactorsOp extends Operator {
         }
 
         OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE,
-                                    OpUtils.getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_MODE));
+                                    OpUtils.getAnnotationString(sourceProducts[0],
+                                                                ChrisConstants.ATTR_NAME_CHRIS_MODE));
         OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE,
-                                    OpUtils.getAnnotationString(sourceProducts[0], ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
+                                    OpUtils.getAnnotationString(sourceProducts[0],
+                                                                ChrisConstants.ATTR_NAME_CHRIS_TEMPERATURE));
         final StringBuilder sb = new StringBuilder("Computed from ");
         for (int i = 0; i < sourceProducts.length; ++i) {
             if (i > 0) {
@@ -462,7 +465,8 @@ public class ComputeDestripingFactorsOp extends Operator {
 
     // todo - generalize
     static double[][] readSlitVsProfileTable() throws OperatorException {
-        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("slit-vs-profile.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeDestripingFactorsOp.class,
+                                                                           "slit-vs-profile.img");
 
         try {
             final int length = iis.readInt();

@@ -1,8 +1,8 @@
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.math.LocalRegressionSmoother;
-import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
-import org.esa.beam.chris.math.Statistics;
+import org.esa.beam.chris.util.math.LocalRegressionSmoother;
+import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
+import org.esa.beam.chris.util.math.Statistics;
 import org.esa.beam.framework.datamodel.Band;
 
 import java.awt.image.Raster;

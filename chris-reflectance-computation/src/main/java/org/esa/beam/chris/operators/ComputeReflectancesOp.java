@@ -1,6 +1,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -49,7 +50,7 @@ public class ComputeReflectancesOp extends Operator {
                label = "Copy radiance bands",
                description = "If 'true' all radiance bands from the source product are copied to the target product.")
     private boolean copyRadianceBands;
-    
+
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
 
@@ -242,7 +243,8 @@ public class ComputeReflectancesOp extends Operator {
 
     // todo - generalize
     static double[][] readThuillierTable() throws OperatorException {
-        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("thuillier.img");
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeReflectancesOp.class,
+                                                                           "thuillier.img");
 
         try {
             final int length = iis.readInt();

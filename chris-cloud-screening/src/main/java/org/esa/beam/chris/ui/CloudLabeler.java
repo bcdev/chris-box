@@ -18,6 +18,7 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.*;
+import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.EMClusterOp;
 import org.esa.beam.framework.datamodel.*;

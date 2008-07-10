@@ -35,8 +35,7 @@ class ModtranLookupTableReader {
     private static final double DEKA_KILO = 1.0E4;
 
     @SuppressWarnings({"ConstantConditions"})
-    public ModtranLookupTable readModtranLookupTable() throws IOException {
-        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream("chrisbox-ac-lut-formatted-1nm.img");
+    public ModtranLookupTable readModtranLookupTable(ImageInputStream iis) throws IOException {
         iis.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 
         try {
