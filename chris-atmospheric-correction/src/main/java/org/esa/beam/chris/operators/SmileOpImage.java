@@ -173,17 +173,17 @@ class SmileOpImage extends OpImage {
         final UnpackedImageData hyperMaskData;
         final UnpackedImageData cloudMaskData;
 
-        final short[] hyperMaskPixels;
-        final short[] cloudMaskPixels;
+        final byte[] hyperMaskPixels;
+        final byte[] cloudMaskPixels;
 
         hyperMaskAccessor = new PixelAccessor(getSourceImage(0));
         cloudMaskAccessor = new PixelAccessor(getSourceImage(1));
 
-        hyperMaskData = hyperMaskAccessor.getPixels(sources[0], rectangle, DataBuffer.TYPE_SHORT, false);
-        cloudMaskData = cloudMaskAccessor.getPixels(sources[1], rectangle, DataBuffer.TYPE_SHORT, false);
+        hyperMaskData = hyperMaskAccessor.getPixels(sources[0], rectangle, DataBuffer.TYPE_BYTE, false);
+        cloudMaskData = cloudMaskAccessor.getPixels(sources[1], rectangle, DataBuffer.TYPE_BYTE, false);
 
-        hyperMaskPixels = hyperMaskData.getShortData(0);
-        cloudMaskPixels = cloudMaskData.getShortData(0);
+        hyperMaskPixels = hyperMaskData.getByteData(0);
+        cloudMaskPixels = cloudMaskData.getByteData(0);
 
         for (int i = 2; i < sources.length; ++i) {
             final PixelAccessor radianceAccessor;

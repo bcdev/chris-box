@@ -59,7 +59,7 @@
                         <configuration>
                             <tasks>
                                 <property name="helpdir" value="${project.build.outputDirectory}/doc/help"/>
-                                <ant antfile="build.xml" target="create-jh-search-db"/>
+                                <ant antfile="../build.xml" target="create-jh-search-db"/>
                             </tasks>
                         </configuration>
                         <goals>

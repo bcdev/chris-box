@@ -61,16 +61,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private static final double RHO_SURF_SCALING_FACTOR = 1.0E-4;
     private static final double WV_SCALING_FACTOR = 2.0E-4;
 
-    // target band valid-pixel expression
-    private static final String VALID_PIXEL_EXPRESSION = "(" + RHO_MASK + " & 515) == 0";
-
-    // cloud flag constants
-    private static final String CLOUD_FLAG_NAME = "cloud";
-    private static final String CLOUD_FLAG_DESCRIPTION = "Cloud pixel";
-    private static final int CLOUD_FLAG_MASK = 0x200;
-    private static final Color CLOUD_FLAG_COLOR = Color.WHITE;
-    private static final float CLOUD_FLAG_TRANSPARENCY = 0.5f;
-
     private static final double RED_WAVELENGTH = 670.0;
     private static final double NIR_WAVELENGTH = 780.0;
 
@@ -115,12 +105,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private transient Band cloudProductBand;
     // target bands
     private transient Band[] rhoBands;
-    private transient Band rhoMaskBand;
     private transient Band wvBand;
 
     private transient RenderedImage hyperMaskImage;
     private transient RenderedImage cloudMaskImage;
-    
+
     private transient ModtranLookupTable modtranLookupTable;
 
     private transient int mode;
@@ -186,7 +175,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         cloudMaskImage = null;
 
         rhoBands = null;
-        rhoMaskBand = null;
         wvBand = null;
 
         toaBands = null;
@@ -206,6 +194,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         // copy flag codings
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
 
+        // create valid pixel expression
+        final StringBuilder validPixelExpression = new StringBuilder("cloud_product < ").append(cloudProductThreshold);
+        for (final Band band : toaMaskBands) {
+            validPixelExpression.append(" && ");
+            validPixelExpression.append("(").append(band.getName()).append(" & 3)").append(" == 0");
+        }
+
         // add surface reflectance bands
         rhoBands = new Band[toaBands.length];
         for (int i = 0; i < toaBands.length; ++i) {
@@ -216,7 +211,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             boaBand.setDescription(MessageFormat.format("Surface reflectance for spectral band {0}", i + 1));
             boaBand.setUnit("dl");
             boaBand.setScalingFactor(RHO_SURF_SCALING_FACTOR);
-            boaBand.setValidPixelExpression(VALID_PIXEL_EXPRESSION);
+            boaBand.setValidPixelExpression(validPixelExpression.toString());
             boaBand.setSpectralBandIndex(toaBand.getSpectralBandIndex());
             boaBand.setSpectralWavelength(toaBand.getSpectralWavelength());
             boaBand.setSpectralBandwidth(toaBand.getSpectralBandwidth());
@@ -237,16 +232,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
         }
 
-        // add mask band
-        rhoMaskBand = targetProduct.addBand(RHO_MASK, ProductData.TYPE_INT16);
-
         // add water vapour band, if applicable
         if (mode == 1 || mode == 3 || mode == 5) {
             if (generateWvMap) {
                 wvBand = new Band(WATER_VAPOUR, ProductData.TYPE_INT16, w, h);
                 wvBand.setUnit("g cm-2");
                 wvBand.setScalingFactor(WV_SCALING_FACTOR);
-                wvBand.setValidPixelExpression(VALID_PIXEL_EXPRESSION);
+                wvBand.setValidPixelExpression(validPixelExpression.toString());
 
                 targetProduct.addBand(wvBand);
             }
@@ -254,29 +246,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-
-        // add flag coding
-        final FlagCoding flagCoding = new FlagCoding("CHRIS_RHO_MASK");
-        for (final Flags flag : Flags.values()) {
-            flagCoding.addFlag(flag.toString(), flag.getMask(), flag.getDescription());
-        }
-        flagCoding.addFlag(CLOUD_FLAG_NAME, CLOUD_FLAG_MASK, CLOUD_FLAG_DESCRIPTION);
-        targetProduct.getFlagCodingGroup().add(flagCoding);
-        rhoMaskBand.setSampleCoding(flagCoding);
-
-        // add bitmask definitions
-        for (final Flags flag : Flags.values()) {
-            targetProduct.addBitmaskDef(new BitmaskDef(RHO_MASK + "_" + flag.toString(),
-                                                       flag.getDescription(),
-                                                       RHO_MASK + "." + flag.toString(),
-                                                       flag.getColor(),
-                                                       flag.getTransparency()));
-        }
-        targetProduct.addBitmaskDef(new BitmaskDef(RHO_MASK + "_" + CLOUD_FLAG_NAME,
-                                                   CLOUD_FLAG_DESCRIPTION,
-                                                   RHO_MASK + "." + CLOUD_FLAG_NAME,
-                                                   CLOUD_FLAG_COLOR,
-                                                   CLOUD_FLAG_TRANSPARENCY));
 
         // set preferred tile size
         targetProduct.setPreferredTileSize(64, 64);
@@ -441,7 +410,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 for (int i = 0; i < rhoBands.length; i++) {
                     rhoTiles[i] = targetTileMap.get(rhoBands[i]);
                 }
-                final Tile rhoMaskTile = targetTileMap.get(rhoMaskBand);
                 final Tile wvTile = targetTileMap.get(wvBand);
 
                 final double[] toa = new double[toaBands.length];
@@ -466,7 +434,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                             wvTile.setSample(pos.x, pos.y, wv);
                         }
                     }
-                    rhoMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
 
                     if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
@@ -565,7 +532,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                 final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
                 final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
-                final Tile rhoMaskTile = targetTileMap.get(rhoMaskBand);
 
                 for (int i = 0; i < rhoBands.length; ++i) {
                     final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, pm);
@@ -584,7 +550,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                             rhoTile.setSample(pos.x, pos.y, rho);
                         }
-                        rhoMaskTile.setSample(pos.x, pos.y, hyperMask | cloudMask);
 
                         if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                             pm.worked(1);

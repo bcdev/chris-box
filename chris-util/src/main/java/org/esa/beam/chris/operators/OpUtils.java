@@ -22,7 +22,7 @@ import java.util.List;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-class OpUtils {
+public class OpUtils {
 
     /**
      * Returns the index of the band whose central wavelength is closest to

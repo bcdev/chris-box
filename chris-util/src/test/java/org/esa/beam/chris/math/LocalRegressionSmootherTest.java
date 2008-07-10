@@ -16,10 +16,6 @@
 package org.esa.beam.chris.math;
 
 import junit.framework.TestCase;
-import org.esa.beam.chris.math.LegendrePolynomials;
-import org.esa.beam.chris.math.LocalRegressionSmoother;
-import org.esa.beam.chris.math.LowessRegressionWeightCalculator;
-import org.esa.beam.chris.math.UnivariateFunctionSequence;
 
 /**
  * Tests for class {@link LocalRegressionSmoother}.
