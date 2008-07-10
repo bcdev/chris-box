@@ -26,7 +26,7 @@ class RtcTable {
     }
 
     public final int getWavelengthCount() {
-        return wavelengths.length;   
+        return wavelengths.length;
     }
 
     public final double[] getLpw() {

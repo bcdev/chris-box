@@ -38,7 +38,7 @@ public class FindClustersAction extends AbstractVisatAction {
                                                      getAppContext(),
                                                      "Cluster Analysis",
                                                      "chrisCloudScreeningTools");
-        
+
         productDialog.show();
     }
 

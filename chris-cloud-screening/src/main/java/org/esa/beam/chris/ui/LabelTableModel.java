@@ -5,7 +5,7 @@ import org.esa.beam.framework.datamodel.ColorPaletteDef;
 import org.esa.beam.framework.datamodel.ImageInfo;
 
 import javax.swing.table.AbstractTableModel;
-import java.awt.Color;
+import java.awt.*;
 import java.text.MessageFormat;
 import java.util.Arrays;
 
@@ -104,20 +104,20 @@ class LabelTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         final ColorPaletteDef.Point point = imageInfo.getColorPaletteDef().getPointAt(rowIndex);
         switch (columnIndex) {
-        case 0:
-            return point.getLabel();
-        case 1:
-            return point.getColor();
-        case 2:
-            return cloud[rowIndex];
-        case 3:
-            return rejected[rowIndex];
-        case 4:
-            return clusterProperties.getBrightnesses()[rowIndex];
-        case 5:
-            return clusterProperties.getOccurrences()[rowIndex];
-        default:
-            return 0;
+            case 0:
+                return point.getLabel();
+            case 1:
+                return point.getColor();
+            case 2:
+                return cloud[rowIndex];
+            case 3:
+                return rejected[rowIndex];
+            case 4:
+                return clusterProperties.getBrightnesses()[rowIndex];
+            case 5:
+                return clusterProperties.getOccurrences()[rowIndex];
+            default:
+                return 0;
         }
     }
 
@@ -125,33 +125,33 @@ class LabelTableModel extends AbstractTableModel {
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         final ColorPaletteDef.Point point = imageInfo.getColorPaletteDef().getPointAt(rowIndex);
         switch (columnIndex) {
-        case 0:
-            point.setLabel((String) aValue);
-            fireTableCellUpdated(rowIndex, 0);
-            break;
-        case 1:
-            point.setColor((Color) aValue);
-            fireTableCellUpdated(rowIndex, 1);
-            break;
-        case 2:
-            cloud[rowIndex] = (Boolean) aValue;
-            if (cloud[rowIndex] && rejected[rowIndex]) {
-                rejected[rowIndex] = false;
-                fireTableCellUpdated(rowIndex, 3);
-            }
-            fireTableCellUpdated(rowIndex, 2);
-            break;
-        case 3:
-            rejected[rowIndex] = (Boolean) aValue;
-            if (cloud[rowIndex] && rejected[rowIndex]) {
-                cloud[rowIndex] = false;
+            case 0:
+                point.setLabel((String) aValue);
+                fireTableCellUpdated(rowIndex, 0);
+                break;
+            case 1:
+                point.setColor((Color) aValue);
+                fireTableCellUpdated(rowIndex, 1);
+                break;
+            case 2:
+                cloud[rowIndex] = (Boolean) aValue;
+                if (cloud[rowIndex] && rejected[rowIndex]) {
+                    rejected[rowIndex] = false;
+                    fireTableCellUpdated(rowIndex, 3);
+                }
                 fireTableCellUpdated(rowIndex, 2);
-            }
-            fireTableCellUpdated(rowIndex, 3);
-            break;
-        default:
-            final String msg = MessageFormat.format("Invalid column index [{0}]", columnIndex);
-            throw new IllegalStateException(msg);
+                break;
+            case 3:
+                rejected[rowIndex] = (Boolean) aValue;
+                if (cloud[rowIndex] && rejected[rowIndex]) {
+                    cloud[rowIndex] = false;
+                    fireTableCellUpdated(rowIndex, 2);
+                }
+                fireTableCellUpdated(rowIndex, 3);
+                break;
+            default:
+                final String msg = MessageFormat.format("Invalid column index [{0}]", columnIndex);
+                throw new IllegalStateException(msg);
         }
     }
 

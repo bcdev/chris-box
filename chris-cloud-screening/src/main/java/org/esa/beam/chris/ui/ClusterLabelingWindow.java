@@ -33,12 +33,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.RenderedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyVetoException;
+import java.beans.VetoableChangeListener;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.concurrent.ExecutionException;
-import java.beans.VetoableChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyVetoException;
 
 /**
  * Cluster labeling tool view.
@@ -171,11 +171,12 @@ public class ClusterLabelingWindow extends JDialog {
     private class VetoablePsvCloseListener implements VetoableChangeListener {
 
         public void vetoableChange(PropertyChangeEvent evt) throws PropertyVetoException {
-            if(JInternalFrame.IS_CLOSED_PROPERTY.equals(evt.getPropertyName())) {
+            if (JInternalFrame.IS_CLOSED_PROPERTY.equals(evt.getPropertyName())) {
                 if ((Boolean) evt.getNewValue()) {
-                    if (visatApp.showQuestionDialog("Do you want to exit the cloud labeling tool?", null) == JOptionPane.NO_OPTION) {
+                    if (visatApp.showQuestionDialog("Do you want to exit the cloud labeling tool?",
+                                                    null) == JOptionPane.NO_OPTION) {
                         throw new PropertyVetoException("Do not close.", evt);
-                    }else {
+                    } else {
                         dispose();
                         cloudLabeler.disposeSourceProducts();
                     }

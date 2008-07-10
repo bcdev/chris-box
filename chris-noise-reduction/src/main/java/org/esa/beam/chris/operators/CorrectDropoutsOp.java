@@ -17,6 +17,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.Assert;
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.chris.internal.DropoutCorrection;
 import org.esa.beam.framework.datamodel.Band;
@@ -31,9 +32,8 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
-import org.esa.beam.chris.util.OpUtils;
 
-import java.awt.Rectangle;
+import java.awt.*;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import java.text.MessageFormat;
@@ -121,7 +121,8 @@ public class CorrectDropoutsOp extends Operator {
     }
 
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                 ProgressMonitor pm) throws OperatorException {
         pm.beginTask("computing dropout correction...", spectralBandCount);
         try {
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);

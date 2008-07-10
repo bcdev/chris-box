@@ -1,9 +1,9 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.chris.util.OpUtils;
 
 import java.io.IOException;
 

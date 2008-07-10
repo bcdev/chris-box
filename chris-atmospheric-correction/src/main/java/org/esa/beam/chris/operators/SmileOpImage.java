@@ -1,9 +1,9 @@
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.util.math.LocalRegressionSmoother;
-import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
 import org.esa.beam.chris.operators.internal.Min;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
+import org.esa.beam.chris.util.math.LocalRegressionSmoother;
+import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 

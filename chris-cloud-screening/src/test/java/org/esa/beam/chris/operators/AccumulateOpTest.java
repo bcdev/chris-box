@@ -6,7 +6,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.OperatorException;
 
-import java.awt.Dimension;
+import java.awt.*;
 import java.io.IOException;
 
 public class AccumulateOpTest extends TestCase {

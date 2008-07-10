@@ -1,7 +1,7 @@
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.ValueContainer;
 import com.bc.ceres.binding.ValidationException;
+import com.bc.ceres.binding.ValueContainer;
 import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
 import org.esa.beam.chris.operators.CorrectDropoutsOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;

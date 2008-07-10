@@ -8,7 +8,7 @@ package org.esa.beam.chris.operators;
  * @since BEAM 4.2
  */
 public class ResamplerFactory {
-    
+
     private final double[] sourceWavelengths;
     private final double[] targetWavelengths;
     private final double[] targetBandwidths;

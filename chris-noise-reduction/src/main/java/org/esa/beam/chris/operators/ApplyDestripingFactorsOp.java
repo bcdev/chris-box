@@ -16,6 +16,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -28,7 +29,6 @@ import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
-import org.esa.beam.chris.util.OpUtils;
 
 import java.awt.*;
 import java.text.MessageFormat;
@@ -79,7 +79,8 @@ public class ApplyDestripingFactorsOp extends Operator {
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
-                                    OpUtils.getAnnotationString(factorProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
+                                    OpUtils.getAnnotationString(factorProduct,
+                                                                ChrisConstants.ATTR_NAME_NOISE_REDUCTION));
         targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 16);
     }
 
