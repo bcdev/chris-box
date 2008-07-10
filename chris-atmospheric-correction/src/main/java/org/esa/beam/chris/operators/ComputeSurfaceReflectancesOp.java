@@ -57,18 +57,14 @@ import java.util.Map;
 public class ComputeSurfaceReflectancesOp extends Operator {
 
     // target band names
-    private static final String RHO_SURF = "rho_surf";
-    private static final String RHO_MASK = "rho_mask";
+    private static final String SURFACE_REFL = "rho_surf";
     private static final String WATER_VAPOUR = "water_vapour";
 
     // target band scaling factors
-    private static final double RHO_SURF_SCALING_FACTOR = 1.0E-4;
-    private static final double WV_SCALING_FACTOR = 2.0E-4;
+    private static final double SURFACE_REFL_SCALING_FACTOR = 1.0E-4;
+    private static final double WATER_VAPOUR_SCALING_FACTOR = 2.0E-4;
 
-    private static final double RED_WAVELENGTH = 670.0;
-    private static final double NIR_WAVELENGTH = 780.0;
-
-    @SourceProduct
+    @SourceProduct(type = "CHRIS_M[1-5][A0]?_NR", bands = "cloud_product")
     private Product sourceProduct;
 
     @Parameter(defaultValue = "0",
@@ -128,13 +124,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         toaMaskBands = OpUtils.findBands(sourceProduct, "mask");
         cloudProductBand = sourceProduct.getBand("cloud_product");
 
-        if (cloudProductBand == null) {
-            throw new OperatorException("band 'cloud_product' does not exists.");
-        }
-        // todo - further validation
-
         // get CHRIS mode
         mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
+
+        if (mode < 1 || mode > 5) {
+            throw new OperatorException(MessageFormat.format(
+                    "unsupported CHRIS mode: {0} = {1}", ChrisConstants.ATTR_NAME_CHRIS_MODE, mode));
+        }
+        // todo - further validation
 
         // create target product
         final Product targetProduct = createTargetProduct();
@@ -155,7 +152,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         // compute remaining bands
         for (final Band targetBand : targetTileMap.keySet()) {
             final String name = targetBand.getName();
-            if (name.startsWith(RHO_SURF) || name.equals(WATER_VAPOUR) || name.equals(RHO_MASK)) {
+            if (name.startsWith(SURFACE_REFL) || name.equals(WATER_VAPOUR)) {
                 continue;
             }
 
@@ -209,12 +206,12 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         rhoBands = new Band[toaBands.length];
         for (int i = 0; i < toaBands.length; ++i) {
             final Band toaBand = toaBands[i];
-            final String boaBandName = toaBand.getName().replaceAll("radiance", RHO_SURF);
+            final String boaBandName = toaBand.getName().replaceAll("radiance", SURFACE_REFL);
             final Band boaBand = new Band(boaBandName, ProductData.TYPE_INT16, w, h);
 
             boaBand.setDescription(MessageFormat.format("Surface reflectance for spectral band {0}", i + 1));
             boaBand.setUnit("dl");
-            boaBand.setScalingFactor(RHO_SURF_SCALING_FACTOR);
+            boaBand.setScalingFactor(SURFACE_REFL_SCALING_FACTOR);
             boaBand.setValidPixelExpression(validPixelExpression.toString());
             boaBand.setSpectralBandIndex(toaBand.getSpectralBandIndex());
             boaBand.setSpectralWavelength(toaBand.getSpectralWavelength());
@@ -241,7 +238,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             if (generateWvMap) {
                 wvBand = new Band(WATER_VAPOUR, ProductData.TYPE_INT16, w, h);
                 wvBand.setUnit("g cm-2");
-                wvBand.setScalingFactor(WV_SCALING_FACTOR);
+                wvBand.setScalingFactor(WATER_VAPOUR_SCALING_FACTOR);
                 wvBand.setValidPixelExpression(validPixelExpression.toString());
 
                 targetProduct.addBand(wvBand);
