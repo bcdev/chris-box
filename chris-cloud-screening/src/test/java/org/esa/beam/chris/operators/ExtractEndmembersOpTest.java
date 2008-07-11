@@ -111,8 +111,8 @@ public class ExtractEndmembersOpTest extends TestCase {
         for (int i = 0; i < probabilities.length; ++i) {
             addSyntheticBand(clusterProduct, "probability_" + i, probabilities[i]);
         }
-        final Band membershipBand = addSyntheticBand(clusterProduct, "cluster_map", memberships);
-        final IndexCoding indexCoding = new IndexCoding("cluster_classes");
+        final Band membershipBand = addSyntheticBand(clusterProduct, "class_indices", memberships);
+        final IndexCoding indexCoding = new IndexCoding("Class_indices");
         indexCoding.addIndex("Erni", 0, "Cluster label");
         indexCoding.addIndex("Cloud 1", 1, "Cluster label");
         indexCoding.addIndex("Bert", 2, "Cluster label");

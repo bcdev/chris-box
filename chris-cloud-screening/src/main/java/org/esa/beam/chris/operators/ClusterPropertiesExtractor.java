@@ -29,7 +29,7 @@ public class ClusterPropertiesExtractor {
 
     public ClusterProperties extractClusterProperties(ProgressMonitor pm) throws IOException {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
-        final Band clusterMapBand = clusterMapProduct.getBand("cluster_map");
+        final Band clusterMapBand = clusterMapProduct.getBand("class_indices");
 
         final int h = clusterMapBand.getRasterHeight();
         final int w = clusterMapBand.getRasterWidth();

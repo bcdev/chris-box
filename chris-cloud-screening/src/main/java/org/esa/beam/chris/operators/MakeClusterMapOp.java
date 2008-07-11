@@ -72,13 +72,13 @@ public class MakeClusterMapOp extends Operator {
                                                                        new int[0]);
                 targetBand.setImage(image);
             }
-            clusterMapBand = new ImageBand("cluster_map", ProductData.TYPE_INT16, width, height);
-            clusterMapBand.setDescription("Cluster map");
+            clusterMapBand = new ImageBand("class_indices", ProductData.TYPE_INT16, width, height);
+            clusterMapBand.setDescription("Class_indices");
             targetProduct.addBand(clusterMapBand);
 
-            final IndexCoding indexCoding = new IndexCoding("clusters");
+            final IndexCoding indexCoding = new IndexCoding("Cluster_classes");
             for (int i = 0; i < sourceBands.length; i++) {
-                indexCoding.addIndex("cluster_" + (i + 1), i, "Cluster label");
+                indexCoding.addIndex("class_" + (i + 1), i, "Cluster label");
             }
             indexCoding.addIndex("unknown", -1, "Unknown");
             targetProduct.getIndexCodingGroup().add(indexCoding);

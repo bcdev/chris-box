@@ -97,7 +97,7 @@ public class ExtractEndmembersOp extends Operator {
     private void setTargetProperties(ProgressMonitor pm) {
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
-        final Band clusterMapBand = clusterMapProduct.getBand("cluster_map");
+        final Band clusterMapBand = clusterMapProduct.getBand("class_indices");
 
         final IndexCoding indexCoding = (IndexCoding) clusterMapBand.getSampleCoding();
         final String[] labels = indexCoding.getIndexNames();

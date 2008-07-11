@@ -64,7 +64,7 @@ public class CloudLabeler {
     }
 
     public Band getClusterMapBand() {
-        return clusterMapProduct.getBand("cluster_map");
+        return clusterMapProduct.getBand("class_indices");
     }
 
     public Product getRadianceProduct() {
