@@ -207,19 +207,18 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         for (int i = 0; i < toaBands.length; ++i) {
             final Band toaBand = toaBands[i];
             final String boaBandName = toaBand.getName().replaceAll("radiance", SURFACE_REFL);
-            final Band boaBand = new Band(boaBandName, ProductData.TYPE_INT16, w, h);
+            final Band rhoBand = new Band(boaBandName, ProductData.TYPE_INT16, w, h);
 
-            boaBand.setDescription(MessageFormat.format("Surface reflectance for spectral band {0}", i + 1));
-            boaBand.setUnit("dl");
-            boaBand.setScalingFactor(SURFACE_REFL_SCALING_FACTOR);
-            boaBand.setValidPixelExpression(validPixelExpression.toString());
-            boaBand.setSpectralBandIndex(toaBand.getSpectralBandIndex());
-            boaBand.setSpectralWavelength(toaBand.getSpectralWavelength());
-            boaBand.setSpectralBandwidth(toaBand.getSpectralBandwidth());
-            // todo - set solar flux ?
+            rhoBand.setDescription(MessageFormat.format("Surface reflectance for spectral band {0}", i + 1));
+            rhoBand.setUnit("dl");
+            rhoBand.setScalingFactor(SURFACE_REFL_SCALING_FACTOR);
+            rhoBand.setValidPixelExpression(validPixelExpression.toString());
+            rhoBand.setSpectralBandIndex(toaBand.getSpectralBandIndex());
+            rhoBand.setSpectralWavelength(toaBand.getSpectralWavelength());
+            rhoBand.setSpectralBandwidth(toaBand.getSpectralBandwidth());
 
-            targetProduct.addBand(boaBand);
-            rhoBands[i] = boaBand;
+            targetProduct.addBand(rhoBand);
+            rhoBands[i] = rhoBand;
         }
         // copy all non-radiance bands from source product to target product
         for (final Band sourceBand : sourceProduct.getBands()) {
@@ -249,7 +248,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
         // set preferred tile size
-        targetProduct.setPreferredTileSize(64, 64);
+        targetProduct.setPreferredTileSize(w, h);
 
         return targetProduct;
     }
@@ -316,7 +315,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         if (mode == 1 || mode == 3 || mode == 5) {
             ac = new Ac1(new CalculatorFactoryCwv(modtranLookupTable, resampler, vza, sza, ada, alt, aot550,
                                                   toaScaling));
-        } else if (mode == 2 || mode == 4) {
+        } else {
             ac = new Ac2(calculatorFactory.createCalculator(resampler));
         }
     }
@@ -511,7 +510,19 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             final int tileWork = targetRectangle.height;
 
+            int totalWork = tileWork * rhoBands.length;
+            if (o2a != -1) {
+                totalWork += tileWork;
+            }
+            if (o2b != -1) {
+                totalWork += tileWork;
+            }
+            if (performAdjacencyCorrection) {
+                totalWork += tileWork * rhoBands.length;
+            }
+
             try {
+                pm.beginTask("Performing atmospheric correction", totalWork);
                 // atmospheric correction
                 ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * rhoBands.length));
                 // polishing of spikes for O2-A and O2-B absorption features
@@ -522,7 +533,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     interpolateRhoTile(o2b, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
                 }
                 if (performAdjacencyCorrection) {
-                    // todo - adjacency correction
+                    performAdjacencyCorrection(targetTileMap, targetRectangle, calculator,
+                                               SubProgressMonitor.create(pm, tileWork * rhoBands.length));
                 }
             } finally {
                 pm.done();
@@ -595,6 +607,86 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             } finally {
                 pm.done();
             }
+        }
+    }
+
+    private void performAdjacencyCorrection(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                            Calculator calculator, ProgressMonitor pm) {
+        try {
+            pm.beginTask("Performing adjacency correction", targetRectangle.height);
+
+            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+            final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+
+            for (int i = 0; i < rhoBands.length; i++) {
+                Band rhoBand = rhoBands[i];
+                final Tile rhoTile = targetTileMap.get(rhoBand);
+
+                final int size = 37;
+
+
+                final int w = targetRectangle.width;
+                final int h = targetRectangle.height;
+                final double[][] image = new double[w][h];
+
+                for (int y = 0; y < targetRectangle.height; ++y) {
+                    final int minY = Math.max(0, y - size);
+                    final int maxY = Math.min(h, y + size);
+
+                    for (int x = 0; x < targetRectangle.width; ++x) {
+                        final int minX = Math.max(0, x - size);
+                        final int maxX = Math.min(w, x + size);
+
+                        final int hyperMask = hyperMaskRaster.getSample(targetRectangle.x + x, targetRectangle.y + y,
+                                                                        0);
+                        final int cloudMask = cloudMaskRaster.getSample(targetRectangle.x + x, targetRectangle.y + y,
+                                                                        0);
+
+                        if ((hyperMask & 3) == 0 && cloudMask == 0) {
+                            double sum = 0.0;
+                            int count = 0;
+                            for (int sourceX = minX; sourceX < maxX; ++sourceX) {
+                                for (int sourceY = minY; sourceY < maxY; ++sourceY) {
+
+                                    final int hyperMask2 = hyperMaskRaster.getSample(targetRectangle.x + sourceX,
+                                                                                     targetRectangle.y + sourceY,
+                                                                                     0);
+                                    final int cloudMask2 = cloudMaskRaster.getSample(targetRectangle.x + sourceX,
+                                                                                     targetRectangle.y + sourceY,
+                                                                                     0);
+                                    if ((hyperMask2 & 3) == 0 && cloudMask2 == 0) {
+                                        sum += rhoTile.getSampleDouble(targetRectangle.x + sourceX,
+                                                                       targetRectangle.y + sourceY);
+                                        count++;
+                                    }
+                                }
+                            }
+                            image[x][y] = sum / count;
+                        }
+                    }
+                }
+
+                for (final Tile.Pos pos : rhoTile) {
+                    if (pos.x == targetRectangle.x) {
+                        checkForCancelation(pm);
+                    }
+                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+                    final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+
+                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
+                        final double rho = rhoTile.getSampleDouble(pos.x, pos.y);
+                        final double ave = image[pos.x - targetRectangle.x][pos.y - targetRectangle.y];
+
+                        rhoTile.setSample(pos.x, pos.y, rho + calculator.getAdjacencyCorrection(i, rho, ave));
+                    }
+
+                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                        pm.worked(1);
+                    }
+                }
+            }
+        } finally {
+            pm.done();
         }
     }
 

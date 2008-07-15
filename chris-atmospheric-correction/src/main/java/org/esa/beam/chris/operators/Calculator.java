@@ -12,13 +12,15 @@ class Calculator {
     private final double[] lpw;
     private final double[] egl;
     private final double[] sab;
-
+    private final double[] rat;
+    
     private final double toaScaling;
 
-    Calculator(double[] lpw, double[] egl, double[] sab, double toaScaling) {
+    Calculator(double[] lpw, double[] egl, double[] sab, double[] rat, double toaScaling) {
         this.lpw = lpw;
         this.egl = egl;
         this.sab = sab;
+        this.rat = rat;
         this.toaScaling = toaScaling;
     }
 
@@ -50,5 +52,10 @@ class Calculator {
 
     public double getToaRadiance(int i, double rho) {
         return (lpw[i] + rho * (egl[i] / (Math.PI * (1.0 - sab[i] * rho)))) / toaScaling;
+    }
+
+    public double getAdjacencyCorrection(int i, double rho, double average) {
+        return (rho - average) * rat[i];
+
     }
 }

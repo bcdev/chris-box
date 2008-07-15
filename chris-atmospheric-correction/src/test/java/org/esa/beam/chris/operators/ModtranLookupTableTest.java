@@ -129,7 +129,7 @@ public class ModtranLookupTableTest extends TestCase {
         assertEquals(0.00423624 * DEKA_KILO, table.getLpw(70), 0.5E-8 * DEKA_KILO);
         assertEquals(0.12408900 * DEKA_KILO, table.getEgl(70), 0.5E-6 * DEKA_KILO);
         assertEquals(0.17851200, table.getSab(70), 0.5E-6);
-//        assertEquals(0.36571800, table.getRat(70), 0.5E-6);
+        assertEquals(0.36571800, table.getRat(70), 0.5E-6);
 
         // vza = 40.0
         // sza = 55.0
@@ -142,6 +142,6 @@ public class ModtranLookupTableTest extends TestCase {
         assertEquals(0.00809511 * DEKA_KILO, table.getLpw(17), 0.5E-8 * DEKA_KILO);
         assertEquals(0.05206649 * DEKA_KILO, table.getEgl(17), 0.5E-7 * DEKA_KILO);
         assertEquals(0.25710700, table.getSab(17), 0.5E-6);
-//        assertEquals(1.00742000, table.getRat(17), 0.5E-5);
+        assertEquals(1.00742000, table.getRat(17), 0.5E-5);
     }
 }

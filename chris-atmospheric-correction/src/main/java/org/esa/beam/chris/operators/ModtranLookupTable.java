@@ -68,7 +68,7 @@ class ModtranLookupTable {
             valuesB[0][j] = valuesB[0][j] * szc + valuesB[1][j];
         }
 
-        return new RtcTable(wavelengths, valuesA, valuesB[0], valuesB[2]);
+        return new RtcTable(wavelengths, valuesA, valuesB[0], valuesB[2], valuesB[3]);
     }
 
     /**

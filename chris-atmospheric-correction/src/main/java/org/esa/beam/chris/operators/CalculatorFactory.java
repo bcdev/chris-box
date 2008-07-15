@@ -21,7 +21,8 @@ class CalculatorFactory {
         final double[] lpw = resampler.resample(table.getLpw());
         final double[] egl = resampler.resample(table.getEgl());
         final double[] sab = resampler.resample(table.getSab());
+        final double[] rat = resampler.resample(table.getRat());
 
-        return new Calculator(lpw, egl, sab, toaScaling);
+        return new Calculator(lpw, egl, sab, rat, toaScaling);
     }
 }

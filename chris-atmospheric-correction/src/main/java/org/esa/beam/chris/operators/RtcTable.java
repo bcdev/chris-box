@@ -12,13 +12,15 @@ class RtcTable {
     private final double[] lpw;
     private final double[] egl;
     private final double[] sab;
+    private final double[] rat;
 
-    RtcTable(double[] wavelengths, double[] lpw, double[] egl, double[] sab) {
+    RtcTable(double[] wavelengths, double[] lpw, double[] egl, double[] sab, double[] rat) {
         this.wavelengths = wavelengths;
 
         this.lpw = lpw;
         this.egl = egl;
         this.sab = sab;
+        this.rat = rat;
     }
 
     public final double[] getWavelengths() {
@@ -41,6 +43,10 @@ class RtcTable {
         return sab;
     }
 
+    public double[] getRat() {
+        return rat;
+    }
+
     public final double getLpw(int i) {
         return lpw[i];
     }
@@ -51,5 +57,9 @@ class RtcTable {
 
     public final double getSab(int i) {
         return sab[i];
+    }
+
+    public double getRat(int i) {
+        return rat[i];
     }
 }

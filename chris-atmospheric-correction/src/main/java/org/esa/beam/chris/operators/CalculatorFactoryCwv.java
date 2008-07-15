@@ -14,6 +14,7 @@ public class CalculatorFactoryCwv {
     private final double[][] lpw;
     private final double[][] egl;
     private final double[][] sab;
+    private final double[][] rat;
 
     private final double toaScaling;
 
@@ -24,6 +25,7 @@ public class CalculatorFactoryCwv {
         lpw = new double[cwv.length][];
         egl = new double[cwv.length][];
         sab = new double[cwv.length][];
+        rat = new double[cwv.length][];
 
         this.toaScaling = toaScaling;
 
@@ -33,6 +35,7 @@ public class CalculatorFactoryCwv {
             lpw[i] = resampler.resample(table.getLpw());
             egl[i] = resampler.resample(table.getEgl());
             sab[i] = resampler.resample(table.getSab());
+            rat[i] = resampler.resample(table.getRat());
         }
     }
 
@@ -56,14 +59,16 @@ public class CalculatorFactoryCwv {
         final double[] interpolatedLpw = new double[wavelengthCount];
         final double[] interpolatedEgl = new double[wavelengthCount];
         final double[] interpolatedSab = new double[wavelengthCount];
+        final double[] interpolatedRat = new double[wavelengthCount];
 
         for (int k = 0; k < wavelengthCount; ++k) {
             interpolatedLpw[k] = (1.0 - f) * lpw[i][k] + f * lpw[i + 1][k];
             interpolatedEgl[k] = (1.0 - f) * egl[i][k] + f * egl[i + 1][k];
             interpolatedSab[k] = (1.0 - f) * sab[i][k] + f * sab[i + 1][k];
+            interpolatedRat[k] = (1.0 - f) * rat[i][k] + f * rat[i + 1][k];
         }
 
-        return new Calculator(interpolatedLpw, interpolatedEgl, interpolatedSab, toaScaling);
+        return new Calculator(interpolatedLpw, interpolatedEgl, interpolatedSab, interpolatedRat, toaScaling);
     }
 
     private FI toFracIndex(final double coordinate) {
