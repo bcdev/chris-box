@@ -88,10 +88,10 @@ class SmileOpImage extends OpImage {
             }
         }
 
-        return new SmileOpImage(imageLayout, sourceImageVector, lowerO2, upperO2, resamplerFactory, calculatorFactory);
+        return new SmileOpImage(sourceImageVector, imageLayout, lowerO2, upperO2, resamplerFactory, calculatorFactory);
     }
 
-    private SmileOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector, int lowerO2, int upperO2,
+    private SmileOpImage(Vector<RenderedImage> sourceImageVector, ImageLayout imageLayout, int lowerO2, int upperO2,
                          ResamplerFactory resamplerFactory, CalculatorFactory calculatorFactory) {
         super(sourceImageVector, imageLayout, null, true);
 

@@ -35,6 +35,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
+import javax.media.jai.OpImage;
 import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
@@ -339,6 +340,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         private final int lowerWva;
         private final int upperWva;
         private final int upperWvb;
+        private OpImage waterMaskImage;
 
         private Ac1(CalculatorFactoryCwv calculatorFactory) {
             this.calculatorFactory = calculatorFactory;
@@ -373,18 +375,32 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             this.lowerWva = lowerWva;
             this.upperWva = upperWva;
             this.upperWvb = upperWvb;
+
+            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
+            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
+
+            waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex], 1.0, 1.0);
         }
 
         @Override
         public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             final int tileWork = targetRectangle.height;
 
+            int totalWork = tileWork * rhoBands.length;
+            if (performAdjacencyCorrection) {
+                totalWork += tileWork * rhoBands.length * 2;
+            }
+
+            final double wv;
             try {
+                pm.beginTask("Performing atmospheric correction", totalWork);
+
                 // Inversion of Lambertian equation
-                ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * rhoBands.length));
-                // Polishing of spikes for O2-A and O2-B absorption features
+                wv = ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * rhoBands.length));
                 if (performAdjacencyCorrection) {
-                    // todo - adjacency correction
+                    final AdjacencyCorrection ac = new AdjacencyCorrection(calculatorFactory.createCalculator(wv));
+                    ac.computeTileStack(targetTileMap, targetRectangle,
+                                        SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
                 }
                 if ((mode == 1 || mode == 2)) {
                     if (performSpectralPolishing) {
@@ -396,12 +412,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
         }
 
-        public void ac(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
+        public double ac(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             try {
                 pm.beginTask("Computing surface reflectances...", targetRectangle.height * rhoBands.length);
 
                 final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
                 final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+                final Raster waterMaskRaster = waterMaskImage.getData(targetRectangle);
 
                 final Tile[] toaTiles = new Tile[toaBands.length];
                 final Tile[] rhoTiles = new Tile[rhoBands.length];
@@ -417,18 +434,28 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final double[] toa = new double[toaBands.length];
                 final double[] rho = new double[toaBands.length];
 
+                double wvSum = 0.0;
+                int wvCount = 0;
+
                 for (final Tile.Pos pos : rhoTiles[0]) {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                    final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
 
                     if ((hyperMask & 3) == 0 && cloudMask == 0) {
                         for (int i = 0; i < toaTiles.length; i++) {
                             toa[i] = toaTiles[i].getSampleDouble(pos.x, pos.y);
                         }
                         final double wv = wv(toa, rho);
+
+                        if (waterMask != 0) {
+                            wvSum += wv;
+                            wvCount++;
+                        }
+
                         for (int i = 0; i < rhoTiles.length; i++) {
                             rhoTiles[i].setSample(pos.x, pos.y, rho[i]);
                         }
@@ -441,6 +468,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         pm.worked(1);
                     }
                 }
+                double wvMean = 0.0;
+
+                if (wvCount > 0) {
+                    wvMean = wvSum / wvCount;
+                }
+
+                return wvMean;
             } finally {
                 pm.done();
             }
@@ -518,7 +552,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 totalWork += tileWork;
             }
             if (performAdjacencyCorrection) {
-                totalWork += tileWork * rhoBands.length;
+                totalWork += tileWork * rhoBands.length * 2;
             }
 
             try {
@@ -533,8 +567,9 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     interpolateRhoTile(o2b, targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
                 }
                 if (performAdjacencyCorrection) {
-                    performAdjacencyCorrection(targetTileMap, targetRectangle, calculator,
-                                               SubProgressMonitor.create(pm, tileWork * rhoBands.length));
+                    final Ac ac = new AdjacencyCorrection(calculator);
+                    ac.computeTileStack(targetTileMap, targetRectangle,
+                                        SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
                 }
             } finally {
                 pm.done();
@@ -610,85 +645,124 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         }
     }
 
-    private void performAdjacencyCorrection(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                            Calculator calculator, ProgressMonitor pm) {
-        try {
-            pm.beginTask("Performing adjacency correction", targetRectangle.height);
+    private class AdjacencyCorrection implements Ac {
+        private final Calculator calculator;
+        private final int kernelSize;
 
-            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-            final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+        private AdjacencyCorrection(Calculator calculator) {
+            this.calculator = calculator;
 
-            for (int i = 0; i < rhoBands.length; i++) {
-                Band rhoBand = rhoBands[i];
-                final Tile rhoTile = targetTileMap.get(rhoBand);
+            if (mode == 1) {
+                kernelSize = 27;
+            } else {
+                kernelSize = 59;
+            }
+        }
 
-                final int size = 37;
+        @Override
+        public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
+            try {
+                pm.beginTask("Performing adjacency correction", 2 * targetRectangle.height * rhoBands.length);
 
+                final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+                final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
 
-                final int w = targetRectangle.width;
-                final int h = targetRectangle.height;
-                final double[][] image = new double[w][h];
+                for (int i = 0; i < rhoBands.length; i++) {
+                    final Tile targetTile = targetTileMap.get(rhoBands[i]);
+                    final double[][] means = computeMeans(targetTile, targetRectangle,
+                                                          SubProgressMonitor.create(pm, targetRectangle.height));
 
-                for (int y = 0; y < targetRectangle.height; ++y) {
-                    final int minY = Math.max(0, y - size);
-                    final int maxY = Math.min(h, y + size);
-
-                    for (int x = 0; x < targetRectangle.width; ++x) {
-                        final int minX = Math.max(0, x - size);
-                        final int maxX = Math.min(w, x + size);
-
-                        final int hyperMask = hyperMaskRaster.getSample(targetRectangle.x + x, targetRectangle.y + y,
-                                                                        0);
-                        final int cloudMask = cloudMaskRaster.getSample(targetRectangle.x + x, targetRectangle.y + y,
-                                                                        0);
+                    for (final Tile.Pos pos : targetTile) {
+                        if (pos.x == targetRectangle.x) {
+                            checkForCancelation(pm);
+                        }
+                        final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+                        final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
 
                         if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                            double sum = 0.0;
-                            int count = 0;
-                            for (int sourceX = minX; sourceX < maxX; ++sourceX) {
-                                for (int sourceY = minY; sourceY < maxY; ++sourceY) {
+                            final double rho = targetTile.getSampleDouble(pos.x, pos.y);
+                            final double ave = means[pos.x - targetRectangle.x][pos.y - targetRectangle.y];
 
-                                    final int hyperMask2 = hyperMaskRaster.getSample(targetRectangle.x + sourceX,
-                                                                                     targetRectangle.y + sourceY,
-                                                                                     0);
-                                    final int cloudMask2 = cloudMaskRaster.getSample(targetRectangle.x + sourceX,
-                                                                                     targetRectangle.y + sourceY,
-                                                                                     0);
-                                    if ((hyperMask2 & 3) == 0 && cloudMask2 == 0) {
-                                        sum += rhoTile.getSampleDouble(targetRectangle.x + sourceX,
-                                                                       targetRectangle.y + sourceY);
-                                        count++;
-                                    }
-                                }
-                            }
-                            image[x][y] = sum / count;
+                            targetTile.setSample(pos.x, pos.y, rho + calculator.getAdjacencyCorrection(i, rho, ave));
+                        }
+
+                        if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                            pm.worked(1);
                         }
                     }
                 }
+            } finally {
+                pm.done();
+            }
+        }
 
-                for (final Tile.Pos pos : rhoTile) {
+        private double[][] computeMeans(Tile targetTile, Rectangle targetRectangle, ProgressMonitor pm) {
+            final double[][] means = new double[targetRectangle.width][targetRectangle.height];
+
+            try {
+                pm.beginTask("Computing smoothed image", targetRectangle.height);
+
+                final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+                final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+
+                for (final Tile.Pos pos : targetTile) {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
+
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                    final double mean;
 
                     if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                        final double rho = rhoTile.getSampleDouble(pos.x, pos.y);
-                        final double ave = image[pos.x - targetRectangle.x][pos.y - targetRectangle.y];
+                        final int minX = Math.max(targetRectangle.x, pos.x - kernelSize / 2);
+                        final int minY = Math.max(targetRectangle.y, pos.y - kernelSize / 2);
 
-                        rhoTile.setSample(pos.x, pos.y, rho + calculator.getAdjacencyCorrection(i, rho, ave));
+                        final int maxX = Math.min(targetRectangle.width, pos.x + kernelSize / 2);
+                        final int maxY = Math.min(targetRectangle.height, pos.y + kernelSize / 2);
+
+                        mean = computeMean(targetTile, hyperMaskRaster, cloudMaskRaster, minX, minY, maxX, maxY);
+                    } else {
+                        mean = 0.0;
                     }
+
+                    means[pos.x - targetRectangle.x][pos.y - targetRectangle.y] = mean;
 
                     if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
                     }
                 }
+            } finally {
+                pm.done();
             }
-        } finally {
-            pm.done();
+
+            return means;
+        }
+
+        private double computeMean(Tile targetTile, Raster hyperMaskRaster, Raster cloudMaskRaster,
+                                   int minX, int minY, int maxX, int maxY) {
+            double sum = 0.0;
+            int count = 0;
+
+            for (int y = minY; y < maxY; ++y) {
+                for (int x = minX; x < maxX; ++x) {
+                    final int hyperMask = hyperMaskRaster.getSample(x, y, 0);
+                    final int cloudMask = cloudMaskRaster.getSample(x, y, 0);
+
+                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
+                        sum += targetTile.getSampleDouble(x, y);
+                        count++;
+                    }
+                }
+            }
+            if (count > 0) {
+                sum /= count;
+            }
+
+            return sum;
         }
     }
+
 
     public static class Spi extends OperatorSpi {
 

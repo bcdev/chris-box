@@ -54,8 +54,8 @@ class Calculator {
         return (lpw[i] + rho * (egl[i] / (Math.PI * (1.0 - sab[i] * rho)))) / toaScaling;
     }
 
-    public double getAdjacencyCorrection(int i, double rho, double average) {
-        return (rho - average) * rat[i];
+    public double getAdjacencyCorrection(int i, double rho, double ave) {
+        return (rho - ave) * rat[i];
 
     }
 }
