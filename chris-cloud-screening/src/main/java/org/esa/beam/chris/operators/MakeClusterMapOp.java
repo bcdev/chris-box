@@ -80,7 +80,6 @@ public class MakeClusterMapOp extends Operator {
             for (int i = 0; i < sourceBands.length; i++) {
                 indexCoding.addIndex("class_" + (i + 1), i, "Cluster label");
             }
-            indexCoding.addIndex("unknown", -1, "Unknown");
             targetProduct.getIndexCodingGroup().add(indexCoding);
             clusterMapBand.setSampleCoding(indexCoding);
             ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(clusterMapBand);

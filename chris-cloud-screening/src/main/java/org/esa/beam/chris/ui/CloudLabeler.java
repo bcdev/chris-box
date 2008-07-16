@@ -134,18 +134,14 @@ public class CloudLabeler {
             }
         }
 
-        final MetadataAttribute[] attributes = getClusterMapBand().getIndexCoding().getAttributes();
-        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[attributes.length];
-        for (int index = 0; index < attributes.length; index++) {
-            MetadataAttribute attribute = attributes[index];
-            final int sample = attribute.getData().getElemInt();
-            final Color color;
-            if (attribute.getName().startsWith("cluster")) {
-                color = new Color(r[index], g[index], b[index]);
-            } else {
-                color = Color.BLACK;
-            }
-            points[index] = new ColorPaletteDef.Point(sample, color, attribute.getName());
+        final IndexCoding indexCoding = getClusterMapBand().getIndexCoding();
+        final String[] classNames = indexCoding.getIndexNames();
+        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[classNames.length];
+        for (int index = 0; index < points.length; index++) {
+            String className = classNames[index];
+            final int sample =indexCoding.getIndexValue(className);
+            final Color color = new Color(r[index], g[index], b[index]);
+            points[index] = new ColorPaletteDef.Point(sample, color, className);
         }
         final ColorPaletteDef def = new ColorPaletteDef(points);
         final ImageInfo imageInfo = new ImageInfo(def);
