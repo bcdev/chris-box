@@ -19,7 +19,11 @@ import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.Roots;
 import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
+import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.chris.util.math.Regression;
+import org.esa.beam.chris.util.math.LocalRegressionSmoother;
+import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -36,11 +40,12 @@ import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.OpImage;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.Raster;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 
 /**
  * Operator for performing the CHRIS atmospheric correction.
@@ -115,7 +120,10 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private transient int mode;
 
     private transient double[] targetWavelengths;
+    private transient double[] targetBandwidths;
+
     private transient Ac ac;
+    private double smileCorrection;
 
     @Override
     public void initialize() throws OperatorException {
@@ -304,14 +312,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         // create resampler factory
         targetWavelengths = OpUtils.getWavelenghts(toaBands);
+        targetBandwidths = OpUtils.getBandwidths(toaBands);
         final ResamplerFactory resamplerFactory = new ResamplerFactory(modtranLookupTable.getWavelengths(),
                                                                        targetWavelengths,
-                                                                       OpUtils.getBandwidths(toaBands));
+                                                                       targetBandwidths);
         // create calculator factory
         final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot550, cwvIni);
         final CalculatorFactory calculatorFactory = new CalculatorFactory(table, toaScaling);
 
-        final double smileCorrection;
         if (mode == 1 || mode == 5) {
             final SmileCorrectionCalculator scc = new SmileCorrectionCalculator();
             smileCorrection = scc.calculate(toaBands, hyperMaskImage, cloudMaskImage, resamplerFactory,
@@ -325,7 +333,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         final double[][] thullierTable = OpUtils.readThuillierTable();
 
         final Resampler waterResampler = new Resampler(thullierTable[0], targetWavelengths,
-                                                       OpUtils.getBandwidths(toaBands), smileCorrection);
+                                                       targetBandwidths, smileCorrection);
         final double[] irr = waterResampler.resample(thullierTable[1]);
         final double redScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irr[redIndex];
         final double nirScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irr[nirIndex];
@@ -364,6 +372,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         private final int lowerWva;
         private final int upperWva;
         private final int upperWvb;
+        private static final int POLISHING_PIXEL_COUNT = 50;
 
         private Ac1(CalculatorFactoryCwv calculatorFactory) {
             this.calculatorFactory = calculatorFactory;
@@ -422,11 +431,136 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 }
                 if (mode == 1 || mode == 2) {
                     if (performSpectralPolishing) {
-                        // todo - spectral polishing
+                        final double[][] table = readEndmemberTable();
+
+                        final Resampler resampler = new Resampler(table[0], targetWavelengths, targetBandwidths, smileCorrection);
+                        final double[] veg = resampler.resample(table[1]);
+                        final double[] sue = resampler.resample(table[2]);
+
+                        final Regression regression = new Regression(veg, sue);
+
+                        final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
+                            @Override
+                            public boolean accept(Band band) {
+                                return band.getSpectralWavelength() >= 670.0;
+                            }
+                        });
+                        final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
+                            @Override
+                            public boolean accept(Band band) {
+                                return band.getSpectralWavelength() >= 785.0;
+                            }
+                        });
+
+                        final Tile redTile = targetTileMap.get(redBand);
+                        final Tile nirTile = targetTileMap.get(nirBand);
+
+                        final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+                        final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+
+                        final List<NdviPixel> ndviPixelList = new ArrayList<NdviPixel>();
+                        for (final Tile.Pos pos : redTile) {
+                            final double nir = nirTile.getSampleDouble(pos.x, pos.y);
+                            final double red = redTile.getSampleDouble(pos.x, pos.y);
+                            final double ndvi = (nir - red) / (nir + red);
+
+                            if (ndvi > 0.1 && nir > 0.2 && nir <= 0.75) {
+                                final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+                                final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                                if ((hyperMask & 3) == 0 && cloudMask == 0) {
+                                    ndviPixelList.add(new NdviPixel(pos, ndvi));
+                                }
+                            }
+                        }
+
+                        if (ndviPixelList.size() > POLISHING_PIXEL_COUNT) {
+                            Collections.sort(ndviPixelList);
+                            final int fromIndex = POLISHING_PIXEL_COUNT / 2;
+                            final int toIndex = ndviPixelList.size() - POLISHING_PIXEL_COUNT / 2;
+                            ndviPixelList.subList(fromIndex, toIndex).clear();
+
+                            final double[][] fits = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
+                            final double[][] spectra = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
+                            final double[] c = new double[2];
+                            final double[] w = new double[2];
+
+                            for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
+                                final double[] spectrum = spectra[i];
+
+                                for (int j = 0; j < rhoBands.length; j++) {
+                                    final Tile rhoTile = targetTileMap.get(rhoBands[j]);
+                                    final Tile.Pos pos = ndviPixelList.get(i).pos;
+                                    spectrum[j] = rhoTile.getSampleDouble(pos.x, pos.y);
+                                }
+                                regression.fit(spectrum, fits[i], c, w);
+                            }
+
+                            final double[] w1 = new double[1];
+                            final double[] c1 = new double[1];
+
+                            final double[] coefficients = new double[rhoBands.length];
+                            for (int j = 0; j < rhoBands.length; j++) {
+                                final double[] fit = new double[POLISHING_PIXEL_COUNT];
+                                final double[] spectrum = new double[POLISHING_PIXEL_COUNT];
+
+                                for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
+                                    fit[i] = fits[i][j];
+                                    spectrum[i] = spectra[i][j];
+                                }
+
+                                final Regression coefficientRegression = new Regression(fit);
+                                coefficientRegression.fit(spectrum, spectrum, c1, w1);
+                                coefficients[j] = c1[0];
+                            }
+
+                            final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
+                                @Override
+                                public boolean accept(Band band) {
+                                    return band.getSpectralWavelength() >= 694.7;
+                                }
+                            });
+                            final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
+                                @Override
+                                public boolean accept(Band band) {
+                                    return band.getSpectralWavelength() > 772.5;
+                                }
+                            });
+
+                            final double[] meanCoefficients = new double[upperRed - lowerRed];
+                            final LocalRegressionSmoother smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 5);
+                            smoother.smooth(Arrays.copyOfRange(coefficients, lowerRed, upperRed), meanCoefficients);
+                            for (int i = 0; i < meanCoefficients.length; i++) {
+                                coefficients[lowerRed + i] = 1.0 + (coefficients[lowerRed + i] - meanCoefficients[i]);
+
+                            }
+                            
+                            for (int i = 0; i < rhoBands.length; ++i) {
+                                final Tile targetTile = targetTileMap.get(rhoBands[i]);
+                                for (final Tile.Pos pos : targetTile) {
+                                    final double rho = targetTile.getSampleDouble(pos.x, pos.y);
+
+                                    targetTile.setSample(pos.x, pos.y, rho * coefficients[i]);
+                                }
+                            }
+                        }
                     }
                 }
             } finally {
                 pm.done();
+            }
+        }
+
+        class NdviPixel implements Comparable<NdviPixel> {
+            Tile.Pos pos;
+            double ndvi;
+
+            NdviPixel(Tile.Pos pos, double ndvi) {
+                this.pos = pos;
+                this.ndvi = ndvi;
+            }
+
+            public int compareTo(NdviPixel o) {
+                return Double.compare(ndvi, o.ndvi);
             }
         }
 
@@ -687,7 +821,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     final Tile targetTile = targetTileMap.get(rhoBands[i]);
                     final short[] targetSamples = targetTile.getDataBufferShort();
                     final short[][] means = computeMeans(targetTile, targetRectangle,
-                                                          SubProgressMonitor.create(pm, targetRectangle.height));
+                                                         SubProgressMonitor.create(pm, targetRectangle.height));
 
                     int targetLineOffset = targetTile.getScanlineOffset();
                     for (int y = 0; y < targetRectangle.height; y++) {
@@ -778,6 +912,32 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
 
             return (short) sum;
+        }
+    }
+
+    static double[][] readEndmemberTable() throws OperatorException {
+        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeSurfaceReflectancesOp.class,
+                                                                           "endmembers.img");
+
+        try {
+            final int length = iis.readInt();
+            final double[] wavelength = new double[length];
+            final double[] rhoVeg = new double[length];
+            final double[] rhoSue = new double[length];
+
+            iis.readFully(wavelength, 0, length);
+            iis.readFully(rhoVeg, 0, length);
+            iis.readFully(rhoSue, 0, length);
+
+            return new double[][]{wavelength, rhoVeg, rhoSue};
+        } catch (Exception e) {
+            throw new OperatorException("could not read endmember table", e);
+        } finally {
+            try {
+                iis.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
     }
 
