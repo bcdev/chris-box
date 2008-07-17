@@ -26,7 +26,24 @@ import java.util.List;
  */
 public class OpUtils {
 
-    private OpUtils() {
+    /**
+     * Returns the index of the first band in a given list of bands which is accepted by a
+     * given band filter.
+     *
+     * @param bands      the bands.
+     * @param bandFilter the band filter.
+     *
+     * @return the index of the first band in {@code bands} which is accepted
+     *         by {@code bandFilter}, or {@code -1} if no band is accepted.
+     */
+    public static int findBandIndex(final Band[] bands, BandFilter bandFilter) {
+        for (int i = 0; i < bands.length; i++) {
+            if (bandFilter.accept(bands[i])) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /**
@@ -71,6 +88,25 @@ public class OpUtils {
         }
 
         return minIndex;
+    }
+
+    /**
+     * Returns the first band in a given list of bands which is accepted by a
+     * given band filter.
+     *
+     * @param bands      the bands.
+     * @param bandFilter the band filter.
+     *
+     * @return the first band in {@code bands} which is accepted by {@code bandFilter}.
+     */
+    public static Band findBand(final Band[] bands, BandFilter bandFilter) {
+        for (final Band band : bands) {
+            if (bandFilter.accept(band)) {
+                return band;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -167,7 +203,7 @@ public class OpUtils {
         try {
             return Double.parseDouble(stringValue);
         } catch (NumberFormatException ignore) {
-           throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
+            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
