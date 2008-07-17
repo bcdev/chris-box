@@ -21,9 +21,9 @@ import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
 import org.esa.beam.chris.operators.internal.UnivariateFunction;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
-import org.esa.beam.chris.util.math.Regression;
 import org.esa.beam.chris.util.math.LocalRegressionSmoother;
 import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
+import org.esa.beam.chris.util.math.Regression;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -40,12 +40,15 @@ import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.OpImage;
-import java.awt.*;
+import java.awt.Rectangle;
 import java.awt.image.Raster;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Operator for performing the CHRIS atmospheric correction.
@@ -431,122 +434,128 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 }
                 if (mode == 1 || mode == 2) {
                     if (performSpectralPolishing) {
-                        final double[][] table = readEndmemberTable();
-
-                        final Resampler resampler = new Resampler(table[0], targetWavelengths, targetBandwidths, smileCorrection);
-                        final double[] veg = resampler.resample(table[1]);
-                        final double[] sue = resampler.resample(table[2]);
-
-                        final Regression regression = new Regression(veg, sue);
-
-                        final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
-                            @Override
-                            public boolean accept(Band band) {
-                                return band.getSpectralWavelength() >= 670.0;
-                            }
-                        });
-                        final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
-                            @Override
-                            public boolean accept(Band band) {
-                                return band.getSpectralWavelength() >= 785.0;
-                            }
-                        });
-
-                        final Tile redTile = targetTileMap.get(redBand);
-                        final Tile nirTile = targetTileMap.get(nirBand);
-
-                        final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-                        final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
-
-                        final List<NdviPixel> ndviPixelList = new ArrayList<NdviPixel>();
-                        for (final Tile.Pos pos : redTile) {
-                            final double nir = nirTile.getSampleDouble(pos.x, pos.y);
-                            final double red = redTile.getSampleDouble(pos.x, pos.y);
-                            final double ndvi = (nir - red) / (nir + red);
-
-                            if (ndvi > 0.1 && nir > 0.2 && nir <= 0.75) {
-                                final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
-                                final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
-                                if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                                    ndviPixelList.add(new NdviPixel(pos, ndvi));
-                                }
-                            }
-                        }
-
-                        if (ndviPixelList.size() > POLISHING_PIXEL_COUNT) {
-                            Collections.sort(ndviPixelList);
-                            final int fromIndex = POLISHING_PIXEL_COUNT / 2;
-                            final int toIndex = ndviPixelList.size() - POLISHING_PIXEL_COUNT / 2;
-                            ndviPixelList.subList(fromIndex, toIndex).clear();
-
-                            final double[][] fits = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
-                            final double[][] spectra = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
-                            final double[] c = new double[2];
-                            final double[] w = new double[2];
-
-                            for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
-                                final double[] spectrum = spectra[i];
-
-                                for (int j = 0; j < rhoBands.length; j++) {
-                                    final Tile rhoTile = targetTileMap.get(rhoBands[j]);
-                                    final Tile.Pos pos = ndviPixelList.get(i).pos;
-                                    spectrum[j] = rhoTile.getSampleDouble(pos.x, pos.y);
-                                }
-                                regression.fit(spectrum, fits[i], c, w);
-                            }
-
-                            final double[] w1 = new double[1];
-                            final double[] c1 = new double[1];
-
-                            final double[] coefficients = new double[rhoBands.length];
-                            for (int j = 0; j < rhoBands.length; j++) {
-                                final double[] fit = new double[POLISHING_PIXEL_COUNT];
-                                final double[] spectrum = new double[POLISHING_PIXEL_COUNT];
-
-                                for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
-                                    fit[i] = fits[i][j];
-                                    spectrum[i] = spectra[i][j];
-                                }
-
-                                final Regression coefficientRegression = new Regression(fit);
-                                coefficientRegression.fit(spectrum, spectrum, c1, w1);
-                                coefficients[j] = c1[0];
-                            }
-
-                            final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
-                                @Override
-                                public boolean accept(Band band) {
-                                    return band.getSpectralWavelength() >= 694.7;
-                                }
-                            });
-                            final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
-                                @Override
-                                public boolean accept(Band band) {
-                                    return band.getSpectralWavelength() > 772.5;
-                                }
-                            });
-
-                            final double[] meanCoefficients = new double[upperRed - lowerRed];
-                            final LocalRegressionSmoother smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 5);
-                            smoother.smooth(Arrays.copyOfRange(coefficients, lowerRed, upperRed), meanCoefficients);
-                            for (int i = 0; i < meanCoefficients.length; i++) {
-                                coefficients[lowerRed + i] = 1.0 + (coefficients[lowerRed + i] - meanCoefficients[i]);
-
-                            }
-                            
-                            for (int i = 0; i < rhoBands.length; ++i) {
-                                final Tile targetTile = targetTileMap.get(rhoBands[i]);
-                                for (final Tile.Pos pos : targetTile) {
-                                    final double rho = targetTile.getSampleDouble(pos.x, pos.y);
-
-                                    targetTile.setSample(pos.x, pos.y, rho * coefficients[i]);
-                                }
-                            }
-                        }
+                        doSpectralPolishing(targetTileMap, targetRectangle);
                     }
                 }
             } finally {
                 pm.done();
+            }
+        }
+
+        private void doSpectralPolishing(Map<Band, Tile> targetTileMap, Rectangle targetRectangle) {
+            final double[][] endmemberTable = readEndmemberTable();
+
+            final Resampler resampler = new Resampler(endmemberTable[0], targetWavelengths, targetBandwidths, smileCorrection);
+            final double[] veg = resampler.resample(endmemberTable[1]);
+            final double[] sue = resampler.resample(endmemberTable[2]);
+            final double[] dummy = new double[veg.length];
+            Arrays.fill(dummy, 1.0);
+
+            final Regression regression = new Regression(dummy, veg, sue);
+
+            final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
+                @Override
+                public boolean accept(Band band) {
+                    return band.getSpectralWavelength() >= 670.0;
+                }
+            });
+            final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
+                @Override
+                public boolean accept(Band band) {
+                    return band.getSpectralWavelength() >= 785.0;
+                }
+            });
+
+            final Tile redTile = targetTileMap.get(redBand);
+            final Tile nirTile = targetTileMap.get(nirBand);
+
+            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+            final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+
+            final List<NdviPixel> ndviPixelList = new ArrayList<NdviPixel>();
+            for (final Tile.Pos pos : redTile) {
+                final double nir = nirTile.getSampleDouble(pos.x, pos.y);
+                final double red = redTile.getSampleDouble(pos.x, pos.y);
+                final double ndvi = (nir - red) / (nir + red);
+
+                if (ndvi > 0.1 && nir > 0.2 && nir <= 0.75) {
+                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+                    final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
+                        ndviPixelList.add(new NdviPixel(pos, ndvi));
+                    }
+                }
+            }
+
+            if (ndviPixelList.size() > POLISHING_PIXEL_COUNT) {
+                Collections.sort(ndviPixelList);
+                final int fromIndex = POLISHING_PIXEL_COUNT / 2;
+                final int toIndex = ndviPixelList.size() - POLISHING_PIXEL_COUNT / 2;
+                ndviPixelList.subList(fromIndex, toIndex).clear();
+
+                final double[][] fits = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
+                final double[][] spectra = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
+                final double[] c = new double[3];
+                final double[] w = new double[3];
+
+                for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
+                    final double[] spectrum = spectra[i];
+
+                    for (int j = 0; j < rhoBands.length; j++) {
+                        final Tile rhoTile = targetTileMap.get(rhoBands[j]);
+                        final Tile.Pos pos = ndviPixelList.get(i).pos;
+                        spectrum[j] = rhoTile.getSampleDouble(pos.x, pos.y);
+                    }
+                    regression.fit(spectrum, fits[i], c, w);
+                }
+
+                final double[] w1 = new double[1];
+                final double[] c1 = new double[1];
+
+                final double[] coefficients = new double[rhoBands.length];
+                for (int j = 0; j < rhoBands.length; j++) {
+                    final double[] fit = new double[POLISHING_PIXEL_COUNT];
+                    final double[] spectrum = new double[POLISHING_PIXEL_COUNT];
+
+                    for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
+                        fit[i] = fits[i][j];
+                        spectrum[i] = spectra[i][j];
+                    }
+
+                    final Regression coefficientRegression = new Regression(fit);
+                    coefficientRegression.fit(spectrum, spectrum, c1, w1);
+                    coefficients[j] = c1[0];
+                }
+
+                final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
+                    @Override
+                    public boolean accept(Band band) {
+                        return band.getSpectralWavelength() >= 694.7;
+                    }
+                });
+                final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
+                    @Override
+                    public boolean accept(Band band) {
+                        return band.getSpectralWavelength() > 772.5;
+                    }
+                });
+
+                final double[] meanCoefficients = new double[upperRed - lowerRed];
+                final LocalRegressionSmoother smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 5);
+                smoother.smooth(Arrays.copyOfRange(coefficients, lowerRed, upperRed), meanCoefficients);
+                for (int i = 0; i < meanCoefficients.length; i++) {
+                    coefficients[lowerRed + i] = 1.0 + (coefficients[lowerRed + i] - meanCoefficients[i]);
+
+                }
+
+                for (int i = 0; i < rhoBands.length; ++i) {
+                    final Tile targetTile = targetTileMap.get(rhoBands[i]);
+                    for (final Tile.Pos pos : targetTile) {
+                        final double rho = targetTile.getSampleDouble(pos.x, pos.y);
+
+                        targetTile.setSample(pos.x, pos.y, rho * coefficients[i]);
+                    }
+                }
             }
         }
 
