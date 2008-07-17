@@ -10,6 +10,7 @@ import org.esa.beam.framework.gpf.OperatorException;
 
 import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -24,6 +25,9 @@ import java.util.List;
  * @since BEAM 4.2
  */
 public class OpUtils {
+
+    private OpUtils() {
+    }
 
     /**
      * Returns the index of the band whose central wavelength is closest to
@@ -98,7 +102,7 @@ public class OpUtils {
      * @return the bands found.
      */
     public static Band[] findBands(Product product, String prefix, BandFilter filter) {
-        final List<Band> bandList = new ArrayList<Band>();
+        final List<Band> bandList = new ArrayList<Band>(product.getBands().length);
 
         for (final Band band : product.getBands()) {
             if (band.getName().startsWith(prefix) && filter.accept(band)) {
@@ -120,8 +124,8 @@ public class OpUtils {
      * @return the bands found.
      */
     public static int[] findBandIndexes(Product product, String prefix, BandFilter filter) {
-        final List<Integer> indexList = new ArrayList<Integer>();
         final Band[] bands = product.getBands();
+        final List<Integer> indexList = new ArrayList<Integer>(bands.length);
 
         for (int i = 0; i < bands.length; ++i) {
             if (bands[i].getName().startsWith(prefix) && filter.accept(bands[i])) {
@@ -156,14 +160,14 @@ public class OpUtils {
         if (element == null) {
             return defaultValue;
         }
-        final String string = element.getAttributeString(name, null);
-        if (string == null) {
+        final String stringValue = element.getAttributeString(name, null);
+        if (stringValue == null) {
             return defaultValue;
         }
         try {
-            return Double.parseDouble(string);
-        } catch (Exception e) {
-            throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
+            return Double.parseDouble(stringValue);
+        } catch (NumberFormatException ignore) {
+           throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
 
@@ -215,11 +219,11 @@ public class OpUtils {
      * @throws OperatorException if the annotation could not be found or parsed.
      */
     public static double getAnnotationDouble(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
+        final String stringValue = getAnnotationString(product, name);
 
         try {
-            return Double.parseDouble(string);
-        } catch (Exception e) {
+            return Double.parseDouble(stringValue);
+        } catch (NumberFormatException ignore) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
@@ -235,11 +239,11 @@ public class OpUtils {
      * @throws OperatorException if the annotation could not be found or parsed.
      */
     public static int getAnnotationInt(Product product, String name) throws OperatorException {
-        final String string = getAnnotationString(product, name);
+        final String stringValue = getAnnotationString(product, name);
 
         try {
-            return Integer.parseInt(string);
-        } catch (Exception e) {
+            return Integer.parseInt(stringValue);
+        } catch (NumberFormatException ignore) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
@@ -257,11 +261,11 @@ public class OpUtils {
      * @throws OperatorException if the annotation could not be found or parsed.
      */
     public static int getAnnotationInt(Product product, String name, int from, int to) throws OperatorException {
-        final String string = getAnnotationString(product, name).substring(from, to);
+        final String stringValue = getAnnotationString(product, name).substring(from, to);
 
         try {
-            return Integer.parseInt(string);
-        } catch (Exception e) {
+            return Integer.parseInt(stringValue);
+        } catch (NumberFormatException ignore) {
             throw new OperatorException(MessageFormat.format("could not parse CHRIS annotation ''{0}''", name));
         }
     }
@@ -362,16 +366,46 @@ public class OpUtils {
      */
     public static ImageInputStream getResourceAsImageInputStream(Class<? extends Operator> opClass,
                                                                  String name) throws OperatorException {
-        final InputStream is = opClass.getResourceAsStream(name);
-
-        if (is == null) {
-            throw new OperatorException(MessageFormat.format("resource {0} not found", name));
-        }
         try {
-            return new FileCacheImageInputStream(is, null);
-        } catch (Exception e) {
+            return getResourceAsStream(opClass, name);
+        } catch (IOException e) {
             throw new OperatorException(MessageFormat.format(
                     "could not create image input stream for resource {0}", name), e);
+        }
+    }
+
+    private static ImageInputStream getResourceAsStream(Class<?> aClass, String name) throws IOException {
+        final InputStream is = aClass.getResourceAsStream(name);
+
+        if (is == null) {
+            throw new IOException(MessageFormat.format("resource {0} not found", name));
+        }
+        return new FileCacheImageInputStream(is, null);
+    }
+
+    public static double[][] readThuillierTable() throws OperatorException {
+        final ImageInputStream iis;
+        try {
+            iis = getResourceAsStream(OpUtils.class, "thuillier.img");
+        } catch (IOException e) {
+            throw new OperatorException("could not read extraterrestrial solar irradiance table", e);
+        }
+        try {
+            final int length = iis.readInt();
+            final double[] abscissas = new double[length];
+            final double[] ordinates = new double[length];
+
+            iis.readFully(abscissas, 0, length);
+            iis.readFully(ordinates, 0, length);
+
+            return new double[][]{abscissas, ordinates};
+        } catch (IOException e) {
+            throw new OperatorException("could not read extraterrestrial solar irradiance table", e);
+        } finally {
+            try {
+                iis.close();
+            } catch (IOException ignore) {
+            }
         }
     }
 }

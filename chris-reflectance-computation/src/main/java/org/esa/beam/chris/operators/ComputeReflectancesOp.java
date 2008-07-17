@@ -17,9 +17,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import javax.imageio.stream.ImageInputStream;
-import java.awt.*;
-import java.io.IOException;
+import java.awt.Rectangle;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -54,15 +52,16 @@ public class ComputeReflectancesOp extends Operator {
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
 
+    @Override
     public void initialize() throws OperatorException {
         assertValidity(sourceProduct);
 
-        sourceBandMap = new HashMap<Band, Band>();
-        conversionFactorMap = new HashMap<Band, Double>();
+        sourceBandMap = new HashMap<Band, Band>(sourceProduct.getNumBands());
+        conversionFactorMap = new HashMap<Band, Double>(sourceProduct.getNumBands());
 
         final double solarZenithAngle = OpUtils.getAnnotationDouble(sourceProduct,
                                                                     ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
-        final double[][] table = readThuillierTable();
+        final double[][] table = OpUtils.readThuillierTable();
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
 
@@ -238,31 +237,6 @@ public class ComputeReflectancesOp extends Operator {
 
         for (int i = 0; i < irradiances.length; ++i) {
             irradiances[i] *= factor;
-        }
-    }
-
-    // todo - generalize
-    static double[][] readThuillierTable() throws OperatorException {
-        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeReflectancesOp.class,
-                                                                           "thuillier.img");
-
-        try {
-            final int length = iis.readInt();
-            final double[] abscissas = new double[length];
-            final double[] ordinates = new double[length];
-
-            iis.readFully(abscissas, 0, length);
-            iis.readFully(ordinates, 0, length);
-
-            return new double[][]{abscissas, ordinates};
-        } catch (Exception e) {
-            throw new OperatorException("could not read extraterrestrial solar irradiance table", e);
-        } finally {
-            try {
-                iis.close();
-            } catch (IOException e) {
-                // ignore
-            }
         }
     }
 

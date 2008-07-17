@@ -36,9 +36,8 @@ import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.OpImage;
-import java.awt.*;
+import java.awt.Rectangle;
 import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -108,14 +107,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private transient Band[] rhoBands;
     private transient Band wvBand;
 
-    private transient RenderedImage hyperMaskImage;
-    private transient RenderedImage cloudMaskImage;
+    private transient OpImage hyperMaskImage;
+    private transient OpImage cloudMaskImage;
+    private transient OpImage waterMaskImage;
 
     private transient ModtranLookupTable modtranLookupTable;
-
     private transient int mode;
-    private transient double[] targetWavelengths;
 
+    private transient double[] targetWavelengths;
     private transient Ac ac;
 
     @Override
@@ -173,8 +172,18 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         mode = 0;
         targetWavelengths = null;
 
+        if (hyperMaskImage != null) {
+            hyperMaskImage.dispose();
+        }
+        if (cloudMaskImage != null) {
+            cloudMaskImage.dispose();
+        }
+        if (waterMaskImage != null) {
+            waterMaskImage.dispose();
+        }
         hyperMaskImage = null;
         cloudMaskImage = null;
+        waterMaskImage = null;
 
         rhoBands = null;
         wvBand = null;
@@ -311,17 +320,32 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             smileCorrection = 0.0;
         }
         final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
+        final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
+        final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
+        final double[][] thullierTable = OpUtils.readThuillierTable();
+
+        final Resampler waterResampler = new Resampler(thullierTable[0], targetWavelengths,
+                                                       OpUtils.getBandwidths(toaBands), smileCorrection);
+        final double[] irr = waterResampler.resample(thullierTable[1]);
+        final double redScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irr[redIndex];
+        final double nirScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irr[nirIndex];
 
         // create atmospheric correction
         if (mode == 1 || mode == 3 || mode == 5) {
-            ac = new Ac1(new CalculatorFactoryCwv(modtranLookupTable, resampler, vza, sza, ada, alt, aot550,
-                                                  toaScaling));
+            final CalculatorFactoryCwv ac1CalculatorFactory = new CalculatorFactoryCwv(modtranLookupTable, resampler,
+                                                                                       vza, sza, ada, alt, aot550,
+                                                                                       toaScaling);
+            waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex],
+                                                          redScaling, nirScaling);
+            ac = new Ac1(ac1CalculatorFactory);
         } else {
             ac = new Ac2(calculatorFactory.createCalculator(resampler));
         }
+
     }
 
     private interface Ac {
+
         void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm);
 
     }
@@ -340,7 +364,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         private final int lowerWva;
         private final int upperWva;
         private final int upperWvb;
-        private OpImage waterMaskImage;
 
         private Ac1(CalculatorFactoryCwv calculatorFactory) {
             this.calculatorFactory = calculatorFactory;
@@ -376,33 +399,28 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             this.upperWva = upperWva;
             this.upperWvb = upperWvb;
 
-            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
-            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
-
-            waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex], 1.0, 1.0);
         }
 
         @Override
         public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             final int tileWork = targetRectangle.height;
 
-            int totalWork = tileWork * rhoBands.length;
+            int totalWork = tileWork;
             if (performAdjacencyCorrection) {
                 totalWork += tileWork * rhoBands.length * 2;
             }
 
-            final double wv;
             try {
                 pm.beginTask("Performing atmospheric correction", totalWork);
 
                 // Inversion of Lambertian equation
-                wv = ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * rhoBands.length));
+                final double wv = ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
                 if (performAdjacencyCorrection) {
                     final AdjacencyCorrection ac = new AdjacencyCorrection(calculatorFactory.createCalculator(wv));
                     ac.computeTileStack(targetTileMap, targetRectangle,
                                         SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
                 }
-                if ((mode == 1 || mode == 2)) {
+                if (mode == 1 || mode == 2) {
                     if (performSpectralPolishing) {
                         // todo - spectral polishing
                     }
@@ -414,7 +432,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         public double ac(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             try {
-                pm.beginTask("Computing surface reflectances...", targetRectangle.height * rhoBands.length);
+                pm.beginTask("Computing surface reflectances...", targetRectangle.height);
 
                 final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
                 final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
@@ -646,6 +664,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     }
 
     private class AdjacencyCorrection implements Ac {
+
         private final Calculator calculator;
         private final int kernelSize;
 
@@ -664,74 +683,65 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             try {
                 pm.beginTask("Performing adjacency correction", 2 * targetRectangle.height * rhoBands.length);
 
-                final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-                final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
-
                 for (int i = 0; i < rhoBands.length; i++) {
                     final Tile targetTile = targetTileMap.get(rhoBands[i]);
-                    final double[][] means = computeMeans(targetTile, targetRectangle,
+                    final short[] targetSamples = targetTile.getDataBufferShort();
+                    final short[][] means = computeMeans(targetTile, targetRectangle,
                                                           SubProgressMonitor.create(pm, targetRectangle.height));
 
-                    for (final Tile.Pos pos : targetTile) {
-                        if (pos.x == targetRectangle.x) {
-                            checkForCancelation(pm);
-                        }
-                        final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
-                        final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                    int targetLineOffset = targetTile.getScanlineOffset();
+                    for (int y = 0; y < targetRectangle.height; y++) {
+                        checkForCancelation(pm);
+                        int targetPixelIndex = targetLineOffset;
 
-                        if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                            final double rho = targetTile.getSampleDouble(pos.x, pos.y);
-                            final double ave = means[pos.x - targetRectangle.x][pos.y - targetRectangle.y];
+                        for (int x = 0; x < targetRectangle.width; x++) {
+                            double rho = rhoBands[i].scale(targetSamples[targetPixelIndex]);
+                            rho += calculator.getAdjacencyCorrection(i, rho, rhoBands[i].scale(means[x][y]));
+                            targetSamples[targetPixelIndex] = (short) rhoBands[i].scaleInverse(rho);
 
-                            targetTile.setSample(pos.x, pos.y, rho + calculator.getAdjacencyCorrection(i, rho, ave));
+                            targetPixelIndex++;
                         }
 
-                        if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-                            pm.worked(1);
-                        }
+                        targetLineOffset += targetTile.getScanlineStride();
+                        pm.worked(1);
                     }
+
                 }
             } finally {
                 pm.done();
             }
         }
 
-        private double[][] computeMeans(Tile targetTile, Rectangle targetRectangle, ProgressMonitor pm) {
-            final double[][] means = new double[targetRectangle.width][targetRectangle.height];
+        private short[][] computeMeans(Tile targetTile, Rectangle targetRectangle, ProgressMonitor pm) {
+
+            final short[][] means = new short[targetRectangle.width][targetRectangle.height];
 
             try {
                 pm.beginTask("Computing smoothed image", targetRectangle.height);
 
-                final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-                final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
+                final int halfKernelSize = kernelSize / 2;
+                final short[] targetSamples = targetTile.getDataBufferShort();
 
-                for (final Tile.Pos pos : targetTile) {
-                    if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
+                    checkForCancelation(pm);
+
+                    final int minY = Math.max(targetRectangle.y, y - halfKernelSize);
+                    final int maxY = Math.min(targetRectangle.height, y + halfKernelSize);
+
+                    for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
+                        if (targetSamples[y * targetRectangle.width + x] != 0) {
+                            final int minX = Math.max(targetRectangle.x, x - halfKernelSize);
+                            final int maxX = Math.min(targetRectangle.width, x + halfKernelSize);
+
+                            means[x - targetRectangle.x][y - targetRectangle.y] = computeMean(targetTile,
+                                                                                              minX,
+                                                                                              minY, maxX, maxY);
+                        }
                     }
 
-                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
-                    final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
-                    final double mean;
-
-                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                        final int minX = Math.max(targetRectangle.x, pos.x - kernelSize / 2);
-                        final int minY = Math.max(targetRectangle.y, pos.y - kernelSize / 2);
-
-                        final int maxX = Math.min(targetRectangle.width, pos.x + kernelSize / 2);
-                        final int maxY = Math.min(targetRectangle.height, pos.y + kernelSize / 2);
-
-                        mean = computeMean(targetTile, hyperMaskRaster, cloudMaskRaster, minX, minY, maxX, maxY);
-                    } else {
-                        mean = 0.0;
-                    }
-
-                    means[pos.x - targetRectangle.x][pos.y - targetRectangle.y] = mean;
-
-                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-                        pm.worked(1);
-                    }
+                    pm.worked(1);
                 }
+
             } finally {
                 pm.done();
             }
@@ -739,27 +749,35 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             return means;
         }
 
-        private double computeMean(Tile targetTile, Raster hyperMaskRaster, Raster cloudMaskRaster,
-                                   int minX, int minY, int maxX, int maxY) {
-            double sum = 0.0;
+        private short computeMean(Tile targetTile, int minX, int minY, int maxX, int maxY) {
+            final short[] targetSamples = targetTile.getDataBufferShort();
+
+            int sum = 0;
             int count = 0;
 
-            for (int y = minY; y < maxY; ++y) {
-                for (int x = minX; x < maxX; ++x) {
-                    final int hyperMask = hyperMaskRaster.getSample(x, y, 0);
-                    final int cloudMask = cloudMaskRaster.getSample(x, y, 0);
+            int targetLineOffset = targetTile.getScanlineOffset() + minY * targetTile.getScanlineStride();
 
-                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                        sum += targetTile.getSampleDouble(x, y);
+            for (int y = minY; y < maxY; y++) {
+                int targetPixelIndex = targetLineOffset + minX;
+
+                for (int x = minX; x < maxX; x++) {
+                    final short targetSample = targetSamples[targetPixelIndex];
+                    if (targetSample != 0) {
+                        sum += targetSample;
                         count++;
                     }
+
+                    targetPixelIndex++;
                 }
+
+                targetLineOffset += targetTile.getScanlineStride();
             }
+
             if (count > 0) {
                 sum /= count;
             }
 
-            return sum;
+            return (short) sum;
         }
     }
 

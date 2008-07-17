@@ -16,9 +16,20 @@ package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
 
-import javax.media.jai.*;
-import java.awt.*;
-import java.awt.image.*;
+import javax.media.jai.ComponentSampleModelJAI;
+import javax.media.jai.ImageLayout;
+import javax.media.jai.OpImage;
+import javax.media.jai.PixelAccessor;
+import javax.media.jai.PlanarImage;
+import javax.media.jai.UnpackedImageData;
+import javax.media.jai.UntiledOpImage;
+import java.awt.Rectangle;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 import java.util.Map;
 import java.util.Vector;
 
@@ -30,6 +41,7 @@ import java.util.Vector;
  * @since BEAM 4.2
  */
 class MeanFilterOpImage extends UntiledOpImage {
+
     private final int kernelSize;
 
     public static OpImage createImage(Band band, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage, int
@@ -59,80 +71,78 @@ class MeanFilterOpImage extends UntiledOpImage {
 
     @Override
     protected void computeImage(Raster[] sources, WritableRaster target, Rectangle rectangle) {
-        final PixelAccessor hyperMaskAccessor;
-        final PixelAccessor cloudMaskAccessor;
 
-        final UnpackedImageData hyperMaskData;
-        final UnpackedImageData cloudMaskData;
-
-        final byte[] hyperMaskPixels;
-        final byte[] cloudMaskPixels;
-
-        hyperMaskAccessor = new PixelAccessor(getSourceImage(1));
-        cloudMaskAccessor = new PixelAccessor(getSourceImage(2));
-
-        hyperMaskData = hyperMaskAccessor.getPixels(sources[0], rectangle, DataBuffer.TYPE_BYTE, false);
-        cloudMaskData = cloudMaskAccessor.getPixels(sources[1], rectangle, DataBuffer.TYPE_BYTE, false);
-
-        hyperMaskPixels = hyperMaskData.getByteData(0);
-        cloudMaskPixels = cloudMaskData.getByteData(0);
-
+        final PixelAccessor sourceAccessor = new PixelAccessor(getSourceImage(0));
         final PixelAccessor targetAccessor = new PixelAccessor(getSampleModel(), getColorModel());
-        final UnpackedImageData targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_SHORT, true);
-        final short[] targetPixels = targetData.getShortData(0);
+        final PixelAccessor hyperMaskAccessor = new PixelAccessor(getSourceImage(1));
+        final PixelAccessor cloudMaskAccessor = new PixelAccessor(getSourceImage(2));
 
-        int hyperMaskLineOffset = hyperMaskData.bandOffsets[0];
-        int cloudMaskLineOffset = cloudMaskData.bandOffsets[0];
+        final UnpackedImageData sourceData = sourceAccessor.getPixels(sources[0], rectangle,
+                                                                      DataBuffer.TYPE_SHORT, false);
+        final UnpackedImageData targetData = targetAccessor.getPixels(target, rectangle,
+                                                                      DataBuffer.TYPE_SHORT, true);
+        final UnpackedImageData hyperMaskData = hyperMaskAccessor.getPixels(sources[0], rectangle,
+                                                                            DataBuffer.TYPE_BYTE, false);
+        final UnpackedImageData cloudMaskData = cloudMaskAccessor.getPixels(sources[1], rectangle,
+                                                                            DataBuffer.TYPE_BYTE, false);
+
+        final short[] sourcePixels = sourceData.getShortData(0);
+        final short[] targetPixels = targetData.getShortData(0);
+        final byte[] hyperMaskPixels = hyperMaskData.getByteData(0);
+        final byte[] cloudMaskPixels = cloudMaskData.getByteData(0);
+
+        int targetLineOffset = targetData.bandOffsets[0];
 
         final int w = rectangle.width;
         final int h = rectangle.height;
+        final int halfKernelSize = kernelSize / 2;
 
         for (int y = 0; y < h; ++y) {
-            int hyperMaskPixelOffset = hyperMaskLineOffset;
-            int cloudMaskPixelOffset = cloudMaskLineOffset;
+            int targetPixelOffset = targetLineOffset;
 
-            final int minY = Math.max(0, y - kernelSize);
-            final int maxY = Math.min(h, y + kernelSize);
+            final int yMin = Math.max(0, y - halfKernelSize);
+            final int yMax = Math.min(h, y + halfKernelSize);
 
             for (int x = 0; x < w; ++x) {
-                final int minX = Math.max(0, x - kernelSize);
-                final int maxX = Math.min(w, x + kernelSize);
+                final int xMin = Math.max(0, x - halfKernelSize);
+                final int xMax = Math.min(w, x + halfKernelSize);
 
-                int hyperMask = hyperMaskPixels[hyperMaskPixelOffset];
-                int cloudMask = cloudMaskPixels[cloudMaskPixelOffset];
+                int hyperMask = hyperMaskPixels[targetPixelOffset];
+                int cloudMask = cloudMaskPixels[targetPixelOffset];
 
                 if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                    double sum = 0.0;
+                    int sum = 0;
                     int count = 0;
 
-                    int targetLineOffset = targetData.bandOffsets[0] + minY * targetData.lineStride;
+                    int sourceLineOffset = sourceData.bandOffsets[0] + yMin * sourceData.lineStride;
 
-                    for (int kernelY = minY; kernelY < maxY; ++kernelY) {
-                        int targetPixelOffset = targetLineOffset + minX * targetData.pixelStride;
+                    for (int kernelY = yMin; kernelY < yMax; ++kernelY) {
+                        int sourcePixelOffset = sourceLineOffset + xMin * sourceData.pixelStride;
 
-                        for (int kernelX = minX; kernelX < maxX; ++kernelX) {
+                        for (int kernelX = xMin; kernelX < xMax; ++kernelX) {
 
-                            hyperMask = hyperMaskPixels[hyperMaskPixelOffset];
-                            cloudMask = cloudMaskPixels[cloudMaskPixelOffset];
+                            hyperMask = hyperMaskPixels[sourcePixelOffset];
+                            cloudMask = cloudMaskPixels[sourcePixelOffset];
 
                             if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                                sum += targetPixels[targetPixelOffset];
+                                sum += sourcePixels[sourcePixelOffset];
                                 count++;
                             }
-                            targetPixelOffset += targetData.pixelStride;
+                            sourcePixelOffset += sourceData.pixelStride;
                         }
-                        targetLineOffset += targetData.lineStride;
+                        sourceLineOffset += sourceData.lineStride;
                     }
-//                    image[x][y] = sum / count;
+                    if (count > 0) {
+                        targetPixels[targetPixelOffset] = (short) (sum / count);
+                    }
                 }
 
-                hyperMaskPixelOffset += hyperMaskData.pixelStride;
-                cloudMaskPixelOffset += cloudMaskData.pixelStride;
+                targetPixelOffset += targetData.pixelStride;
             }
 
-            hyperMaskLineOffset += hyperMaskData.lineStride;
-            cloudMaskLineOffset += cloudMaskData.lineStride;
-//            targetLineOffset += targetData.lineStride;
+            targetLineOffset += targetData.lineStride;
         }
+
+        targetAccessor.setPixels(targetData);
     }
 }
