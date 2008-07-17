@@ -210,24 +210,29 @@ public class LocalRegressionSmoother {
         final double[] b = new double[n];
 
         for (int i = 0; i < m; ++i) {
+            final double wi = w[i];
+            final double[] pi = p[i];
+            
             for (int j = 0; j < n; ++j) {
                 for (int k = j; k < n; ++k) {
-                    a[j][k] += (w[i] * w[i]) * (p[i][j] * p[i][k]);
+                    a[j][k] += (wi * wi) * (pi[j] * pi[k]);
                 }
-                b[j] += (w[i] * w[i]) * y[from + i] * p[i][j];
+                b[j] += (wi * wi) * y[from + i] * pi[j];
             }
         }
         for (int i = 0; i < n; ++i) {
+            final double[] ai = a[i];
+
             for (int j = i; j < n; ++j) {
-                double r = a[i][j];
+                double r = ai[j];
                 for (int k = 0; k < i; ++k) {
-                    r -= a[i][k] * a[j][k];
+                    r -= ai[k] * a[j][k];
                 }
                 if (i < j) {
-                    a[j][i] = r / a[i][i];
+                    a[j][i] = r / ai[i];
                 } else {
                     if (r > 0.0) {
-                        a[i][i] = Math.sqrt(r);
+                        ai[i] = Math.sqrt(r);
                     } else {
                         throw new ArithmeticException();
                     }
@@ -269,10 +274,14 @@ public class LocalRegressionSmoother {
         final double[] b = new double[m];
 
         for (int i = 0; i < m; ++i) {
+            final double wi = w[i];
+            final double[] ai = a[i];
+            final double[] pi = p[i];
+
             for (int j = 0; j < n; ++j) {
-                a[i][j] = w[i] * p[i][j];
+                ai[j] = wi * pi[j];
             }
-            b[i] = w[i] * y[from + i];
+            b[i] = wi * y[from + i];
         }
 
         final SingularValueDecomposition svd = new Matrix(a, m, n).svd();
