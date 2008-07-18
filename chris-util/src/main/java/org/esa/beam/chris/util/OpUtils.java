@@ -223,7 +223,13 @@ public class OpUtils {
         if (element == null) {
             throw new OperatorException(MessageFormat.format("could not find CHRIS annotation ''{0}''", name));
         }
-        return element.getAttributeString(name, null);
+        final String stringValue = element.getAttributeString(name, null);
+
+        if (stringValue == null) {
+            throw new OperatorException(MessageFormat.format("could not find CHRIS annotation ''{0}''", name));
+        }
+        
+        return stringValue;
     }
 
     /**
