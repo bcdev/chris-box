@@ -1,4 +1,4 @@
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.util.math.internal;
 
 /**
  * Class performing the function of calculating simple linear regressions. See

@@ -18,11 +18,7 @@ import java.util.Scanner;
  */
 public class OpUtilsTest extends TestCase {
 
-    public void testSlitVsProfileTableIntegrity() throws IOException {
-        assertThuillierTableIntegrity();
-    }
-
-    private static void assertThuillierTableIntegrity() {
+    public void testThuillierTableIntegrity() throws IOException {
         final InputStream is = OpUtilsTest.class.getResourceAsStream("thuillier.txt");
 
         final Scanner scanner = new Scanner(is);
@@ -44,16 +40,16 @@ public class OpUtilsTest extends TestCase {
         assertEquals(rowCount, x.size());
         assertEquals(rowCount, y.size());
 
-// was used to create the thuillier.img file
-//        final FileImageOutputStream ios = new FileImageOutputStream(new File("thuillier.img"));
-//        ios.writeInt(rowCount);
-//        for (final Double value : x) {
-//            ios.writeDouble(value);
-//        }
-//        for (final Double value : y) {
-//            ios.writeDouble(value);
-//        }
-//        ios.close();
+//      was used to create the thuillier.img file
+//      final FileImageOutputStream ios = new FileImageOutputStream(new File("thuillier.img"));
+//      ios.writeInt(rowCount);
+//      for (final Double value : x) {
+//          ios.writeDouble(value);
+//      }
+//      for (final Double value : y) {
+//          ios.writeDouble(value);
+//      }
+//      ios.close();
 
         final double[][] table = OpUtils.readThuillierTable();
 
@@ -65,5 +61,4 @@ public class OpUtilsTest extends TestCase {
             assertEquals(y.get(i), table[1][i]);
         }
     }
-
 }

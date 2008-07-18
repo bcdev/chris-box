@@ -2,7 +2,6 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.util.BandComparator;
 import org.esa.beam.chris.operators.internal.InclusiveBandFilter;
 import org.esa.beam.chris.operators.internal.InclusiveMultiBandFilter;
 import org.esa.beam.chris.operators.internal.StrictlyInclusiveBandFilter;

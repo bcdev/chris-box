@@ -17,7 +17,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.Rectangle;
+import java.awt.*;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package org.esa.beam.chris.util.math;
+package org.esa.beam.chris.util.math.internal;
 
 /**
  * Local regression weight calculator interface.

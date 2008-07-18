@@ -16,20 +16,9 @@ package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
 
-import javax.media.jai.ComponentSampleModelJAI;
-import javax.media.jai.ImageLayout;
-import javax.media.jai.OpImage;
-import javax.media.jai.PixelAccessor;
-import javax.media.jai.PlanarImage;
-import javax.media.jai.UnpackedImageData;
-import javax.media.jai.UntiledOpImage;
-import java.awt.Rectangle;
-import java.awt.image.ColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
-import java.awt.image.SampleModel;
-import java.awt.image.WritableRaster;
+import javax.media.jai.*;
+import java.awt.*;
+import java.awt.image.*;
 import java.util.Map;
 import java.util.Vector;
 

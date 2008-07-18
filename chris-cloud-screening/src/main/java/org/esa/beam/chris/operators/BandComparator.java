@@ -1,4 +1,4 @@
-package org.esa.beam.chris.util;
+package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
 

@@ -16,14 +16,9 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.operators.internal.Roots;
-import org.esa.beam.chris.operators.internal.SimpleLinearRegression;
-import org.esa.beam.chris.operators.internal.UnivariateFunction;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
-import org.esa.beam.chris.util.math.LocalRegressionSmoother;
-import org.esa.beam.chris.util.math.LowessRegressionWeightCalculator;
-import org.esa.beam.chris.util.math.Regression;
+import org.esa.beam.chris.util.math.internal.*;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -400,7 +395,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             this.upperWva = upperWva;
             this.upperWvb = upperWvb;
 
-            if (performSpectralPolishing) {
+            if (performSpectralPolishing && (mode == 1 || mode == 5)) {
                 final double[][] endmemberTable = readEndmemberTable();
                 final Resampler resampler = new Resampler(endmemberTable[0], targetWavelengths, targetBandwidths,
                                                           smileCorrection);
@@ -424,7 +419,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             if (performAdjacencyCorrection) {
                 totalWork += tileWork * rhoBands.length * 2;
             }
-            if (performSpectralPolishing) {
+            if (performSpectralPolishing && (mode == 1 || mode == 5)) {
                 totalWork += tileWork * rhoBands.length * 2;
             }
             try {
@@ -437,7 +432,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     ac.computeTileStack(targetTileMap, targetRectangle,
                                         SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
                 }
-                if (performSpectralPolishing) {
+                if (performSpectralPolishing && (mode == 1 || mode == 5)) {
                     performSpectralPolishing(targetTileMap, targetRectangle,
                                              SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
                 }

@@ -12,23 +12,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.util.math.internal;
 
 /**
- * Interface for real-valued functions of a single variable.
+ * Interface for real-valued functions of more than one variable.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public interface UnivariateFunction {
+public interface MultivariateFunction {
 
     /**
      * Returns the value of the function at {@code x}.
      *
-     * @param x the variable.
+     * @param x the variables.
      *
      * @return the value of the function at {@code x}.
      */
-    double value(double x);
+    double value(double... x);
 }

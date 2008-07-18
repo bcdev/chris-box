@@ -18,7 +18,7 @@
     along with the BEAM software; if not, download BEAM from
     http://www.brockmann-consult.de/beam/ and install it.
 */
-package org.esa.beam.chris.util.math;
+package org.esa.beam.chris.util.math.internal;
 
 import junit.framework.TestCase;
 

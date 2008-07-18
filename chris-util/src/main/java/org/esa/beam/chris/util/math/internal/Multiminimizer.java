@@ -1,4 +1,4 @@
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.util.math.internal;
 
 /**
  * todo - add API doc
