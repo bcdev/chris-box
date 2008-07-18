@@ -27,8 +27,16 @@ import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
+import javax.swing.event.InternalFrameListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -104,7 +112,7 @@ public class ClusterLabelingWindow extends JDialog {
         if (b) {
             if (rgbFrame == null) {
                 final ProductSceneView rgbView = cloudLabeler.getRgbSceneView();
-                final String title = MessageFormat.format("{0} RGB", cloudLabeler.getRadianceProduct().getName());
+                final String title = MessageFormat.format("{0} - RGB", cloudLabeler.getRadianceProduct().getName());
                 final Icon icon = UIUtils.loadImageIcon("icons/RsBandAsSwath16.gif");
                 rgbView.getScene().setName(title);
                 rgbView.setCommandUIFactory(visatApp.getCommandUIFactory());
