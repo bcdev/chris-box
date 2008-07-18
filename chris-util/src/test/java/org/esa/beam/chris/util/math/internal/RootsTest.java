@@ -1,0 +1,68 @@
+/*
+ * Copyright (C) 2002-2008 by Brockmann Consult
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation. This program is distributed in the hope it will
+ * be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package org.esa.beam.chris.util.math.internal;
+
+import junit.framework.TestCase;
+
+/**
+ * Tests for class {@link Roots}.
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ * @since BEAM 4.2
+ */
+public class RootsTest extends TestCase {
+
+    public void testBrent() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Cos();
+        final Roots.Bracket bracket = new Roots.Bracket(0.0, 2.0);
+        final boolean success = Roots.brent(f, bracket, 100);
+
+        assertTrue(success);
+        assertEquals(Math.PI / 2.0, bracket.root, 0.0);
+    }
+
+    public void testBrentWithRootAtBracketingIntervalLowerLimit() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Sin();
+        final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
+        final boolean success = Roots.brent(f, bracket, 100);
+
+        assertTrue(success);
+        assertEquals(0.0, bracket.root, 0.0);
+    }
+
+    public void testBrentWithRootAtBracketingIntervalUpperLimit() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Sin();
+        final Roots.Bracket bracket = new Roots.Bracket(-1.0, 0.0);
+        final boolean success = Roots.brent(f, bracket, 100);
+
+        assertTrue(success);
+        assertEquals(0.0, bracket.root, 0.0);
+    }
+
+    public void testBrentWithRootNotInBracketingInterval() throws Exception {
+        final UnivariateFunction f = new TestFunctions.Cos();
+        final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
+
+        // the bracketing interval does not bracket a root
+        assertFalse(bracket.isBracket(f));
+
+        final boolean success = Roots.brent(f, bracket, 100);
+        // the bracketing interval does not bracket a root, but Brent's
+        // algorithm returns the value which is closest to the root
+        assertTrue(success);
+        assertEquals(1.0, bracket.root, 0.0);
+    }
+}
