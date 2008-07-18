@@ -46,7 +46,7 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct != null &&
+        final boolean enabled = selectedProduct == null ||
                 selectedProduct.getProductType().startsWith("CHRIS_M") &&
                 selectedProduct.containsBand("cloud_product");
 

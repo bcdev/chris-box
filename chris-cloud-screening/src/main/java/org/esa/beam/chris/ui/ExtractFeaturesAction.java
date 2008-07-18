@@ -42,39 +42,14 @@ public class ExtractFeaturesAction extends AbstractVisatAction {
                                                      "CHRIS/PROBA Feature Extraction",
                                                      "chrisCloudScreeningTools");
         productDialog.show();
-//        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-//
-//        try {
-//            performAction(selectedProduct);
-//        } catch (OperatorException e) {
-//            VisatApp.getApp().showErrorDialog(e.getMessage());
-//            VisatApp.getApp().getLogger().log(Level.SEVERE, e.getMessage(), e);
-//        }
     }
 
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct != null
-                && CHRIS_TYPES.contains(selectedProduct.getProductType());
+        final boolean enabled = selectedProduct == null
+                || CHRIS_TYPES.contains(selectedProduct.getProductType());
 
         setEnabled(enabled);
-    }
-
-    private static void performAction(Product sourceProduct) throws OperatorException {
-        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
-
-        final StringBuilder name = new StringBuilder(sourceProduct.getName());
-        final int pos = name.lastIndexOf("_REFL");
-        if (pos != -1) {
-            name.replace(pos, pos + 5, "_FEAT");
-        } else {
-            name.append("_FEAT");
-        }
-        parameterMap.put("targetProductName", name.toString());
-        final Product targetProduct = GPF.createProduct("chris.ExtractFeatures",
-                                                        parameterMap,
-                                                        sourceProduct);
-        VisatApp.getApp().addProduct(targetProduct);
     }
 }

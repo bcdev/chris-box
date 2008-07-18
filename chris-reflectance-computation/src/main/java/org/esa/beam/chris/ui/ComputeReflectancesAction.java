@@ -51,27 +51,9 @@ public class ComputeReflectancesAction extends AbstractVisatAction {
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct != null
-                && CHRIS_TYPES.contains(selectedProduct.getProductType());
+        final boolean enabled = selectedProduct == null
+                || CHRIS_TYPES.contains(selectedProduct.getProductType());
 
         setEnabled(enabled);
-    }
-
-    private static void performAction(Product sourceProduct) throws OperatorException {
-        final HashMap<String, Object> parameterMap = new HashMap<String, Object>();
-
-        final StringBuilder name = new StringBuilder(sourceProduct.getName());
-        final int pos = name.lastIndexOf("_NR");
-        if (pos != -1) {
-            name.replace(pos, pos + 3, "_REFL");
-        } else {
-            name.append("_REFL");
-        }
-        parameterMap.put("targetProductName", name.toString());
-        parameterMap.put("copyRadianceBands", true);
-        final Product targetProduct = GPF.createProduct("chris.ComputeReflectances",
-                                                        parameterMap,
-                                                        sourceProduct);
-        VisatApp.getApp().addProduct(targetProduct);
     }
 }

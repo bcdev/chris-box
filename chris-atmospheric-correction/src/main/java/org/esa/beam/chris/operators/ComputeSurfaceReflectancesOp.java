@@ -70,7 +70,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     @Parameter(defaultValue = "0.2",
                interval = "[0.0, 1.0]",
                label = "Aerosol optical thickness",
-               description = "The value of the aerosol optical thickness (AOT) at 550 nm. If nonzero, AOT retrieval is disabled.")
+               description = "The value of the aerosol optical thickness (AOT) at 550 nm.")
     private double aot550;
 
     @Parameter(defaultValue = "1.0",
@@ -81,7 +81,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     @Parameter(defaultValue = "0.05",
                label = "Cloud product threshold",
-               description = "The threshold used for generating the cloud mask. Pixels with cloud product values exceeding the threshold are flagged as cloudy.")
+               description = "The threshold used for deciding whether a pixel is cloudy or not. Pixels with cloud product values exceeding the threshold are considered as cloudy.")
     private double cloudProductThreshold;
 
     @Parameter(defaultValue = "false",
