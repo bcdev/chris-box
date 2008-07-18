@@ -279,14 +279,12 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         }
 
         // get annotations
-        final double vaa = 0.0;
-        final double vza = 0.0;
-//        final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
-//                                                       ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
+        final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
+                                                       ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
         final double saa = OpUtils.getAnnotationDouble(sourceProduct,
                                                        ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
-//        final double vza = OpUtils.getAnnotationDouble(sourceProduct,
-//                                                       ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
+        final double vza = OpUtils.getAnnotationDouble(sourceProduct,
+                                                       ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
         final double sza = OpUtils.getAnnotationDouble(sourceProduct,
                                                        ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         final double ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
