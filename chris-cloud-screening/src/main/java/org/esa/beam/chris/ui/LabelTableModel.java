@@ -31,7 +31,7 @@ class LabelTableModel extends AbstractTableModel {
 
     LabelTableModel(ImageInfo imageInfo) {
         this.imageInfo = imageInfo;
-        rowCount = imageInfo.getColorPaletteDef().getNumPoints() - 1;
+        rowCount = imageInfo.getColorPaletteDef().getNumPoints();
         cloud = new boolean[rowCount];
         rejected = new boolean[rowCount];
         clusterProperties = new ClusterProperties(rowCount);
