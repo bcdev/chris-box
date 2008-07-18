@@ -37,7 +37,7 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
                 new DefaultSingleTargetProductDialog(
                         OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
                         getAppContext(),
-                        "Atmospheric Correction",
+                        "CHRIS/PROBA Atmospheric Correction",
                         "chrisAtmosphericCorrectionTool");
 //        dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
         dialog.show();

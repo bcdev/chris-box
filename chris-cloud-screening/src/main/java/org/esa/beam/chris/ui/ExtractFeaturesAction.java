@@ -39,7 +39,7 @@ public class ExtractFeaturesAction extends AbstractVisatAction {
         final DefaultSingleTargetProductDialog productDialog =
                 new DefaultSingleTargetProductDialog("chris.ExtractFeatures",
                                                      getAppContext(),
-                                                     "Feature Extraction",
+                                                     "CHRIS/PROBA Feature Extraction",
                                                      "chrisCloudScreeningTools");
         productDialog.show();
 //        final Product selectedProduct = VisatApp.getApp().getSelectedProduct();

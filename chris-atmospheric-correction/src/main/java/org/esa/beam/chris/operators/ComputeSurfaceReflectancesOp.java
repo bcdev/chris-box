@@ -67,13 +67,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     @SourceProduct(type = "CHRIS_M[1-5][A0]?_NR", bands = "cloud_product")
     private Product sourceProduct;
 
-    @Parameter(defaultValue = "0",
+    @Parameter(defaultValue = "0.2",
                interval = "[0.0, 1.0]",
                label = "Aerosol optical thickness",
                description = "The value of the aerosol optical thickness (AOT) at 550 nm. If nonzero, AOT retrieval is disabled.")
     private double aot550;
 
-    @Parameter(defaultValue = "0.0",
+    @Parameter(defaultValue = "1.0",
                interval = "[0.0, 5.0]",
                label = "Initial water vapour column (g cm-2)",
                description = "The initial guess of the water vapour (WV) column (g cm-2) used for WV retrieval.")
@@ -89,7 +89,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                description = "If 'true' an adjacency correction is performed.")
     private boolean performAdjacencyCorrection;
 
-    @Parameter(defaultValue = "true",
+    @Parameter(defaultValue = "false",
                label = "Perform spectral polishing",
                description = "If 'false' no spectral polishing is done for modes 1, 3 and 5.")
     private boolean performSpectralPolishing;

@@ -46,8 +46,8 @@
         <action>
             <id>chrisAtmosphericCorrection</id>
             <class>org.esa.beam.chris.ui.PerformAtmosphericCorrectionAction</class>
-            <text>Perform Atmospheric Correction...</text>
-            <shortDescr>Perfoms an atmospheric correction for the selected CHRIS/PROBA product</shortDescr>
+            <text>Perform atmospheric correction...</text>
+            <shortDescr>Calculates surface reflectances for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisAtmosphericCorrectionTool</helpID>

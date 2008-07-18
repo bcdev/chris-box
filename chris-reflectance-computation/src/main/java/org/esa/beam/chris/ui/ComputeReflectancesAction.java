@@ -42,7 +42,7 @@ public class ComputeReflectancesAction extends AbstractVisatAction {
         final SingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ComputeReflectances",
                                                      getAppContext(),
-                                                     "Reflectance Computation",
+                                                     "CHRIS/PROBA Reflectance Computation",
                                                      "chrisReflectanceComputationTool");
         dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_NR", "_REFL"));
         dialog.show();

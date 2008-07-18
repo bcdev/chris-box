@@ -64,7 +64,7 @@ public class ClusterLabelingWindow extends JDialog {
 
     public ClusterLabelingWindow(CloudLabeler cloudLabeler) {
         super(VisatApp.getApp().getMainFrame(),
-              MessageFormat.format("CHRIS Cluster Labeling Tool - {0}", cloudLabeler.getRadianceProduct().getName()),
+              MessageFormat.format("CHRIS/PROBA Cloud Labeling Tool - {0}", cloudLabeler.getRadianceProduct().getName()),
               false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         this.cloudLabeler = cloudLabeler;
