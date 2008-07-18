@@ -17,10 +17,126 @@
 </table>
 
 <h3>CHRIS/PROBA Cloud Screening</h3>
+
 <p>
-    No help available yet.
+    The Cloud Screening Tools is used to mask cloud and cloudy pixels in CHRIS images.
+    The cloud masking algorithm described below provides cloud probability and abundances for
+    each pixel instead of a single flag.
 </p>
 
+<h4>Cloud Screening Algorithm</h4>
+
+<p>
+    <b>The cloud screening algorithm consists of the following steps:</b>
+</p>
+<ol>
+    <li><b>Image Pre-Processing:</b> TOA reflectance is estimated from the CHRIS products to remove in practice the
+        dependence on particular illumination conditions (day of the year and angular configuration).
+    </li>
+    <li><b>Feature extraction:</b> physically-inspired features are extracted to increase separability of clouds and
+        surface taking into account that the measured spectral signature depends on the illumination (solar and
+        observation conditions: TOA reflectance is already estimated), the atmosphere (cloud height: oxygen and water
+        vapour atmospheric absorptions are used to estimate the optical path), and the surface (cloud reflectance: its
+        spectral signature is white and bright).
+    </li>
+    <li><b>Image clustering:</b> an unsupervised Expectation-Maximization (EM) clustering algorithm is performed on the
+        extracted features in order to separate clouds from the ground-cover while obtaining posterior probabilities of
+        each pixel to each cluster.
+    </li>
+    <li><b>Cluster labeling:</b> resulting clusters are subsequently labeled into geo-physical classes according to
+        their spectral signatures. Once all clusters corresponding to clouds have been identified, it is straightforward
+        to merge all the clusters belonging to a cloud type (cloud-clusters). In the clustering of the extracted
+        features, the EM algorithm provides a probabilistic membership for each cluster, thus the probability of being
+        cloud is computed as the sum of the posteriors of the cloud-clusters.
+    </li>
+    <li><b>Spectral unmixing:</b> a Fully Constrained Linear Spectral Unmixing (FCLSU) is applied to the image in order
+        to obtain the fraction of cloud content for each pixel (rather than flags or a binary classification).
+    </li>
+</ol>
+<p>The final cloud product is obtained combining the cloud probability and the cloud fraction by means of a
+    pixel-by-pixel multiplication. That is, combining two complementary sources of information processed by independent
+    methods: the cloud probability (obtained from the extracted features), which is close to one in cloud-like pixels
+    and close to zero in remaining areas; and the cloud abundance or mixing (obtained from the spectra).</p>
+
+
+<h4>User Interface</h4>
+
+
+<p>
+    The Cloud Screening tool can be invoked from VISAT <b>Tools</b> menu by selecting
+    the <b>Compute Cloud Mask</b> command in the <b>CHRIS/PROBA Tools</b> submenu. It performs the cloud screening on
+    the
+    currently selected product, if applicable.
+</p>
+
+<p>
+    Selecting the <b>Compute Cloud Mask</b> command brings up a progress dialog :
+</p>
+
+<p align="center">
+    <img src="images/ClusterAnalysisProgress.jpg" alt="Cluster Analysis Progress Dialog"/>
+</p>
+
+<p>
+    While the progress dialog is shown the first three steps (Image Pre-Processing, Feature extraction, Image
+    clustering) of the algorithm are performed. This might take some time. Depending on the size of the scene and on
+    the performance of your system.
+</p>
+
+<p>
+    After the cluster analysis has been performed two scene images are opened. One is an RGB image of the scene the
+    other is the resulting image of the clustering. Additionally a window is opened showing a table with an entry for
+    each class.
+</p>
+
+<p class="inote"><b>Hint:</b><br/>
+    Use the <b>Tile Evenly</b> command in the <b>Window</b> menu to display both scenes side by side. <br/>
+    It's also useful to synchronize both views. Use the chain symbol in the
+    <a href="visat/NavigationWindow.html#synchronise">Navigation Window</a> for that purpose.
+
+<p align="center">
+    <img src="images/CloudLabelingWindows.jpg" alt="Manual Cloud Labeling"/>
+</p>
+
+<p>
+    <b>Manual Cloud Labeling</b><br/>
+    Mark the classes as cloud which you can identify to be a cloud class.<br/>
+    If one class contains cloud and surface samples you can reject them. Thereby the concerned samples will be
+    re-distributed to the classes with the second highest probability.<br/>
+    You can also enable a spectral unmixing on the cloud pixel spectra. This will give a better separation between
+    real cloud pixels and those which were wrongly classified as cloud by the clustering.<br/>
+    After you're satisfied with your labeling settings you can click on the <b>Create Cloud Mask</b> button.
+    The resulting mask is added to the source product as band named <b>cloud_product</b>.
+</p>
+
+<p class="inote"><b class="note">Note:</b> The spectral unmixing gives you better results in uncertain cases, but note
+    that it is very time consuming.
+</p>
+
+<h4>The Cloud Mask Result</h4>
+<ul>
+    <li><b>without spectral unmixing</b> results in a binary mask, only distinguishing between one and zero.
+        Where one means cloud and zero means cloud free.<br/>
+    </li>
+    <li><b>with spectral unmixing</b> results in a gradient mask, whose values vary from zero and one. The higher the
+        value the higher is the probability that the sample is a cloud.<br/>
+    </li>
+</ul>
+
+<div align="center">
+    <table align="center">
+        <tr>
+            <td><img src="images/CloudLabelingResult.jpg" alt="Result of cloud labeling without spectral unmixing"/>
+            </td>
+            <td><img src="images/CloudLabelingResultUnmixed.jpg"
+                     alt="Result of cloud labeling using spectral unmixing"/></td>
+        </tr>
+        <tr align="center">
+            <td>Result without spectral unmixing</td>
+            <td>Result with spectral unmixing</td>
+        </tr>
+    </table>
+</div>
 <hr>
 </body>
 </html>
