@@ -40,15 +40,12 @@ import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.OpImage;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.Raster;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Operator for performing the CHRIS atmospheric correction.
@@ -119,7 +116,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private transient OpImage cloudMaskImage;
     private transient OpImage waterMaskImage;
 
-    private transient ModtranLookupTable modtranLookupTable;
     private transient int mode;
 
     private transient double[] targetWavelengths;
@@ -153,7 +149,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
         synchronized (this) {
-            if (modtranLookupTable == null) {
+            if (hyperMaskImage == null) {
                 initialize2();
             }
         }
@@ -178,7 +174,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     @Override
     public void dispose() {
         ac = null;
-        modtranLookupTable = null;
 
         mode = 0;
         targetWavelengths = null;
@@ -275,6 +270,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     }
 
     private void initialize2() {
+        // create mask images
+        hyperMaskImage = HyperMaskOpImage.createImage(toaMaskBands);
+        cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
+
+        final ModtranLookupTable modtranLookupTable;
         try {
             final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(getClass(),
                                                                                "chrisbox-ac-lut-formatted-1nm.img");
@@ -282,10 +282,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         } catch (IOException e) {
             throw new OperatorException(e.getMessage());
         }
-
-        // create mask images
-        hyperMaskImage = HyperMaskOpImage.createImage(toaMaskBands);
-        cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
 
         // get annotations
         final double vaa = 0.0;
@@ -305,14 +301,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
         final double toaScaling = 1.0E-3 / OpUtils.getSolarIrradianceCorrectionFactor(day);
 
-        // initialize water vapour column, if zero
-        if (cwvIni == 0.0) {
-            final double cwvMin = 0.5;
-            final double cwvMax = 2.0;
-
-            cwvIni = (cwvMax - cwvMin) * Math.sin(day * Math.PI / 365);
-        }
-
         // create resampler factory
         targetWavelengths = OpUtils.getWavelenghts(toaBands);
         targetBandwidths = OpUtils.getBandwidths(toaBands);
@@ -330,29 +318,29 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         } else {
             smileCorrection = 0.0;
         }
-        final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
-        final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
-        final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
-        final double[][] thullierTable = OpUtils.readThuillierTable();
 
-        final Resampler waterResampler = new Resampler(thullierTable[0], targetWavelengths,
-                                                       targetBandwidths, smileCorrection);
-        final double[] irr = waterResampler.resample(thullierTable[1]);
-        final double redScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irr[redIndex];
-        final double nirScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irr[nirIndex];
+        final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
 
         // create atmospheric correction
         if (mode == 1 || mode == 3 || mode == 5) {
             final CalculatorFactoryCwv ac1CalculatorFactory = new CalculatorFactoryCwv(modtranLookupTable, resampler,
                                                                                        vza, sza, ada, alt, aot550,
                                                                                        toaScaling);
-            waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex],
-                                                          redScaling, nirScaling);
+            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
+            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
+            
+            final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
+            final double[] irradiances = new Resampler(solarIrradianceTable[0], targetWavelengths, targetBandwidths,
+                                                       smileCorrection).resample(solarIrradianceTable[1]);
+            final double redScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irradiances[redIndex];
+            final double nirScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irradiances[nirIndex];
+
+            waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex], redScaling,
+                                                          nirScaling);
             ac = new Ac1(ac1CalculatorFactory);
         } else {
             ac = new Ac2(calculatorFactory.createCalculator(resampler));
         }
-
     }
 
     private interface Ac {
@@ -363,6 +351,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     private class Ac1 implements Ac {
 
+        private static final int SPIKY_PIXEL_COUNT = 50;
         private static final int WV_RETRIEVAL_MAX_ITER = 10000;
 
         private static final double WV_A_LOWER_BOUND = 770.0;
@@ -370,12 +359,12 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         private static final double WV_B_UPPER_BOUND = 921.0;
 
         private final CalculatorFactoryCwv calculatorFactory;
-
         // indexes for water vapour absorption bands
         private final int lowerWva;
         private final int upperWva;
         private final int upperWvb;
-        private static final int POLISHING_PIXEL_COUNT = 50;
+        // endmember regression used for spectral polishing
+        private final Regression endmemberRegression;
 
         private Ac1(CalculatorFactoryCwv calculatorFactory) {
             this.calculatorFactory = calculatorFactory;
@@ -411,6 +400,20 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             this.upperWva = upperWva;
             this.upperWvb = upperWvb;
 
+            if (performSpectralPolishing) {
+                final double[][] endmemberTable = readEndmemberTable();
+                final Resampler resampler = new Resampler(endmemberTable[0], targetWavelengths, targetBandwidths,
+                                                          smileCorrection);
+
+                final double[] constant = new double[targetWavelengths.length];
+                Arrays.fill(constant, 1.0);
+                final double[] veg = resampler.resample(endmemberTable[1]);
+                final double[] sue = resampler.resample(endmemberTable[2]);
+
+                endmemberRegression = new Regression(constant, veg, sue);
+            } else {
+                endmemberRegression = null;
+            }
         }
 
         @Override
@@ -421,7 +424,9 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             if (performAdjacencyCorrection) {
                 totalWork += tileWork * rhoBands.length * 2;
             }
-
+            if (performSpectralPolishing) {
+                totalWork += tileWork * rhoBands.length * 2;
+            }
             try {
                 pm.beginTask("Performing atmospheric correction", totalWork);
 
@@ -432,9 +437,135 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     ac.computeTileStack(targetTileMap, targetRectangle,
                                         SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
                 }
-                if (mode == 1 || mode == 2) {
-                    if (performSpectralPolishing) {
-                        doSpectralPolishing(targetTileMap, targetRectangle);
+                if (performSpectralPolishing) {
+                    performSpectralPolishing(targetTileMap, targetRectangle,
+                                             SubProgressMonitor.create(pm, tileWork * rhoBands.length * 2));
+                }
+            } finally {
+                pm.done();
+            }
+        }
+
+        private void performSpectralPolishing(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                              ProgressMonitor pm) {
+            try {
+                pm.beginTask("Performing spectral polishing", targetRectangle.height * rhoBands.length * 2);
+
+                // 1. Find pixels with spiky spectra
+                final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
+                    @Override
+                    public boolean accept(Band band) {
+                        return band.getSpectralWavelength() >= 670.0;
+                    }
+                });
+                final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
+                    @Override
+                    public boolean accept(Band band) {
+                        return band.getSpectralWavelength() >= 785.0;
+                    }
+                });
+
+                final Tile redTile = targetTileMap.get(redBand);
+                final Tile nirTile = targetTileMap.get(nirBand);
+                final List<SpikyPixel> spikyPixelList = new ArrayList<SpikyPixel>();
+
+                for (final Tile.Pos pos : redTile) {
+                    if (pos.x == targetRectangle.x) {
+                        checkForCancelation(pm);
+                    }
+                    final double nir = nirTile.getSampleDouble(pos.x, pos.y);
+                    final double red = redTile.getSampleDouble(pos.x, pos.y);
+                    final double ndvi = (nir - red) / (nir + red);
+
+                    if (ndvi > 0.1 && nir > 0.2 && nir <= 0.75) {
+                        spikyPixelList.add(new SpikyPixel(pos, ndvi));
+                    }
+                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                        pm.worked(1);
+                    }
+                }
+
+                if (spikyPixelList.size() > SPIKY_PIXEL_COUNT) {
+                    // 2. Select pixels with reference spectra
+                    Collections.sort(spikyPixelList);
+                    spikyPixelList.subList(SPIKY_PIXEL_COUNT / 2, spikyPixelList.size() - SPIKY_PIXEL_COUNT / 2).clear();
+
+                    // 3. Calculate smoothed spectra
+                    final double[][] originalSpectra = new double[SPIKY_PIXEL_COUNT][rhoBands.length];
+                    final double[][] smoothedSpectra = new double[SPIKY_PIXEL_COUNT][rhoBands.length];
+                    final double[] c = new double[3];
+                    final double[] w = new double[3];
+
+                    for (int i = 0; i < SPIKY_PIXEL_COUNT; i++) {
+                        final double[] original = originalSpectra[i];
+
+                        for (int j = 0; j < rhoBands.length; j++) {
+                            final Tile rhoTile = targetTileMap.get(rhoBands[j]);
+                            final Tile.Pos pos = spikyPixelList.get(i).pos;
+
+                            original[j] = rhoTile.getSampleDouble(pos.x, pos.y);
+                        }
+
+                        endmemberRegression.fit(original, smoothedSpectra[i], c, w);
+                    }
+
+                    // 4. Calculate calibration factors for individual bands
+                    final double[] calibrationFactors = new double[rhoBands.length];
+                    final double[] c1 = new double[1];
+                    final double[] w1 = new double[1];
+
+                    for (int j = 0; j < rhoBands.length; j++) {
+                        final double[] originalSamples = new double[SPIKY_PIXEL_COUNT];
+                        final double[] smoothedSamples = new double[SPIKY_PIXEL_COUNT];
+
+                        for (int i = 0; i < SPIKY_PIXEL_COUNT; i++) {
+                            originalSamples[i] = originalSpectra[i][j];
+                            smoothedSamples[i] = smoothedSpectra[i][j];
+                        }
+
+                        new Regression(smoothedSamples).fit(originalSamples, originalSamples, c1, w1);
+                        calibrationFactors[j] = c1[0];
+                    }
+
+                    final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
+                        @Override
+                        public boolean accept(Band band) {
+                            return band.getSpectralWavelength() >= 694.7;
+                        }
+                    });
+                    final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
+                        @Override
+                        public boolean accept(Band band) {
+                            return band.getSpectralWavelength() > 772.5;
+                        }
+                    });
+
+                    // 5. Special treatment for calibration factors for bands in the red
+                    final double[] originalRedCalibrationFactors = Arrays.copyOfRange(calibrationFactors, lowerRed, upperRed);
+                    final double[] smoothedRedCalibrationFactors = new double[upperRed - lowerRed];
+                    final LowessRegressionWeightCalculator weightCalculator = new LowessRegressionWeightCalculator();
+                    final LocalRegressionSmoother smoother = new LocalRegressionSmoother(weightCalculator, 0, 5);
+                    smoother.smooth(originalRedCalibrationFactors, smoothedRedCalibrationFactors);
+
+                    for (int i = 0; i < originalRedCalibrationFactors.length; i++) {
+                        calibrationFactors[lowerRed + i] = 1.0 + (originalRedCalibrationFactors[i] - smoothedRedCalibrationFactors[i]);
+                    }
+
+                    // 6. Recalibrate bands
+                    for (int i = 0; i < rhoBands.length; ++i) {
+                        final Tile targetTile = targetTileMap.get(rhoBands[i]);
+                        for (final Tile.Pos pos : targetTile) {
+                            if (pos.x == targetRectangle.x) {
+                                checkForCancelation(pm);
+                            }
+
+                            final double rho = targetTile.getSampleDouble(pos.x, pos.y);
+                            targetTile.setSample(pos.x, pos.y, rho * calibrationFactors[i]);
+
+                            if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                                pm.worked(1);
+                            }
+                        }
                     }
                 }
             } finally {
@@ -442,133 +573,16 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
         }
 
-        private void doSpectralPolishing(Map<Band, Tile> targetTileMap, Rectangle targetRectangle) {
-            final double[][] endmemberTable = readEndmemberTable();
+        private class SpikyPixel implements Comparable<SpikyPixel> {
+            private double ndvi;
+            private Tile.Pos pos;
 
-            final Resampler resampler = new Resampler(endmemberTable[0], targetWavelengths, targetBandwidths, smileCorrection);
-            final double[] veg = resampler.resample(endmemberTable[1]);
-            final double[] sue = resampler.resample(endmemberTable[2]);
-            final double[] dummy = new double[veg.length];
-            Arrays.fill(dummy, 1.0);
-
-            final Regression regression = new Regression(dummy, veg, sue);
-
-            final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
-                @Override
-                public boolean accept(Band band) {
-                    return band.getSpectralWavelength() >= 670.0;
-                }
-            });
-            final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
-                @Override
-                public boolean accept(Band band) {
-                    return band.getSpectralWavelength() >= 785.0;
-                }
-            });
-
-            final Tile redTile = targetTileMap.get(redBand);
-            final Tile nirTile = targetTileMap.get(nirBand);
-
-            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-            final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
-
-            final List<NdviPixel> ndviPixelList = new ArrayList<NdviPixel>();
-            for (final Tile.Pos pos : redTile) {
-                final double nir = nirTile.getSampleDouble(pos.x, pos.y);
-                final double red = redTile.getSampleDouble(pos.x, pos.y);
-                final double ndvi = (nir - red) / (nir + red);
-
-                if (ndvi > 0.1 && nir > 0.2 && nir <= 0.75) {
-                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
-                    final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
-                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                        ndviPixelList.add(new NdviPixel(pos, ndvi));
-                    }
-                }
-            }
-
-            if (ndviPixelList.size() > POLISHING_PIXEL_COUNT) {
-                Collections.sort(ndviPixelList);
-                final int fromIndex = POLISHING_PIXEL_COUNT / 2;
-                final int toIndex = ndviPixelList.size() - POLISHING_PIXEL_COUNT / 2;
-                ndviPixelList.subList(fromIndex, toIndex).clear();
-
-                final double[][] fits = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
-                final double[][] spectra = new double[POLISHING_PIXEL_COUNT][rhoBands.length];
-                final double[] c = new double[3];
-                final double[] w = new double[3];
-
-                for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
-                    final double[] spectrum = spectra[i];
-
-                    for (int j = 0; j < rhoBands.length; j++) {
-                        final Tile rhoTile = targetTileMap.get(rhoBands[j]);
-                        final Tile.Pos pos = ndviPixelList.get(i).pos;
-                        spectrum[j] = rhoTile.getSampleDouble(pos.x, pos.y);
-                    }
-                    regression.fit(spectrum, fits[i], c, w);
-                }
-
-                final double[] w1 = new double[1];
-                final double[] c1 = new double[1];
-
-                final double[] coefficients = new double[rhoBands.length];
-                for (int j = 0; j < rhoBands.length; j++) {
-                    final double[] fit = new double[POLISHING_PIXEL_COUNT];
-                    final double[] spectrum = new double[POLISHING_PIXEL_COUNT];
-
-                    for (int i = 0; i < POLISHING_PIXEL_COUNT; i++) {
-                        fit[i] = fits[i][j];
-                        spectrum[i] = spectra[i][j];
-                    }
-
-                    final Regression coefficientRegression = new Regression(fit);
-                    coefficientRegression.fit(spectrum, spectrum, c1, w1);
-                    coefficients[j] = c1[0];
-                }
-
-                final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
-                    @Override
-                    public boolean accept(Band band) {
-                        return band.getSpectralWavelength() >= 694.7;
-                    }
-                });
-                final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
-                    @Override
-                    public boolean accept(Band band) {
-                        return band.getSpectralWavelength() > 772.5;
-                    }
-                });
-
-                final double[] meanCoefficients = new double[upperRed - lowerRed];
-                final LocalRegressionSmoother smoother = new LocalRegressionSmoother(new LowessRegressionWeightCalculator(), 0, 5);
-                smoother.smooth(Arrays.copyOfRange(coefficients, lowerRed, upperRed), meanCoefficients);
-                for (int i = 0; i < meanCoefficients.length; i++) {
-                    coefficients[lowerRed + i] = 1.0 + (coefficients[lowerRed + i] - meanCoefficients[i]);
-
-                }
-
-                for (int i = 0; i < rhoBands.length; ++i) {
-                    final Tile targetTile = targetTileMap.get(rhoBands[i]);
-                    for (final Tile.Pos pos : targetTile) {
-                        final double rho = targetTile.getSampleDouble(pos.x, pos.y);
-
-                        targetTile.setSample(pos.x, pos.y, rho * coefficients[i]);
-                    }
-                }
-            }
-        }
-
-        class NdviPixel implements Comparable<NdviPixel> {
-            Tile.Pos pos;
-            double ndvi;
-
-            NdviPixel(Tile.Pos pos, double ndvi) {
+            SpikyPixel(Tile.Pos pos, double ndvi) {
                 this.pos = pos;
                 this.ndvi = ndvi;
             }
 
-            public int compareTo(NdviPixel o) {
+            public final int compareTo(SpikyPixel o) {
                 return Double.compare(ndvi, o.ndvi);
             }
         }
@@ -612,11 +626,10 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         }
                         final double wv = wv(toa, rho);
 
-                        if (waterMask != 0) {
+                        if (waterMask == 0) {
                             wvSum += wv;
                             wvCount++;
                         }
-
                         for (int i = 0; i < rhoTiles.length; i++) {
                             rhoTiles[i].setSample(pos.x, pos.y, rho[i]);
                         }
@@ -629,13 +642,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         pm.worked(1);
                     }
                 }
-                double wvMean = 0.0;
-
                 if (wvCount > 0) {
-                    wvMean = wvSum / wvCount;
+                    wvSum /= wvCount;
                 }
 
-                return wvMean;
+                return wvSum;
             } finally {
                 pm.done();
             }
@@ -824,7 +835,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         @Override
         public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             try {
-                pm.beginTask("Performing adjacency correction", 2 * targetRectangle.height * rhoBands.length);
+                pm.beginTask("Performing adjacency correction", targetRectangle.height * rhoBands.length * 2);
 
                 for (int i = 0; i < rhoBands.length; i++) {
                     final Tile targetTile = targetTileMap.get(rhoBands[i]);
