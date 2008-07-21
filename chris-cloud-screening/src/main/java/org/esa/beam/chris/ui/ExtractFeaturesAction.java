@@ -1,8 +1,6 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
@@ -10,7 +8,6 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -40,7 +37,7 @@ public class ExtractFeaturesAction extends AbstractVisatAction {
                 new DefaultSingleTargetProductDialog("chris.ExtractFeatures",
                                                      getAppContext(),
                                                      "CHRIS/PROBA Feature Extraction",
-                                                     "chrisCloudScreeningTools");
+                                                     "chrisExtractFeaturesTools");
         productDialog.show();
     }
 

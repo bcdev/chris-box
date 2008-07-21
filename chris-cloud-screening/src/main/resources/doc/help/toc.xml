@@ -6,5 +6,6 @@
 
     <tocitem text="CHRIS/PROBA Tools">
         <tocitem text="CHRIS/PROBA Cloud Screening Tools" target="chrisCloudScreeningTools"/>
+        <tocitem text="CHRIS/PROBA Extract Features Tool" target="chrisExtractFeaturesTools"/>
     </tocitem>
 </toc>
