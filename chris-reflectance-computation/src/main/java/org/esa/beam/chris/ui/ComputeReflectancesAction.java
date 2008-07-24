@@ -1,8 +1,6 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.gpf.ui.SingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
@@ -11,7 +9,6 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -38,13 +35,16 @@ public class ComputeReflectancesAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final String sourceProductName = VisatApp.getApp().getSelectedProduct().getName();
         final SingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ComputeReflectances",
                                                      getAppContext(),
                                                      "CHRIS/PROBA Reflectance Computation",
                                                      "chrisReflectanceComputationTool");
-        dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_NR", "_REFL"));
+        final Product sourceProduct = VisatApp.getApp().getSelectedProduct();
+        if (sourceProduct != null && CHRIS_TYPES.contains(sourceProduct.getProductType())) {
+            final String sourceProductName = sourceProduct.getName();
+            dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_NR", "_REFL"));
+        }
         dialog.show();
     }
 
