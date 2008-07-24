@@ -30,16 +30,22 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
  * @version $Revision$ $Date$
  */
 public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
+
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final String sourceProductName = VisatApp.getApp().getSelectedProduct().getName();
         final SingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog(
                         OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
                         getAppContext(),
                         "CHRIS/PROBA Atmospheric Correction",
                         "chrisAtmosphericCorrectionTool");
-//        dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
+        final Product sourceProduct = VisatApp.getApp().getSelectedProduct();
+        if (sourceProduct != null &&
+            sourceProduct.getProductType().startsWith("CHRIS_M") &&
+            sourceProduct.containsBand("cloud_product")) {
+            final String sourceProductName = sourceProduct.getName();
+            dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
+        }
         dialog.show();
     }
 
@@ -47,8 +53,8 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         final boolean enabled = selectedProduct == null ||
-                selectedProduct.getProductType().startsWith("CHRIS_M") &&
-                selectedProduct.containsBand("cloud_product");
+                                selectedProduct.getProductType().startsWith("CHRIS_M") &&
+                                selectedProduct.containsBand("cloud_product");
 
         setEnabled(enabled);
     }
