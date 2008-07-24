@@ -5,7 +5,7 @@ import org.esa.beam.framework.datamodel.ColorPaletteDef;
 import org.esa.beam.framework.datamodel.ImageInfo;
 
 import javax.swing.table.AbstractTableModel;
-import java.awt.*;
+import java.awt.Color;
 import java.text.MessageFormat;
 import java.util.Arrays;
 
@@ -107,7 +107,8 @@ class LabelTableModel extends AbstractTableModel {
             case 0:
                 return point.getLabel();
             case 1:
-                return point.getColor();
+                final Color color = point.getColor();
+                return color.equals(ImageInfo.NO_COLOR) ? null : color;
             case 2:
                 return cloud[rowIndex];
             case 3:
@@ -130,7 +131,7 @@ class LabelTableModel extends AbstractTableModel {
                 fireTableCellUpdated(rowIndex, 0);
                 break;
             case 1:
-                point.setColor((Color) aValue);
+                point.setColor(aValue == null ? ImageInfo.NO_COLOR : (Color)aValue);
                 fireTableCellUpdated(rowIndex, 1);
                 break;
             case 2:
