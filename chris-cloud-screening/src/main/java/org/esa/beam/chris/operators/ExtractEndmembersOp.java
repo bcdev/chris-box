@@ -113,7 +113,7 @@ public class ExtractEndmembersOp extends Operator {
                 {808.0, 840.0},
                 {885.0, 985.0},
                 {985.0, 1010.0}});
-        final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct, "reflectance", bandFilter);
+        final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct, "toa_refl", bandFilter);
 
         reflectanceBandNames = new String[reflectanceBands.length];
         for (int i = 0; i < reflectanceBands.length; ++i) {

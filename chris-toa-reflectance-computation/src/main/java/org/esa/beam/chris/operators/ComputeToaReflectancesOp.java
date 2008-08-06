@@ -194,6 +194,7 @@ public class ComputeToaReflectancesOp extends Operator {
         }
     }
 
+    // todo - move or make an averager class
     private static double getAverageValue(double[][] table, double wavelength, double width) {
         final double[] x = table[0];
         final double[] y = table[1];

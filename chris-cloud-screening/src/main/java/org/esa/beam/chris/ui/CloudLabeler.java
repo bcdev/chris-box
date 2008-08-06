@@ -324,7 +324,7 @@ public class CloudLabeler {
 
     private static Product createReflectanceProduct(Product radianceProduct) {
         final Map<String, Object> emptyMap = Collections.emptyMap();
-        return GPF.createProduct("chris.ComputeReflectances",
+        return GPF.createProduct("chris.ComputeToaReflectances",
                                  emptyMap,
                                  radianceProduct);
     }

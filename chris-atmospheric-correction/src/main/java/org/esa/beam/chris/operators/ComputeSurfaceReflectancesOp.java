@@ -64,7 +64,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private static final double SURFACE_REFL_SCALING_FACTOR = 1.0E-4;
     private static final double WATER_VAPOUR_SCALING_FACTOR = 2.0E-4;
 
-    @SourceProduct(type = "CHRIS_M[1-5][A0]?_NR")
+    @SourceProduct
     private Product sourceProduct;
 
     @Parameter(defaultValue = "0.2",
@@ -197,7 +197,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private Product createTargetProduct() {
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
-        final Product targetProduct = new Product("CHRIS_SURFACE_REFL", "CHRIS_SURFACE_REFL", w, h);
+        final String type = sourceProduct.getProductType() + "_AC";
+        final Product targetProduct = new Product("CHRIS_SURFACE_REFL", type, w, h);
 
         // set start and stop times
         targetProduct.setStartTime(sourceProduct.getStartTime());
@@ -276,7 +277,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         if (cloudProductBand != null) {
             cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
         } else {
-            cloudMaskImage = NullOpImage.createImage(sourceProduct.getSceneRasterWidth(),
+            cloudMaskImage = ZeroOpImage.createImage(sourceProduct.getSceneRasterWidth(),
                                                      sourceProduct.getSceneRasterHeight());
         }
 
@@ -322,7 +323,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         } else {
             smileCorrection = 0.0;
         }
-
         final Resampler resampler = resamplerFactory.createResampler(smileCorrection);
 
         // create atmospheric correction
@@ -330,8 +330,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final CalculatorFactoryCwv ac1CalculatorFactory = new CalculatorFactoryCwv(modtranLookupTable, resampler,
                                                                                        vza, sza, ada, alt, aot550,
                                                                                        toaScaling);
-            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
-            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
+            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0 - smileCorrection);
+            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0 - smileCorrection);
 
             final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
             final double[] irradiances = new Resampler(solarIrradianceTable[0], targetWavelengths, targetBandwidths,
@@ -376,20 +376,20 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             int upperWva = -1;
             int upperWvb = -1;
             for (int i = 0; i < targetWavelengths.length; ++i) {
-                if (targetWavelengths[i] >= WV_A_LOWER_BOUND) {
+                if (targetWavelengths[i] + smileCorrection >= WV_A_LOWER_BOUND) {
                     lowerWva = i;
                     break;
                 }
             }
             for (int i = lowerWva + 1; i < targetWavelengths.length; ++i) {
-                if (targetWavelengths[i] <= WV_A_UPPER_BOUND) {
+                if (targetWavelengths[i] + smileCorrection <= WV_A_UPPER_BOUND) {
                     upperWva = i;
                 } else {
                     break;
                 }
             }
             for (int i = upperWva + 1; i < targetWavelengths.length; ++i) {
-                if (targetWavelengths[i] <= WV_B_UPPER_BOUND) {
+                if (targetWavelengths[i] + smileCorrection <= WV_B_UPPER_BOUND) {
                     upperWvb = i;
                 } else {
                     break;
@@ -423,7 +423,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             final int tileWork = targetRectangle.height;
 
-            int totalWork = tileWork;
+            int totalWork = tileWork * 2;
             if (performAdjacencyCorrection) {
                 totalWork += tileWork * rhoBands.length * 2;
             }
@@ -434,7 +434,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 pm.beginTask("Performing atmospheric correction", totalWork);
 
                 // Inversion of Lambertian equation
-                final double wv = ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork));
+                final double wv = ac(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, tileWork * 2));
                 if (performAdjacencyCorrection) {
                     final AdjacencyCorrection ac = new AdjacencyCorrection(calculatorFactory.createCalculator(wv));
                     ac.computeTileStack(targetTileMap, targetRectangle,
@@ -458,13 +458,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
                     @Override
                     public boolean accept(Band band) {
-                        return band.getSpectralWavelength() >= 670.0;
+                        return band.getSpectralWavelength() + smileCorrection >= 670.0;
                     }
                 });
                 final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
                     @Override
                     public boolean accept(Band band) {
-                        return band.getSpectralWavelength() >= 785.0;
+                        return band.getSpectralWavelength() + smileCorrection >= 785.0;
                     }
                 });
 
@@ -533,13 +533,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
                         @Override
                         public boolean accept(Band band) {
-                            return band.getSpectralWavelength() >= 694.7;
+                            return band.getSpectralWavelength() + smileCorrection >= 694.7;
                         }
                     });
                     final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
                         @Override
                         public boolean accept(Band band) {
-                            return band.getSpectralWavelength() > 772.5;
+                            return band.getSpectralWavelength() + smileCorrection > 772.5;
                         }
                     });
 
@@ -592,7 +592,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         public double ac(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             try {
-                pm.beginTask("Computing surface reflectances...", targetRectangle.height);
+                pm.beginTask("Computing surface reflectances...", targetRectangle.height * 2);
 
                 final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
                 final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
@@ -609,12 +609,47 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 }
                 final Tile wvTile = targetTileMap.get(wvBand);
 
-                final double[] toa = new double[toaBands.length];
-                final double[] rho = new double[rhoBands.length];
-
                 double wvSum = 0.0;
                 int wvCount = 0;
 
+                // first pass for land pixels only
+                for (final Tile.Pos pos : rhoTiles[0]) {
+                    if (pos.x == targetRectangle.x) {
+                        checkForCancelation(pm);
+                    }
+                    
+                    final double[] toa = new double[toaBands.length];
+                    final double[] rho = new double[rhoBands.length];
+
+                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+                    final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
+                    final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
+
+                    if ((hyperMask & 3) == 0 && cloudMask == 0 && waterMask == 0) {
+                        for (int i = 0; i < toaTiles.length; i++) {
+                            toa[i] = toaTiles[i].getSampleDouble(pos.x, pos.y);
+                        }
+
+                        final double wv = wv(toa, rho);
+                        wvSum += wv;
+                        wvCount++;
+
+                        for (int i = 0; i < rhoTiles.length; i++) {
+                            rhoTiles[i].setSample(pos.x, pos.y, rho[i]);
+                        }
+                        if (wvTile != null) {
+                            wvTile.setSample(pos.x, pos.y, wv);
+                        }
+                    }
+                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                        pm.worked(1);
+                    }
+                }
+
+                final double wvMean = wvCount > 0 ? wvSum / wvCount : 0.0;
+                final Calculator calculator = calculatorFactory.createCalculator(wvMean);
+
+                // second pass for water pixels only
                 for (final Tile.Pos pos : rhoTiles[0]) {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
@@ -623,30 +658,23 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
                     final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
 
-                    if ((hyperMask & 3) == 0 && cloudMask == 0) {
-                        for (int i = 0; i < toaTiles.length; i++) {
-                            toa[i] = toaTiles[i].getSampleDouble(pos.x, pos.y);
-                        }
-                        final double wv = wv(toa, rho);
-
-                        if (waterMask == 0) {
-                            wvSum += wv;
-                            wvCount++;
-                        }
+                    if ((hyperMask & 3) == 0 && cloudMask == 0 && waterMask == 1) {
                         for (int i = 0; i < rhoTiles.length; i++) {
-                            rhoTiles[i].setSample(pos.x, pos.y, rho[i]);
+                            final double toa = toaTiles[i].getSampleDouble(pos.x, pos.y);
+                            final double rho = calculator.getBoaReflectance(i, toa);
+                            
+                            rhoTiles[i].setSample(pos.x, pos.y, rho);
                         }
                         if (wvTile != null) {
-                            wvTile.setSample(pos.x, pos.y, wv);
+                            wvTile.setSample(pos.x, pos.y, wvMean);
                         }
                     }
-
                     if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
                         pm.worked(1);
                     }
                 }
-
-                return wvCount > 0 ? wvSum / wvCount : 0.0;
+                
+                return wvMean;
             } finally {
                 pm.done();
             }
@@ -692,11 +720,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 }
             };
             // 4. Calculate columnar water vapour by finding the root of the merit-function
-            if (bracket.isBracket(function)) {
-                Roots.brent(function, bracket, WV_RETRIEVAL_MAX_ITER);
-            } else {
-                bracket.root = calculatorFactory.getCwvMin();
-            }
+            Roots.brent(function, bracket, WV_RETRIEVAL_MAX_ITER);
             // 5. Calculate surface reflectances
             calculatorFactory.createCalculator(bracket.root).calculateBoaReflectances(toa, rho);
 
@@ -859,8 +883,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     int targetLineOffset = targetTile.getScanlineOffset();
                     for (int y = 0; y < targetRectangle.height; y++) {
                         checkForCancelation(pm);
-                        int targetPixelIndex = targetLineOffset;
 
+                        int targetPixelIndex = targetLineOffset;
                         for (int x = 0; x < targetRectangle.width; x++) {
                             double rho = rhoBands[i].scale(targetSamples[targetPixelIndex]);
                             rho += calculator.getAdjacencyCorrection(i, rho, rhoBands[i].scale(means[x][y]));
@@ -868,8 +892,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                             targetPixelIndex++;
                         }
-
                         targetLineOffset += targetTile.getScanlineStride();
+
                         pm.worked(1);
                     }
 

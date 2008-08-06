@@ -1,5 +1,6 @@
 package org.esa.beam.chris.ui;
 
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
@@ -17,35 +18,23 @@ import java.util.List;
  * @version $Revision$ $Date$
  */
 public class ExtractFeaturesAction extends AbstractVisatAction {
-    private static List<String> CHRIS_TYPES;
-
-    static {
-        CHRIS_TYPES = new ArrayList<String>();
-        Collections.addAll(CHRIS_TYPES,
-                           "CHRIS_M1_REFL",
-                           "CHRIS_M2_REFL",
-                           "CHRIS_M3_REFL",
-                           "CHRIS_M3A_REFL",
-                           "CHRIS_M30_REFL",
-                           "CHRIS_M4_REFL",
-                           "CHRIS_M5_REFL");
-    }
-
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final DefaultSingleTargetProductDialog productDialog =
+        final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ExtractFeatures",
                                                      getAppContext(),
                                                      "CHRIS/PROBA Feature Extraction",
                                                      "chrisExtractFeaturesTools");
-        productDialog.show();
+        dialog.setTargetProductNameSuffix("_FEAT");
+        dialog.show();
     }
 
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct == null
-                || CHRIS_TYPES.contains(selectedProduct.getProductType());
+        final boolean enabled = selectedProduct == null ||
+                selectedProduct.getProductType().startsWith("CHRIS_M") &&
+                        OpUtils.findBands(selectedProduct, "toa_refl").length > 17;
 
         setEnabled(enabled);
     }

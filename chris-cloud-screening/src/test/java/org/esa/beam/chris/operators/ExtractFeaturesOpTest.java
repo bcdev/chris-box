@@ -18,46 +18,6 @@ import java.util.Scanner;
  */
 public class ExtractFeaturesOpTest extends TestCase {
 
-    public void testAssertValidity() {
-        ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M1_REFL", 10, 10));
-        ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M2_REFL", 10, 10));
-        ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M3_REFL", 10, 10));
-        ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M3A_REFL", 10, 10));
-        ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M4_REFL", 10, 10));
-        ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M5_REFL", 10, 10));
-
-        try {
-            ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M1", 10, 10));
-            fail();
-        } catch (OperatorException expected) {
-        }
-        try {
-            ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M2", 10, 10));
-            fail();
-        } catch (OperatorException expected) {
-        }
-        try {
-            ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M3", 10, 10));
-            fail();
-        } catch (OperatorException expected) {
-        }
-        try {
-            ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M3A", 10, 10));
-            fail();
-        } catch (OperatorException expected) {
-        }
-        try {
-            ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M4", 10, 10));
-            fail();
-        } catch (OperatorException expected) {
-        }
-        try {
-            ExtractFeaturesOp.assertValidity(new Product("name", "CHRIS_M5", 10, 10));
-            fail();
-        } catch (OperatorException expected) {
-        }
-    }
-
     public void testTransmittanceTableIntegrity() throws IOException {
         assertTransmittanceTableIntegrity();
     }

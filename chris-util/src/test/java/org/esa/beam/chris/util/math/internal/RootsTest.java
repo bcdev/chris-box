@@ -54,15 +54,30 @@ public class RootsTest extends TestCase {
 
     public void testBrentWithRootNotInBracketingInterval() throws Exception {
         final UnivariateFunction f = new TestFunctions.Cos();
-        final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
+
+        Roots.Bracket bracket;
+        bracket = new Roots.Bracket(0.0, 1.0);
 
         // the bracketing interval does not bracket a root
         assertFalse(bracket.isBracket(f));
 
-        final boolean success = Roots.brent(f, bracket, 100);
+        boolean success;
+        success = Roots.brent(f, bracket, 100);
         // the bracketing interval does not bracket a root, but Brent's
         // algorithm returns the value which is closest to the root
         assertTrue(success);
         assertEquals(1.0, bracket.root, 0.0);
+
+
+        bracket = new Roots.Bracket(Math.PI - 1.0, Math.PI);
+
+        // the bracketing interval does not bracket a root
+        assertFalse(bracket.isBracket(f));
+
+        success = Roots.brent(f, bracket, 100);
+        // the bracketing interval does not bracket a root, but Brent's
+        // algorithm returns the value which is closest to the root
+        assertTrue(success);
+        assertEquals(Math.PI - 1.0, bracket.root, 0.0);
     }
 }

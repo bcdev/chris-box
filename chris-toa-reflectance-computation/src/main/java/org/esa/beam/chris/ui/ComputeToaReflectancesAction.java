@@ -8,13 +8,12 @@ import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
 /**
- * Action for computing reflectances.
+ * Action for computing TOA reflectances.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
 public class ComputeToaReflectancesAction extends AbstractVisatAction {
-
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
         final DefaultSingleTargetProductDialog dialog =

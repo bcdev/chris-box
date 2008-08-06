@@ -49,7 +49,7 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         final boolean enabled = selectedProduct == null ||
                 selectedProduct.getProductType().startsWith("CHRIS_M") &&
-                        OpUtils.findBands(selectedProduct, "radiance").length != 0;
+                        OpUtils.findBands(selectedProduct, "radiance").length >= 18;
 
         setEnabled(enabled);
     }

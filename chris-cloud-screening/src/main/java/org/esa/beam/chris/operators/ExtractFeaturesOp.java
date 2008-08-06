@@ -46,7 +46,7 @@ public class ExtractFeaturesOp extends Operator {
 
     private static final double INVERSE_SCALING_FACTOR = 10000.0;
 
-    @SourceProduct(alias = "source", type = "CHRIS_M[1-5][A0]?_REFL")
+    @SourceProduct(alias = "source")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
@@ -73,8 +73,6 @@ public class ExtractFeaturesOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        assertValidity(sourceProduct);
-
         final Band[] reflectanceBands = getReflectanceBands(sourceProduct.getBands());
         categorizeBands(reflectanceBands);
 
@@ -97,9 +95,8 @@ public class ExtractFeaturesOp extends Operator {
             mu = 1.0 / (1.0 / cos(toRadians(sza)) + 1.0 / cos(toRadians(vza)));
         }
 
-        final String name = sourceProduct.getName().replace("_REFL", "_FEAT");
-        final String type = sourceProduct.getProductType().replace("_REFL", "_FEAT");
-        targetProduct = new Product(name, type,
+        final String type = sourceProduct.getProductType() + "_FEAT";
+        targetProduct = new Product("CHRIS_FEATURES", type,
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
@@ -154,7 +151,7 @@ public class ExtractFeaturesOp extends Operator {
     private static Band[] getReflectanceBands(Band[] bands) {
         final List<Band> reflectanceBandList = new ArrayList<Band>(bands.length);
         for (final Band band : bands) {
-            if (band.getName().startsWith("reflectance")) {
+            if (band.getName().startsWith("toa_refl")) {
                 reflectanceBandList.add(band);
             }
         }
@@ -400,14 +397,6 @@ public class ExtractFeaturesOp extends Operator {
         return sum / (wavelengths[wavelengths.length - 1] - wavelengths[0]);
     }
 
-    static void assertValidity(Product product) {
-        if (!product.getProductType().matches("CHRIS_M[1-5][A0]?_REFL")) {
-            throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not of appropriate type", product.getName()));
-        }
-    }
-
-    // todo - generalize
     static double[][] readTransmittanceTable() throws OperatorException {
         final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ExtractFeaturesOp.class,
                                                                            "nir-transmittance.img");
