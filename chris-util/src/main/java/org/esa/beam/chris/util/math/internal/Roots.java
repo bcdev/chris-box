@@ -159,8 +159,8 @@ public class Roots {
                 double p, q, r;
 
                 if (acEqual) {
-                    p = 2 * m * s;
-                    q = 1 - s;
+                    p = 2.0 * m * s;
+                    q = 1.0 - s;
                 } else {
                     q = fa / fc;
                     r = fb / fc;
@@ -198,13 +198,11 @@ public class Roots {
             }
 
             fb = f.value(b);
-
-            bracket.root = b;
-
             if ((fb < 0.0 && fc < 0.0) || (fb > 0.0 && fc > 0.0)) {
                 c = a;
             }
 
+            bracket.root = b;
             if (b < c) {
                 bracket.lowerX = b;
                 bracket.upperX = c;
