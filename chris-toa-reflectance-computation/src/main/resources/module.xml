@@ -1,0 +1,110 @@
+<module>
+    <manifestVersion>1.0.0</manifestVersion>
+    <symbolicName>chris-toa-reflectance-computation</symbolicName>
+    <version>1.0-SNAPSHOT</version>
+    <name>CHRIS/PROBA TOA Reflectance Computation Tool</name>
+    <description>CHRIS/PROBA TOA Reflectance Computation Tool</description>
+
+    <vendor>Brockmann Consult GmbH</vendor>
+    <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
+    <copyright>(C) 2007 by Brockmann Consult GmbH</copyright>
+    <url>http://envisat.esa.int/beam</url>
+    <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
+
+    <changelog>
+        <!--
+        <![CDATA[
+        <p>Initial Release 1.0
+        </p>
+        ]]>
+        -->
+    </changelog>
+
+    <dependency>
+        <module>beam-gpf</module>
+    </dependency>
+    <dependency>
+        <module>beam-chris-reader</module>
+    </dependency>
+    <dependency>
+        <module>beam-visat</module>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+        <module>chris-util</module>
+    </dependency>
+ 
+    <categories>Application,Processor,CHRIS</categories>
+
+    <extension point="beam-ui:actions">
+        <action>
+            <id>chris</id>
+            <class>org.esa.beam.visat.actions.ActionGroup</class>
+            <text>CHRIS/PROBA Tools</text>
+            <mnemonic/>
+        </action>
+        <action>
+            <id>chrisComputeToaReflectances</id>
+            <class>org.esa.beam.chris.ui.ComputeToaReflectancesAction</class>
+            <text>Compute TOA Reflectances...</text>
+            <shortDescr>Compute TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
+            <mnemonic/>
+            <parent>chris</parent>
+            <helpID>chrisToaReflectanceComputationTool</helpID>
+            <placeAfter>chrisNoiseReduction</placeAfter>
+        </action>
+    </extension>
+
+    <extension point="beam-ui:helpSets">
+        <helpSet>
+            <parent>beam-help</parent>
+            <path>doc/help/toareflectancecomputation.hs</path>
+        </helpSet>
+    </extension>
+
+    <extension point="beam-core:rgbProfiles">
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 0</name>
+            <red>toa_refl_3</red>
+            <green>toa_refl_2</green>
+            <blue>toa_refl_1</blue>
+        </rgbProfile>
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 1</name>
+            <red>toa_refl_23</red>
+            <green>toa_refl_13</green>
+            <blue>toa_refl_3</blue>
+        </rgbProfile>
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 2</name>
+            <red>toa_refl_10</red>
+            <green>toa_refl_6</green>
+            <blue>toa_refl_2</blue>
+        </rgbProfile>
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 3</name>
+            <red>toa_refl_7</red>
+            <green>toa_refl_4</green>
+            <blue>toa_refl_1</blue>
+        </rgbProfile>
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 3A</name>
+            <red>toa_refl_8</red>
+            <green>toa_refl_5</green>
+            <blue>toa_refl_2</blue>
+        </rgbProfile>
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 4</name>
+            <red>toa_refl_4</red>
+            <green>toa_refl_2</green>
+            <blue>toa_refl_1</blue>
+        </rgbProfile>
+        <rgbProfile>
+            <name>CHRIS/PROBA TOA Reflectances - Mode 5</name>
+            <red>toa_refl_7</red>
+            <green>toa_refl_4</green>
+            <blue>toa_refl_1</blue>
+        </rgbProfile>
+    </extension>
+    
+</module>
