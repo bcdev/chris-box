@@ -33,28 +33,21 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final SingleTargetProductDialog dialog =
+        final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog(
                         OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
                         getAppContext(),
                         "CHRIS/PROBA Atmospheric Correction",
                         "chrisAtmosphericCorrectionTool");
-        final Product sourceProduct = VisatApp.getApp().getSelectedProduct();
-        if (sourceProduct != null &&
-            sourceProduct.getProductType().startsWith("CHRIS_M") &&
-            sourceProduct.containsBand("cloud_product")) {
-            final String sourceProductName = sourceProduct.getName();
-            dialog.getTargetProductSelector().getModel().setProductName(sourceProductName.replace("_REFL", "_ATM"));
-        }
+        
+        dialog.setTargetProductNameSuffix("_AC");
         dialog.show();
     }
 
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct == null ||
-                                selectedProduct.getProductType().startsWith("CHRIS_M") &&
-                                selectedProduct.containsBand("cloud_product");
+        final boolean enabled = selectedProduct == null || selectedProduct.getProductType().startsWith("CHRIS_M");
 
         setEnabled(enabled);
     }

@@ -150,9 +150,9 @@ public class CloudLabeler {
 
     public static RasterDataNode[] getRgbBands(Product product) {
         return new RasterDataNode[]{
-                findBandImage(product, 700.0f),
-                findBandImage(product, 546.0f),
-                findBandImage(product, 435.0f)
+                findBandImage(product, 650.0f),
+                findBandImage(product, 550.0f),
+                findBandImage(product, 450.0f)
         };
     }
 

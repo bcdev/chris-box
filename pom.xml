@@ -109,7 +109,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.4</version>
+                <version>1.4.1-SNAPSHOT</version>
             </dependency>
 
             <!-- JAI Libraries ############################################# -->

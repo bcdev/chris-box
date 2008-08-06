@@ -46,7 +46,7 @@
         <action>
             <id>chrisAtmosphericCorrection</id>
             <class>org.esa.beam.chris.ui.PerformAtmosphericCorrectionAction</class>
-            <text>Perform atmospheric correction...</text>
+            <text>Perform Atmospheric Correction...</text>
             <shortDescr>Calculates surface reflectances for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
@@ -71,27 +71,27 @@
         </rgbProfile>
         <rgbProfile>
             <name>CHRIS/PROBA Surface Reflectances - Mode 1</name>
-            <red>rho_surf_29</red>
-            <green>rho_surf_12</green>
-            <blue>rho_surf_2</blue>
+            <red>rho_surf_23</red>
+            <green>rho_surf_13</green>
+            <blue>rho_surf_3</blue>
         </rgbProfile>
         <rgbProfile>
             <name>CHRIS/PROBA Surface Reflectances - Mode 2</name>
-            <red>rho_surf_11</red>
-            <green>rho_surf_5</green>
-            <blue>rho_surf_3</blue>
-        </rgbProfile>
-        <rgbProfile>
-            <name>CHRIS/PROBA Surface Reflectances - Mode 3</name>
-            <red>rho_surf_8</red>
-            <green>rho_surf_4</green>
+            <red>rho_surf_10</red>
+            <green>rho_surf_6</green>
             <blue>rho_surf_2</blue>
         </rgbProfile>
         <rgbProfile>
+            <name>CHRIS/PROBA Surface Reflectances - Mode 3</name>
+            <red>rho_surf_7</red>
+            <green>rho_surf_4</green>
+            <blue>rho_surf_1</blue>
+        </rgbProfile>
+        <rgbProfile>
             <name>CHRIS/PROBA Surface Reflectances - Mode 3A</name>
-            <red>rho_surf_9</red>
+            <red>rho_surf_8</red>
             <green>rho_surf_5</green>
-            <blue>rho_surf_3</blue>
+            <blue>rho_surf_2</blue>
         </rgbProfile>
         <rgbProfile>
             <name>CHRIS/PROBA Surface Reflectances - Mode 4</name>
@@ -101,9 +101,9 @@
         </rgbProfile>
         <rgbProfile>
             <name>CHRIS/PROBA Surface Reflectances - Mode 5</name>
-            <red>rho_surf_8</red>
+            <red>rho_surf_7</red>
             <green>rho_surf_4</green>
-            <blue>rho_surf_2</blue>
+            <blue>rho_surf_1</blue>
         </rgbProfile>
     </extension>
     
