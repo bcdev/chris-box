@@ -15,10 +15,10 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.chris.operators.ComputeSurfaceReflectancesOp;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
-import org.esa.beam.framework.gpf.ui.SingleTargetProductDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
@@ -39,7 +39,7 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
                         getAppContext(),
                         "CHRIS/PROBA Atmospheric Correction",
                         "chrisAtmosphericCorrectionTool");
-        
+
         dialog.setTargetProductNameSuffix("_AC");
         dialog.show();
     }
@@ -47,7 +47,9 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct == null || selectedProduct.getProductType().startsWith("CHRIS_M");
+        final boolean enabled = selectedProduct == null ||
+                selectedProduct.getProductType().startsWith("CHRIS_M") &&
+                        OpUtils.findBands(selectedProduct, "radiance").length != 0;
 
         setEnabled(enabled);
     }

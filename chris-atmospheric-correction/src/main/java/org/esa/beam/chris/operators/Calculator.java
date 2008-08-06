@@ -29,7 +29,7 @@ class Calculator {
     }
 
     public void calculateBoaReflectances(double[] toa, double[] rho, int from, int to) {
-        for (int i = from; i < to; i++) {
+        for (int i = from; i < to; ++i) {
             rho[i] = getBoaReflectance(i, toa[i]);
         }
     }
@@ -45,7 +45,7 @@ class Calculator {
     }
 
     public void calculateToaRadiances(double[] rho, double[] toa, int from, int to) {
-        for (int i = from; i < to; i++) {
+        for (int i = from; i < to; ++i) {
             toa[i] = getToaRadiance(i, rho[i]);
         }
     }
@@ -56,6 +56,5 @@ class Calculator {
 
     public double getAdjacencyCorrection(int i, double rho, double ave) {
         return (rho - ave) * rat[i];
-
     }
 }

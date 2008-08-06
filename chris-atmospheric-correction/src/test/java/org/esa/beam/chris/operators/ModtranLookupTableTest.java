@@ -17,6 +17,7 @@ package org.esa.beam.chris.operators;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.util.math.IntervalPartition;
 
 import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class ModtranLookupTableTest extends TestCase {
     // unit conversion constant
     private static final double DEKA_KILO = 1.0E4;
 
-    private ModtranLookupTable factory;
+    private ModtranLookupTable modtranLookupTable;
 
     @Override
     public void run(TestResult result) {
@@ -46,13 +47,14 @@ public class ModtranLookupTableTest extends TestCase {
     protected void setUp() throws IOException {
         final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeSurfaceReflectancesOp.class,
                                                                            "chrisbox-ac-lut-formatted-1nm.img");
-        factory = new ModtranLookupTableReader().readModtranLookupTable(iis);
+        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable(iis);
     }
 
     public void testLookupTableIntegrity() {
         checkLookupTableA();
         checkLookupTableB();
         checkModtranLookupTable();
+        checkWaterVapourDimension();
     }
 
     private void checkLookupTableA() {
@@ -62,7 +64,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3   target elevation
         // aot = 0.2   AOT at 550nm
         // ada = 145.0 relative azimuth angle
-        values = factory.getLutA().getValues(20.0, 35.0, 0.3, 0.2, 145.0);
+        values = modtranLookupTable.getLutA().getValues(20.0, 35.0, 0.3, 0.2, 145.0);
 
         assertEquals(0.002960650 * DEKA_KILO, values[104], 0.5E-8 * DEKA_KILO);
         assertEquals(0.000294274 * DEKA_KILO, values[472], 0.5E-9 * DEKA_KILO);
@@ -72,7 +74,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // ada = 45.0 relative azimuth angle
-        values = factory.getLutA().getValues(40.0, 55.0, 0.1, 0.3, 45.0);
+        values = modtranLookupTable.getLutA().getValues(40.0, 55.0, 0.1, 0.3, 45.0);
 
         assertEquals(0.004093020 * DEKA_KILO, values[136], 0.5E-8 * DEKA_KILO);
         assertEquals(0.000631324 * DEKA_KILO, values[446], 0.5E-9 * DEKA_KILO);
@@ -85,7 +87,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3  target elevation
         // aot = 0.2  AOT at 550nm
         // cwv = 2.0  integrated water vapour
-        values = factory.getLutB().getValues(20.0, 35.0, 0.3, 0.2, 2.0);
+        values = modtranLookupTable.getLutB().getValues(20.0, 35.0, 0.3, 0.2, 2.0);
 
         assertEquals(0.1084700 * DEKA_KILO, values[0][110], 0.5E-5 * DEKA_KILO);
         assertEquals(0.0333388 * DEKA_KILO, values[1][110], 0.5E-7 * DEKA_KILO);
@@ -102,7 +104,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // cwv = 3.0  integrated water vapour
-        values = factory.getLutB().getValues(40.0, 55.0, 0.1, 0.3, 3.0);
+        values = modtranLookupTable.getLutB().getValues(40.0, 55.0, 0.1, 0.3, 3.0);
 
         assertEquals(0.0756223 * DEKA_KILO, values[0][222], 0.5E-7 * DEKA_KILO);
         assertEquals(0.0227272 * DEKA_KILO, values[1][222], 0.5E-7 * DEKA_KILO);
@@ -124,7 +126,7 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.3  target elevation
         // aot = 0.2  AOT at 550nm
         // cwv = 2.0  integrated water vapour
-        table = factory.getRtcTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
+        table = modtranLookupTable.getRtcTable(20.0, 35.0, 145.0, 0.3, 0.2, 2.0);
 
         assertEquals(0.00423624 * DEKA_KILO, table.getLpw(70), 0.5E-8 * DEKA_KILO);
         assertEquals(0.12408900 * DEKA_KILO, table.getEgl(70), 0.5E-6 * DEKA_KILO);
@@ -137,11 +139,19 @@ public class ModtranLookupTableTest extends TestCase {
         // alt = 0.1  target elevation
         // aot = 0.3  AOT at 550nm
         // cwv = 3.0  integrated water vapour
-        table = factory.getRtcTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
+        table = modtranLookupTable.getRtcTable(40.0, 55.0, 45.0, 0.1, 0.3, 3.0);
 
         assertEquals(0.00809511 * DEKA_KILO, table.getLpw(17), 0.5E-8 * DEKA_KILO);
         assertEquals(0.05206649 * DEKA_KILO, table.getEgl(17), 0.5E-7 * DEKA_KILO);
         assertEquals(0.25710700, table.getSab(17), 0.5E-6);
         assertEquals(1.00742000, table.getRat(17), 0.5E-5);
+    }
+
+    private void checkWaterVapourDimension() {
+        final IntervalPartition dimension = modtranLookupTable.getDimension(ModtranLookupTable.CWV);
+
+        assertEquals(7, dimension.getCardinal());
+        assertEquals(0.3, dimension.getMin(), 1.0E-6);
+        assertEquals(5.0, dimension.getMax(), 1.0E-6);
     }
 }

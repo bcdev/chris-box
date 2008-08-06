@@ -68,8 +68,8 @@ public class ComputeToaReflectancesOp extends Operator {
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
 
-        final String name = sourceProduct.getName().replace("_NR", "_REFL");
-        final String type = sourceProduct.getProductType().replace("_NR", "_REFL");
+        final String name = sourceProduct.getName().replace("_NR", "_TOA_REFL");
+        final String type = sourceProduct.getProductType().replace("_NR", "_TOA_REFL");
         targetProduct = new Product(name, type,
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());

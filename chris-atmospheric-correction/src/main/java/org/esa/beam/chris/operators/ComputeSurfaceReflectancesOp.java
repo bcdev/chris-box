@@ -57,14 +57,14 @@ import java.util.List;
 public class ComputeSurfaceReflectancesOp extends Operator {
 
     // target band names
-    private static final String SURFACE_REFL = "rho_surf";
+    private static final String SURFACE_REFL = "reflectance";
     private static final String WATER_VAPOUR = "water_vapour";
 
     // target band scaling factors
     private static final double SURFACE_REFL_SCALING_FACTOR = 1.0E-4;
     private static final double WATER_VAPOUR_SCALING_FACTOR = 2.0E-4;
 
-    @SourceProduct(type = "CHRIS_M[1-5][A0]?_NR", bands = "cloud_product")
+    @SourceProduct(type = "CHRIS_M[1-5][A0]?_NR")
     private Product sourceProduct;
 
     @Parameter(defaultValue = "0.2",
@@ -207,10 +207,16 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
 
         // create valid pixel expression
-        final StringBuilder validPixelExpression = new StringBuilder("cloud_product < ").append(cloudProductThreshold);
+        final StringBuilder validPixelExpression = new StringBuilder("");
+        if (cloudProductBand != null) {
+            validPixelExpression.append("cloud_product < ").append(cloudProductThreshold).append(" && ");
+        }
         for (final Band band : toaMaskBands) {
-            validPixelExpression.append(" && ");
             validPixelExpression.append("(").append(band.getName()).append(" & 3)").append(" == 0");
+
+            if (band != toaMaskBands[toaMaskBands.length - 1]) {
+                validPixelExpression.append(" && ");
+            }
         }
 
         // add surface reflectance bands
@@ -267,7 +273,12 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private void initialize2() {
         // create mask images
         hyperMaskImage = HyperMaskOpImage.createImage(toaMaskBands);
-        cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
+        if (cloudProductBand != null) {
+            cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
+        } else {
+            cloudMaskImage = NullOpImage.createImage(sourceProduct.getSceneRasterWidth(),
+                                                     sourceProduct.getSceneRasterHeight());
+        }
 
         final ModtranLookupTable modtranLookupTable;
         try {
@@ -321,7 +332,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                                                                                        toaScaling);
             final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
             final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
-            
+
             final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
             final double[] irradiances = new Resampler(solarIrradianceTable[0], targetWavelengths, targetBandwidths,
                                                        smileCorrection).resample(solarIrradianceTable[1]);
@@ -339,7 +350,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private interface Ac {
 
         void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm);
-
     }
 
     private class Ac1 implements Ac {
@@ -517,7 +527,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         }
 
                         new Regression(smoothedSamples).fit(originalSamples, originalSamples, c1, w1);
-                        calibrationFactors[j] = c1[0];
+                        calibrationFactors[j] = 1.0 / c1[0];
                     }
 
                     final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
@@ -600,7 +610,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final Tile wvTile = targetTileMap.get(wvBand);
 
                 final double[] toa = new double[toaBands.length];
-                final double[] rho = new double[toaBands.length];
+                final double[] rho = new double[rhoBands.length];
 
                 double wvSum = 0.0;
                 int wvCount = 0;
@@ -635,33 +645,38 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         pm.worked(1);
                     }
                 }
-                if (wvCount > 0) {
-                    wvSum /= wvCount;
-                }
 
-                return wvSum;
+                return wvCount > 0 ? wvSum / wvCount : 0.0;
             } finally {
                 pm.done();
             }
         }
 
+        /**
+         * Simultaneously calculates the surface reflectance spectrum and the columnar
+         * water vapour.
+         *
+         * @param toa the TOA radiance spectrum.
+         * @param rho the surface reflectance spectrum calculated.
+         *
+         * @return the columnar water vapour.
+         */
         private double wv(final double[] toa, final double[] rho) {
             final Calculator calculator = calculatorFactory.createCalculator(cwvIni);
             calculator.calculateBoaReflectances(toa, rho, lowerWva, upperWva + 1);
 
+            // 2. Extrapolate surface reflectances from region A to region B
             final SimpleLinearRegression lg = new SimpleLinearRegression(targetWavelengths, rho,
                                                                          lowerWva, upperWva + 1);
-            final double a = lg.getSlope();
-            final double b = lg.getIntercept();
-
             for (int i = upperWva + 1; i < upperWvb + 1; ++i) {
-                rho[i] = a * targetWavelengths[i] + b;
+                rho[i] = lg.getIntercept() + lg.getSlope() * targetWavelengths[i];
             }
 
             final Roots.Bracket bracket = new Roots.Bracket(calculatorFactory.getCwvMin(),
                                                             calculatorFactory.getCwvMax());
             final double[] sim = new double[toa.length];
 
+            // 3. Define the merit-function for retrieving columnar water vapour
             final UnivariateFunction function = new UnivariateFunction() {
                 @Override
                 public double value(double cwv) {
@@ -676,8 +691,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     return sum;
                 }
             };
-
-            Roots.brent(function, bracket, WV_RETRIEVAL_MAX_ITER);
+            // 4. Calculate columnar water vapour by finding the root of the merit-function
+            if (bracket.isBracket(function)) {
+                Roots.brent(function, bracket, WV_RETRIEVAL_MAX_ITER);
+            } else {
+                bracket.root = calculatorFactory.getCwvMin();
+            }
+            // 5. Calculate surface reflectances
             calculatorFactory.createCalculator(bracket.root).calculateBoaReflectances(toa, rho);
 
             return bracket.root;
