@@ -37,8 +37,8 @@ import java.util.Map;
                   description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
 public class ComputeToaReflectancesOp extends Operator {
 
-    private static final String TOA_REFL = "reflectance";
-    private static final double TOA_REFL_SCALING_FACTOR = 10000.0;
+    private static final String TOA_REFL = "toa_refl";
+    private static final double TOA_REFL_SCALING_FACTOR = 1.0E-4;
 
     @SourceProduct(alias = "input", type = "CHRIS_M[1-5][A0]?_NR")
     private Product sourceProduct;
@@ -51,14 +51,12 @@ public class ComputeToaReflectancesOp extends Operator {
                label = "Copy radiance bands",
                description = "If 'true' all radiance bands from the source product are copied to the target product.")
     private boolean copyRadianceBands;
-    
+
     private transient Map<Band, Band> sourceBandMap;
     private transient Map<Band, Double> conversionFactorMap;
 
     @Override
     public void initialize() throws OperatorException {
-        assertValidity(sourceProduct);
-
         sourceBandMap = new HashMap<Band, Band>(sourceProduct.getNumBands());
         conversionFactorMap = new HashMap<Band, Double>(sourceProduct.getNumBands());
 
@@ -68,9 +66,8 @@ public class ComputeToaReflectancesOp extends Operator {
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
         computeSolarIrradianceTable(table, day);
 
-        final String name = sourceProduct.getName().replace("_NR", "_TOA_REFL");
-        final String type = sourceProduct.getProductType().replace("_NR", "_TOA_REFL");
-        targetProduct = new Product(name, type,
+        final String type = sourceProduct.getProductType() + "_TOA_REFL";
+        targetProduct = new Product("CHRIS_TOA_REFL", type,
                                     sourceProduct.getSceneRasterWidth(),
                                     sourceProduct.getSceneRasterHeight());
 
@@ -98,7 +95,7 @@ public class ComputeToaReflectancesOp extends Operator {
                                                  sourceBand.getSceneRasterHeight());
 
                 targetBand.setDescription(MessageFormat.format(
-                        "Reflectance for spectral band {0}", sourceBand.getSpectralBandIndex() + 1));
+                        "TOA Reflectance for spectral band {0}", sourceBand.getSpectralBandIndex() + 1));
                 targetBand.setUnit("dl");
                 targetBand.setScalingFactor(TOA_REFL_SCALING_FACTOR);
                 targetBand.setValidPixelExpression(sourceBand.getValidPixelExpression());
@@ -157,36 +154,43 @@ public class ComputeToaReflectancesOp extends Operator {
     }
 
     private void computeReflectances(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("computing reflectances...", targetTile.getHeight());
         try {
+            pm.beginTask("computing reflectances...", targetTile.getHeight());
+
             final Band sourceBand = sourceBandMap.get(targetBand);
             final Rectangle targetRectangle = targetTile.getRectangle();
             final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
 
             final double conversionFactor = conversionFactorMap.get(targetBand);
 
-            for (final Tile.Pos pos : targetTile) {
-                if (pos.x == targetRectangle.x) {
+            final int[] sourceSamples = sourceTile.getDataBufferInt();
+            final short[] targetSamples = targetTile.getDataBufferShort();
+
+            int sourceOffset = sourceTile.getScanlineOffset();
+            int sourceStride = sourceTile.getScanlineStride();
+            int targetOffset = targetTile.getScanlineOffset();
+            int targetStride = targetTile.getScanlineStride();
+
+            for (int y = 0; y < targetTile.getHeight(); ++y) {
+                int sourceIndex = sourceOffset;
+                int targetIndex = targetOffset;
+
+                for (int x = 0; x < targetTile.getWidth(); ++x) {
                     checkForCancelation(pm);
-                }
 
-                final double radiance = sourceTile.getSampleDouble(pos.x, pos.y);
-                final double toaRefl = radiance * conversionFactor;
-                targetTile.setSample(pos.x, pos.y, toaRefl);
+                    targetSamples[targetIndex] = (short) (sourceSamples[sourceIndex] * conversionFactor /
+                            TOA_REFL_SCALING_FACTOR + 0.5);
 
-                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-                    pm.worked(1);
+                    ++sourceIndex;
+                    ++targetIndex;
                 }
+                sourceOffset += sourceStride;
+                targetOffset += targetStride;
+
+                pm.worked(1);
             }
         } finally {
             pm.done();
-        }
-    }
-
-    static void assertValidity(Product product) {
-        if (!product.getProductType().matches("CHRIS_M[1-5][A0]?_NR")) {
-            throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not of appropriate type", product.getName()));
         }
     }
 
