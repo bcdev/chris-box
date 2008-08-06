@@ -5,6 +5,6 @@
 
 <map version="2.0">
 
-    <mapID target="chrisToaReflectanceComputationTool" url="reflectancecomputation/ToaReflectanceComputationTool.html"/>
+    <mapID target="chrisToaReflectanceComputationTool" url="toareflectancecomputation/ToaReflectanceComputationTool.html"/>
 
 </map>
