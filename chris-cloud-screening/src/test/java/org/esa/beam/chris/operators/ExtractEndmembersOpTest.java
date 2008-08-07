@@ -88,7 +88,7 @@ public class ExtractEndmembersOpTest extends TestCase {
         final Product reflectanceProduct = new Product("R", "R", 3, 2);
 
         for (int i = 0; i < values.length; ++i) {
-            addSyntheticBand(reflectanceProduct, "reflectance_" + i, values[i]);
+            addSyntheticBand(reflectanceProduct, "toa_refl_" + i, values[i]);
         }
 
         return reflectanceProduct;
