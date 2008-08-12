@@ -13,7 +13,7 @@ class Calculator {
     private final double[] egl;
     private final double[] sab;
     private final double[] rat;
-    
+
     private final double toaScaling;
 
     Calculator(double[] lpw, double[] egl, double[] sab, double[] rat, double toaScaling) {

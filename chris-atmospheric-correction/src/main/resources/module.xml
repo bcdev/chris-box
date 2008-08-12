@@ -31,6 +31,9 @@
         <optional>true</optional>
     </dependency>
     <dependency>
+        <module>chris-atmospheric-correction-lut</module>
+    </dependency>
+    <dependency>
         <module>chris-util</module>
     </dependency>
 
@@ -106,5 +109,5 @@
             <blue>reflectance_1</blue>
         </rgbProfile>
     </extension>
-    
+
 </module>

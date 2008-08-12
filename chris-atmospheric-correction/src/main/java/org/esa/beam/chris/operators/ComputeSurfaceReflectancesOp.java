@@ -283,9 +283,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         final ModtranLookupTable modtranLookupTable;
         try {
-            final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(getClass(),
-                                                                               "chrisbox-ac-lut-formatted-1nm.img");
-            modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable(iis);
+            modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
         } catch (IOException e) {
             throw new OperatorException(e.getMessage());
         }
@@ -300,7 +298,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         final double sza = OpUtils.getAnnotationDouble(sourceProduct,
                                                        ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         final double ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
-        final double alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        final double alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT) / 1000.0;
 
         // calculate TOA scaling
         final int day = OpUtils.getAcquisitionDay(sourceProduct);
@@ -330,8 +328,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final CalculatorFactoryCwv ac1CalculatorFactory = new CalculatorFactoryCwv(modtranLookupTable, resampler,
                                                                                        vza, sza, ada, alt, aot550,
                                                                                        toaScaling);
-            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0 - smileCorrection);
-            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0 - smileCorrection);
+            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
+            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
 
             final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
             final double[] irradiances = new Resampler(solarIrradianceTable[0], targetWavelengths, targetBandwidths,
@@ -376,20 +374,20 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             int upperWva = -1;
             int upperWvb = -1;
             for (int i = 0; i < targetWavelengths.length; ++i) {
-                if (targetWavelengths[i] + smileCorrection >= WV_A_LOWER_BOUND) {
+                if (targetWavelengths[i] >= WV_A_LOWER_BOUND) {
                     lowerWva = i;
                     break;
                 }
             }
             for (int i = lowerWva + 1; i < targetWavelengths.length; ++i) {
-                if (targetWavelengths[i] + smileCorrection <= WV_A_UPPER_BOUND) {
+                if (targetWavelengths[i] <= WV_A_UPPER_BOUND) {
                     upperWva = i;
                 } else {
                     break;
                 }
             }
             for (int i = upperWva + 1; i < targetWavelengths.length; ++i) {
-                if (targetWavelengths[i] + smileCorrection <= WV_B_UPPER_BOUND) {
+                if (targetWavelengths[i] <= WV_B_UPPER_BOUND) {
                     upperWvb = i;
                 } else {
                     break;
@@ -458,13 +456,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final Band redBand = OpUtils.findBand(rhoBands, new BandFilter() {
                     @Override
                     public boolean accept(Band band) {
-                        return band.getSpectralWavelength() + smileCorrection >= 670.0;
+                        return band.getSpectralWavelength() >= 670.0;
                     }
                 });
                 final Band nirBand = OpUtils.findBand(rhoBands, new BandFilter() {
                     @Override
                     public boolean accept(Band band) {
-                        return band.getSpectralWavelength() + smileCorrection >= 785.0;
+                        return band.getSpectralWavelength() >= 785.0;
                     }
                 });
 
@@ -533,13 +531,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     final int lowerRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
                         @Override
                         public boolean accept(Band band) {
-                            return band.getSpectralWavelength() + smileCorrection >= 694.7;
+                            return band.getSpectralWavelength() >= 694.7;
                         }
                     });
                     final int upperRed = OpUtils.findBandIndex(rhoBands, new BandFilter() {
                         @Override
                         public boolean accept(Band band) {
-                            return band.getSpectralWavelength() + smileCorrection > 772.5;
+                            return band.getSpectralWavelength() > 772.5;
                         }
                     });
 
@@ -617,7 +615,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     if (pos.x == targetRectangle.x) {
                         checkForCancelation(pm);
                     }
-                    
+
                     final double[] toa = new double[toaBands.length];
                     final double[] rho = new double[rhoBands.length];
 
@@ -662,7 +660,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         for (int i = 0; i < rhoTiles.length; i++) {
                             final double toa = toaTiles[i].getSampleDouble(pos.x, pos.y);
                             final double rho = calculator.getBoaReflectance(i, toa);
-                            
+
                             rhoTiles[i].setSample(pos.x, pos.y, rho);
                         }
                         if (wvTile != null) {
@@ -673,7 +671,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         pm.worked(1);
                     }
                 }
-                
+
                 return wvMean;
             } finally {
                 pm.done();

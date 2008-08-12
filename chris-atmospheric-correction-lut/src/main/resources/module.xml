@@ -1,0 +1,27 @@
+<module>
+    <manifestVersion>1.0.0</manifestVersion>
+    <symbolicName>chris-atmospheric-correction-lut</symbolicName>
+    <version>1.0-SNAPSHOT</version>
+    <name>CHRIS/PROBA Atmospheric Correction Tool Lookup Table</name>
+    <description>CHRIS/PROBA Atmospheric Correction Tool Lookup Table</description>
+
+    <vendor>Brockmann Consult GmbH</vendor>
+    <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
+    <copyright>(C) 2007 by Brockmann Consult GmbH</copyright>
+    <url>http://envisat.esa.int/beam</url>
+    <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
+
+    <changelog>
+        <!--
+        <![CDATA[
+        <p>Initial Release 1.0
+        </p>
+        ]]>
+        -->
+    </changelog>
+
+    <dependency>
+        <module>beam-core</module>
+    </dependency>
+
+</module>

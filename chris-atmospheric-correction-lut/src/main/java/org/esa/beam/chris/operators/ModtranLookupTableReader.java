@@ -18,24 +18,29 @@ import org.esa.beam.util.math.Array;
 import org.esa.beam.util.math.IntervalPartition;
 import org.esa.beam.util.math.VectorLookupTable;
 
+import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteOrder;
+import java.text.MessageFormat;
 
 /**
  * Reader for the MODTRAN lookup table.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 2585 $ $Date: 2008-07-10 13:03:14 +0200 (Do, 10 Jul 2008) $
  * @since BEAM 4.2
  */
 class ModtranLookupTableReader {
 
+    private static final String LUT_FILE_NAME = "chrisbox-ac-lut-formatted-1nm.img";
     // unit conversion constant
     private static final double DEKA_KILO = 1.0E4;
 
     @SuppressWarnings({"ConstantConditions"})
-    public ModtranLookupTable readModtranLookupTable(ImageInputStream iis) throws IOException {
+    public ModtranLookupTable readModtranLookupTable() throws IOException {
+        final ImageInputStream iis = getResourceAsImageInputStream(LUT_FILE_NAME);
         iis.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 
         try {
@@ -110,5 +115,15 @@ class ModtranLookupTableReader {
                 // ignore
             }
         }
+    }
+
+    private ImageInputStream getResourceAsImageInputStream(String name) throws IOException {
+        final InputStream is = getClass().getResourceAsStream(name);
+
+        if (is == null) {
+            throw new IOException(MessageFormat.format("resource {0} not found", name));
+        }
+
+        return new FileCacheImageInputStream(is, null);
     }
 }

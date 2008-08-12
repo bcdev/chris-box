@@ -26,6 +26,7 @@
         <module>chris-bootstrap</module>
         <module>chris-util</module>		
         <module>chris-atmospheric-correction</module>
+        <module>chris-atmospheric-correction-lut</module>
         <module>chris-cloud-screening</module>
 		<!-- not yet available
         <module>chris-geometric-correction</module>

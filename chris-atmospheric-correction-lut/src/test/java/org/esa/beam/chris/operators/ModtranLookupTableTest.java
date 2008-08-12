@@ -16,10 +16,8 @@ package org.esa.beam.chris.operators;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
-import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.util.math.IntervalPartition;
 
-import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
 
 /**
@@ -27,10 +25,10 @@ import java.io.IOException;
  * <p/>
  * Note that the {@link TestCase#run()} method  is overridden in order to
  * deactivate the tests defined in this class. Running the tests requires
- * about 140 K of heap space.
+ * about 140 MB of heap space.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 2864 $ $Date: 2008-08-06 11:34:55 +0200 (Mi, 06 Aug 2008) $
  */
 public class ModtranLookupTableTest extends TestCase {
     // unit conversion constant
@@ -45,9 +43,7 @@ public class ModtranLookupTableTest extends TestCase {
 
     @Override
     protected void setUp() throws IOException {
-        final ImageInputStream iis = OpUtils.getResourceAsImageInputStream(ComputeSurfaceReflectancesOp.class,
-                                                                           "chrisbox-ac-lut-formatted-1nm.img");
-        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable(iis);
+        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
     }
 
     public void testLookupTableIntegrity() {

@@ -16,7 +16,7 @@ import java.awt.image.RenderedImage;
  * @since BEAM 4.2
  */
 public class CloudMaskOpImageTest extends TestCase {
-    
+
     private static final int W = 2;
     private static final int H = 2;
 
@@ -25,7 +25,7 @@ public class CloudMaskOpImageTest extends TestCase {
         final Raster raster = image.getData();
 
         assertEquals(0, raster.getSample(0, 0, 0));
-        assertEquals(0, raster.getSample(1, 0, 0)); 
+        assertEquals(0, raster.getSample(1, 0, 0));
         assertEquals(0, raster.getSample(0, 1, 0));
         assertEquals(1, raster.getSample(1, 1, 0));
     }

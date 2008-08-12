@@ -12,10 +12,10 @@
     <packaging>jar</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
-    <artifactId>chris-atmospheric-correction</artifactId>
-    <name>CHRIS/PROBA Atmospheric Correction Tool</name>
+    <artifactId>chris-atmospheric-correction-lut</artifactId>
+    <name>CHRIS/PROBA Atmospheric Correction Tool Lookup Table</name>
     <version>1.0-SNAPSHOT</version>
-    <description>CHRIS/PROBA Atmospheric Correction Tool</description>
+    <description>CHRIS/PROBA Atmospheric Correction Tool Lookup Table</description>
 
     <dependencies>
         <dependency>
@@ -23,34 +23,8 @@
             <artifactId>junit</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.bc.ceres</groupId>
-            <artifactId>ceres-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.esa.beam</groupId>
             <artifactId>beam-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam</groupId>
-            <artifactId>beam-gpf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam</groupId>
-            <artifactId>beam-visat</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam</groupId>
-            <artifactId>beam-chris-reader</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam.chris</groupId>
-            <artifactId>chris-atmospheric-correction-lut</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam.chris</groupId>
-            <artifactId>chris-util</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

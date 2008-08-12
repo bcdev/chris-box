@@ -4,7 +4,7 @@ package org.esa.beam.chris.operators;
  * todo - API doc
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 2703 $ $Date: 2008-07-15 11:42:48 +0200 (Di, 15 Jul 2008) $
  * @since BEAM 4.2
  */
 class RtcTable {

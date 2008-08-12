@@ -20,7 +20,7 @@ import org.esa.beam.util.math.*;
  * MODTRAN lookup table.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 2703 $ $Date: 2008-07-15 11:42:48 +0200 (Di, 15 Jul 2008) $
  */
 class ModtranLookupTable {
 

@@ -27,8 +27,6 @@ public class CalculatorFactoryCwv {
         sab = new double[cwv.length][];
         rat = new double[cwv.length][];
 
-        this.toaScaling = toaScaling;
-
         for (int i = 0; i < cwv.length; ++i) {
             final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot, cwv[i]);
 
@@ -37,6 +35,8 @@ public class CalculatorFactoryCwv {
             sab[i] = resampler.resample(table.getSab());
             rat[i] = resampler.resample(table.getRat());
         }
+
+        this.toaScaling = toaScaling;
     }
 
     public Calculator createCalculator(double cwv) {
