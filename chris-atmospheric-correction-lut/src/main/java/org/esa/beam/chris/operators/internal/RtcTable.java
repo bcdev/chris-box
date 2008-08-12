@@ -1,4 +1,4 @@
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 /**
  * todo - API doc
@@ -7,7 +7,7 @@ package org.esa.beam.chris.operators;
  * @version $Revision: 2703 $ $Date: 2008-07-15 11:42:48 +0200 (Di, 15 Jul 2008) $
  * @since BEAM 4.2
  */
-class RtcTable {
+public class RtcTable {
     private final double[] wavelengths;
     private final double[] lpw;
     private final double[] egl;

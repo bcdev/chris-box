@@ -12,7 +12,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 import org.esa.beam.util.math.*;
 
@@ -22,7 +22,7 @@ import org.esa.beam.util.math.*;
  * @author Ralf Quast
  * @version $Revision: 2703 $ $Date: 2008-07-15 11:42:48 +0200 (Di, 15 Jul 2008) $
  */
-class ModtranLookupTable {
+public class ModtranLookupTable {
 
     public static final int VZA = 0;
     public static final int SZA = 1;
@@ -87,7 +87,7 @@ class ModtranLookupTable {
      *
      * @return the ith dimension.
      */
-    final IntervalPartition getDimension(int i) {
+    public final IntervalPartition getDimension(int i) {
         switch (i) {
             case VZA:
                 return lutB.getDimension(0);

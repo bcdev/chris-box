@@ -7,7 +7,7 @@ package org.esa.beam.chris.operators;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class ResamplerFactory {
+class ResamplerFactory {
 
     private final double[] sourceWavelengths;
     private final double[] targetWavelengths;

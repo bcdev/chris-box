@@ -12,7 +12,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 import org.esa.beam.util.math.Array;
 import org.esa.beam.util.math.IntervalPartition;
@@ -32,7 +32,7 @@ import java.text.MessageFormat;
  * @version $Revision: 2585 $ $Date: 2008-07-10 13:03:14 +0200 (Do, 10 Jul 2008) $
  * @since BEAM 4.2
  */
-class ModtranLookupTableReader {
+public class ModtranLookupTableReader {
 
     private static final String LUT_FILE_NAME = "chrisbox-ac-lut-formatted-1nm.img";
     // unit conversion constant

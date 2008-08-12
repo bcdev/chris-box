@@ -1,5 +1,7 @@
 package org.esa.beam.chris.operators;
 
+import org.esa.beam.chris.operators.internal.RtcTable;
+
 /**
  * todo - API doc
  *

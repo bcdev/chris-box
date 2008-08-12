@@ -1,5 +1,8 @@
 package org.esa.beam.chris.operators;
 
+import org.esa.beam.chris.operators.internal.ModtranLookupTable;
+import org.esa.beam.chris.operators.internal.RtcTable;
+
 /**
  * todo - API doc
  *
@@ -7,7 +10,7 @@ package org.esa.beam.chris.operators;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class CalculatorFactoryCwv {
+class CalculatorFactoryCwv {
 
     private final double[] cwv;
 

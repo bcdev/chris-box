@@ -19,6 +19,9 @@ import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.chris.util.math.internal.*;
+import org.esa.beam.chris.operators.internal.ModtranLookupTable;
+import org.esa.beam.chris.operators.internal.ModtranLookupTableReader;
+import org.esa.beam.chris.operators.internal.RtcTable;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -310,6 +313,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         final ResamplerFactory resamplerFactory = new ResamplerFactory(modtranLookupTable.getWavelengths(),
                                                                        targetWavelengths,
                                                                        targetBandwidths);
+        // compute initial water vapour column if zero
+        if (cwvIni == 0.0) {
+            final double cwvMax = 2.0;
+            final double cwvMin = 0.5;
+
+            cwvIni = (cwvMax - cwvMin) * Math.sin(day / 365) + cwvMin;
+        }
+
         // create calculator factory
         final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot550, cwvIni);
         final CalculatorFactory calculatorFactory = new CalculatorFactory(table, toaScaling);
@@ -343,6 +354,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         } else {
             ac = new Ac2(calculatorFactory.createCalculator(resampler));
         }
+
     }
 
     private interface Ac {
