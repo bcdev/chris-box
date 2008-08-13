@@ -217,10 +217,12 @@ class NoiseReductionPresenter {
     }
 
     void removeSelectedProduct() {
-        int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
+        if (productTableModel.getRowCount() > 0) {
+            int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
 
-        getProductTableModel().removeRow(selectionIndex);
-        updateSelection(selectionIndex);
+            productTableModel.removeRow(selectionIndex);
+            updateSelection(selectionIndex);
+        }
     }
 
     private void updateSelection(int selectionIndex) {

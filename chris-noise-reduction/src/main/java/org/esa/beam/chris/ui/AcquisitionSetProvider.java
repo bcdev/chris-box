@@ -56,6 +56,7 @@ class AcquisitionSetProvider {
         final File selectedFile = selectedProduct.getFileLocation();
         if (selectedFile != null) {
             final File parent = selectedFile.getParentFile();
+
             if (parent != null && parent.isDirectory()) {
                 final File[] files = parent.listFiles(
                         new AcquisitionSetFileFilter(selectedProduct.getFileLocation()));
