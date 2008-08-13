@@ -119,7 +119,7 @@ public class ComputeDestripingFactorsOp extends Operator {
         }
 
         // set up target product and bands
-        targetProduct = new Product(sourceProducts[0].getName() + "_VSC", "CHRIS_VSC",
+        targetProduct = new Product("CHRIS_VSC", "CHRIS_VSC",
                                     sourceProducts[0].getSceneRasterWidth(), 1);
         targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 1);
 
