@@ -14,13 +14,17 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
  * @version $Revision$ $Date$
  */
 public class ComputeToaReflectancesAction extends AbstractVisatAction {
+    private static final String DIALOG_TITLE = "CHRIS/PROBA TOA Reflectance Computation";
+    private static final String DIALOG_HELP_ID = "chrisToaReflectanceComputationTool";
+
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
         final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ComputeToaReflectances",
                                                      getAppContext(),
-                                                     "CHRIS/PROBA Reflectance Computation",
-                                                     "chrisReflectanceComputationTool");
+                                                     DIALOG_TITLE,
+                                                     DIALOG_HELP_ID);
+        dialog.getJDialog().setName("chrisToaReflectanceComputationDialog");
         dialog.setTargetProductNameSuffix("_TOA_REFL");
         dialog.show();
     }

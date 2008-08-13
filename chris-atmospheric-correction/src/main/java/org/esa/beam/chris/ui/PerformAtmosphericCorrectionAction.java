@@ -30,6 +30,8 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
  * @version $Revision$ $Date$
  */
 public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
+    private static final String DIALOG_TITLE = "CHRIS/PROBA Atmospheric Correction";
+    private static final String DIALOG_HELP_ID = "chrisAtmosphericCorrectionTool";
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
@@ -37,9 +39,9 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
                 new DefaultSingleTargetProductDialog(
                         OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
                         getAppContext(),
-                        "CHRIS/PROBA Atmospheric Correction",
-                        "chrisAtmosphericCorrectionTool");
-
+                        DIALOG_TITLE,
+                        DIALOG_HELP_ID);
+        dialog.getJDialog().setName("chrisAtmosphericCorrectionDialog");
         dialog.setTargetProductNameSuffix("_AC");
         dialog.show();
     }

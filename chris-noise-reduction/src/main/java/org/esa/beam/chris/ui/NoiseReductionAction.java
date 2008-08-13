@@ -94,6 +94,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
                         return true;
                     }
                 };
+        dialog.getJDialog().setName("chrisNoiseReductionDialog");
         dialog.setContent(noiseReductionForm);
 
         final String homeDirPath = SystemUtils.getUserHomeDir().getPath();
