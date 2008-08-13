@@ -67,7 +67,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private static final double SURFACE_REFL_SCALING_FACTOR = 1.0E-4;
     private static final double WATER_VAPOUR_SCALING_FACTOR = 2.0E-4;
 
-    @SourceProduct
+    @SourceProduct(alias = "source", type = "CHRIS_M.*")
     private Product sourceProduct;
 
     @Parameter(defaultValue = "0.2",

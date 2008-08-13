@@ -40,7 +40,7 @@ public class ComputeToaReflectancesOp extends Operator {
     private static final String TOA_REFL = "toa_refl";
     private static final double TOA_REFL_SCALING_FACTOR = 1.0E-4;
 
-    @SourceProduct(alias = "input", type = "CHRIS_M[1-5][A0]?_NR")
+    @SourceProduct(alias = "source", type = "CHRIS_M.*")
     private Product sourceProduct;
 
     @SuppressWarnings({"FieldCanBeLocal"})
