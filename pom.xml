@@ -98,7 +98,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-cluster-analysis</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
+                <version>1.0.1</version>
             </dependency>
 
             <dependency>
