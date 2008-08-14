@@ -135,6 +135,8 @@ class NoiseReductionForm extends JPanel {
         metadataTable.setName("metadataTable");
 
         targetProductSelector = new TargetProductSelector();
+        // only DIMAP format works because written intermediate products are read again
+        targetProductSelector.getFormatNameComboBox().setEnabled(false);
 
         targetProductSelector.getProductNameLabel().setText(
                 MessageFormat.format("Name pattern - {0} will be replaced with the source product name:",
@@ -167,8 +169,8 @@ class NoiseReductionForm extends JPanel {
         acquisitionScrollPane.setViewportView(acquisitionSetTable);
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.insets = new Insets(4,4,4,4);
-        
+        gridBagConstraints.insets = new Insets(4, 4, 4, 4);
+
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridheight = 3;
