@@ -21,8 +21,9 @@ class CalculatorFactoryCwv {
 
     private final double toaScaling;
 
-    public CalculatorFactoryCwv(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza, double sza,
-                                double ada, double alt, double aot, double toaScaling) {
+    public CalculatorFactoryCwv(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza,
+                                double sza, double ada, double alt, double aot, double[] lpwCorrections,
+                                double toaScaling) {
         cwv = modtranLookupTable.getDimension(ModtranLookupTable.CWV).getSequence();
 
         lpw = new double[cwv.length][];
@@ -37,6 +38,11 @@ class CalculatorFactoryCwv {
             egl[i] = resampler.resample(table.getEgl());
             sab[i] = resampler.resample(table.getSab());
             rat[i] = resampler.resample(table.getRat());
+
+            for (int j = 0; j < lpw[i].length; j++) {
+                lpw[i][j] -= lpwCorrections[j];
+
+            }
         }
 
         this.toaScaling = toaScaling;

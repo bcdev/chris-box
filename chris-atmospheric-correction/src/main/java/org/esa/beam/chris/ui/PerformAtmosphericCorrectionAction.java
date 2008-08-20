@@ -36,11 +36,10 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
         final DefaultSingleTargetProductDialog dialog =
-                new DefaultSingleTargetProductDialog(
-                        OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
-                        getAppContext(),
-                        DIALOG_TITLE,
-                        DIALOG_HELP_ID);
+                new DefaultSingleTargetProductDialog(OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
+                                                     getAppContext(),
+                                                     DIALOG_TITLE,
+                                                     DIALOG_HELP_ID);
         dialog.getJDialog().setName("chrisAtmosphericCorrectionDialog");
         dialog.setTargetProductNameSuffix("_AC");
         dialog.show();

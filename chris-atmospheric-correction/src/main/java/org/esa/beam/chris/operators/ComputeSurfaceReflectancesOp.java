@@ -16,12 +16,12 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.util.BandFilter;
-import org.esa.beam.chris.util.OpUtils;
-import org.esa.beam.chris.util.math.internal.*;
 import org.esa.beam.chris.operators.internal.ModtranLookupTable;
 import org.esa.beam.chris.operators.internal.ModtranLookupTableReader;
 import org.esa.beam.chris.operators.internal.RtcTable;
+import org.esa.beam.chris.util.BandFilter;
+import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.chris.util.math.internal.*;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -58,13 +58,15 @@ import java.util.List;
                   copyright = "(c) 2008 by Brockmann Consult",
                   description = "Computes surface reflectances from a CHRIS/PROBA RCI with cloud product.")
 public class ComputeSurfaceReflectancesOp extends Operator {
-
+    // the number of dark pixels
+    private static final int DARK_PIXEL_COUNT = 100;
     // target band names
     private static final String SURFACE_REFL = "reflectance";
-    private static final String WATER_VAPOUR = "water_vapour";
 
+    private static final String WATER_VAPOUR = "water_vapour";
     // target band scaling factors
     private static final double SURFACE_REFL_SCALING_FACTOR = 1.0E-4;
+
     private static final double WATER_VAPOUR_SCALING_FACTOR = 2.0E-4;
 
     @SourceProduct(alias = "source", type = "CHRIS_M.*")
@@ -101,26 +103,26 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                label = "Generate water vapour map",
                description = "If 'true' a water vapour map is generated for modes 1, 3 and 5.")
     private boolean generateWvMap;
-
     // source bands
     private transient Band[] toaBands;
     private transient Band[] toaMaskBands;
     private transient Band cloudProductBand;
     // target bands
     private transient Band[] rhoBands;
-    private transient Band wvBand;
 
+    private transient Band wvBand;
     private transient OpImage hyperMaskImage;
     private transient OpImage cloudMaskImage;
+
     private transient OpImage waterMaskImage;
 
     private transient int mode;
-
     private transient double[] targetWavelengths;
-    private transient double[] targetBandwidths;
 
+    private transient double[] targetBandwidths;
     private transient Ac ac;
-    private double smileCorrection;
+    private transient double smileCorrection;
+    private transient double[] lpwCorrections;
 
     @Override
     public void initialize() throws OperatorException {
@@ -148,7 +150,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                                  ProgressMonitor pm) throws OperatorException {
         synchronized (this) {
             if (hyperMaskImage == null) {
-                initialize2();
+                initialize2(targetRectangle, pm);
             }
         }
 
@@ -274,7 +276,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         return targetProduct;
     }
 
-    private void initialize2() {
+    private void initialize2(Rectangle targetRectangle, ProgressMonitor pm) {
         // create mask images
         hyperMaskImage = HyperMaskOpImage.createImage(toaMaskBands);
         if (cloudProductBand != null) {
@@ -321,9 +323,15 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             cwvIni = (cwvMax - cwvMin) * Math.sin(day / 365) + cwvMin;
         }
 
+        if (aot550 == 0.0) {
+            computeAot(targetRectangle, pm, modtranLookupTable, vza, sza, ada, alt);
+        } else {
+            lpwCorrections = new double[toaBands.length];
+        }
+
         // create calculator factory
         final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot550, cwvIni);
-        final CalculatorFactory calculatorFactory = new CalculatorFactory(table, toaScaling);
+        final CalculatorFactory calculatorFactory = new CalculatorFactory(table, lpwCorrections, toaScaling);
 
         if (mode == 1 || mode == 5) {
             final SmileCorrectionCalculator scc = new SmileCorrectionCalculator();
@@ -338,7 +346,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         if (mode == 1 || mode == 3 || mode == 5) {
             final CalculatorFactoryCwv ac1CalculatorFactory = new CalculatorFactoryCwv(modtranLookupTable, resampler,
                                                                                        vza, sza, ada, alt, aot550,
-                                                                                       toaScaling);
+                                                                                       lpwCorrections, toaScaling);
             final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
             final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
 
@@ -354,7 +362,120 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         } else {
             ac = new Ac2(calculatorFactory.createCalculator(resampler));
         }
+    }
 
+    private void computeAot(Rectangle targetRectangle, ProgressMonitor pm, ModtranLookupTable modtranLookupTable,
+                            double vza, double sza, double ada, double alt) {
+        int lowerVis = -1;
+        int upperVis = -1;
+        for (int i = 0; i < targetWavelengths.length; ++i) {
+            if (targetWavelengths[i] >= 420.0) {
+                lowerVis = i;
+                break;
+            }
+        }
+        for (int i = lowerVis + 1; i < targetWavelengths.length; ++i) {
+            if (targetWavelengths[i] <= 690.0) {
+                upperVis = i;
+            } else {
+                break;
+            }
+        }
+
+        final double[][] darkPixels = new double[toaBands.length][DARK_PIXEL_COUNT];
+        for (double[] samples : darkPixels) {
+            Arrays.fill(samples, Double.POSITIVE_INFINITY);
+        }
+
+        final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+
+        for (int i = 0; i < toaBands.length; ++i) {
+            final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, pm);
+
+            for (final Tile.Pos pos : toaTile) {
+                if (pos.x == targetRectangle.x) {
+                    checkForCancelation(pm);
+                }
+                final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+
+                if ((hyperMask & 3) == 0) {
+                    final double toa = toaTile.getSampleDouble(pos.x, pos.y);
+
+                    if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
+                        darkPixels[i][DARK_PIXEL_COUNT - 1] = toa;
+                        Arrays.sort(darkPixels[i]);
+                    }
+                }
+
+                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                    pm.worked(1);
+                }
+            }
+        }
+
+        int count = 0;
+        int j = 0;
+
+        final Resampler resampler = new Resampler(modtranLookupTable.getWavelengths(), targetWavelengths,
+                                                  targetBandwidths);
+        double[] lpwVza = new double[toaBands.length];
+
+        final double[] aots = modtranLookupTable.getDimension(ModtranLookupTable.AOT).getSequence();
+        while (count < DARK_PIXEL_COUNT && j < aots.length) {
+            final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aots[j], cwvIni);
+            resampler.resample(table.getLpw(), lpwVza);
+            count = 0;
+
+            for (int k = 0; k < DARK_PIXEL_COUNT; ++k) {
+                for (int i = lowerVis; i < upperVis + 1; ++i) {
+                    if (darkPixels[i][k] < lpwVza[i]) {
+                        ++count;
+                        break;
+                    }
+                }
+            }
+
+            ++j;
+        }
+
+        aot550 = aots[0];
+        final int jmax = j - 2;
+
+        if (jmax > 0) {
+            j = 1;
+            double stp = 0.005;
+            count = 0;
+            double aot = aots[jmax];
+            while (count < DARK_PIXEL_COUNT && aot <= aots[aots.length - 1]) {
+                aot = aots[jmax] + j * stp;
+                final RtcTable table = modtranLookupTable.getRtcTable(vza, sza, ada, alt, aot, cwvIni);
+                resampler.resample(table.getLpw(), lpwVza);
+                count = 0;
+
+                for (int k = 0; k < DARK_PIXEL_COUNT; ++k) {
+                    for (int i = lowerVis; i < upperVis + 1; ++i) {
+                        if (darkPixels[i][k] < lpwVza[i]) {
+                            ++count;
+                            break;
+                        }
+                    }
+                }
+
+                ++j;
+            }
+
+            aot550 = aots[jmax] + (j - 1) * stp;
+        }
+
+        lpwCorrections = new double[toaBands.length];
+        if (aot550 == aots[0]) {
+            final double fza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
+            if (fza == 55.0 || fza == -55.0) {
+                for (int i = 0; i < lpwCorrections.length; ++i) {
+                    lpwCorrections[i] = lpwVza[i] - Statistics.mean(darkPixels[i]);
+                }
+            }
+        }
     }
 
     private interface Ac {
@@ -595,6 +716,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 this.ndvi = ndvi;
             }
 
+            @Override
             public final int compareTo(SpikyPixel o) {
                 return Double.compare(ndvi, o.ndvi);
             }
