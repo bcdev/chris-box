@@ -232,4 +232,8 @@ class NoiseReductionForm extends JPanel {
         settingsButtonPanel.add(advancedSettingsButton, gridBagConstraints);
         add(settingsButtonPanel);
     }
+
+    public TargetProductSelector getTargetProductSelector() {
+        return targetProductSelector;
+    }
 }

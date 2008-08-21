@@ -56,6 +56,8 @@ public class NoiseReductionAction extends AbstractVisatAction {
         final NoiseReductionPresenter presenter = new NoiseReductionPresenter(acquisitionSet,
                                                                               new AdvancedSettingsPresenter());
         final NoiseReductionForm noiseReductionForm = new NoiseReductionForm(presenter);
+        noiseReductionForm.getTargetProductSelector().getOpenInAppCheckBox().setText("Open in " + getAppContext().getApplicationName());
+        
         final TargetProductSelectorModel targetProductSelectorModel = noiseReductionForm.getTargetProductSelectorModel();
         final ModalDialog dialog =
                 new ModalDialog(VisatApp.getApp().getMainFrame(), DIALOG_TITLE, ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionTool") {
