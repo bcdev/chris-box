@@ -12,12 +12,12 @@ import org.esa.beam.chris.operators.internal.RtcTable;
 class CalculatorFactory {
 
     private final RtcTable table;
-    private final double[] lpwCorrections;
+    private final double[] corrections;
     private final double toaScaling;
 
-    public CalculatorFactory(RtcTable table, double[] lpwCorrections, double toaScaling) {
+    public CalculatorFactory(RtcTable table, double[] corrections, double toaScaling) {
         this.table = table;
-        this.lpwCorrections = lpwCorrections;
+        this.corrections = corrections;
         this.toaScaling = toaScaling;
     }
 
@@ -28,7 +28,7 @@ class CalculatorFactory {
         final double[] rat = resampler.resample(table.getRat());
 
         for (int i = 0; i < lpw.length; i++) {
-            lpw[i] -= lpwCorrections[i];
+            lpw[i] -= corrections[i];
         }
 
         return new Calculator(lpw, egl, sab, rat, toaScaling);

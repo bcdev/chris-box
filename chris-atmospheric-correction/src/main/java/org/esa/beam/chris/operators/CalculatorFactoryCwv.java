@@ -22,9 +22,9 @@ class CalculatorFactoryCwv {
     private final double toaScaling;
 
     public CalculatorFactoryCwv(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza,
-                                double sza, double ada, double alt, double aot, double[] lpwCorrections,
+                                double sza, double ada, double alt, double aot, double[] corrections,
                                 double toaScaling) {
-        cwv = modtranLookupTable.getDimension(ModtranLookupTable.CWV).getSequence();
+        cwv = modtranLookupTable.getDimension(ModtranLookupTable.CWV);
 
         lpw = new double[cwv.length][];
         egl = new double[cwv.length][];
@@ -40,7 +40,7 @@ class CalculatorFactoryCwv {
             rat[i] = resampler.resample(table.getRat());
 
             for (int j = 0; j < lpw[i].length; j++) {
-                lpw[i][j] -= lpwCorrections[j];
+                lpw[i][j] -= corrections[j];
 
             }
         }
@@ -54,11 +54,11 @@ class CalculatorFactoryCwv {
         return createCalculator(fracIndex.i, fracIndex.f);
     }
 
-    public final double getCwvMin() {
+    public final double getMinCwv() {
         return cwv[0];
     }
 
-    public final double getCwvMax() {
+    public final double getMaxCwv() {
         return cwv[cwv.length - 1];
     }
 

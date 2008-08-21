@@ -14,7 +14,10 @@
  */
 package org.esa.beam.chris.operators.internal;
 
-import org.esa.beam.util.math.*;
+import org.esa.beam.util.math.Array;
+import org.esa.beam.util.math.ColumnMajorMatrixFactory;
+import org.esa.beam.util.math.MatrixLookupTable;
+import org.esa.beam.util.math.VectorLookupTable;
 
 /**
  * MODTRAN lookup table.
@@ -68,7 +71,7 @@ public class ModtranLookupTable {
             valuesB[0][j] = valuesB[0][j] * szc + valuesB[1][j];
         }
 
-        return new RtcTable(wavelengths, valuesA, valuesB[0], valuesB[2], valuesB[3]);
+        return new RtcTable(valuesA, valuesB[0], valuesB[2], valuesB[3]);
     }
 
     /**
@@ -87,20 +90,20 @@ public class ModtranLookupTable {
      *
      * @return the ith dimension.
      */
-    public final IntervalPartition getDimension(int i) {
+    public final double[] getDimension(int i) {
         switch (i) {
             case VZA:
-                return lutB.getDimension(0);
+                return lutB.getDimension(0).getSequence();
             case SZA:
-                return lutB.getDimension(1);
+                return lutB.getDimension(1).getSequence();
             case ADA:
-                return lutA.getDimension(4);
+                return lutA.getDimension(4).getSequence();
             case ALT:
-                return lutB.getDimension(2);
+                return lutB.getDimension(2).getSequence();
             case AOT:
-                return lutB.getDimension(3);
+                return lutB.getDimension(3).getSequence();
             case CWV:
-                return lutB.getDimension(4);
+                return lutB.getDimension(4).getSequence();
             default:
                 throw new IllegalArgumentException("illegal dimension index number");
         }

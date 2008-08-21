@@ -8,27 +8,16 @@ package org.esa.beam.chris.operators.internal;
  * @since BEAM 4.2
  */
 public class RtcTable {
-    private final double[] wavelengths;
     private final double[] lpw;
     private final double[] egl;
     private final double[] sab;
     private final double[] rat;
 
-    RtcTable(double[] wavelengths, double[] lpw, double[] egl, double[] sab, double[] rat) {
-        this.wavelengths = wavelengths;
-
+    public RtcTable(double[] lpw, double[] egl, double[] sab, double[] rat) {
         this.lpw = lpw;
         this.egl = egl;
         this.sab = sab;
         this.rat = rat;
-    }
-
-    public final double[] getWavelengths() {
-        return wavelengths;
-    }
-
-    public final int getWavelengthCount() {
-        return wavelengths.length;
     }
 
     public final double[] getLpw() {
@@ -59,7 +48,7 @@ public class RtcTable {
         return sab[i];
     }
 
-    public double getRat(int i) {
+    public final double getRat(int i) {
         return rat[i];
     }
 }

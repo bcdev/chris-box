@@ -144,10 +144,10 @@ public class ModtranLookupTableTest extends TestCase {
     }
 
     private void checkWaterVapourDimension() {
-        final IntervalPartition dimension = modtranLookupTable.getDimension(ModtranLookupTable.CWV);
+        final double[] dimension = modtranLookupTable.getDimension(ModtranLookupTable.CWV);
 
-        assertEquals(7, dimension.getCardinal());
-        assertEquals(0.3, dimension.getMin(), 1.0E-6);
-        assertEquals(5.0, dimension.getMax(), 1.0E-6);
+        assertEquals(7, dimension.length);
+        assertEquals(0.3, dimension[0], 1.0E-6);
+        assertEquals(5.0, dimension[dimension.length - 1], 1.0E-6);
     }
 }
