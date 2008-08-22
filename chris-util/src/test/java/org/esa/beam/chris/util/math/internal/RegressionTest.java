@@ -26,22 +26,12 @@ import junit.framework.TestCase;
 public class RegressionTest extends TestCase {
 
     public void testRegression() {
-        final UnivariateFunctionSequence functionSequence = new LegendrePolynomials();
+        final UnivariateFunctionSequence legendrePolynomials = new LegendrePolynomials();
+        final double[][] matrix = new double[3][5];
 
-        final double[][] x = new double[5][3];
-        for (int i = 0; i < 5; ++i) {
-            functionSequence.calculate(i, x[i]);
-        }
-        final double[][] xx = new double[3][5];
-        for (int i = 0; i < 3; ++i) {
-            final double[] xxi = xx[i];
-            for (int j = 0; j < 5; ++j) {
-                xxi[j] = x[j][i];
-            }
-        }
-
-        final double[] y = {0.0, 3.0, 12.0, 27.0, 48.0};
-        double[] z = new Regression(xx).fit(y, new double[5], new double[3], new double[3]);
+        legendrePolynomials.calculate(new double[]{0.0, 1.0, 2.0, 3.0, 4.0}, matrix);
+        final double[] y = {0.0, 3.0, 12.0, 27.0, 48.0}; // parabola
+        double[] z = new Regression(matrix).fit(y);
 
         assertEquals(y[0], z[0], 1.0E-10);
         assertEquals(y[1], z[1], 1.0E-10);

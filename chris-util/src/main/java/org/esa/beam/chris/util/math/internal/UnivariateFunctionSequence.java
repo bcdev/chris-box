@@ -35,4 +35,18 @@ public interface UnivariateFunctionSequence {
      * @throws NullPointerException if {@code y} is {@code null}.
      */
     void calculate(double x, double[] y) throws NullPointerException;
+
+    /**
+     * Evaluates the first n functions at given abscissa values.
+     *
+     * @param x the abscissa values.
+     * @param y the calculated function values. The number of calculated
+     *          values is defined by the length of this array.  No value
+     *          is calculated if the array is empty.
+     *          The value {@code y[i][k]} corresponds to the value of the
+     *          ith function in the sequence at the kth abscissa value.
+     *
+     * @throws NullPointerException if {@code x} or {@code y} is {@code null}.
+     */
+    void calculate(double[] x, double[][] y);
 }

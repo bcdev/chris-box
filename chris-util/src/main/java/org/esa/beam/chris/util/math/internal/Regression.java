@@ -14,13 +14,15 @@
  */
 package org.esa.beam.chris.util.math.internal;
 
+import java.util.Arrays;
+
 /**
  * todo - add API doc
-*
-* @author Ralf Quast
-* @version $Revision$ $Date$
-* @since BEAM 4.2
-*/
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ * @since BEAM 4.2
+ */
 public class Regression {
     private final int m;
     private final int n;
@@ -54,6 +56,18 @@ public class Regression {
         rank = svd.rank();
     }
 
+    public double[] fit(double[] y) {
+        return fit(y, new double[m], new double[rank], new double[rank]);
+    }
+
+    public double[] fit(double[] y, double[] z) {
+        return fit(y, z, new double[rank], new double[rank]);
+    }
+
+    public double[] fit(double[] y, double[] z, double[] c) {
+        return fit(y, z, c, new double[rank]);
+    }
+
     public double[] fit(double[] y, double[] z, double[] c, double[] w) {
         // compute coefficients
         for (int j = 0; j < rank; ++j) {
@@ -64,7 +78,7 @@ public class Regression {
             }
             w[j] /= s[j];
         }
-        for (int j = 0; j < n; ++j) {
+        for (int j = 0; j < rank; ++j) {
             final double[] vj = v[j];
 
             for (int i = 0; i < rank; ++i) {
@@ -72,6 +86,9 @@ public class Regression {
             }
         }
         // compute fit values
+        for (int j = 0; j < m; ++j) {
+            z[j] = 0.0;
+        }
         for (int i = 0; i < rank; ++i) {
             final double ci = c[i];
 
