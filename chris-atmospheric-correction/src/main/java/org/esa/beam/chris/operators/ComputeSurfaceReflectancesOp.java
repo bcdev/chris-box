@@ -310,8 +310,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
             final double[] irradiances = new Resampler(solarIrradianceTable[0], nominalWavelengths,
                                                        nominalBandwidths).resample(solarIrradianceTable[1]);
-            final double redScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irradiances[redIndex];
-            final double nirScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irradiances[nirIndex];
+            final double redScaling = Math.PI / (Math.cos(Math.toRadians(sza)) * 1000.0 * irradiances[redIndex]);
+            final double nirScaling = Math.PI / (Math.cos(Math.toRadians(sza)) * 1000.0 * irradiances[nirIndex]);
 
             waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex], redScaling,
                                                           nirScaling);
@@ -376,17 +376,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final CalculatorFactoryCwv ac1CalculatorFactory = new CalculatorFactoryCwv(modtranLookupTable, resampler,
                                                                                        vza, sza, ada, alt, aot550,
                                                                                        lpwCor, toaScaling);
-            final int redIndex = OpUtils.findBandIndex(toaBands, 688.0);
-            final int nirIndex = OpUtils.findBandIndex(toaBands, 780.0);
-
-            final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
-            final double[] irradiances = new Resampler(solarIrradianceTable[0], nominalWavelengths, nominalBandwidths,
-                                                       smileCorrection).resample(solarIrradianceTable[1]);
-            final double redScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irradiances[redIndex];
-            final double nirScaling = Math.PI / Math.cos(Math.toRadians(sza)) / irradiances[nirIndex];
-
-            waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex], redScaling,
-                                                          nirScaling);
             ac = new Ac1(ac1CalculatorFactory);
         } else {
             ac = new Ac2(calculatorFactory.createCalculator(resampler));
@@ -459,10 +448,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 }
             }
         }
-
         for (int i = 0; i < lpwCor.length; ++i) {
             if (lpwCor[i] > 0.0) {
                 lpwCor[i] = 1.0;
+            } else {
+                lpwCor[i] = 0.0;
             }
         }
     }
@@ -502,7 +492,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                 final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
 
-                if ((hyperMask & 3) == 0 && waterMask == 1) {
+                if ((hyperMask & 3) == 0 && waterMask != 0) {
                     final double toa = toaTile.getSampleDouble(pos.x, pos.y);
 
                     if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
@@ -532,8 +522,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                 for (int i = 0; i < lpwCor.length; ++i) {
                     lpwCor[i] = table.getLpw(i) - Statistics.mean(darkPixels[i]);
-                    // todo - do 3rd order interpolation?
                 }
+                // polynomial fit
+                final double[][] p = new double[4][lpwCor.length];
+                new LegendrePolynomials().calculate(nominalWavelengths, p);
+                new Regression(p).fit(lpwCor, lpwCor);
             }
         }
         for (int i = 0; i < lpwCor.length; ++i) {
@@ -885,7 +878,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
                     final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
 
-                    if ((hyperMask & 3) == 0 && cloudMask == 0 && waterMask == 1) {
+                    if ((hyperMask & 3) == 0 && cloudMask == 0 && waterMask != 0) {
                         for (int i = 0; i < rhoTiles.length; i++) {
                             final double toa = toaTiles[i].getSampleDouble(pos.x, pos.y);
                             final double rho = calculator.getBoaReflectance(i, toa);

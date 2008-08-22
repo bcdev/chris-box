@@ -1,0 +1,283 @@
+
+
+;********************************************************************************************
+;To be updated in the main
+
+; AOT retrieval
+if aot550_val eq 0 then begin
+   if mode ne 2 then $
+     AOT_retr_land, toa_img_arr, ncols, nrows, wl_center, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, aot_gr, msk_arr, mode, wv_val, cld_aot_thre, aot550_arr, lpw_cor $
+   else $
+     AOT_retr_water, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, aot_gr, msk_arr, file_Isc, mode, wv_val, cld_aot_thre, aot550_arr, lpw_cor 
+endif else begin
+  aot550_arr = replicate(aot550_val, num_img)
+  lpw_cor = replicate(0., num_img, num_bd)
+endelse
+;********************************************************************************************
+
+
+
+;********************************************************************************************
+; AOT_retr_land:
+;
+; Retrieves AOT at 550 nm from land targets (modes 1, 3, 4, 5)
+;********************************************************************************************
+PRO AOT_retr_land, toa_img_arr, ncols, nrows, wl_center, s_norm_ini, fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, cld_arr, aot_gr, msk_arr, mode, wv_val, cld_aot_thre, aot550_arr, lpw_cor
+
+common lut_inp, lut1, lut2, num_par, num_wvl_LUT, xnodes, nm_nodes, ndim, lim, lut_cell, x_cell ; used to enable calls to interpol_LUT to retrieve parameters from the LUT
+
+num_bd = n_elements(wl_center)
+num_img = n_elements(toa_img_arr[*, 0, 0, 0])
+
+ret_flg=0 ; initialization of ret_flg; no successful AOT retrieval when ret_flg = 1 
+
+num_min_pix = 100. / num_img ; threshold indicating the number of pixels which should become negative to finish the AOTmax claculation
+
+lpw_cor = fltarr(num_img, num_bd) ; path_radiance correction for +/-55 angles
+
+; *******************************************************************************
+; AOTmax is set by serching for the maximum AOT leading to Ltoa > Lpath at #num_min_pix of dark pixels 
+;   (forcing to positive reflectance)
+
+vis_lim = [420., 690.] ; wavelength range considered for the evaluation of the darkest pixel
+wh_vis = where(wl_center ge vis_lim[0] and wl_center le vis_lim[1], num_bd_vis)
+
+hsurf = mean(hsf_arr) 
+
+warn_max_flg = 0 ; if 1, AOT550 set to the maximum value
+warn_def_flg = 0; if 1, AOT550 set to the default value aot_def = 0.2
+
+;AOT calculated separately for the 5 angles
+aot550_arr = fltarr(num_img)
+dim_aot = n_elements(aot_gr)
+
+for ind_img = 0, num_img - 1 do begin
+
+; minimum radiance min_arr at vis_lim spectral range is found from #num_min_pix pixels
+  min_arr = fltarr(num_min_pix, num_bd)
+  dum = fltarr(ncols, nrows)
+  for i = 0, num_bd - 1 do begin 
+    dum = toa_img_arr[ind_img, *, *, i] * msk_arr[*, *, ind_img]
+    wh_no0 = where(dum ne 0., cnt_no0)
+    if cnt_no0 gt 0 then begin
+      dum_tmp = dum[wh_no0]
+      ind_min=sort(dum_tmp)
+      min_arr[*, i] = dum_tmp[ind_min[0:num_min_pix-1]]     
+    endif
+  endfor 
+
+  CHRIS_retr_aot_max, wh_vis, num_min_pix, dim_aot, vza_arr[ind_img], sza_arr[ind_img], phi_arr[ind_img], mean(hsf_arr), aot_gr, wv_val, s_norm_ini, min_arr, aot_max, lpw_vza
+
+  if aot_max eq aot_gr[0] then begin
+    aot550=aot_gr[0]
+    ret_flg=1
+  endif
+; 
+; END of AOTmax calculation
+; *******************************************************************************
+
+; Refinement in AOT calculation through endmemeber inversion (CHRIS_AOT_inv_land), when  AOT_max != aot_gr[0]
+;    AOT is calculated from the inversion of Ltoa at 5 reference pixels in CHRIS_AOT_inv_land
+  if ret_flg eq 0 then begin
+
+    toa_img = reform(toa_img_arr[ind_img, *, *, *]) ; preparation of the call to CHRIS_AOT_inv_land. Parameters passed by 
+    vza_inp = vza_arr[ind_img]
+    sza_inp = sza_arr[ind_img] 
+    phi_inp = phi_arr[ind_img]
+
+    tot_pix = long(ncols) * nrows
+    wh_land = where(cld_arr[*, *, ind_img] le cld_aot_thre and msk_arr[*, *, ind_img] eq 1, cnt_land)
+    toa_sub = fltarr(cnt_land, num_bd)
+    for i = 0, num_bd - 1 do toa_sub[*, i] = toa_img[wh_land + tot_pix * i]
+    toa_img = 0
+
+    dem_mean = hsf_arr[ind_img]
+    mus_mean = cos(sza_arr[ind_img]*!dtor)
+
+    n_pts_gr = 10
+    aot_min = aot_gr[0]
+    aot_gr_inv = aot_min + (aot_max - aot_min) * findgen(n_pts_gr) / (n_pts_gr - 1)
+    lpw_aot = fltarr(num_bd, n_pts_gr)
+    egl_aot = fltarr(num_bd, n_pts_gr)
+    sab_aot = fltarr(num_bd, n_pts_gr)
+    for i = 0, n_pts_gr - 1 do begin ; extraction of AOT breakpoints from LUT
+      f_int = interpol_lut(vza_arr[ind_img], sza_arr[ind_img], phi_arr[ind_img], dem_mean, aot_gr_inv[i], wv_val) ; call to interpolt_lut with different AOT values
+
+      a = f_int # s_norm_ini
+      lpw_aot[*, i] = a[0, *] * 1.e+4 
+      egl_aot[*, i] = (a[1, *] * mus_mean + a[2, *]) * 1.e+4
+      sab_aot[*, i] = a[3, *]
+    endfor
+
+  ; call to routine performing end-member inversion
+    CHRIS_AOT_inv_land, toa_sub, lpw_aot, egl_aot, sab_aot, dn2rad, wl_center, wl_fwhm, aot_gr_inv, aot550, valid_flg 
+    ; aot550 is the final value, if CHRIS_AOT_inv_land worked (valid_flg=1)
+  endif
+; end of refinement of AOT by endmember inversion
+
+  if ret_flg eq 1 or valid_flg eq 1 then aot550_arr[ind_img] = aot550 else begin ; 
+    aot_def = 0.2 ; default value when CHRIS_AOT_inv_land did not work; it is applied when aot_max > aot_def
+    if aot_def gt aot_max then begin 
+      warn_max_flg = 1
+      aot550_arr[ind_img] = aot_max
+    endif else begin
+      warn_def_flg = 1
+      aot550_arr[ind_img] = aot_def
+    endelse
+  endelse
+
+; Path radiance correction for +/-55 images. Radiance values at dark pixels are compared to path radiance for aot_max
+  if aot550_arr[ind_img] eq aot_gr[0] then begin ; path radiance correction for +/-55 deg; a spectral value is added to avoid darkest pixels going to negative
+    if fza_arr[ind_img] eq 55. or fza_arr[ind_img] eq -55. then begin
+      atmp = lpw_vza - total(min_arr, 1)/n_elements(min_arr[*, 0])
+      lpw_cor[ind_img, *] = atmp
+      wh_pos = where(lpw_cor gt 0., cnt_pos) 
+      if cnt_pos gt 0 then printf, 15, 'WARNING: Path radiance correction based on darkest pixel performed over FZA='+ string(fza_arr[ind_img], format='(I4)')
+    endif
+  endif
+
+endfor
+
+lpw_cor = lpw_cor > 0.
+
+if warn_max_flg eq 1 then printf, 15, 'WARNING: Error in AOT retrieval - insufficient spectral contrast. AOT550 set to maximum value = ' + string(aot_max, format='(F5.3)')
+if warn_def_flg eq 1 then printf, 15, 'WARNING: Error in AOT retrieval - insufficient spectral contrast. AOT550 set to default value = ' + string(aot_def, format='(F5.3)')
+
+END
+
+;********************************************************************************************
+; AOT_retr_water:
+;
+; Retrieves AOT from water targets (mode 2)
+;
+; Based on finding AOTmax, as in AOT_retr_land; no refinement with endmember inversion
+;
+;********************************************************************************************
+PRO AOT_retr_water, toa_img_arr, ncols, nrows, wl_center, wl_fwhm, s_norm_ini,fza_arr, vza_arr, sza_arr, phi_arr, hsf_arr, aot_gr, msk_arr, file_Isc, mode, wv_val, cld_aot_thre, aot550_arr, lpw_cor
+
+common lut_inp, lut1, lut2, num_par, num_wvl_LUT, xnodes, nm_nodes, ndim, lim, lut_cell, x_cell
+
+num_bd = n_elements(wl_center)
+num_img = n_elements(toa_img_arr[*, 0, 0, 0])
+
+lpw_cor = replicate(1., num_img, num_bd)
+; Solar irradiance is read and spectrally resampled, it is used in the L_toa->ro_toa conversion
+a=''
+num_lin_Isc = 21001
+tmp= fltarr(2, num_lin_Isc)
+openr, 1, file_Isc
+readf, 1, a
+readf, 1, a
+readf, 1, tmp
+close, 1
+wvl_irr = 1.e+7 / tmp[0, *]
+solirr_ini = tmp[1, *] * tmp[0, *]^2
+
+s_norm_irr = generate_filter(wvl_irr, wl_center, wl_fwhm) 
+solirr = solirr_ini # s_norm_irr ; Solar irradiance resampled to spectral setting
+
+num_min_pix = 100. /num_img
+
+vis_lim = [435., 690.] ; Spectral region for AOT_max calculation
+wh_vis = where(wl_center ge vis_lim[0] and wl_center le vis_lim[1], num_bd_vis)
+
+wvl_red = 688. 
+wvl_nir = 780.
+wh_red = where(abs(wl_center-wvl_red) eq min(abs(wl_center-wvl_red))) & wh_red = wh_red[0]
+wh_nir = where(abs(wl_center-wvl_nir) eq min(abs(wl_center-wvl_nir))) & wh_nir = wh_nir[0]
+
+dim_aot = n_elements(aot_gr)
+
+lpw_cor = fltarr(num_img, num_bd)
+min_arr = fltarr(num_min_pix, num_bd)
+aot550_arr = fltarr(num_img)
+
+for ind_img = 0, num_img - 1 do begin
+
+  ro_toa_red = toa_img_arr[ind_img, *, *, wh_red] * !pi / cos(sza_arr[ind_img]*!dtor)/solirr[wh_red]
+  ro_toa_nir = toa_img_arr[ind_img, *, *, wh_nir] * !pi / cos(sza_arr[ind_img]*!dtor)/solirr[wh_nir]
+
+; Water pixels are extracted by means of red/nir thresholds
+  msk_wat = (toa_img_arr[ind_img, *, *, wh_red] gt toa_img_arr[ind_img, *, *, wh_nir]) and (ro_toa_nir lt 0.1 and ro_toa_nir gt 0.01 and ro_toa_red gt 0.01)
+
+; minimum radiance at vis_lim range is found from #num_min_pix water pixels
+  for i = 0, num_bd - 1 do begin
+    dum = toa_img_arr[ind_img, *, *, i] * msk_arr[*, *, ind_img] * msk_wat
+    wh_no0 = where(dum ne 0.)
+    dum_tmp = dum[wh_no0]
+    ind_min=sort(dum_tmp)
+    min_arr[*, i] = dum_tmp[ind_min[0:num_min_pix-1]]
+  endfor 
+
+  CHRIS_retr_aot_max, wh_vis, num_min_pix, dim_aot, vza_arr[ind_img], sza_arr[ind_img], phi_arr[ind_img], mean(hsf_arr), aot_gr, wv_val, s_norm_ini, min_arr, aot550, lpw_vza
+  aot550_arr[ind_img] = aot550
+
+; Path radiance correction for +/-55 images. Radiance values at dark pixels are compared to path radiance for aot_max
+  if aot550 eq aot_gr[0] then begin
+    if fza_arr[ind_img] eq 55. or fza_arr[ind_img] eq -55. then begin
+      atmp = lpw_vza - total(min_arr, 1)/n_elements(min_arr[*, 0])
+      s = poly_fit(wl_center, atmp, 4)
+      lpw_cor[ind_img, *] = s[0] + s[1]*wl_center + s[2]*wl_center*wl_center + s[3]*wl_center*wl_center*wl_center + s[4]*wl_center*wl_center*wl_center*wl_center
+      wh_pos = where(lpw_cor gt 0., cnt_pos) 
+      if cnt_pos gt 0 then printf, 15, 'WARNING: Path radiance correction based on darkest pixel performed over FZA='+ string(fza_arr[ind_img], format='(I4)')
+    endif
+  endif
+
+endfor
+
+lpw_cor = lpw_cor > 0.
+
+
+END
+
+;********************************************************************************************
+; CHRIS_retr_aot_max:
+;
+; Calculates AOT_max, as the AOT causing a number of dark pixels going to negative values 
+;  after atmospheric correction (Sets the maximum AOT value)
+;
+;********************************************************************************************
+PRO CHRIS_retr_aot_max, wh_vis, num_min_pix, dim_aot, vza, sza, phi, hsurf, aot_gr, wv_val, s_norm_ini, min_arr, aot550, lpw_vza
+
+;dark pixels in min_arr are compared with the path radiance lpw_vza from the LUT
+
+cnt_neg = 0
+j=0
+; Loop with coarse step in AOT
+while cnt_neg lt num_min_pix and j lt dim_aot do begin
+  f_int = interpol_lut(vza, sza, phi, hsurf, aot_gr[j], wv_val)
+  a = f_int # s_norm_ini
+  lpw_vza = a[0, *] * 10000.
+  cnt_neg = 0
+  for k = 0, num_min_pix-1 do begin
+    wh_neg = where(min_arr[k, wh_vis]-lpw_vza[wh_vis] le 0., cnt_cont)
+    if cnt_cont gt 0 then cnt_neg = cnt_neg + 1
+  endfor
+  j = j+1
+endwhile
+j_max = j - 2 > 0
+
+aot550 = aot_gr[0]
+; if j_max=0 -> AOTmax=aot_gr[0]: even the lowest AOT value in the LUT leads to n>num_min_pix; aot550=aot_gr[0] and aot calculation is finished
+
+; Loop with fine step in AOT
+if j_max ne 0 then begin
+  j=1
+  stp = 0.005
+  cnt_neg=0
+  while cnt_neg lt num_min_pix and aot_gr[j_max] + j*stp le aot_gr[dim_aot - 1] do begin
+    aot_lp = aot_gr[j_max] + j*stp
+    f_int = interpol_lut(vza, sza, phi, hsurf, aot_lp, wv_val)
+    a = f_int # s_norm_ini
+    lpw_vza = a[0, *] * 10000.
+    cnt_neg = 0
+    for k = 0, num_min_pix-1 do begin
+      wh_neg = where(min_arr[k, wh_vis]-lpw_vza[wh_vis] le 0., cnt_cont)
+      if cnt_cont gt 0 then cnt_neg = cnt_neg + 1
+    endfor
+    j = j+1
+  endwhile 
+  aot550 = aot_lp - stp
+endif
+
+END
