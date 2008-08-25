@@ -295,6 +295,10 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         nominalWavelengths = OpUtils.getWavelenghts(toaBands);
         nominalBandwidths = OpUtils.getBandwidths(toaBands);
 
+        // calculate TOA scaling
+        final int day = OpUtils.getAcquisitionDay(sourceProduct);
+        final double toaScaling = 1.0E-3 / OpUtils.getSolarIrradianceCorrectionFactor(day);
+
         // create mask images
         hyperMaskImage = HyperMaskOpImage.createImage(toaMaskBands);
         if (cloudProductBand != null) {
@@ -310,8 +314,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final double[][] solarIrradianceTable = OpUtils.readThuillierTable();
             final double[] irradiances = new Resampler(solarIrradianceTable[0], nominalWavelengths,
                                                        nominalBandwidths).resample(solarIrradianceTable[1]);
-            final double redScaling = Math.PI / (Math.cos(Math.toRadians(sza)) * 1000.0 * irradiances[redIndex]);
-            final double nirScaling = Math.PI / (Math.cos(Math.toRadians(sza)) * 1000.0 * irradiances[nirIndex]);
+            final double redScaling = toaScaling * Math.PI / (Math.cos(Math.toRadians(sza)) * irradiances[redIndex]);
+            final double nirScaling = toaScaling * Math.PI / (Math.cos(Math.toRadians(sza)) * irradiances[nirIndex]);
 
             waterMaskImage = WaterMaskOpImage.createImage(toaBands[redIndex], toaBands[nirIndex], redScaling,
                                                           nirScaling);
@@ -323,10 +327,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         } catch (IOException e) {
             throw new OperatorException(e.getMessage());
         }
-
-        // calculate TOA scaling
-        final int day = OpUtils.getAcquisitionDay(sourceProduct);
-        final double toaScaling = 1.0E-3 / OpUtils.getSolarIrradianceCorrectionFactor(day);
 
         // create resampler factory
         final ResamplerFactory resamplerFactory = new ResamplerFactory(modtranLookupTable.getWavelengths(),
@@ -347,9 +347,9 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     new RtcTableFactoryAot(modtranLookupTable, resamplerFactory.createResampler(0.0), vza, sza, ada,
                                            alt, cwvIni);
             if (mode == 2) {
-                computeAotWater(tableFactory, targetRectangle, pm);
+                computeAotWater(tableFactory, toaScaling, targetRectangle, pm);
             } else {
-                computeAotLand(tableFactory, targetRectangle, pm);
+                computeAotLand(tableFactory, toaScaling, targetRectangle, pm);
             }
             OpUtils.setAnnotationString(getTargetProduct(), "Aerosol Optical Thickness",
                                         new DecimalFormat("0.000").format(aot550));
@@ -382,7 +382,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         }
     }
 
-    private void computeAotLand(RtcTableFactoryAot tableFactory, Rectangle targetRectangle, ProgressMonitor pm) {
+    private void computeAotLand(RtcTableFactoryAot tableFactory, double toaScaling, Rectangle targetRectangle,
+                                ProgressMonitor pm) {
         int lowerVis = -1;
         int upperVis = -1;
         for (int i = 0; i < nominalWavelengths.length; ++i) {
@@ -416,26 +417,22 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
 
                 if ((hyperMask & 3) == 0) {
-                    final double toa = toaTile.getSampleDouble(pos.x, pos.y);
+                    final double toa = toaScaling * toaTile.getSampleDouble(pos.x, pos.y);
 
                     if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
-                        darkPixels[i][DARK_PIXEL_COUNT - 1] = toa;
-                        Arrays.sort(darkPixels[i]);
+                        sort(darkPixels[i], toa);
                     }
                 }
 
-                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-                    pm.worked(1);
-                }
+//                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+//                    pm.worked(1);
+//                }
             }
         }
 
-        double aot = findMaxAot(tableFactory, darkPixels, tableFactory.getMinAot(), 0.05, lowerVis, upperVis);
-        if (aot > tableFactory.getMinAot()) {
-            aot = findMaxAot(tableFactory, darkPixels, aot, 0.005, lowerVis, upperVis);
-        }
-
-        aot550 = aot;
+        aot550 = tableFactory.getMinAot();
+        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
+        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.005, lowerVis, upperVis);
 
         if (aot550 == tableFactory.getMinAot()) {
             final double fza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
@@ -449,15 +446,25 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
         }
         for (int i = 0; i < lpwCor.length; ++i) {
-            if (lpwCor[i] > 0.0) {
-                lpwCor[i] = 1.0;
-            } else {
+            if (lpwCor[i] < 0.0) {
                 lpwCor[i] = 0.0;
             }
         }
     }
 
-    private void computeAotWater(RtcTableFactoryAot tableFactory, Rectangle targetRectangle, ProgressMonitor pm) {
+    private static void sort(double[] values, double value) {
+        for (int i = 0; i < values.length; ++i) {
+            if (value < values[i]) {
+                System.arraycopy(values, i, values, i + 1, values.length - i - 1);
+                values[i] = value;
+
+                return;
+            }
+        }
+    }
+
+    private void computeAotWater(RtcTableFactoryAot tableFactory, double toaScaling, Rectangle targetRectangle,
+                                 ProgressMonitor pm) {
         int lowerVis = -1;
         int upperVis = -1;
         for (int i = 0; i < nominalWavelengths.length; ++i) {
@@ -493,26 +500,22 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
 
                 if ((hyperMask & 3) == 0 && waterMask != 0) {
-                    final double toa = toaTile.getSampleDouble(pos.x, pos.y);
+                    final double toa = toaScaling * toaTile.getSampleDouble(pos.x, pos.y);
 
                     if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
-                        darkPixels[i][DARK_PIXEL_COUNT - 1] = toa;
-                        Arrays.sort(darkPixels[i]);
+                        sort(darkPixels[i], toa);
                     }
                 }
 
-                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-                    pm.worked(1);
-                }
+//                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+//                    pm.worked(1);
+//                }
             }
         }
 
-        double aot = findMaxAot(tableFactory, darkPixels, tableFactory.getMinAot(), 0.05, lowerVis, upperVis);
-        if (aot > tableFactory.getMinAot()) {
-            aot = findMaxAot(tableFactory, darkPixels, aot, 0.005, lowerVis, upperVis);
-        }
-
-        aot550 = aot;
+        aot550 = tableFactory.getMinAot();
+        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
+        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.001, lowerVis, upperVis);
 
         if (aot550 == tableFactory.getMinAot()) {
             final double fza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
@@ -530,9 +533,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
         }
         for (int i = 0; i < lpwCor.length; ++i) {
-            if (lpwCor[i] > 0.0) {
-                lpwCor[i] = 1.0;
-            } else {
+            if (lpwCor[i] < 0.0) {
                 lpwCor[i] = 0.0;
             }
         }
@@ -540,30 +541,28 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     private static double findMaxAot(RtcTableFactoryAot tableFactory, double[][] darkPixels, double aotMin,
                                      double aotInc, int lowerVis, int upperVis) {
-        int iter = 0;
-        int count;
-
-        do {
+        for (int iter = 1; ; ++iter) {
             final double aot = aotMin + iter * aotInc;
+
             if (aot > tableFactory.getMaxAot()) {
-                break;
+                return aotMin + (iter - 1) * aotInc;
             }
 
             final RtcTable table = tableFactory.createRtcTable(aot);
-            count = 0;
+            int count = 0;
 
-            for (int i = lowerVis; i < upperVis + 1; ++i) {
-                for (int k = 0; k < DARK_PIXEL_COUNT; ++k) {
+            for (int k = 0; k < DARK_PIXEL_COUNT; ++k) {
+                for (int i = lowerVis; i < upperVis + 1; ++i) {
                     if (darkPixels[i][k] < table.getLpw(i)) {
                         ++count;
                         break;
                     }
                 }
             }
-            ++iter;
-        } while (count < DARK_PIXEL_COUNT);
-
-        return aotMin + (iter - 1) * aotInc;
+            if (count >= DARK_PIXEL_COUNT) {
+                return aotMin + (iter - 1) * aotInc;
+            }
+        }
     }
 
     private interface Ac {
