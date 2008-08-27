@@ -75,7 +75,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     @Parameter(defaultValue = "0.0",
                interval = "[0.0, 1.0]",
-               label = "Aerosol optical thickness",
+               label = "Aerosol optical thickness at 550 nm",
                description = "The value of the aerosol optical thickness (AOT) at 550 nm.")
     private double aot550;
 
@@ -348,11 +348,13 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                                            alt, cwvIni);
             if (mode == 2) {
                 computeAotWater(tableFactory, toaScaling, targetRectangle, pm);
+                OpUtils.setAnnotationString(getTargetProduct(), "AOT@550nm",
+                                            new DecimalFormat("0.000").format(aot550));
             } else {
                 computeAotLand(tableFactory, toaScaling, targetRectangle, pm);
+                OpUtils.setAnnotationString(getTargetProduct(), "Maximum AOT@550nm",
+                                            new DecimalFormat("0.000").format(aot550));
             }
-            OpUtils.setAnnotationString(getTargetProduct(), "Aerosol Optical Thickness",
-                                        new DecimalFormat("0.000").format(aot550));
         }
 
         // create calculator factory
@@ -1143,9 +1145,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                             final int minX = Math.max(targetRectangle.x, x - halfKernelSize);
                             final int maxX = Math.min(targetRectangle.width, x + halfKernelSize);
 
-                            means[x - targetRectangle.x][y - targetRectangle.y] = computeMean(targetTile,
-                                                                                              minX,
-                                                                                              minY, maxX, maxY);
+                            means[x - targetRectangle.x][y - targetRectangle.y] = computeMean(targetTile, minX, minY,
+                                                                                              maxX, maxY);
                         }
                     }
 
