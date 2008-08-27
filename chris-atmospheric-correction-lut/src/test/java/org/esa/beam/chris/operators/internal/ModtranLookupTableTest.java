@@ -38,7 +38,7 @@ public class ModtranLookupTableTest extends TestCase {
 
     @Override
     public void run(TestResult result) {
-//        super.run(result);  // uncomment this line in order to run the tests
+        super.run(result);  // uncomment this line in order to run the tests
     }
 
     @Override
@@ -141,6 +141,19 @@ public class ModtranLookupTableTest extends TestCase {
         assertEquals(0.05206649 * DEKA_KILO, table.getEgl(17), 0.5E-7 * DEKA_KILO);
         assertEquals(0.25710700, table.getSab(17), 0.5E-6);
         assertEquals(1.00742000, table.getRat(17), 0.5E-5);
+
+        // vza = 20.0
+        // sza = 20.0
+        // ada = 20.0
+        // alt = 0.40  target elevation
+        // aot = 0.23  AOT at 550nm
+        // cwv = 1.80  integrated water vapour
+        table = modtranLookupTable.getRtcTable(20.0, 20.0, 20.0, 0.40, 0.23, 1.80);
+
+        assertEquals(0.00839986 * DEKA_KILO, table.getLpw(0), 0.5E-8 * DEKA_KILO);
+        assertEquals(0.10621177 * DEKA_KILO, table.getEgl(0), 0.5E-5 * DEKA_KILO);
+        assertEquals(0.26435800, table.getSab(0), 0.5E-6);
+        assertEquals(0.62973800, table.getRat(0), 0.5E-6);
     }
 
     private void checkWaterVapourDimension() {
