@@ -41,6 +41,7 @@ public class ClusterPropertiesExtractor {
 
         final int[] clusterMapPixels = new int[w];
         final double[] brightnessPixels = new double[w];
+        
         for (int y = 0; y < h; ++y) {
             clusterMapBand.readPixels(0, y, w, 1, clusterMapPixels, pm);
             brightnessBand.readPixels(0, y, w, 1, brightnessPixels, pm);

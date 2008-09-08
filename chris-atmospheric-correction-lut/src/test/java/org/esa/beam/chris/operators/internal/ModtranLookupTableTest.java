@@ -38,7 +38,7 @@ public class ModtranLookupTableTest extends TestCase {
 
     @Override
     public void run(TestResult result) {
-        super.run(result);  // uncomment this line in order to run the tests
+//        super.run(result);  // uncomment this line in order to run the tests
     }
 
     @Override

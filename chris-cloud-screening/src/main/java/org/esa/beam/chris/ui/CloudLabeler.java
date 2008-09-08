@@ -20,7 +20,9 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.*;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.cluster.EMCluster;
-import org.esa.beam.cluster.EMClusterOp;
+import org.esa.beam.cluster.IndexFilter;
+import org.esa.beam.cluster.ProbabilityCalculator;
+import org.esa.beam.cluster.ProbabilityCalculatorFactory;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.GPF;
 import org.esa.beam.framework.gpf.Operator;
@@ -54,7 +56,7 @@ public class CloudLabeler {
     private final Product radianceProduct;
     private Product reflectanceProduct;
     private Product featureProduct;
-    private Product clusterProduct;
+    private EMCluster[] clusters;
     private Product clusterMapProduct;
     private ProductSceneView rgbSceneView;
 
@@ -83,17 +85,16 @@ public class CloudLabeler {
             featureProduct = createFeatureProduct(reflectanceProduct);
 
             // 2. Find clusters
-            clusterProduct = createClusterProduct(featureProduct);
+            clusters = findClusters(featureProduct);
 
             // 3. Cluster labeling
-            clusterMapProduct = createClusterMapProduct(clusterProduct);
+            clusterMapProduct = createClusterMapProduct(featureProduct, clusters);
         } finally {
             pm.done();
         }
     }
 
     public void createRgbSceneView() throws IOException {
-
         final RasterDataNode[] rgbBands = getRgbBands(radianceProduct);
         ProductSceneImage productSceneImage = ProductSceneImage.create(rgbBands[0], rgbBands[1], rgbBands[2],
                                                                        ProgressMonitor.NULL);
@@ -107,11 +108,10 @@ public class CloudLabeler {
     }
 
     public void assignImageInfo(RenderedImage rgbImage) {
-        final Band[] sourceBands = findBands(clusterProduct, "probability");
-        final int[] r = new int[sourceBands.length];
-        final int[] g = new int[sourceBands.length];
-        final int[] b = new int[sourceBands.length];
-        final int[] clusterCount = new int[sourceBands.length];
+        final int[] r = new int[clusters.length];
+        final int[] g = new int[clusters.length];
+        final int[] b = new int[clusters.length];
+        final int[] clusterCount = new int[clusters.length];
 
         final RenderedImage image = getClusterMapBand().getImage();
         final Raster membershipImageData = image.getData();
@@ -139,7 +139,7 @@ public class CloudLabeler {
         final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[classNames.length];
         for (int index = 0; index < points.length; index++) {
             String className = classNames[index];
-            final int sample =indexCoding.getIndexValue(className);
+            final int sample = indexCoding.getIndexValue(className);
             final Color color = new Color(r[index], g[index], b[index]);
             points[index] = new ColorPaletteDef.Point(sample, color, className);
         }
@@ -175,22 +175,25 @@ public class CloudLabeler {
         return bestBand;
     }
 
-    public void performLabelingStep(int[] rejectedIndexes) throws OperatorException {
-        final Band[] probabilityBands = new Band[clusterMapProduct.getNumBands() - 1];
-
-        int index = 0;
-        for (Band band : clusterMapProduct.getBands()) {
-            if (band.getName().startsWith("probability")) {
-                probabilityBands[index] = band;
-                ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(band);
-                band.setImage(ClusterProbabilityOpImage.create(imageLayout, findBands(clusterProduct, "prob"),
-                                                               index, rejectedIndexes));
-                index++;
-            }
-        }
+    public void performLabelingStep(final int[] rejectedIndexes) throws OperatorException {
         final Band clusterMapBand = getClusterMapBand();
         ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(clusterMapBand);
-        clusterMapBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
+        final Band[] featureBands = getFeatureBands(featureProduct);
+        final ProbabilityCalculator calculator =
+                new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
+        final IndexFilter indexFilter = new IndexFilter() {
+            @Override
+            public boolean accept(int index) {
+                for (final int rejectedIndex : rejectedIndexes) {
+                    if (index == rejectedIndex) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        };
+        clusterMapBand.setImage(ClusterMapOpImage2.createImage(featureBands, calculator, indexFilter, clusters.length));
     }
 
     public void performCloudProductComputation(int[] cloudClusterIndexes, int[] surfaceClusterIndexes,
@@ -291,35 +294,54 @@ public class CloudLabeler {
         return GPF.createProduct("chris.Accumulate", parameterMap, clusterMapProduct);
     }
 
-    private Product createClusterProduct(Product featureProduct) {
+    private EMCluster[] findClusters(Product featureProduct) {
+        // todo -- make GUI parameters
         final int clusterCount = 14;
         final int iterationCount = 60;
-        final boolean includeProbabilities = true;
+        final int seed = 31415;
+
+        final String[] sourceBandNames = getFeatureBandNames(featureProduct);
+        final Comparator<EMCluster> clusterComparator = new Comparator<EMCluster>() {
+            @Override
+            public int compare(EMCluster c1, EMCluster c2) {
+                return Double.compare(c2.getMean()[0], c1.getMean()[0]);
+            }
+        };
+
+        return FindClustersOp.findClusters(featureProduct, clusterCount, iterationCount, seed, sourceBandNames,
+                                      clusterComparator, ProgressMonitor.NULL);
+    }
+
+    private String[] getFeatureBandNames(Product featureProduct) {
         final List<String> sourceBandNameList = new ArrayList<String>(5);
         Collections.addAll(sourceBandNameList, "brightness_vis", "brightness_nir", "whiteness_vis", "whiteness_nir");
         if (featureProduct.getProductType().matches("CHRIS_M[15]_FEAT")) {
             sourceBandNameList.add("wv");
         }
         final String[] sourceBandNames = sourceBandNameList.toArray(new String[sourceBandNameList.size()]);
-        final Comparator<EMCluster> clusterComparator = new Comparator<EMCluster>() {
-            public int compare(EMCluster c1, EMCluster c2) {
-                return Double.compare(c2.getMean()[0], c1.getMean()[0]);
-            }
-        };
-        final EMClusterOp clustersOp = new EMClusterOp(
-                featureProduct,
-                clusterCount,
-                iterationCount,
-                sourceBandNames,
-                includeProbabilities,
-                clusterComparator);
-
-        return clustersOp.getTargetProduct();
+        return sourceBandNames;
     }
 
-    private Product createClusterMapProduct(Product clusterProduct) {
-        final Map<String, Object> emptyMap = Collections.emptyMap();
-        return GPF.createProduct("chris.MakeClusterMap", emptyMap, clusterProduct);
+    private Band[] getFeatureBands(Product featureProduct) {
+        final List<Band> sourceBandList = new ArrayList<Band>(5);
+        Collections.addAll(sourceBandList,
+                           featureProduct.getBand("brightness_vis"),
+                           featureProduct.getBand("brightness_nir"),
+                           featureProduct.getBand("whiteness_vis"),
+                           featureProduct.getBand("whiteness_nir"));
+        if (featureProduct.getProductType().matches("CHRIS_M[15]_FEAT")) {
+            sourceBandList.add(featureProduct.getBand("wv"));
+        }
+
+        return sourceBandList.toArray(new Band[sourceBandList.size()]);
+    }
+
+    private Product createClusterMapProduct(Product featureProduct, EMCluster[] clusters) {
+        final Map<String, Object> parameterMap = new HashMap<String, Object>();
+        parameterMap.put("sourceBandNames", getFeatureBandNames(featureProduct));
+        parameterMap.put("clusters", clusters);
+
+        return GPF.createProduct("chris.MakeClusterMap2", parameterMap, featureProduct);
     }
 
     private static Product createReflectanceProduct(Product radianceProduct) {
@@ -350,10 +372,6 @@ public class CloudLabeler {
         if (clusterMapProduct != null) {
             clusterMapProduct.dispose();
             clusterMapProduct = null;
-        }
-        if (clusterProduct != null) {
-            clusterProduct.dispose();
-            clusterProduct = null;
         }
         if (featureProduct != null) {
             featureProduct.dispose();

@@ -265,7 +265,7 @@ public class ClusterLabelingWindow extends JDialog {
         mainPanel.add(tablePanel, BorderLayout.CENTER);
         mainPanel.add(buttonRow, BorderLayout.SOUTH);
 
-        tableModel.addTableModelListener(new LableTableModelListener(mainPanel));
+        tableModel.addTableModelListener(new LabelTableModelListener(mainPanel));
 
         updateAbundancesCheckBox();
         return mainPanel;
@@ -352,11 +352,11 @@ public class ClusterLabelingWindow extends JDialog {
 
     }
 
-    private class LableTableModelListener implements TableModelListener {
+    private class LabelTableModelListener implements TableModelListener {
 
         private final JPanel mainPanel;
 
-        public LableTableModelListener(JPanel mainPanel) {
+        public LabelTableModelListener(JPanel mainPanel) {
             this.mainPanel = mainPanel;
         }
 

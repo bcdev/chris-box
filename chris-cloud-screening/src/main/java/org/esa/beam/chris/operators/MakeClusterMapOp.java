@@ -40,7 +40,8 @@ import java.awt.image.RenderedImage;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2008 by Brockmann Consult",
-                  description = "Makes the cluster membership map for clusters of features extracted from TOA reflectances.")
+                  description = "Makes the cluster membership map for clusters of features extracted from TOA reflectances.",
+                  internal = true)
 public class MakeClusterMapOp extends Operator {
 
     @SourceProduct(alias = "source")
@@ -48,7 +49,7 @@ public class MakeClusterMapOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
-    private Band clusterMapBand;
+    private transient Band clusterMapBand;
 
     @Override
     public void initialize() throws OperatorException {
