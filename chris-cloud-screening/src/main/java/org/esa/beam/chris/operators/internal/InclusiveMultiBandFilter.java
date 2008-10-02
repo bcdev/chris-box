@@ -17,6 +17,7 @@ public class InclusiveMultiBandFilter implements BandFilter {
         this.wavelengthIntervals = wavelengthIntervals;
     }
 
+    @Override
     public boolean accept(Band band) {
         final float wavelength = band.getSpectralWavelength();
 

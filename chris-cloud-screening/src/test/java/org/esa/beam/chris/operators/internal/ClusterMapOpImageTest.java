@@ -12,7 +12,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 import junit.framework.TestCase;
 import org.esa.beam.cluster.Distribution;
@@ -33,7 +33,7 @@ import java.awt.image.RenderedImage;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class ClusterMapOpImage2Test extends TestCase {
+public class ClusterMapOpImageTest extends TestCase {
 
     private static final IndexFilter NO_FILTERING = new IndexFilter() {
         @Override
@@ -54,7 +54,7 @@ public class ClusterMapOpImage2Test extends TestCase {
         final double[] priors = {1.0, 1.0, 1.0, 1.0};
         final ProbabilityCalculator calculator = new ProbabilityCalculator(distributions, priors);
 
-        final RenderedImage image = ClusterMapOpImage2.createImage(product.getBands(), calculator, NO_FILTERING, 4);
+        final RenderedImage image = ClusterMapOpImage.createImage(product.getBands(), calculator, NO_FILTERING, 4);
         final Raster data = image.getData();
 
         assertEquals(0, data.getSample(0, 0, 0));
@@ -76,7 +76,7 @@ public class ClusterMapOpImage2Test extends TestCase {
 
     private static Band addSourceBand(Product product, String name, short[] samples) {
         final Band band = product.addBand(name, ProductData.TYPE_INT16);
-        band.setScalingFactor(10.0);
+        band.setScalingFactor(1.0 / 10.0);
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(samples));

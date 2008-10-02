@@ -14,7 +14,9 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.chris.operators.internal.ClusterMapOpImage;
+import org.esa.beam.cluster.EMCluster;
+import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -23,25 +25,23 @@ import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
-
-import javax.media.jai.ImageLayout;
-import java.awt.image.RenderedImage;
 
 /**
- * todo - API doc
+ * todo - add API doc
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
+ * @since BEAM 4.2
  */
-@OperatorMetadata(alias = "chris.MakeClusterMap",
-                  version = "1.0",
-                  authors = "Ralf Quast",
-                  copyright = "(c) 2008 by Brockmann Consult",
-                  description = "Makes the cluster membership map for clusters of features extracted from TOA reflectances.",
-                  internal = true)
+@OperatorMetadata(alias = "chris.MakeClusterMap2",
+        version = "1.0",
+        authors = "Ralf Quast",
+        copyright = "(c) 2008 by Brockmann Consult",
+        description = "Makes the cluster map for clusters of cloud features extracted from TOA reflectances.",
+        internal = true)
 public class MakeClusterMapOp extends Operator {
 
     @SourceProduct(alias = "source")
@@ -49,42 +49,43 @@ public class MakeClusterMapOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
-    private transient Band clusterMapBand;
+    @Parameter
+    private String[] sourceBandNames;
+    @Parameter
+    private EMCluster[] clusters;
 
     @Override
     public void initialize() throws OperatorException {
-        int width = sourceProduct.getSceneRasterWidth();
-        int height = sourceProduct.getSceneRasterHeight();
-        targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(), width, height);
-
         try {
-            final Band[] sourceBands = OpUtils.findBands(sourceProduct, "probability");
-            final Band[] probabilityBands = new Band[sourceBands.length];
-            for (int i = 0; i < sourceBands.length; ++i) {
-                final Band sourceBand = sourceBands[i];
+            final int w = sourceProduct.getSceneRasterWidth();
+            final int h = sourceProduct.getSceneRasterHeight();
 
-                Band targetBand = new ImageBand(sourceBand.getName(), sourceBand.getDataType(), width, height);
-                targetBand.setDescription(sourceBand.getDescription());
-                targetProduct.addBand(targetBand);
-                probabilityBands[i] = targetBand;
-                ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(targetBand);
-                RenderedImage image = ClusterProbabilityOpImage.create(imageLayout,
-                                                                       sourceBands, i,
-                                                                       new int[0]);
-                targetBand.setImage(image);
+            targetProduct = new Product(sourceProduct.getName() + "_CLM", sourceProduct.getProductType() + "_CLM", w, h);
+
+            final Band[] sourceBands = new Band[sourceBandNames.length];
+            for (int i = 0; i < sourceBandNames.length; ++i) {
+                sourceBands[i] = sourceProduct.getBand(sourceBandNames[i]);
             }
-            clusterMapBand = new ImageBand("class_indices", ProductData.TYPE_INT16, width, height);
-            clusterMapBand.setDescription("Class_indices");
-            targetProduct.addBand(clusterMapBand);
 
-            final IndexCoding indexCoding = new IndexCoding("Cluster_classes");
-            for (int i = 0; i < sourceBands.length; i++) {
+            final Band targetBand = new ImageBand("class_indices", ProductData.TYPE_INT8, w, h);
+            targetBand.setDescription("Class indices");
+            targetProduct.addBand(targetBand);
+
+            final IndexCoding indexCoding = new IndexCoding("Class indices");
+            for (int i = 0; i < clusters.length; i++) {
                 indexCoding.addIndex("class_" + (i + 1), i, "Cluster label");
             }
             targetProduct.getIndexCodingGroup().add(indexCoding);
-            clusterMapBand.setSampleCoding(indexCoding);
-            ImageLayout imageLayout = RasterDataNodeOpImage.createSingleBandedImageLayout(clusterMapBand);
-            clusterMapBand.setImage(ClusterMapOpImage.create(imageLayout, probabilityBands));
+            targetBand.setSampleCoding(indexCoding);
+
+            final IndexFilter indexFilter = new IndexFilter() {
+                @Override
+                public boolean accept(int index) {
+                    return true;
+                }
+            };
+
+            targetBand.setImage(ClusterMapOpImage.createImage(sourceBands, clusters, indexFilter));
         } catch (Throwable e) {
             throw new OperatorException(e);
         }

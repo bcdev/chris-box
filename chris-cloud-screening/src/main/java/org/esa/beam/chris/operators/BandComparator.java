@@ -11,7 +11,7 @@ import java.util.Comparator;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class BandComparator implements Comparator<Band> {
+class BandComparator implements Comparator<Band> {
 
     /**
      * Compares its two arguments for order.  Returns a negative integer,
@@ -27,6 +27,7 @@ public class BandComparator implements Comparator<Band> {
      *         first argument is less than, equal to, or greater than the
      *         second.
      */
+    @Override
     public int compare(Band b1, Band b2) {
         return Float.compare(b1.getSpectralWavelength(), b2.getSpectralWavelength());
     }

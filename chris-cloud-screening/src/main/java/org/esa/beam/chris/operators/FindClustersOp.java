@@ -37,11 +37,11 @@ import java.util.Comparator;
  * @since BEAM 4.2
  */
 @OperatorMetadata(alias = "chris.FindClusters",
-                  version = "1.0",
-                  authors = "Ralf Quast",
-                  copyright = "(c) 2008 by Brockmann Consult",
-                  description = "Performs an expectation-maximization (EM) cluster analysis.",
-                  internal = true)
+        version = "1.0",
+        authors = "Ralf Quast",
+        copyright = "(c) 2008 by Brockmann Consult",
+        description = "Performs an expectation-maximization (EM) cluster analysis.",
+        internal = true)
 public class FindClustersOp extends Operator {
 
     @SourceProduct(alias = "source")
@@ -54,39 +54,37 @@ public class FindClustersOp extends Operator {
     @Parameter(label = "Number of iterations", defaultValue = "30", interval = "[1,999]")
     private int iterationCount;
     @Parameter(label = "Random seed",
-               defaultValue = "31415",
-               description = "The seed used for initializing the EM clustering algorithm.")
+            defaultValue = "31415",
+            description = "The seed used for initializing the EM clustering algorithm.")
     private int seed;
     @Parameter(label = "Source bands", sourceProductId = "source")
     private String[] sourceBandNames;
 
+    public FindClustersOp() {
+    }
+
     private FindClustersOp(Product sourceProduct, int clusterCount, int iterationCount, int seed,
-                      String[] sourceBandNames) {
+                           String[] sourceBandNames) {
         this.sourceProduct = sourceProduct;
         this.clusterCount = clusterCount;
         this.iterationCount = iterationCount;
         this.seed = seed;
         this.sourceBandNames = sourceBandNames;
-
-        initialize();
     }
 
     @Override
     public void initialize() throws OperatorException {
-        final int w = sourceProduct.getSceneRasterWidth();
-        final int h = sourceProduct.getSceneRasterHeight();
-
         targetProduct = new Product("NULL", "NULL", 0, 0);
-        targetProduct.setPreferredTileSize(w, h);
+        setTargetProduct(targetProduct);
     }
 
     public static EMCluster[] findClusters(Product sourceProduct,
-                                    int clusterCount,
-                                    int iterationCount,
-                                    int seed,
-                                    String[] sourceBandNames,
-                                    Comparator<EMCluster> clusterComparator,
-                                    ProgressMonitor pm) {
+                                           int clusterCount,
+                                           int iterationCount,
+                                           int seed,
+                                           String[] sourceBandNames,
+                                           Comparator<EMCluster> clusterComparator,
+                                           ProgressMonitor pm) {
         final FindClustersOp op = new FindClustersOp(sourceProduct, clusterCount, iterationCount, seed, sourceBandNames);
 
         final Tile[] tiles = new Tile[sourceBandNames.length];

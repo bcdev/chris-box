@@ -28,16 +28,8 @@ import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
-import javax.swing.event.InternalFrameAdapter;
-import javax.swing.event.InternalFrameEvent;
-import javax.swing.event.InternalFrameListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.FlowLayout;
+import javax.swing.event.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -73,8 +65,8 @@ public class ClusterLabelingWindow extends JDialog {
 
     public ClusterLabelingWindow(CloudLabeler cloudLabeler) {
         super(VisatApp.getApp().getMainFrame(),
-              MessageFormat.format("CHRIS/PROBA Cloud Labeling Tool - {0}", cloudLabeler.getRadianceProduct().getName()),
-              false);
+                MessageFormat.format("CHRIS/PROBA Cloud Labeling Tool - {0}", cloudLabeler.getRadianceProduct().getName()),
+                false);
         setName("chrisCloudLabelingDialog");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         this.cloudLabeler = cloudLabeler;
@@ -184,7 +176,7 @@ public class ClusterLabelingWindow extends JDialog {
             if (JInternalFrame.IS_CLOSED_PROPERTY.equals(evt.getPropertyName())) {
                 if ((Boolean) evt.getNewValue()) {
                     if (visatApp.showQuestionDialog("Do you want to exit the cloud labeling tool?",
-                                                    null) == JOptionPane.NO_OPTION) {
+                            null) == JOptionPane.NO_OPTION) {
                         throw new PropertyVetoException("Do not close.", evt);
                     } else {
                         dispose();
@@ -235,7 +227,7 @@ public class ClusterLabelingWindow extends JDialog {
         tableModel = new LabelTableModel(cloudLabeler.getClusterMapBand().getImageInfo());
         tableModel.setCloudClusterIndexes(new int[0]);
         tableModel.setRejectedIndexes(new int[0]);
-        tableModel.setClusterProperties(cloudLabeler.getClusterProperties());
+        tableModel.setClusterProperties(cloudLabeler.getClusterProperties(new int[0]));
         table = new JTable(tableModel);
         table.getColumnModel().getColumn(4).setCellRenderer(new BrightnessRenderer());
         table.setDefaultRenderer(Double.class, new PercentageRenderer());
@@ -323,8 +315,8 @@ public class ClusterLabelingWindow extends JDialog {
             final int[] cloudClusterIndexes = tableModel.getCloudIndexes();
             final int[] surfaceClusterIndexes = tableModel.getSurfaceIndexes();
             cloudLabeler.performCloudProductComputation(cloudClusterIndexes,
-                                                        surfaceClusterIndexes,
-                                                        abundancesCheckBox.isSelected(), pm);
+                    surfaceClusterIndexes,
+                    abundancesCheckBox.isSelected(), pm);
             return null;
         }
 
@@ -375,8 +367,9 @@ public class ClusterLabelingWindow extends JDialog {
             mainPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             try {
                 if (!updateColors) {
-                    cloudLabeler.performLabelingStep(tableModel.getRejectedIndexes());
-                    tableModel.setClusterProperties(cloudLabeler.getClusterProperties());
+                    final int[] rejectedIndexes = tableModel.getRejectedIndexes();
+                    cloudLabeler.performLabelingStep(rejectedIndexes);
+                    tableModel.setClusterProperties(cloudLabeler.getClusterProperties(rejectedIndexes));
                 }
                 Band membershipBand = cloudLabeler.getClusterMapBand();
                 membershipBand.setImageInfo(tableModel.getImageInfo().createDeepCopy());

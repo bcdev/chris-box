@@ -19,6 +19,7 @@ public class StrictlyInclusiveBandFilter implements BandFilter {
         this.maxWavelength = maxWavelength;
     }
 
+    @Override
     public boolean accept(Band band) {
         final double lowerBound = band.getSpectralWavelength() - 0.5 * band.getSpectralBandwidth();
         final double upperBound = band.getSpectralWavelength() + 0.5 * band.getSpectralBandwidth();

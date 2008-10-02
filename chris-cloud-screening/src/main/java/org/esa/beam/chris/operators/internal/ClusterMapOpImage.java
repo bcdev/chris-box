@@ -12,10 +12,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
+import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.cluster.ProbabilityCalculator;
+import org.esa.beam.cluster.ProbabilityCalculatorFactory;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
@@ -31,15 +33,21 @@ import java.util.Vector;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class ClusterMapOpImage2 extends PointOpImage {
+public class ClusterMapOpImage extends PointOpImage {
 
     private final Band[] sourceBands;
     private final ProbabilityCalculator calculator;
-    private final IndexFilter indexFilter;
+    private final IndexFilter clusterFilter;
     private final int clusterCount;
 
-    public static OpImage createImage(Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter indexFilter,
-                                      int clusterCount) {
+    public static OpImage createImage(Band[] sourceBands, EMCluster[] clusters, IndexFilter clusterFilter) {
+        final ProbabilityCalculator calculator = new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
+
+        return createImage(sourceBands, calculator, clusterFilter, clusters.length);
+    }
+
+    static OpImage createImage(Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+                               int clusterCount) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band sourceBand : sourceBands) {
@@ -58,43 +66,75 @@ public class ClusterMapOpImage2 extends PointOpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        return new ClusterMapOpImage2(imageLayout, sourceImageVector, sourceBands, calculator, indexFilter, clusterCount);
+        return new ClusterMapOpImage(imageLayout, sourceImageVector, sourceBands, calculator, clusterFilter, clusterCount);
     }
 
-    private ClusterMapOpImage2(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                               Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter indexFilter,
-                               int clusterCount) {
+    private ClusterMapOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
+                              Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+                              int clusterCount) {
         super(sourceImageVector, imageLayout, null, true);
 
         this.sourceBands = sourceBands;
         this.calculator = calculator;
-        this.indexFilter = indexFilter;
+        this.clusterFilter = clusterFilter;
         this.clusterCount = clusterCount;
     }
 
     @Override
     protected void computeRect(Raster[] sources, WritableRaster target, Rectangle rectangle) {
-        final RasterFormatTag[] formatTags = getFormatTags();
-        final RasterAccessor[] sourceAccessors = new RasterAccessor[sources.length];
+        final PixelAccessor targetAccessor;
+        final UnpackedImageData targetData;
+        final byte[] targetPixels;
+
+        targetAccessor = new PixelAccessor(getSampleModel(), getColorModel());
+        targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_BYTE, true);
+        targetPixels = targetData.getByteData(0);
+
+        final PixelAccessor[] sourceAccessors = new PixelAccessor[sources.length];
+        final UnpackedImageData[] sourceData = new UnpackedImageData[sources.length];
+        final short[][] sourcePixels = new short[sources.length][];
 
         for (int i = 0; i < sources.length; ++i) {
-            sourceAccessors[i] = new RasterAccessor(sources[i], rectangle, formatTags[i], getSourceImage(i).getColorModel());
+            sourceAccessors[i] = new PixelAccessor(getSourceImage(i));
+            sourceData[i] = sourceAccessors[i].getPixels(sources[i], rectangle, DataBuffer.TYPE_SHORT, false);
+            sourcePixels[i] = sourceData[i].getShortData(0);
         }
 
-        final RasterAccessor targetAccessor =
-                new RasterAccessor(target, rectangle, formatTags[sources.length], getColorModel());
+        final int sourceBandOffset = sourceData[0].bandOffsets[0];
+        final int targetBandOffset = targetData.bandOffsets[0];
 
-        final int targetDataType = targetAccessor.getDataType();
-        if (targetDataType == DataBuffer.TYPE_INT) {
-            intLoop(sourceAccessors, targetAccessor);
-        } else {
-            throw new IllegalStateException("Target data type '" + targetDataType + "' not supported.");
+        final int sourcePixelStride = sourceData[0].pixelStride;
+        final int targetPixelStride = targetData.pixelStride;
+
+        final int sourceLineStride = sourceData[0].lineStride;
+        final int targetLineStride = targetData.lineStride;
+
+        int sourceLineOffset = sourceBandOffset;
+        int targetLineOffset = targetBandOffset;
+
+        final double[] sourceSamples = new double[sources.length];
+        final double[] posteriors = new double[clusterCount];
+
+        for (int y = 0; y < target.getHeight(); y++) {
+            int sourcePixelOffset = sourceLineOffset;
+            int targetPixelOffset = targetLineOffset;
+
+            for (int x = 0; x < target.getWidth(); x++) {
+                for (int i = 0; i < sources.length; i++) {
+                    sourceSamples[i] = sourceBands[i].scale(sourcePixels[i][sourcePixelOffset]);
+                }
+                calculator.calculate(sourceSamples, posteriors, clusterFilter);
+                targetPixels[targetPixelOffset] = findMaxIndex(posteriors);
+
+                sourcePixelOffset += sourcePixelStride;
+                targetPixelOffset += targetPixelStride;
+            }
+
+            sourceLineOffset += sourceLineStride;
+            targetLineOffset += targetLineStride;
         }
 
-        if (targetAccessor.isDataCopy()) {
-            targetAccessor.clampDataArrays();
-            targetAccessor.copyDataToRaster();
-        }
+        targetAccessor.setPixels(targetData);
     }
 
     private void intLoop(RasterAccessor[] sources, RasterAccessor target) {
@@ -124,9 +164,9 @@ public class ClusterMapOpImage2 extends PointOpImage {
 
             for (int x = 0; x < target.getWidth(); x++) {
                 for (int i = 0; i < sourceDataArrays.length; i++) {
-                    sourceSamples[i] = sourceBands[i].scaleInverse(sourceDataArrays[i][sourcePixelOffset]);
+                    sourceSamples[i] = sourceBands[i].scale(sourceDataArrays[i][sourcePixelOffset]);
                 }
-                calculator.calculate(sourceSamples, posteriors, indexFilter);
+                calculator.calculate(sourceSamples, posteriors, clusterFilter);
                 targetDataArray[targetPixelOffset] = findMaxIndex(posteriors);
 
                 sourcePixelOffset += sourcePixelStride;
@@ -138,10 +178,10 @@ public class ClusterMapOpImage2 extends PointOpImage {
         }
     }
 
-    private static int findMaxIndex(double[] posteriors) {
-        int index = 0;
+    private static byte findMaxIndex(double[] posteriors) {
+        byte index = 0;
 
-        for (int i = 1; i < posteriors.length; ++i) {
+        for (byte i = 1; i < posteriors.length; ++i) {
             if (posteriors[i] > posteriors[index]) {
                 index = i;
             }

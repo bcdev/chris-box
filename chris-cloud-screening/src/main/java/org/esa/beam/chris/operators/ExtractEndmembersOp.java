@@ -40,10 +40,11 @@ import java.awt.*;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ExtractEndmembers",
-                  version = "1.0",
-                  authors = "Ralf Quast, Marco Zühlke",
-                  copyright = "(c) 2008 Brockmann Consult",
-                  description = "Extracts endmembers for calculating cloud abundances.")
+        version = "1.0",
+        authors = "Ralf Quast, Marco Zühlke",
+        copyright = "(c) 2008 Brockmann Consult",
+        description = "Extracts endmembers for calculating cloud abundances.",
+        internal = true)
 public class ExtractEndmembersOp extends Operator {
 
     @SourceProduct(alias = "reflectances")

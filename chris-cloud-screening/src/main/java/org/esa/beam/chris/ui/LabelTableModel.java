@@ -1,6 +1,6 @@
 package org.esa.beam.chris.ui;
 
-import org.esa.beam.chris.operators.ClusterProperties;
+import org.esa.beam.chris.ui.ClusterProperties;
 import org.esa.beam.framework.datamodel.ColorPaletteDef;
 import org.esa.beam.framework.datamodel.ImageInfo;
 
@@ -34,7 +34,6 @@ class LabelTableModel extends AbstractTableModel {
         rowCount = imageInfo.getColorPaletteDef().getNumPoints();
         cloud = new boolean[rowCount];
         rejected = new boolean[rowCount];
-        clusterProperties = new ClusterProperties(rowCount);
     }
 
     public ImageInfo getImageInfo() {
@@ -114,9 +113,9 @@ class LabelTableModel extends AbstractTableModel {
             case 3:
                 return rejected[rowIndex];
             case 4:
-                return clusterProperties.getBrightnesses()[rowIndex];
+                return clusterProperties.getBrightness(rowIndex);
             case 5:
-                return clusterProperties.getOccurrences()[rowIndex];
+                return clusterProperties.getOccurrence(rowIndex);
             default:
                 return 0;
         }

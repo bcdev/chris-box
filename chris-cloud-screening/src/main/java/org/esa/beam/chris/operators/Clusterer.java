@@ -27,7 +27,7 @@ import java.util.Random;
  * @author Ralf Quast
  * @version $Revision: 2221 $ $Date: 2008-06-16 11:19:52 +0200 (Mo, 16 Jun 2008) $
  */
-public class Clusterer {
+class Clusterer {
 
     private final int clusterCount;
     private final PixelAccessor pixelAccessor;
@@ -65,7 +65,7 @@ public class Clusterer {
      * @param clusterCount  the number of clusters.
      * @param seed          the seed used to initialize the cluster algorithm.
      */
-    public Clusterer(PixelAccessor pixelAccessor, int clusterCount, long seed) {
+    Clusterer(PixelAccessor pixelAccessor, int clusterCount, long seed) {
         final int sampleCount = pixelAccessor.getSampleCount();
 
         this.pixelAccessor = pixelAccessor;
@@ -166,7 +166,7 @@ public class Clusterer {
             // covariance matrixes from becoming singular
             double sum = 0.0;
             for (int k = 0; k < clusterCount; ++k) {
-                posteriors[k] += 1.0E-4;
+                posteriors[k] += 1.0E-12;
                 sum += posteriors[k];
             }
             for (int k = 0; k < clusterCount; ++k) {

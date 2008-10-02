@@ -10,14 +10,9 @@ import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.text.MessageFormat;
 
-/**
- * User: Marco Peters
- * Date: 07.05.2008
- */
-public class ImageBand extends Band {
+class ImageBand extends Band {
 
-
-    public ImageBand(String name, int dataType, int width, int height) {
+    ImageBand(String name, int dataType, int width, int height) {
         super(name, dataType, width, height);
     }
 
@@ -65,6 +60,7 @@ public class ImageBand extends Band {
                         final Object target = rasterData.getElems();
 
                         for (int i = 0; i < h; ++i) {
+                            //noinspection SuspiciousSystemArraycopy
                             System.arraycopy(source, i * w, target, (y + i) * width + x, w);
                         }
                     }
