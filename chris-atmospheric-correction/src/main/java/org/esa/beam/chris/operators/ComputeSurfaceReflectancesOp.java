@@ -304,6 +304,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         if (cloudProductBand != null) {
             cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
         } else {
+            // todo - replace with ConstantDescriptor.create(w, h, new Byte[]{0}, null)
             cloudMaskImage = ZeroOpImage.createImage(sourceProduct.getSceneRasterWidth(),
                                                      sourceProduct.getSceneRasterHeight());
         }

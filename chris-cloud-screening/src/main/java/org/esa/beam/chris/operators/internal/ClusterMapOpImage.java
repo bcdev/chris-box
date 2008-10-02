@@ -35,26 +35,26 @@ import java.util.Vector;
  */
 public class ClusterMapOpImage extends PointOpImage {
 
-    private final Band[] sourceBands;
+    private final Band[] featureBands;
     private final ProbabilityCalculator calculator;
     private final IndexFilter clusterFilter;
     private final int clusterCount;
 
-    public static OpImage createImage(Band[] sourceBands, EMCluster[] clusters, IndexFilter clusterFilter) {
+    public static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter) {
         final ProbabilityCalculator calculator = new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
 
-        return createImage(sourceBands, calculator, clusterFilter, clusters.length);
+        return createImage(featureBands, calculator, clusterFilter, clusters.length);
     }
 
-    static OpImage createImage(Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+    static OpImage createImage(Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
                                int clusterCount) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
-        for (final Band sourceBand : sourceBands) {
-            RenderedImage sourceImage = sourceBand.getImage();
+        for (final Band band : featureBands) {
+            RenderedImage sourceImage = band.getImage();
             if (sourceImage == null) {
-                sourceImage = new RasterDataNodeOpImage(sourceBand);
-                sourceBand.setImage(sourceImage);
+                sourceImage = new RasterDataNodeOpImage(band);
+                band.setImage(sourceImage);
             }
             sourceImageVector.add(sourceImage);
         }
@@ -66,15 +66,15 @@ public class ClusterMapOpImage extends PointOpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        return new ClusterMapOpImage(imageLayout, sourceImageVector, sourceBands, calculator, clusterFilter, clusterCount);
+        return new ClusterMapOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter, clusterCount);
     }
 
     private ClusterMapOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                              Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+                              Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
                               int clusterCount) {
         super(sourceImageVector, imageLayout, null, true);
 
-        this.sourceBands = sourceBands;
+        this.featureBands = featureBands;
         this.calculator = calculator;
         this.clusterFilter = clusterFilter;
         this.clusterCount = clusterCount;
@@ -121,7 +121,7 @@ public class ClusterMapOpImage extends PointOpImage {
 
             for (int x = 0; x < target.getWidth(); x++) {
                 for (int i = 0; i < sources.length; i++) {
-                    sourceSamples[i] = sourceBands[i].scale(sourcePixels[i][sourcePixelOffset]);
+                    sourceSamples[i] = featureBands[i].scale(sourcePixels[i][sourcePixelOffset]);
                 }
                 calculator.calculate(sourceSamples, posteriors, clusterFilter);
                 targetPixels[targetPixelOffset] = findMaxIndex(posteriors);
@@ -164,7 +164,7 @@ public class ClusterMapOpImage extends PointOpImage {
 
             for (int x = 0; x < target.getWidth(); x++) {
                 for (int i = 0; i < sourceDataArrays.length; i++) {
-                    sourceSamples[i] = sourceBands[i].scale(sourceDataArrays[i][sourcePixelOffset]);
+                    sourceSamples[i] = featureBands[i].scale(sourceDataArrays[i][sourcePixelOffset]);
                 }
                 calculator.calculate(sourceSamples, posteriors, clusterFilter);
                 targetDataArray[targetPixelOffset] = findMaxIndex(posteriors);

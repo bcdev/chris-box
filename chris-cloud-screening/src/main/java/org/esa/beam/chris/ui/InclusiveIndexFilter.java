@@ -26,7 +26,7 @@ class InclusiveIndexFilter implements IndexFilter {
     @Override
     public boolean accept(int index) {
         for (final int[] ints : indexes) {
-            for (int i = 0; i < ints.length; ++i) {
+            for (final int i : ints) {
                 if (i == index) {
                     return true;
                 }

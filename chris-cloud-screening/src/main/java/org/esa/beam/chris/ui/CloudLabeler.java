@@ -18,7 +18,7 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.FindClustersOp;
-import org.esa.beam.chris.operators.internal.CloudMaskOpImage;
+import org.esa.beam.chris.operators.internal.ProbabilisticCloudMaskOpImage;
 import org.esa.beam.chris.operators.internal.ClusterMapOpImage;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
@@ -214,7 +214,7 @@ public class CloudLabeler {
                 final InclusiveIndexFilter clusterFilter =
                         new InclusiveIndexFilter(cloudClusterIndexes, surfaceClusterIndexes);
                 final IndexFilter cloudClusterFilter = new InclusiveIndexFilter(cloudClusterIndexes);
-                final OpImage cloudMaskImage = CloudMaskOpImage.createImage(sourceBands, calculator,
+                final OpImage cloudMaskImage = ProbabilisticCloudMaskOpImage.createImage(sourceBands, calculator,
                         clusterFilter, cloudClusterFilter, clusters.length);
                 addCloudImageToInput(cloudMaskImage);
             }
@@ -359,7 +359,7 @@ public class CloudLabeler {
     }
 
     public ClusterProperties getClusterProperties(int[] rejectedIndexes) {
-        return new ClusterProperties(clusters, new ExclusiveIndexFilter(rejectedIndexes));
+        return new ClusterProperties(getClusterMapBand().getImage(), clusters, new ExclusiveIndexFilter(rejectedIndexes));
     }
 
 }
