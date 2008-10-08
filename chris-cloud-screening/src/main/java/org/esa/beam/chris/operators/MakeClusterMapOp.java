@@ -36,7 +36,7 @@ import org.esa.beam.framework.gpf.annotations.TargetProduct;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-@OperatorMetadata(alias = "chris.MakeClusterMap2",
+@OperatorMetadata(alias = "chris.MakeClusterMap",
         version = "1.0",
         authors = "Ralf Quast",
         copyright = "(c) 2008 by Brockmann Consult",

@@ -14,13 +14,14 @@
  */
 package org.esa.beam.chris.operators.internal;
 
+import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.cluster.ProbabilityCalculator;
+import org.esa.beam.cluster.ProbabilityCalculatorFactory;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.*;
-import javax.media.jai.operator.ConstantDescriptor;
 import java.awt.*;
 import java.awt.image.*;
 import java.util.Vector;
@@ -32,29 +33,25 @@ import java.util.Vector;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class ProbabilisticCloudMaskOpImage extends PointOpImage {
-
-    private static final double CLOUD_MASK_THRESHOLD = 0.5;
-    private static final short CLOUD_MASK_SCALING = 10000;
+public class CloudProbabilityOpImage extends PointOpImage {
 
     private final Band[] featureBands;
     private final ProbabilityCalculator calculator;
     private final IndexFilter clusterFilter;
     private final IndexFilter cloudClusterFilter;
     private final int clusterCount;
+    private final boolean binary;
 
-    public static OpImage createImage(Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
-                                      IndexFilter cloudClusterFilter, int clusterCount) {
-        final float w = featureBands[0].getRasterWidth();
-        final float h = featureBands[0].getRasterHeight();
+    public static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter,
+                                      IndexFilter cloudClusterFilter, boolean binary) {
+        final ProbabilityCalculator calculator =
+                new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
 
-        return createImage(featureBands, calculator, clusterFilter, cloudClusterFilter, clusterCount,
-                           ConstantDescriptor.create(w, h, new Short[]{1}, null));
+        return createImage(featureBands, calculator, clusterFilter, cloudClusterFilter, clusters.length, binary);
     }
 
-    public static OpImage createImage(Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
-                                      IndexFilter cloudClusterFilter, int clusterCount,
-                                      RenderedImage cloudAbundanceImage) {
+    static OpImage createImage(Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+                               IndexFilter cloudClusterFilter, int clusterCount, boolean applyThreshold) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band band : featureBands) {
@@ -69,36 +66,37 @@ public class ProbabilisticCloudMaskOpImage extends PointOpImage {
         final int w = sourceImageVector.get(0).getWidth();
         final int h = sourceImageVector.get(0).getHeight();
 
-        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_SHORT, w, h, 1, w, new int[]{0});
+        final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_DOUBLE, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        return new ProbabilisticCloudMaskOpImage(imageLayout, sourceImageVector, featureBands, calculator,
-                                                 clusterFilter,
-                                                 cloudClusterFilter, clusterCount);
+        return new CloudProbabilityOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
+                                           cloudClusterFilter, clusterCount, applyThreshold);
     }
 
-    private ProbabilisticCloudMaskOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                                          Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
-                                          IndexFilter cloudClusterFilter, int clusterCount) {
-        super(sourceImageVector, imageLayout, null, true);
+    private CloudProbabilityOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
+                                    Band[] featureBands, ProbabilityCalculator calculator,
+                                    IndexFilter clusterFilter, IndexFilter cloudClusterFilter,
+                                    int clusterCount, boolean binary) {
+        super(sourceImageVector, imageLayout, new RenderingHints(JAI.KEY_TILE_CACHE, null), true);
 
         this.featureBands = featureBands;
         this.calculator = calculator;
         this.clusterFilter = clusterFilter;
         this.cloudClusterFilter = cloudClusterFilter;
         this.clusterCount = clusterCount;
+        this.binary = binary;
     }
 
     @Override
     protected void computeRect(Raster[] sources, WritableRaster target, Rectangle rectangle) {
         final PixelAccessor targetAccessor;
         final UnpackedImageData targetData;
-        final short[] targetPixels;
+        final double[] targetPixels;
 
         targetAccessor = new PixelAccessor(getSampleModel(), getColorModel());
-        targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_SHORT, true);
-        targetPixels = targetData.getShortData(0);
+        targetData = targetAccessor.getPixels(target, rectangle, DataBuffer.TYPE_DOUBLE, true);
+        targetPixels = targetData.getDoubleData(0);
 
         final PixelAccessor[] sourceAccessors = new PixelAccessor[sources.length];
         final UnpackedImageData[] sourceData = new UnpackedImageData[sources.length];
@@ -134,7 +132,15 @@ public class ProbabilisticCloudMaskOpImage extends PointOpImage {
                     sourceSamples[i] = featureBands[i].scale(sourcePixels[i][sourcePixelOffset]);
                 }
                 calculator.calculate(sourceSamples, posteriors, clusterFilter);
-                targetPixels[targetPixelOffset] = accumulateCloudProbabilities(posteriors);
+
+                final double cloudProbability = accumulateCloudProbabilities(posteriors);
+                if (binary) {
+                    if (cloudProbability > 0.5) {
+                        targetPixels[targetPixelOffset] = 1.0;
+                    }
+                } else {
+                    targetPixels[targetPixelOffset] = cloudProbability;
+                }
 
                 sourcePixelOffset += sourcePixelStride;
                 targetPixelOffset += targetPixelStride;
@@ -147,7 +153,7 @@ public class ProbabilisticCloudMaskOpImage extends PointOpImage {
         targetAccessor.setPixels(targetData);
     }
 
-    private short accumulateCloudProbabilities(double[] posteriors) {
+    private double accumulateCloudProbabilities(double[] posteriors) {
         double sum = 0.0;
 
         for (int i = 0; i < posteriors.length; ++i) {
@@ -155,10 +161,7 @@ public class ProbabilisticCloudMaskOpImage extends PointOpImage {
                 sum += posteriors[i];
             }
         }
-        if (sum < CLOUD_MASK_THRESHOLD) {
-            return 0;
-        } else {
-            return CLOUD_MASK_SCALING;
-        }
+
+        return sum;
     }
 }

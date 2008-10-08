@@ -40,14 +40,14 @@ class ClusterProperties {
             }
         }
 
-        final RenderedOp op = HistogramDescriptor.create(classificationImage, null, 1, 1, new int[]{clusters.length},
+        final RenderedOp op = HistogramDescriptor.create(classificationImage, null, 4, 4, new int[]{clusters.length},
                                                          new double[]{0.0}, new double[]{clusters.length}, null);
         final Histogram histogram = (Histogram) op.getProperty("histogram");
         final int totalCounts = classificationImage.getWidth() * classificationImage.getHeight();
         final int[] histogramCounts = histogram.getBins(0);
-
+        
         for (int k = 0; k < clusters.length; ++k) {
-            occurrences[k] = (double) histogramCounts[k] / (double) totalCounts;
+            occurrences[k] = (16.0 * histogramCounts[k]) / totalCounts;
         }
     }
 

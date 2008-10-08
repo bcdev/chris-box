@@ -16,8 +16,13 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.internal.ExclusiveMultiBandFilter;
+import org.esa.beam.chris.operators.internal.InclusiveIndexFilter;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.cluster.EMCluster;
+import org.esa.beam.cluster.IndexFilter;
+import org.esa.beam.cluster.ProbabilityCalculator;
+import org.esa.beam.cluster.ProbabilityCalculatorFactory;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
@@ -40,11 +45,11 @@ import java.awt.*;
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ExtractEndmembers",
-        version = "1.0",
-        authors = "Ralf Quast, Marco Zühlke",
-        copyright = "(c) 2008 Brockmann Consult",
-        description = "Extracts endmembers for calculating cloud abundances.",
-        internal = true)
+                  version = "1.0",
+                  authors = "Ralf Quast, Marco Zühlke",
+                  copyright = "(c) 2008 Brockmann Consult",
+                  description = "Extracts endmembers for calculating cloud abundances.",
+                  internal = true)
 public class ExtractEndmembersOp extends Operator {
 
     @SourceProduct(alias = "reflectances")
@@ -58,11 +63,16 @@ public class ExtractEndmembersOp extends Operator {
     private int[] cloudClusterIndexes;
     @Parameter(alias = "surfaceClusterIndexes", notEmpty = true, notNull = true)
     private int[] surfaceClusterIndexes;
+    @Parameter
+    private Band[] featureBands;
+    @Parameter
+    private EMCluster[] clusters;
 
     @TargetProperty
     private Endmember[] endmembers;
     @TargetProperty
     private String[] reflectanceBandNames;
+
 
     /**
      * Constructs a new instance of this class.
@@ -76,14 +86,18 @@ public class ExtractEndmembersOp extends Operator {
      * @param reflectanceProduct    the reflectance product.
      * @param featureProduct        the feature product.
      * @param clusterMapProduct     the cluster product.
+     * @param featureBands          the feature bands.
+     * @param clusters              the clusters.
      * @param cloudClusterIndexes   the cloud cluster indexes.
      * @param surfaceClusterIndexes the surface cluster indexes.
      */
     public ExtractEndmembersOp(Product reflectanceProduct, Product featureProduct, Product clusterMapProduct,
-                               int[] cloudClusterIndexes, int[] surfaceClusterIndexes) {
+                               Band[] featureBands, EMCluster[] clusters, int[] cloudClusterIndexes, int[] surfaceClusterIndexes) {
         this.reflectanceProduct = reflectanceProduct;
         this.featureProduct = featureProduct;
         this.clusterMapProduct = clusterMapProduct;
+        this.featureBands = featureBands;
+        this.clusters = clusters;
         this.cloudClusterIndexes = cloudClusterIndexes;
         this.surfaceClusterIndexes = surfaceClusterIndexes;
     }
@@ -96,6 +110,13 @@ public class ExtractEndmembersOp extends Operator {
 
     // todo - refactor
     private void setTargetProperties(ProgressMonitor pm) {
+        final IndexFilter clusterFilter =
+                new InclusiveIndexFilter(cloudClusterIndexes, surfaceClusterIndexes);
+        final IndexFilter cloudClusterFilter =
+                new InclusiveIndexFilter(cloudClusterIndexes);
+        final IndexFilter surfaceClusterFilter =
+                new InclusiveIndexFilter(surfaceClusterIndexes);
+
         final Band brightnessBand = featureProduct.getBand("brightness_vis");
         final Band whitenessBand = featureProduct.getBand("whiteness_vis");
         final Band clusterMapBand = clusterMapProduct.getBand("class_indices");
@@ -131,6 +152,7 @@ public class ExtractEndmembersOp extends Operator {
         int cloudEndmemberY = -1;
         double maxRatio = 0.0;
 
+        // todo - optimize loop
         for (int y = 0; y < height; ++y) {
             final Rectangle rectangle = new Rectangle(0, y, width, 1);
             final Tile membershipTile = getSourceTile(clusterMapBand, rectangle, pm);
@@ -138,7 +160,7 @@ public class ExtractEndmembersOp extends Operator {
             final Tile whitenessTile = getSourceTile(whitenessBand, rectangle, pm);
 
             for (int x = 0; x < width; ++x) {
-                if (isContained(membershipTile.getSampleInt(x, y), cloudClusterIndexes)) {
+                if (cloudClusterFilter.accept(membershipTile.getSampleInt(x, y))) {
                     if (whitenessTile.getSampleDouble(x, y) > 0.0) {
                         final double ratio = brightnessTile.getSampleDouble(x, y) / whitenessTile.getSampleDouble(x, y);
                         if (cloudEndmemberX == -1 || cloudEndmemberY == -1 || ratio > maxRatio) {
@@ -161,21 +183,25 @@ public class ExtractEndmembersOp extends Operator {
         final Endmember em = new Endmember("cloud", wavelengths, reflectances);
         endmembers[0] = em;
 
-
-        final Band[] probabilityBands = OpUtils.findBands(clusterMapProduct, "probability");
-        System.out.println("probabilityBands.length = " + probabilityBands.length);
-        ///////////////////////
-        final double[][] meanReflectances = new double[probabilityBands.length][reflectanceBands.length];
-        final int[] count = new int[probabilityBands.length];
+        final double[][] meanReflectances = new double[clusters.length][reflectanceBands.length];
+        final int[] count = new int[clusters.length];
+        final ProbabilityCalculator calculator =
+                new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
+        final double[] posteriors = new double[clusters.length];
+        final double[] features = new double[featureBands.length];
 
         for (int y = 0; y < height; ++y) {
             final Rectangle rectangle = new Rectangle(0, y, width, 1);
 
-            for (int k = 0; k < probabilityBands.length; ++k) {
-                if (isContained(k, surfaceClusterIndexes)) {
-                    final Tile probabilityTile = getSourceTile(probabilityBands[k], rectangle, pm);
+            for (int k = 0; k < clusters.length; ++k) {
+                if (surfaceClusterFilter.accept(k)) {
                     for (int x = 0; x < width; ++x) {
-                        if (probabilityTile.getSampleDouble(x, y) > 0.5) {
+                        for (int i = 0; i < featureBands.length; ++i) {
+                            final Tile featureTile = getSourceTile(featureBands[i], rectangle, pm);
+                            features[i] = featureTile.getSampleDouble(x, y);
+                        }
+                        calculator.calculate(features, posteriors, clusterFilter);
+                        if (posteriors[k] > 0.5) {
                             for (int i = 0; i < reflectanceBands.length; ++i) {
                                 final Tile reflectanceTile = getSourceTile(reflectanceBands[i], rectangle, pm);
                                 meanReflectances[k][i] += reflectanceTile.getSampleDouble(x, y);
@@ -187,7 +213,7 @@ public class ExtractEndmembersOp extends Operator {
             }
         }
 
-        for (int k = 0, j = 0; k < probabilityBands.length; ++k) {
+        for (int k = 0, j = 0; k < clusters.length; ++k) {
             if (count[k] > 0) {
                 for (int i = 0; i < reflectanceBands.length; ++i) {
                     meanReflectances[k][i] /= count[k];
@@ -206,16 +232,6 @@ public class ExtractEndmembersOp extends Operator {
             wavelengths[i] = (double) bands[i].getSpectralWavelength();
         }
         return wavelengths;
-    }
-
-    private static boolean isContained(int index, int[] indexes) {
-        for (int i : indexes) {
-            if (index == i) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public static class Spi extends OperatorSpi {

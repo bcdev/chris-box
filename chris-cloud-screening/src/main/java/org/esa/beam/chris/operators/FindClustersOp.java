@@ -21,10 +21,7 @@ import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
-import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
-import org.esa.beam.framework.gpf.annotations.Parameter;
-import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.framework.gpf.annotations.TargetProduct;
+import org.esa.beam.framework.gpf.annotations.*;
 
 import java.awt.*;
 import java.util.Comparator;
@@ -37,11 +34,11 @@ import java.util.Comparator;
  * @since BEAM 4.2
  */
 @OperatorMetadata(alias = "chris.FindClusters",
-        version = "1.0",
-        authors = "Ralf Quast",
-        copyright = "(c) 2008 by Brockmann Consult",
-        description = "Performs an expectation-maximization (EM) cluster analysis.",
-        internal = true)
+                  version = "1.0",
+                  authors = "Ralf Quast",
+                  copyright = "(c) 2008 by Brockmann Consult",
+                  description = "Performs an expectation-maximization (EM) cluster analysis.",
+                  internal = true)
 public class FindClustersOp extends Operator {
 
     @SourceProduct(alias = "source")
@@ -49,14 +46,18 @@ public class FindClustersOp extends Operator {
     @TargetProduct
     private Product targetProduct;
 
+    @TargetProperty
+    private EMCluster[] clusters;
+
     @Parameter(label = "Number of clusters", defaultValue = "14", interval = "[2,99]")
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "30", interval = "[1,999]")
     private int iterationCount;
     @Parameter(label = "Random seed",
-            defaultValue = "31415",
-            description = "The seed used for initializing the EM clustering algorithm.")
+               defaultValue = "31415",
+               description = "The seed used for initializing the EM clustering algorithm.")
     private int seed;
+
     @Parameter(label = "Source bands", sourceProductId = "source")
     private String[] sourceBandNames;
 
@@ -74,6 +75,15 @@ public class FindClustersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
+        final Comparator<EMCluster> cc = new Comparator<EMCluster>() {
+            @Override
+            public int compare(EMCluster o1, EMCluster o2) {
+                return Double.compare(o2.getPriorProbability(), o1.getPriorProbability());
+            }
+        };
+
+        clusters = findClusters(sourceProduct, clusterCount, iterationCount, seed, sourceBandNames, cc,
+                                ProgressMonitor.NULL);
         targetProduct = new Product("NULL", "NULL", 0, 0);
         setTargetProduct(targetProduct);
     }
@@ -85,11 +95,13 @@ public class FindClustersOp extends Operator {
                                            String[] sourceBandNames,
                                            Comparator<EMCluster> clusterComparator,
                                            ProgressMonitor pm) {
-        final FindClustersOp op = new FindClustersOp(sourceProduct, clusterCount, iterationCount, seed, sourceBandNames);
+        final FindClustersOp op = new FindClustersOp(sourceProduct, clusterCount, iterationCount, seed,
+                                                     sourceBandNames);
 
         final Tile[] tiles = new Tile[sourceBandNames.length];
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
+        final Clusterer clusterer;
 
         try {
             pm.beginTask("Performing cluster analysis...", iterationCount);
@@ -99,14 +111,12 @@ public class FindClustersOp extends Operator {
                 tiles[i] = op.getSourceTile(sourceProduct.getBand(sourceBandNames[i]), sourceRectangle, pm);
             }
 
-            final Clusterer clusterer = new Clusterer(new TilePixelAccessor(tiles), clusterCount, seed);
+            clusterer = new Clusterer(new TilePixelAccessor(tiles), clusterCount, seed);
             for (int i = 0; i < iterationCount; ++i) {
                 op.checkForCancelation(pm);
                 clusterer.iterate();
                 pm.worked(1);
             }
-
-            return clusterer.getClusters(clusterComparator);
         } catch (OperatorException e) {
             throw e;
         } catch (Throwable t) {
@@ -114,6 +124,8 @@ public class FindClustersOp extends Operator {
         } finally {
             pm.done();
         }
+
+        return clusterer.getClusters(clusterComparator);
     }
 
     private static class TilePixelAccessor implements PixelAccessor {
@@ -126,7 +138,7 @@ public class FindClustersOp extends Operator {
         @Override
         public void getPixel(int i, double[] samples) {
             final int y = getY(i);
-            final int x = getX(i, y);
+            final int x = getX(i);
 
             for (int j = 0; j < samples.length; ++j) {
                 samples[j] = tiles[j].getSampleDouble(tiles[j].getMinX() + x, tiles[j].getMinY() + y);
@@ -143,8 +155,8 @@ public class FindClustersOp extends Operator {
             return tiles.length;
         }
 
-        private int getX(int i, int y) {
-            return i - y * tiles[0].getWidth();
+        private int getX(int i) {
+            return i % tiles[0].getWidth();
         }
 
         private int getY(int i) {

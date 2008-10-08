@@ -72,7 +72,7 @@ public class ClusterMapOpImage extends PointOpImage {
     private ClusterMapOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
                               Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
                               int clusterCount) {
-        super(sourceImageVector, imageLayout, null, true);
+        super(sourceImageVector, imageLayout, new RenderingHints(JAI.KEY_TILE_CACHE, null), true);
 
         this.featureBands = featureBands;
         this.calculator = calculator;

@@ -57,8 +57,9 @@ public class ExtractEndmembersOpTest extends TestCase {
 
         final int[] cloudIndexes = {1, 4};
         final int[] surfaceClusterIndexes = {0, 2};
-        final ExtractEndmembersOp op = new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterProduct,
-                cloudIndexes, surfaceClusterIndexes);
+        final ExtractEndmembersOp op = null;
+//        new ExtractEndmembersOp(reflectanceProduct, featureProduct, clusterProduct,
+//                cloudIndexes, surfaceClusterIndexes);
 
         final Endmember[] endmembers = (Endmember[]) op.getTargetProperty("endmembers");
 

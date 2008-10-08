@@ -12,27 +12,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.ui;
+package org.esa.beam.chris.operators.internal;
 
 import org.esa.beam.cluster.IndexFilter;
 
-class InclusiveIndexFilter implements IndexFilter {
-    private final int[][] indexes;
+/**
+ * todo - add API doc
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ * @since BEAM 4.2
+ */
+public class ExclusiveIndexFilter implements IndexFilter {
+    private final IndexFilter indexFilter;
 
-    InclusiveIndexFilter(int[]... indexes) {
-        this.indexes = indexes;
+    public ExclusiveIndexFilter(int[]... indexes) {
+        indexFilter = new InclusiveIndexFilter(indexes);
     }
 
     @Override
     public boolean accept(int index) {
-        for (final int[] ints : indexes) {
-            for (final int i : ints) {
-                if (i == index) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return !indexFilter.accept(index);
     }
 }
