@@ -1,4 +1,4 @@
 org.esa.beam.chris.operators.ExtractFeaturesOp$Spi
 org.esa.beam.chris.operators.ExtractEndmembersOp$Spi
-org.esa.beam.chris.operators.MakeClusterMapOp$Spi
+org.esa.beam.chris.operators.ClassifyOp$Spi
 org.esa.beam.chris.operators.FindClustersOp$Spi

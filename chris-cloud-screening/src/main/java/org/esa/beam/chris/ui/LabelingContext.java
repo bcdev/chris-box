@@ -12,13 +12,42 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.ui;
+
+import org.esa.beam.cluster.EMCluster;
+
+import java.awt.*;
+import java.awt.image.RenderedImage;
 
 /**
- * todo - API doc
+ * todo - add API doc
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class EndmemberExtractorTest {
+interface LabelingContext {
+
+    String getLabel(int index);
+
+    void setLabel(int index, String label);
+
+    Color getColor(int index);
+
+    void setColor(int index, Color color);
+
+    boolean isCloud(int index);
+
+    void setCloud(int index, boolean b);
+
+    boolean isIgnored(int index);
+
+    void setIgnored(int index, boolean b);
+
+    EMCluster[] getClusters();
+
+    void recomputeClassificationImage();
+
+    RenderedImage getClassificationImage();
+
+    int getClassIndex(int x, int y);
 }

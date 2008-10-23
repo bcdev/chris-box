@@ -15,6 +15,8 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.beam.chris.operators.internal.Clusterer;
+import org.esa.beam.chris.operators.internal.PixelAccessor;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.Operator;
@@ -31,7 +33,6 @@ import java.util.Comparator;
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
- * @since BEAM 4.2
  */
 @OperatorMetadata(alias = "chris.FindClusters",
                   version = "1.0",
@@ -49,6 +50,8 @@ public class FindClustersOp extends Operator {
     @TargetProperty
     private EMCluster[] clusters;
 
+    @Parameter(label = "Source bands", sourceProductId = "source")
+    private String[] sourceBandNames;
     @Parameter(label = "Number of clusters", defaultValue = "14", interval = "[2,99]")
     private int clusterCount;
     @Parameter(label = "Number of iterations", defaultValue = "30", interval = "[1,999]")
@@ -57,9 +60,6 @@ public class FindClustersOp extends Operator {
                defaultValue = "31415",
                description = "The seed used for initializing the EM clustering algorithm.")
     private int seed;
-
-    @Parameter(label = "Source bands", sourceProductId = "source")
-    private String[] sourceBandNames;
 
     public FindClustersOp() {
     }
@@ -82,17 +82,17 @@ public class FindClustersOp extends Operator {
             }
         };
 
-        clusters = findClusters(sourceProduct, clusterCount, iterationCount, seed, sourceBandNames, cc,
+        clusters = findClusters(sourceProduct, sourceBandNames, clusterCount, iterationCount, seed, cc,
                                 ProgressMonitor.NULL);
         targetProduct = new Product("NULL", "NULL", 0, 0);
         setTargetProduct(targetProduct);
     }
 
     public static EMCluster[] findClusters(Product sourceProduct,
+                                           String[] sourceBandNames,
                                            int clusterCount,
                                            int iterationCount,
                                            int seed,
-                                           String[] sourceBandNames,
                                            Comparator<EMCluster> clusterComparator,
                                            ProgressMonitor pm) {
         final FindClustersOp op = new FindClustersOp(sourceProduct, clusterCount, iterationCount, seed,
@@ -128,6 +128,13 @@ public class FindClustersOp extends Operator {
         return clusterer.getClusters(clusterComparator);
     }
 
+    public static class Spi extends OperatorSpi {
+
+        public Spi() {
+            super(FindClustersOp.class);
+        }
+    }
+
     private static class TilePixelAccessor implements PixelAccessor {
         private final Tile[] tiles;
 
@@ -161,13 +168,6 @@ public class FindClustersOp extends Operator {
 
         private int getY(int i) {
             return i / tiles[0].getWidth();
-        }
-    }
-
-    public static class Spi extends OperatorSpi {
-
-        public Spi() {
-            super(FindClustersOp.class);
         }
     }
 }

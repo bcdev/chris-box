@@ -19,10 +19,8 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.ExtractEndmembersOp;
 import org.esa.beam.chris.operators.FindClustersOp;
-import org.esa.beam.chris.operators.internal.CloudProbabilityOpImage;
-import org.esa.beam.chris.operators.internal.ClusterMapOpImage;
-import org.esa.beam.chris.operators.internal.ExclusiveIndexFilter;
-import org.esa.beam.chris.operators.internal.InclusiveIndexFilter;
+import org.esa.beam.chris.operators.internal.ClassificationOpImage;
+import org.esa.beam.chris.operators.internal.CloudMaskOpImage;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.*;
@@ -176,53 +174,66 @@ public class CloudLabeler {
         return bestBand;
     }
 
-    public void performLabelingStep(final int[] rejectedIndexes) throws OperatorException {
+    public void performLabelingStep(final IndexFilter indexFilter) throws OperatorException {
         final Band clusterMapBand = getClusterMapBand();
         final Band[] featureBands = getFeatureBands(featureProduct);
-        final IndexFilter clusterFilter = new ExclusiveIndexFilter(rejectedIndexes);
 
-        clusterMapBand.setImage(ClusterMapOpImage.createImage(featureBands, clusters, clusterFilter));
+        clusterMapBand.setImage(ClassificationOpImage.createImage(featureBands, clusters, indexFilter));
     }
 
-    public void performCloudProductComputation(final int[] cloudClusterIndexes, int[] surfaceClusterIndexes,
-                                               boolean computeAbundances,
-                                               ProgressMonitor pm) throws OperatorException {
+    public static class LabelingPerformer {
+        private final Band[] featureBands;
+        private final Band classificationBand;
+        private final EMCluster[] clusters;
+
+        public LabelingPerformer(Band[] featureBands, Band classificationBand, EMCluster[] clusters) {
+            this.featureBands = featureBands;
+            this.classificationBand = classificationBand;
+            this.clusters = clusters;
+        }
+
+        public void performLabeling(final boolean[] invalids, double[] brightnesses, double[] occurrences) {
+            final IndexFilter indexFilter = new IndexFilter() {
+                @Override
+                public boolean accept(int index) {
+                    return !invalids[index];
+                }
+            };
+            classificationBand.setImage(ClassificationOpImage.createImage(featureBands, clusters, indexFilter));
+            // todo - compute brightnesses and occurrences
+        }
+    }
+
+    public void performCloudProductComputation(final IndexFilter validFilter, final IndexFilter cloudFilter,
+                                               boolean computeAbundances, ProgressMonitor pm) throws OperatorException {
         pm.beginTask("Computing cloud product...", 1);
 
         try {
-            if (computeAbundances && cloudClusterIndexes.length > 0) {
+            if (computeAbundances) {
                 // 4. Cloud probabilities
                 final Band[] featureBands = getFeatureBands(featureProduct);
-                final InclusiveIndexFilter clusterFilter =
-                        new InclusiveIndexFilter(cloudClusterIndexes, surfaceClusterIndexes);
-                final IndexFilter cloudClusterFilter = new InclusiveIndexFilter(cloudClusterIndexes);
-                final OpImage cloudProbImage = CloudProbabilityOpImage.createImage(featureBands, clusters,
-                                                                                   clusterFilter, cloudClusterFilter,
-                                                                                   false);
+                final OpImage cloudProbImage =
+                        CloudMaskOpImage.createProbabilisticImage(featureBands, clusters, validFilter, cloudFilter);
                 // 5. Endmember extraction
-                final Operator endmemberOp = new ExtractEndmembersOp(reflectanceProduct,
-                                                                     featureProduct,
-                                                                     clusterMapProduct,
-                                                                     getFeatureBands(featureProduct),
-                                                                     clusters,
-                                                                     cloudClusterIndexes,
-                                                                     surfaceClusterIndexes);
-                final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
-                final String[] reflectanceBandNames = (String[]) endmemberOp.getTargetProperty("reflectanceBandNames");
-
-                // 6. Cloud abundances
-                final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers, reflectanceBandNames);
-
-                // 7. Cloud probability * cloud abundance
-                addCloudImageToInput(createCloudProductImage(cloudProbImage, cloudAbundancesProduct));
+//////                final Operator endmemberOp = new ExtractEndmembersOp(reflectanceProduct,
+//////                                                                     featureProduct,
+//////                                                                     clusterMapProduct,
+//////                                                                     getFeatureBands(featureProduct),
+//////                                                                     clusters,
+//////                                                                     cloudFilter, validFilter
+//////                );
+////                final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
+////                final String[] reflectanceBandNames = (String[]) endmemberOp.getTargetProperty("reflectanceBandNames");
+//
+//                // 6. Cloud abundances
+//                final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers, reflectanceBandNames);
+//
+//                // 7. Cloud probability * cloud abundance
+//                addCloudImageToInput(createCloudProductImage(cloudProbImage, cloudAbundancesProduct));
             } else {
                 final Band[] featureBands = getFeatureBands(featureProduct);
-                final InclusiveIndexFilter clusterFilter =
-                        new InclusiveIndexFilter(cloudClusterIndexes, surfaceClusterIndexes);
-                final IndexFilter cloudClusterFilter = new InclusiveIndexFilter(cloudClusterIndexes);
-                final OpImage cloudMaskImage = CloudProbabilityOpImage.createImage(featureBands, clusters,
-                                                                                   clusterFilter, cloudClusterFilter,
-                                                                                   true);
+                final OpImage cloudMaskImage =
+                        CloudMaskOpImage.createBinaryImage(featureBands, clusters, validFilter, cloudFilter);
                 addCloudImageToInput(cloudMaskImage);
             }
         } finally {
@@ -289,7 +300,7 @@ public class CloudLabeler {
             }
         };
 
-        return FindClustersOp.findClusters(featureProduct, clusterCount, iterationCount, seed, sourceBandNames,
+        return FindClustersOp.findClusters(featureProduct, sourceBandNames, clusterCount, iterationCount, seed,
                                            clusterComparator, ProgressMonitor.NULL);
     }
 
@@ -353,10 +364,4 @@ public class CloudLabeler {
             reflectanceProduct = null;
         }
     }
-
-    public ClusterProperties getClusterProperties(int[] rejectedIndexes) {
-        return new ClusterProperties(getClusterMapBand().getImage(), clusters,
-                                     new ExclusiveIndexFilter(rejectedIndexes));
-    }
-
 }

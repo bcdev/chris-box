@@ -17,11 +17,11 @@ package org.esa.beam.chris.operators.internal;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.cluster.ProbabilityCalculator;
-import org.esa.beam.cluster.ProbabilityCalculatorFactory;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.*;
+import javax.media.jai.PixelAccessor;
 import java.awt.*;
 import java.awt.image.*;
 import java.util.Vector;
@@ -33,25 +33,35 @@ import java.util.Vector;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class CloudProbabilityOpImage extends PointOpImage {
+public class CloudMaskOpImage extends PointOpImage {
 
     private final Band[] featureBands;
     private final ProbabilityCalculator calculator;
-    private final IndexFilter clusterFilter;
+    private final IndexFilter validClusterFilter;
     private final IndexFilter cloudClusterFilter;
     private final int clusterCount;
-    private final boolean binary;
+    private final boolean binaryMask;
 
-    public static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter,
-                                      IndexFilter cloudClusterFilter, boolean binary) {
-        final ProbabilityCalculator calculator =
-                new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
+    public static OpImage createProbabilisticImage(Band[] featureBands, EMCluster[] clusters,
+                                                   IndexFilter validClusterFilter, IndexFilter cloudClusterFilter) {
+        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
-        return createImage(featureBands, calculator, clusterFilter, cloudClusterFilter, clusters.length, binary);
+        return createImage(featureBands, calculator, validClusterFilter, cloudClusterFilter, clusters.length, false);
     }
 
+    public static OpImage createBinaryImage(Band[] featureBands, EMCluster[] clusters, IndexFilter validClusterFilter,
+                                            IndexFilter cloudClusterFilter) {
+        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
+
+        return createImage(featureBands, calculator, validClusterFilter, cloudClusterFilter, clusters.length, true);
+    }
+
+    /*
+     * For unit-level testing, which is easier with a calculator 
+     * instead of a clusters array.
+     */
     static OpImage createImage(Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
-                               IndexFilter cloudClusterFilter, int clusterCount, boolean applyThreshold) {
+                               IndexFilter cloudClusterFilter, int clusterCount, boolean binaryMask) {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band band : featureBands) {
@@ -70,22 +80,22 @@ public class CloudProbabilityOpImage extends PointOpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        return new CloudProbabilityOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
-                                           cloudClusterFilter, clusterCount, applyThreshold);
+        return new CloudMaskOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
+                                    cloudClusterFilter, clusterCount, binaryMask);
     }
 
-    private CloudProbabilityOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                                    Band[] featureBands, ProbabilityCalculator calculator,
-                                    IndexFilter clusterFilter, IndexFilter cloudClusterFilter,
-                                    int clusterCount, boolean binary) {
+    private CloudMaskOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
+                             Band[] featureBands, ProbabilityCalculator calculator,
+                             IndexFilter validClusterFilter, IndexFilter cloudClusterFilter,
+                             int clusterCount, boolean binaryMask) {
         super(sourceImageVector, imageLayout, new RenderingHints(JAI.KEY_TILE_CACHE, null), true);
 
         this.featureBands = featureBands;
         this.calculator = calculator;
-        this.clusterFilter = clusterFilter;
+        this.validClusterFilter = validClusterFilter;
         this.cloudClusterFilter = cloudClusterFilter;
         this.clusterCount = clusterCount;
-        this.binary = binary;
+        this.binaryMask = binaryMask;
     }
 
     @Override
@@ -131,10 +141,10 @@ public class CloudProbabilityOpImage extends PointOpImage {
                 for (int i = 0; i < sources.length; i++) {
                     sourceSamples[i] = featureBands[i].scale(sourcePixels[i][sourcePixelOffset]);
                 }
-                calculator.calculate(sourceSamples, posteriors, clusterFilter);
+                calculator.calculate(sourceSamples, posteriors, validClusterFilter);
 
                 final double cloudProbability = accumulateCloudProbabilities(posteriors);
-                if (binary) {
+                if (binaryMask) {
                     if (cloudProbability > 0.5) {
                         targetPixels[targetPixelOffset] = 1.0;
                     }

@@ -54,7 +54,7 @@ public class ClusterMapOpImageTest extends TestCase {
         final double[] priors = {1.0, 1.0, 1.0, 1.0};
         final ProbabilityCalculator calculator = new ProbabilityCalculator(distributions, priors);
 
-        final RenderedImage image = ClusterMapOpImage.createImage(product.getBands(), calculator, NO_FILTERING, 4);
+        final RenderedImage image = ClassificationOpImage.createImage(product.getBands(), calculator, NO_FILTERING, 4);
         final Raster data = image.getData();
 
         assertEquals(0, data.getSample(0, 0, 0));

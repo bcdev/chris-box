@@ -12,26 +12,27 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.operators;
 
-import org.esa.beam.cluster.IndexFilter;
+import org.esa.beam.chris.util.BandFilter;
+import org.esa.beam.chris.operators.InclusiveMultiBandFilter;
+import org.esa.beam.framework.datamodel.Band;
 
 /**
- * todo - add API doc
+ * Exclusive multi band filter.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
- * @since BEAM 4.2
  */
-public class ExclusiveIndexFilter implements IndexFilter {
-    private final IndexFilter indexFilter;
+class ExclusiveMultiBandFilter implements BandFilter {
+    private final InclusiveMultiBandFilter inclusiveMultiBandFilter;
 
-    public ExclusiveIndexFilter(int[]... indexes) {
-        indexFilter = new InclusiveIndexFilter(indexes);
+    ExclusiveMultiBandFilter(double[]... wavelengthIntervals) {
+        inclusiveMultiBandFilter = new InclusiveMultiBandFilter(wavelengthIntervals);
     }
 
     @Override
-    public boolean accept(int index) {
-        return !indexFilter.accept(index);
+    public boolean accept(Band band) {
+        return !inclusiveMultiBandFilter.accept(band);
     }
 }

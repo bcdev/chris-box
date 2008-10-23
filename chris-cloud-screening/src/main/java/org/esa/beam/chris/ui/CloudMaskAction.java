@@ -9,9 +9,12 @@ import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -23,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 public class CloudMaskAction extends AbstractVisatAction {
 
     private static final List<String> CHRIS_TYPES;
-    private Set<Product> activeProductSet;
+    private final Set<Product> activeProductSet;
 
     public CloudMaskAction() {
         activeProductSet = new HashSet<Product>(7);
@@ -45,7 +48,11 @@ public class CloudMaskAction extends AbstractVisatAction {
     public void actionPerformed(CommandEvent event) {
         final Product selectedProduct = getAppContext().getSelectedProduct();
         activeProductSet.add(selectedProduct);
-        final SwingWorker<CloudLabeler, Object> worker = new ActionSwingWorker(selectedProduct);
+        final CloudScreeningFormModel formModel = new CloudScreeningFormModel();
+        // todo - GUI
+        formModel.setRadianceProduct(selectedProduct);
+
+        final SwingWorker<CloudScreeningPerformer, Object> worker = new CloudScreeningSwingWorker(formModel);
         worker.execute();
     }
 
@@ -56,37 +63,38 @@ public class CloudMaskAction extends AbstractVisatAction {
         setEnabled(valid && !activeProductSet.contains(selectedProduct));
     }
 
-    private class ActionSwingWorker extends ProgressMonitorSwingWorker<CloudLabeler, Object> {
+    private class CloudScreeningSwingWorker extends ProgressMonitorSwingWorker<CloudScreeningPerformer, Object> {
+        private final CloudScreeningFormModel formModel;
 
-        private final Product radianceProduct;
-
-        private ActionSwingWorker(Product radianceProduct) {
-            super(getAppContext().getApplicationWindow(), "Performing Cluster Analysis");
-            this.radianceProduct = radianceProduct;
+        private CloudScreeningSwingWorker(CloudScreeningFormModel formModel) {
+            super(getAppContext().getApplicationWindow(), "Performing Cluster Analysis...");
+            this.formModel = formModel;
         }
 
         @Override
-        protected CloudLabeler doInBackground(ProgressMonitor pm) throws Exception {
-            final CloudLabeler cloudLabeler = new CloudLabeler(radianceProduct);
-            cloudLabeler.performClusterAnalysis(pm);
-            cloudLabeler.createRgbSceneView();
-            return cloudLabeler;
+        protected CloudScreeningPerformer doInBackground(ProgressMonitor pm) throws Exception {
+            final CloudScreeningPerformer performer = new CloudScreeningPerformer(getAppContext(), formModel);
+            performer.performClusterAnalysis(pm);
+
+            return performer;
         }
 
         @Override
         protected void done() {
             try {
-                final CloudLabeler cloudLabeler = get();
-                final ClusterLabelingWindow labelingWindow = new ClusterLabelingWindow(cloudLabeler);
-
-                labelingWindow.addWindowListener(new WindowAdapter() {
+                final CloudScreeningPerformer performer = get();
+                final Window owner = getAppContext().getApplicationWindow();
+                final String title = MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}",
+                                                          performer.getRadianceProductName());
+                final JDialog dialog = new LabelingDialog(owner, title, performer);
+                dialog.addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosed(WindowEvent e) {
-                        activeProductSet.remove(radianceProduct);
-                        VisatApp.getApp().setSelectedProductNode(cloudLabeler.getRadianceProduct());
+                        activeProductSet.remove(formModel.getRadianceProduct());
+//                        VisatApp.getApp().setSelectedProductNode(formModel.getRadianceProduct());
                     }
                 });
-                labelingWindow.setVisible(true);
+                dialog.setVisible(true);
             } catch (InterruptedException e) {
                 getAppContext().handleError(e);
             } catch (ExecutionException e) {

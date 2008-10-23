@@ -11,7 +11,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
 import org.esa.beam.cluster.Distribution;
 import org.esa.beam.cluster.EMCluster;
@@ -27,7 +27,7 @@ import java.util.Random;
  * @author Ralf Quast
  * @version $Revision: 2221 $ $Date: 2008-06-16 11:19:52 +0200 (Mo, 16 Jun 2008) $
  */
-class Clusterer {
+public class Clusterer {
 
     private final int clusterCount;
     private final PixelAccessor pixelAccessor;
@@ -54,8 +54,28 @@ class Clusterer {
      *
      * @return the cluster decomposition.
      */
-    static EMCluster[] findClusters(PixelAccessor pixelAccessor, int clusterCount, int iterationCount, int seed) {
+    public static EMCluster[] findClusters(PixelAccessor pixelAccessor, int clusterCount, int iterationCount, int seed) {
         return new Clusterer(pixelAccessor, clusterCount, seed).findClusters(iterationCount);
+    }
+
+    /**
+     * Creates a {@link ProbabilityCalculator} for calculating posterior cluster
+     * probabilities for the clusters provided as arguments.
+     *
+     * @param clusters the clusters.
+     *
+     * @return the probability calculator.
+     */
+    public static ProbabilityCalculator createProbabilityCalculator(EMCluster[] clusters) {
+        final Distribution[] distributions = new Distribution[clusters.length];
+        final double[] priors = new double[clusters.length];
+
+        for (int i = 0; i < clusters.length; i++) {
+            distributions[i] = new MultinormalDistribution(clusters[i].getMean(), clusters[i].getCovariances());
+            priors[i] = clusters[i].getPriorProbability();
+        }
+
+        return new ProbabilityCalculator(distributions, priors);
     }
 
     /**
@@ -65,7 +85,7 @@ class Clusterer {
      * @param clusterCount  the number of clusters.
      * @param seed          the seed used to initialize the cluster algorithm.
      */
-    Clusterer(PixelAccessor pixelAccessor, int clusterCount, long seed) {
+    public Clusterer(PixelAccessor pixelAccessor, int clusterCount, long seed) {
         final int sampleCount = pixelAccessor.getSampleCount();
 
         this.pixelAccessor = pixelAccessor;
@@ -75,7 +95,7 @@ class Clusterer {
 
         means = new double[clusterCount][sampleCount];
         covariances = new double[clusterCount][sampleCount][sampleCount];
-        distributions = new MultinormalDistribution[clusterCount];
+        distributions = new Distribution[clusterCount];
         calculator = new ProbabilityCalculator(distributions, priors);
 
         initialize(new Random(seed));
@@ -89,9 +109,8 @@ class Clusterer {
      * @return the cluster decomposition.
      */
     private EMCluster[] findClusters(int iterationCount) {
-        while (iterationCount > 0) {
+        for (int i = 0; i < iterationCount; ++i) {
             iterate();
-            iterationCount--;
             // todo - logging
         }
 
@@ -107,7 +126,7 @@ class Clusterer {
         return getClusters(new PriorProbabilityClusterComparator());
     }
 
-    EMCluster[] getClusters(Comparator<EMCluster> clusterComparator) {
+    public EMCluster[] getClusters(Comparator<EMCluster> clusterComparator) {
         final EMCluster[] clusters = new EMCluster[clusterCount];
 
         for (int k = 0; k < clusterCount; ++k) {
@@ -150,7 +169,11 @@ class Clusterer {
     /**
      * Carries out a single EM iteration.
      */
-    void iterate() {
+    public final void iterate() {
+        iterate(false);
+    }
+
+    private void iterate(boolean updateCovariances) {
         final int pixelCount = pixelAccessor.getPixelCount();
         final int sampleCount = pixelAccessor.getSampleCount();
 
@@ -162,25 +185,17 @@ class Clusterer {
             pixelAccessor.getPixel(i, samples);
             calculator.calculate(samples, posteriors);
 
-            // ensure non-zero probabilities for all clusters to prevent the
-            // covariance matrixes from becoming singular
-            double sum = 0.0;
-            for (int k = 0; k < clusterCount; ++k) {
-                posteriors[k] += 1.0E-12;
-                sum += posteriors[k];
-            }
-            for (int k = 0; k < clusterCount; ++k) {
-                posteriors[k] /= sum;
-            }
-
             // calculate cluster means and covariances in a single pass
             // D. H. D. West (1979, Communications of the ACM, 22, 532)
             if (i == 0) {
                 for (int k = 0; k < clusterCount; ++k) {
                     for (int l = 0; l < sampleCount; ++l) {
                         means[k][l] = samples[l];
-                        for (int m = l; m < sampleCount; ++m) {
-                            covariances[k][l][m] = 0.0;
+                        covariances[k][l][l] = 0.0;
+                        if (updateCovariances) {
+                            for (int m = l + 1; m < sampleCount; ++m) {
+                                covariances[k][l][m] = 0.0;
+                            }
                         }
                     }
                     sums[k] = posteriors[k];
@@ -190,10 +205,15 @@ class Clusterer {
                     final double temp = posteriors[k] + sums[k];
 
                     for (int l = 0; l < sampleCount; ++l) {
-                        for (int m = l; m < sampleCount; ++m) {
-                            covariances[k][l][m] += sums[k] * posteriors[k] * (samples[l] - means[k][l]) * (samples[m] - means[k][m]) / temp;
+                        final double dist = samples[l] - means[k][l];
+
+                        covariances[k][l][l] += sums[k] * posteriors[k] * dist * dist / temp;
+                        if (updateCovariances) {
+                            for (int m = l + 1; m < sampleCount; ++m) {
+                                covariances[k][l][m] += sums[k] * posteriors[k] * dist * (samples[m] - means[k][m]) / temp;
+                            }
                         }
-                        means[k][l] += posteriors[k] * (samples[l] - means[k][l]) / temp;
+                        means[k][l] += posteriors[k] * dist / temp;
                     }
 
                     sums[k] = temp;
@@ -203,9 +223,12 @@ class Clusterer {
 
         for (int k = 0; k < clusterCount; ++k) {
             for (int l = 0; l < sampleCount; ++l) {
-                for (int m = l; m < sampleCount; ++m) {
-                    covariances[k][l][m] /= sums[k];
-                    covariances[k][m][l] = covariances[k][l][m];
+                covariances[k][l][l] /= sums[k];
+                if (updateCovariances) {
+                    for (int m = l + 1; m < sampleCount; ++m) {
+                        covariances[k][l][m] /= sums[k];
+                        covariances[k][m][l] = covariances[k][l][m];
+                    }
                 }
             }
 
@@ -224,6 +247,54 @@ class Clusterer {
         @Override
         public int compare(EMCluster c1, EMCluster c2) {
             return Double.compare(c2.getPriorProbability(), c1.getPriorProbability());
+        }
+    }
+
+    /**
+     * Multinormal distribution with vanishing covariances.
+     */
+    private static class MultinormalDistribution implements Distribution {
+        private final double[] means;
+        private final double[] variances;
+        private final double logNormFactor;
+
+        private MultinormalDistribution(double[] means, double[][] covariances) {
+            this.means = means.clone();
+            this.variances = new double[means.length];
+
+            double det = variances[0] = covariances[0][0];
+            for (int i = 1; i < variances.length; ++i) {
+                variances[i] = covariances[i][i];
+                det *= variances[i];
+            }
+            if (det == 0) {
+                throw new ArithmeticException("covariance matrix is singular.");
+            }
+            logNormFactor = -0.5 * (means.length * Math.log(2.0 * Math.PI) + Math.log(det));
+        }
+
+        @Override
+        public double probabilityDensity(double[] y) {
+            return Math.exp(logProbabilityDensity(y));
+        }
+
+        @Override
+        public double logProbabilityDensity(double[] y) {
+            if (y.length != means.length) {
+                throw new IllegalArgumentException("y.length != mean.length");
+            }
+            return logNormFactor - 0.5 * mahalanobisSquaredDistance(y);
+        }
+
+        private double mahalanobisSquaredDistance(double[] y) {
+            double sum = 0.0;
+
+            for (int i = 0; i < means.length; ++i) {
+                final double dist = y[i] - means[i];
+                sum += (dist * dist) / variances[i];
+            }
+
+            return sum;
         }
     }
 }

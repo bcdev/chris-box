@@ -1,4 +1,4 @@
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.operators;
 
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.framework.datamodel.Band;
@@ -9,12 +9,12 @@ import org.esa.beam.framework.datamodel.Band;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class StrictlyInclusiveBandFilter implements BandFilter {
+class StrictlyInclusiveBandFilter implements BandFilter {
 
     private final double minWavelength;
     private final double maxWavelength;
 
-    public StrictlyInclusiveBandFilter(double minWavelength, double maxWavelength) {
+    StrictlyInclusiveBandFilter(double minWavelength, double maxWavelength) {
         this.minWavelength = minWavelength;
         this.maxWavelength = maxWavelength;
     }

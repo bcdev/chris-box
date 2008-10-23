@@ -17,11 +17,11 @@ package org.esa.beam.chris.operators.internal;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.cluster.ProbabilityCalculator;
-import org.esa.beam.cluster.ProbabilityCalculatorFactory;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.util.jai.RasterDataNodeOpImage;
 
 import javax.media.jai.*;
+import javax.media.jai.PixelAccessor;
 import java.awt.*;
 import java.awt.image.*;
 import java.util.Vector;
@@ -33,7 +33,7 @@ import java.util.Vector;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class ClusterMapOpImage extends PointOpImage {
+public class ClassificationOpImage extends PointOpImage {
 
     private final Band[] featureBands;
     private final ProbabilityCalculator calculator;
@@ -41,7 +41,7 @@ public class ClusterMapOpImage extends PointOpImage {
     private final int clusterCount;
 
     public static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter) {
-        final ProbabilityCalculator calculator = new ProbabilityCalculatorFactory().createProbabilityCalculator(clusters);
+        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
         return createImage(featureBands, calculator, clusterFilter, clusters.length);
     }
@@ -66,13 +66,14 @@ public class ClusterMapOpImage extends PointOpImage {
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
-        return new ClusterMapOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter, clusterCount);
+        return new ClassificationOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
+                                         clusterCount);
     }
 
-    private ClusterMapOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                              Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
-                              int clusterCount) {
-        super(sourceImageVector, imageLayout, new RenderingHints(JAI.KEY_TILE_CACHE, null), true);
+    private ClassificationOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
+                                  Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+                                  int clusterCount) {
+        super(sourceImageVector, imageLayout, null, true);
 
         this.featureBands = featureBands;
         this.calculator = calculator;
@@ -135,47 +136,6 @@ public class ClusterMapOpImage extends PointOpImage {
         }
 
         targetAccessor.setPixels(targetData);
-    }
-
-    private void intLoop(RasterAccessor[] sources, RasterAccessor target) {
-        final int[] targetDataArray = target.getIntDataArray(0);
-        final int targetBandOffset = target.getBandOffset(0);
-        final int targetPixelStride = target.getPixelStride();
-        final int targetScanlineStride = target.getScanlineStride();
-
-        final int[][] sourceDataArrays = new int[sources.length][];
-        for (int i = 0; i < sources.length; i++) {
-            sourceDataArrays[i] = sources[i].getIntDataArray(0);
-        }
-
-        int sourceBandOffset = sources[0].getBandOffset(0);
-        int sourcePixelStride = sources[0].getPixelStride();
-        int sourceScanlineStride = sources[0].getScanlineStride();
-
-        int sourceScanlineOffset = sourceBandOffset;
-        int targetScanlineOffset = targetBandOffset;
-
-        final double[] sourceSamples = new double[sourceDataArrays.length];
-        final double[] posteriors = new double[clusterCount];
-
-        for (int y = 0; y < target.getHeight(); y++) {
-            int sourcePixelOffset = sourceScanlineOffset;
-            int targetPixelOffset = targetScanlineOffset;
-
-            for (int x = 0; x < target.getWidth(); x++) {
-                for (int i = 0; i < sourceDataArrays.length; i++) {
-                    sourceSamples[i] = featureBands[i].scale(sourceDataArrays[i][sourcePixelOffset]);
-                }
-                calculator.calculate(sourceSamples, posteriors, clusterFilter);
-                targetDataArray[targetPixelOffset] = findMaxIndex(posteriors);
-
-                sourcePixelOffset += sourcePixelStride;
-                targetPixelOffset += targetPixelStride;
-            }
-
-            sourceScanlineOffset += sourceScanlineStride;
-            targetScanlineOffset += targetScanlineStride;
-        }
     }
 
     private static byte findMaxIndex(double[] posteriors) {

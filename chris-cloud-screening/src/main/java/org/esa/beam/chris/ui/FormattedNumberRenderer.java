@@ -12,26 +12,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package org.esa.beam.chris.operators.internal;
+package org.esa.beam.chris.ui;
 
-import org.esa.beam.chris.util.BandFilter;
-import org.esa.beam.framework.datamodel.Band;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.*;
+import java.text.NumberFormat;
 
-/**
- * Exclusive multi band filter.
- *
- * @author Ralf Quast
- * @version $Revision$ $Date$
- */
-public class ExclusiveMultiBandFilter implements BandFilter {
-    private final InclusiveMultiBandFilter inclusiveMultiBandFilter;
+class FormattedNumberRenderer extends DefaultTableCellRenderer {
+    private final NumberFormat numberFormat;
 
-    public ExclusiveMultiBandFilter(double[]... wavelengthIntervals) {
-        inclusiveMultiBandFilter = new InclusiveMultiBandFilter(wavelengthIntervals);
+    FormattedNumberRenderer(NumberFormat numberFormat) {
+        this.numberFormat = numberFormat;
     }
 
     @Override
-    public boolean accept(Band band) {
-        return !inclusiveMultiBandFilter.accept(band);
+    public void setValue(Object value) {
+        setText(value == null ? "" : numberFormat.format(value));
     }
 }
