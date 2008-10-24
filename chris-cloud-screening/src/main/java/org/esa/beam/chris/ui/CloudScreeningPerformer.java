@@ -25,7 +25,6 @@ import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.ui.AppContext;
@@ -211,16 +210,19 @@ class CloudScreeningPerformer {
                 final OpImage cloudProbImage =
                         CloudMaskOpImage.createProbabilisticImage(featureBands, clusters, validFilter, cloudFilter);
                 // 5. Endmember extraction
-                final Operator endmemberOp = new ExtractEndmembersOp(reflectanceProduct,
-                                                                     featureProduct,
-                                                                     classificationProduct,
-                                                                     featureBands,
-                                                                     clusters,
-                                                                     clouds, ignoreds);
+                final Endmember[] endmembers = ExtractEndmembersOp.extractEndmembers(reflectanceProduct,
+                                                                                     featureProduct,
+                                                                                     classificationProduct,
+                                                                                     model.getFeatureBandNames(),
+                                                                                     clusters,
+                                                                                     clouds, ignoreds, pm);
 
-                final Endmember[] endmembers = (Endmember[]) endmemberOp.getTargetProperty("endmembers");
-                final String[] reflectanceBandNames = (String[]) endmemberOp.getTargetProperty("reflectanceBandNames");
-
+                final Band[] reflectanceBands =
+                        OpUtils.findBands(reflectanceProduct, "toa_refl", ExtractEndmembersOp.BAND_FILTER);
+                final String[] reflectanceBandNames = new String[reflectanceBands.length];
+                for (int i = 0; i < reflectanceBands.length; ++i) {
+                    reflectanceBandNames[i] = reflectanceBands[i].getName();
+                }
                 // 6. Cloud abundances
                 final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers, reflectanceBandNames);
 

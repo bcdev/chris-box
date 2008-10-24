@@ -17,7 +17,6 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.chris.operators.ExtractEndmembersOp;
 import org.esa.beam.chris.operators.FindClustersOp;
 import org.esa.beam.chris.operators.internal.ClassificationOpImage;
 import org.esa.beam.chris.operators.internal.CloudMaskOpImage;
@@ -25,7 +24,6 @@ import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.GPF;
-import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.ui.product.ProductSceneImage;

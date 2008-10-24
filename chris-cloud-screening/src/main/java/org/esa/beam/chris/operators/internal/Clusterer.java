@@ -149,7 +149,7 @@ public class Clusterer {
         final double[] samples = new double[sampleCount];
 
         for (int k = 0; k < clusterCount; ++k) {
-            pixelAccessor.getPixel(random.nextInt(pixelCount), samples);
+            pixelAccessor.getSamples(random.nextInt(pixelCount), samples);
             System.arraycopy(samples, 0, means[k], 0, sampleCount);
         }
 
@@ -182,7 +182,7 @@ public class Clusterer {
         final double[] samples = new double[sampleCount];
 
         for (int i = 0; i < pixelCount; ++i) {
-            pixelAccessor.getPixel(i, samples);
+            pixelAccessor.getSamples(i, samples);
             calculator.calculate(samples, posteriors);
 
             // calculate cluster means and covariances in a single pass

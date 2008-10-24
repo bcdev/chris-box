@@ -17,15 +17,20 @@ package org.esa.beam.chris.operators.internal;
 import org.esa.beam.cluster.IndexFilter;
 
 /**
- * todo - add API doc
-*
-* @author Ralf Quast
-* @version $Revision$ $Date$
-* @since BEAM 4.2
-*/
+ * Index filter excluding all indexes where any backing
+ * boolean array element is {@code true}.
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ */
 public class ExclusiveIndexFilter implements IndexFilter {
     private final IndexFilter inclusiveIndexFilter;
 
+    /**
+     * Constructs a new instance of this class.
+     *
+     * @param booleans the backing boolean array(s).
+     */
     public ExclusiveIndexFilter(boolean[]... booleans) {
         inclusiveIndexFilter = new InclusiveIndexFilter(booleans);
     }

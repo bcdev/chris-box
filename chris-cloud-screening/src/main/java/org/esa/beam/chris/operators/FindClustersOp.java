@@ -16,7 +16,6 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.internal.Clusterer;
-import org.esa.beam.chris.operators.internal.PixelAccessor;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.Operator;
@@ -135,39 +134,4 @@ public class FindClustersOp extends Operator {
         }
     }
 
-    private static class TilePixelAccessor implements PixelAccessor {
-        private final Tile[] tiles;
-
-        public TilePixelAccessor(Tile[] tiles) {
-            this.tiles = tiles;
-        }
-
-        @Override
-        public void getPixel(int i, double[] samples) {
-            final int y = getY(i);
-            final int x = getX(i);
-
-            for (int j = 0; j < samples.length; ++j) {
-                samples[j] = tiles[j].getSampleDouble(tiles[j].getMinX() + x, tiles[j].getMinY() + y);
-            }
-        }
-
-        @Override
-        public int getPixelCount() {
-            return tiles[0].getWidth() * tiles[0].getHeight();
-        }
-
-        @Override
-        public int getSampleCount() {
-            return tiles.length;
-        }
-
-        private int getX(int i) {
-            return i % tiles[0].getWidth();
-        }
-
-        private int getY(int i) {
-            return i / tiles[0].getWidth();
-        }
-    }
 }
