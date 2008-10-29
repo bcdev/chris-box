@@ -45,9 +45,9 @@ interface LabelingContext {
 
     EMCluster[] getClusters();
 
-    void recomputeClassificationImage();
-
     RenderedImage getClassificationImage();
 
-    int getClassIndex(int x, int y);
+    int getClassIndex(int x, int y, int currentLevel);
+
+    void recomputeClassificationImage();
 }

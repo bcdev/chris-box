@@ -3,18 +3,16 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.command.CommandEvent;
-import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -25,23 +23,10 @@ import java.util.concurrent.ExecutionException;
  */
 public class CloudMaskAction extends AbstractVisatAction {
 
-    private static final List<String> CHRIS_TYPES;
     private final Set<Product> activeProductSet;
 
     public CloudMaskAction() {
         activeProductSet = new HashSet<Product>(7);
-    }
-
-    static {
-        CHRIS_TYPES = new ArrayList<String>(7);
-        Collections.addAll(CHRIS_TYPES,
-                           "CHRIS_M1_NR",
-                           "CHRIS_M2_NR",
-                           "CHRIS_M3_NR",
-                           "CHRIS_M30_NR",
-                           "CHRIS_M3A_NR",
-                           "CHRIS_M4_NR",
-                           "CHRIS_M5_NR");
     }
 
     @Override
@@ -52,29 +37,41 @@ public class CloudMaskAction extends AbstractVisatAction {
         // todo - GUI
         formModel.setRadianceProduct(selectedProduct);
 
-        final SwingWorker<CloudScreeningPerformer, Object> worker = new CloudScreeningSwingWorker(formModel);
+        final SwingWorker<CloudScreeningPerformer, Object> worker = new ClusterAnalysisWorker(formModel);
         worker.execute();
     }
 
     @Override
     public void updateState() {
         final Product selectedProduct = getAppContext().getSelectedProduct();
-        final boolean valid = selectedProduct != null && CHRIS_TYPES.contains(selectedProduct.getProductType());
-        setEnabled(valid && !activeProductSet.contains(selectedProduct));
+        final boolean enabled = selectedProduct == null ||
+                !activeProductSet.contains(selectedProduct) && isValid(selectedProduct);
+        setEnabled(enabled);
     }
 
-    private class CloudScreeningSwingWorker extends ProgressMonitorSwingWorker<CloudScreeningPerformer, Object> {
+    private static boolean isValid(Product product) {
+        return product.getProductType().matches("CHRIS_M.*_NR") &&
+                OpUtils.findBands(product, "radiance").length >= 18;
+    }
+
+    private class ClusterAnalysisWorker extends ProgressMonitorSwingWorker<CloudScreeningPerformer, Object> {
         private final CloudScreeningFormModel formModel;
 
-        private CloudScreeningSwingWorker(CloudScreeningFormModel formModel) {
+        private ClusterAnalysisWorker(CloudScreeningFormModel formModel) {
             super(getAppContext().getApplicationWindow(), "Performing Cluster Analysis...");
             this.formModel = formModel;
         }
 
         @Override
         protected CloudScreeningPerformer doInBackground(ProgressMonitor pm) throws Exception {
-            final CloudScreeningPerformer performer = new CloudScreeningPerformer(getAppContext(), formModel);
-            performer.performClusterAnalysis(pm);
+            final CloudScreeningPerformer performer = new CloudScreeningPerformer(formModel);
+
+            try {
+                performer.performClusterAnalysis(getAppContext(), pm);
+            } catch (Exception e) {
+                performer.dispose();
+                throw e;
+            }
 
             return performer;
         }
@@ -83,15 +80,13 @@ public class CloudMaskAction extends AbstractVisatAction {
         protected void done() {
             try {
                 final CloudScreeningPerformer performer = get();
-                final Window owner = getAppContext().getApplicationWindow();
-                final String title = MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}",
-                                                          performer.getRadianceProductName());
-                final JDialog dialog = new LabelingDialog(owner, title, performer);
+                final JDialog dialog = new LabelingDialog(getAppContext(), 
+                                                          formModel.getRadianceProduct().getName(),
+                                                          performer);
                 dialog.addWindowListener(new WindowAdapter() {
                     @Override
                     public void windowClosed(WindowEvent e) {
                         activeProductSet.remove(formModel.getRadianceProduct());
-//                        VisatApp.getApp().setSelectedProductNode(formModel.getRadianceProduct());
                     }
                 });
                 dialog.setVisible(true);

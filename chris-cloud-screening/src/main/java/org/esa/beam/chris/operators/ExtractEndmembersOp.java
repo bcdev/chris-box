@@ -15,6 +15,7 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.chris.operators.internal.ExclusiveIndexFilter;
 import org.esa.beam.chris.operators.internal.InclusiveIndexFilter;
@@ -44,7 +45,7 @@ import java.util.ArrayList;
  * Extracts endmembers for calculating cloud abundances.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @version $Revision: 3388 $ $Date: 2008-10-24 18:34:36 +0200 (Fr, 24 Okt 2008) $
  */
 @OperatorMetadata(alias = "chris.ExtractEndmembers",
                   version = "1.0",
@@ -126,46 +127,54 @@ public class ExtractEndmembersOp extends Operator {
                                                 EMCluster[] clusters,
                                                 final boolean[] cloudClusters,
                                                 final boolean[] ignoredClusters, ProgressMonitor pm) {
-        final ExtractEndmembersOp op = new ExtractEndmembersOp(reflectanceProduct,
-                                                               featureProduct,
-                                                               classificationProduct,
-                                                               featureBandNames,
-                                                               clusters,
-                                                               cloudClusters,
-                                                               ignoredClusters);
-        final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct, "toa_refl", BAND_FILTER);
-        final double[] wavelengths = OpUtils.getWavelenghts(reflectanceBands);
+        try {
+            pm.beginTask("Extracting endmembers...", 100);
 
-        final PixelAccessor featAccessor = createPixelAccessor(op, featureProduct, featureBandNames, pm);
-        final PixelAccessor reflAccessor = createPixelAccessor(op, reflectanceBands, pm);
+            final ExtractEndmembersOp op = new ExtractEndmembersOp(reflectanceProduct,
+                                                                   featureProduct,
+                                                                   classificationProduct,
+                                                                   featureBandNames,
+                                                                   clusters,
+                                                                   cloudClusters,
+                                                                   ignoredClusters);
+            final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct, "toa_refl", BAND_FILTER);
+            final double[] wavelengths = OpUtils.getWavelenghts(reflectanceBands);
 
-        final IndexFilter clusterFilter = new ExclusiveIndexFilter(ignoredClusters);
-        final IndexFilter surfaceFilter = new ExclusiveIndexFilter(cloudClusters, ignoredClusters);
-        final IndexFilter cloudFilter = new InclusiveIndexFilter(cloudClusters);
+            final PixelAccessor featAccessor = createPixelAccessor(op, featureProduct, featureBandNames);
+            final PixelAccessor reflAccessor = createPixelAccessor(op, reflectanceBands);
 
-        final double[] cloudReflectances = extractCloudReflectances(op, featAccessor,
-                                                                    reflAccessor,
-                                                                    clusters,
-                                                                    cloudFilter,
-                                                                    clusterFilter, pm);
+            final IndexFilter clusterFilter = new ExclusiveIndexFilter(ignoredClusters);
+            final IndexFilter surfaceFilter = new ExclusiveIndexFilter(cloudClusters, ignoredClusters);
+            final IndexFilter cloudFilter = new InclusiveIndexFilter(cloudClusters);
 
-        final double[][] surfaceReflectances = extractSurfaceReflectances(op, featAccessor,
-                                                                          reflAccessor,
-                                                                          clusters,
-                                                                          surfaceFilter,
-                                                                          clusterFilter, pm);
+            final double[] cloudReflectances = extractCloudReflectances(op, featAccessor,
+                                                                        reflAccessor,
+                                                                        clusters,
+                                                                        cloudFilter,
+                                                                        clusterFilter,
+                                                                        SubProgressMonitor.create(pm, 40));
 
-        final ArrayList<Endmember> endmemberList = new ArrayList<Endmember>();
-        endmemberList.add(new Endmember("cloud", wavelengths, cloudReflectances));
+            final double[][] surfaceReflectances = extractSurfaceReflectances(op, featAccessor,
+                                                                              reflAccessor,
+                                                                              clusters,
+                                                                              surfaceFilter,
+                                                                              clusterFilter,
+                                                                              SubProgressMonitor.create(pm, 60));
 
-        final SampleCoding sampleCoding = classificationProduct.getBand("class_indices").getSampleCoding();
-        for (int k = 0; k < clusters.length; ++k) {
-            if (surfaceFilter.accept(k)) {
-                endmemberList.add(new Endmember(sampleCoding.getSampleName(k), wavelengths, surfaceReflectances[k]));
+            final ArrayList<Endmember> endmemberList = new ArrayList<Endmember>();
+            endmemberList.add(new Endmember("cloud", wavelengths, cloudReflectances));
+
+            final SampleCoding sampleCoding = classificationProduct.getBand("class_indices").getSampleCoding();
+            for (int k = 0; k < clusters.length; ++k) {
+                if (surfaceFilter.accept(k)) {
+                    final String name = sampleCoding.getSampleName(k);
+                    endmemberList.add(new Endmember(name, wavelengths, surfaceReflectances[k]));
+                }
             }
+            return endmemberList.toArray(new Endmember[endmemberList.size()]);
+        } finally {
+            pm.done();
         }
-
-        return endmemberList.toArray(new Endmember[endmemberList.size()]);
     }
 
     private static double[] extractCloudReflectances(ExtractEndmembersOp op,
@@ -175,36 +184,44 @@ public class ExtractEndmembersOp extends Operator {
                                                      IndexFilter cloudFilter,
                                                      IndexFilter clusterFilter,
                                                      ProgressMonitor pm) {
-        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
+        try {
+            pm.beginTask("Extracting cloud endmember", featAccessor.getPixelCount() / 500);
 
-        int maxIndex = -1;
-        double maxRatio = 0.0;
+            final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
-        for (int i = 0; i < featAccessor.getPixelCount(); ++i) {
-            final double[] features = new double[featAccessor.getSampleCount()];
-            featAccessor.getSamples(i, features);
+            int maxIndex = -1;
+            double maxRatio = 0.0;
 
-            if (features[1] > 0.0) {
-                final double[] posteriors = new double[clusters.length];
-                calculator.calculate(features, posteriors, clusterFilter);
+            for (int i = 0; i < featAccessor.getPixelCount(); ++i) {
+                final double[] features = new double[featAccessor.getSampleCount()];
+                featAccessor.getSamples(i, features);
 
-                for (int k = 0; k < clusters.length; ++k) {
-                    if (posteriors[k] > 0.5) {
-                        if (cloudFilter.accept(k)) {
-                            final double ratio = features[0] / features[1];
+                if (features[1] > 0.0) {
+                    final double[] posteriors = new double[clusters.length];
+                    calculator.calculate(features, posteriors, clusterFilter);
 
-                            if (maxIndex == -1 || ratio > maxRatio) {
-                                maxIndex = i;
-                                maxRatio = ratio;
+                    for (int k = 0; k < clusters.length; ++k) {
+                        if (posteriors[k] > 0.5) {
+                            if (cloudFilter.accept(k)) {
+                                final double ratio = features[0] / features[1];
+
+                                if (maxIndex == -1 || ratio > maxRatio) {
+                                    maxIndex = i;
+                                    maxRatio = ratio;
+                                }
                             }
                         }
                     }
                 }
+                if (i % 500 == 0) {
+                    op.checkForCancelation(pm);
+                    pm.worked(1);
+                }
             }
-            op.checkForCancelation(pm);
+            return reflAccessor.getSamples(maxIndex, new double[reflAccessor.getSampleCount()]);
+        } finally {
+            pm.done();
         }
-
-        return reflAccessor.getSamples(maxIndex, new double[reflAccessor.getSampleCount()]);
     }
 
     private static double[][] extractSurfaceReflectances(ExtractEndmembersOp op,
@@ -214,61 +231,68 @@ public class ExtractEndmembersOp extends Operator {
                                                          IndexFilter surfaceFilter,
                                                          IndexFilter clusterFilter,
                                                          ProgressMonitor pm) {
-        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
+        try {
+            pm.beginTask("Extracting surface endmembers", featAccessor.getPixelCount() / 500);
 
-        final double[][] reflectances = new double[clusters.length][reflAccessor.getSampleCount()];
-        final int[] count = new int[clusters.length];
+            final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
-        for (int i = 0; i < featAccessor.getPixelCount(); ++i) {
-            final double[] features = new double[featAccessor.getSampleCount()];
-            featAccessor.getSamples(i, features);
-            final double[] posteriors = new double[clusters.length];
-            calculator.calculate(features, posteriors, clusterFilter);
+            final double[][] reflectances = new double[clusters.length][reflAccessor.getSampleCount()];
+            final int[] count = new int[clusters.length];
 
+            for (int i = 0; i < featAccessor.getPixelCount(); ++i) {
+                final double[] features = new double[featAccessor.getSampleCount()];
+                featAccessor.getSamples(i, features);
+                final double[] posteriors = new double[clusters.length];
+                calculator.calculate(features, posteriors, clusterFilter);
+
+                for (int k = 0; k < clusters.length; ++k) {
+                    if (posteriors[k] > 0.5) {
+                        if (surfaceFilter.accept(k)) {
+                            reflAccessor.addSamples(i, reflectances[k]);
+                            ++count[k];
+                            break;
+                        }
+                    }
+                }
+                if (i % 500 == 0) {
+                    op.checkForCancelation(pm);
+                    pm.worked(1);
+                }
+            }
             for (int k = 0; k < clusters.length; ++k) {
-                if (posteriors[k] > 0.5) {
-                    if (surfaceFilter.accept(k)) {
-                        reflAccessor.addSamples(i, reflectances[k]);
-                        ++count[k];
-                        break;
+                if (count[k] > 0) {
+                    for (int i = 0; i < reflAccessor.getSampleCount(); ++i) {
+                        reflectances[k][i] /= count[k];
                     }
                 }
             }
-            op.checkForCancelation(pm);
+            return reflectances;
+        } finally {
+            pm.done();
         }
-        for (int k = 0; k < clusters.length; ++k) {
-            if (count[k] > 0) {
-                for (int i = 0; i < reflAccessor.getSampleCount(); ++i) {
-                    reflectances[k][i] /= count[k];
-                }
-            }
-        }
-
-        return reflectances;
     }
 
-    private static PixelAccessor createPixelAccessor(Operator op, Band[] bands, ProgressMonitor pm) {
+    private static PixelAccessor createPixelAccessor(Operator op, Band[] bands) {
         final int w = bands[0].getSceneRasterWidth();
         final int h = bands[0].getSceneRasterHeight();
         final Rectangle rectangle = new Rectangle(0, 0, w, h);
         final Tile[] tiles = new Tile[bands.length];
 
         for (int i = 0; i < tiles.length; ++i) {
-            tiles[i] = op.getSourceTile(bands[i], rectangle, pm);
+            tiles[i] = op.getSourceTile(bands[i], rectangle, ProgressMonitor.NULL);
         }
 
         return new TilePixelAccessor(tiles);
     }
 
-    private static PixelAccessor createPixelAccessor(Operator op, Product product, String[] bandNames,
-                                                     ProgressMonitor pm) {
+    private static PixelAccessor createPixelAccessor(Operator op, Product product, String[] bandNames) {
         final int w = product.getSceneRasterWidth();
         final int h = product.getSceneRasterHeight();
         final Rectangle rectangle = new Rectangle(0, 0, w, h);
         final Tile[] tiles = new Tile[bandNames.length];
 
         for (int i = 0; i < tiles.length; ++i) {
-            tiles[i] = op.getSourceTile(product.getBand(bandNames[i]), rectangle, pm);
+            tiles[i] = op.getSourceTile(product.getBand(bandNames[i]), rectangle, ProgressMonitor.NULL);
         }
 
         return new TilePixelAccessor(tiles);

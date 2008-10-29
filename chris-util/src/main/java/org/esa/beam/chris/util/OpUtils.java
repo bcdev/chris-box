@@ -97,7 +97,7 @@ public class OpUtils {
      * @param bands      the bands.
      * @param bandFilter the band filter.
      *
-     * @return the first band in {@code bands} which is accepted by {@code bandFilter}.
+     * @return the band found or {@code null} if no band was found.
      */
     public static Band findBand(final Band[] bands, BandFilter bandFilter) {
         for (final Band band : bands) {
@@ -125,6 +125,26 @@ public class OpUtils {
                 return true;
             }
         });
+    }
+
+    /**
+     * Returns the first band in a product of interest whose name start with
+     * a given prefix and is accepted by a given band filter.
+     *
+     * @param product the product of interest.
+     * @param prefix  the prefix.
+     * @param filter  the band filter.
+     *
+     * @return the band found or {@code null} if no band was found.
+     */
+    public static Band findBand(Product product, String prefix, BandFilter filter) {
+        for (final Band band : product.getBands()) {
+            if (band.getName().startsWith(prefix) && filter.accept(band)) {
+                return band;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -228,7 +248,7 @@ public class OpUtils {
         if (stringValue == null) {
             throw new OperatorException(MessageFormat.format("could not find CHRIS annotation ''{0}''", name));
         }
-        
+
         return stringValue;
     }
 

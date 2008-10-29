@@ -21,7 +21,7 @@ import org.esa.beam.cluster.ProbabilityCalculator;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.BandOpImage;
 
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
@@ -54,7 +54,7 @@ public class ClusterMapOpImageTest extends TestCase {
         final double[] priors = {1.0, 1.0, 1.0, 1.0};
         final ProbabilityCalculator calculator = new ProbabilityCalculator(distributions, priors);
 
-        final RenderedImage image = ClassificationOpImage.createImage(product.getBands(), calculator, NO_FILTERING, 4);
+        final RenderedImage image = ClassOpImage.createImage(product.getBands(), calculator, NO_FILTERING, 4);
         final Raster data = image.getData();
 
         assertEquals(0, data.getSample(0, 0, 0));
@@ -80,7 +80,7 @@ public class ClusterMapOpImageTest extends TestCase {
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(samples));
-        band.setImage(new RasterDataNodeOpImage(band));
+        band.setSourceImage(new BandOpImage(band));
 
         return band;
     }

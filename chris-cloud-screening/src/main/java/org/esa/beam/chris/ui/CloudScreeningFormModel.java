@@ -17,10 +17,8 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.binding.ValidationException;
 import com.bc.ceres.binding.ValueContainer;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.Band;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,6 +28,13 @@ import java.util.List;
  * @version $Revision$ $Date$
  */
 class CloudScreeningFormModel {
+
+    private static final String BR_VIS_NAME = "brightness_vis";
+    private static final String WH_VIS_NAME = "whiteness_vis";
+    private static final String BR_NIR_NAME = "brightness_nir";
+    private static final String WH_NIR_NAME = "whiteness_nir";
+    private static final String WV_NAME = "wv";
+    private static final String O2_NAME = "o2";
 
     private final ParameterBlock parameterBlock;
     private final ValueContainer valueContainer;
@@ -108,29 +113,31 @@ class CloudScreeningFormModel {
         setValueContainerValue("iterationCount", iterationCount);
     }
 
-    final public int getSeed() {
+    final int getSeed() {
         return parameterBlock.seed;
     }
 
-    final public void setSeed(int seed) {
+    final void setSeed(int seed) {
         setValueContainerValue("seed", seed);
     }
 
     String[] getFeatureBandNames() {
-        final List<String> nameList = new ArrayList<String>(2);
-        Collections.addAll(nameList, "brightness_vis", "whiteness_vis");
+        final List<String> nameList = new ArrayList<String>(6);
+
+        nameList.add(BR_VIS_NAME);
+        nameList.add(WH_VIS_NAME);
 
         if (isNirBrightnessSelected()) {
-            nameList.add("brightness_nir");
+            nameList.add(BR_NIR_NAME);
         }
         if (isNirWhitenessSelected()) {
-            nameList.add("whiteness_nir");
+            nameList.add(WH_NIR_NAME);
         }
         if (isWvSelected()) {
-            nameList.add("wv");
+            nameList.add(WV_NAME);
         }
         if (isO2Selected()) {
-            nameList.add("o2");
+            nameList.add(O2_NAME);
         }
 
         return nameList.toArray(new String[nameList.size()]);
@@ -147,6 +154,7 @@ class CloudScreeningFormModel {
     /**
      * Cloud screening parameters.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     private static class ParameterBlock {
         private Product radianceProduct;
 

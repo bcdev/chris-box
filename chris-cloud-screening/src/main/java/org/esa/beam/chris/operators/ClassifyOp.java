@@ -14,7 +14,8 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.internal.ClassificationOpImage;
+import org.esa.beam.chris.operators.internal.ClassOpImage;
+import org.esa.beam.chris.operators.internal.ImageBand;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.Band;
@@ -60,8 +61,6 @@ public class ClassifyOp extends Operator {
     private String[] sourceBandNames;
     @Parameter
     private EMCluster[] clusters;
-//    @Parameter
-//    private RenderedImage rgbImage;
 
     @Override
     public void initialize() throws OperatorException {
@@ -71,11 +70,6 @@ public class ClassifyOp extends Operator {
 
             targetProduct = new Product(sourceProduct.getName() + "_CLASS",
                                         sourceProduct.getProductType() + "_CLASS", w, h);
-
-            final Band[] sourceBands = new Band[sourceBandNames.length];
-            for (int i = 0; i < sourceBandNames.length; ++i) {
-                sourceBands[i] = sourceProduct.getBand(sourceBandNames[i]);
-            }
 
             final Band targetBand = new ImageBand("class_indices", ProductData.TYPE_INT8, w, h);
             targetBand.setDescription("Class indices");
@@ -87,8 +81,7 @@ public class ClassifyOp extends Operator {
             }
             targetProduct.getIndexCodingGroup().add(indexCoding);
             targetBand.setSampleCoding(indexCoding);
-            targetBand.setImage(ClassificationOpImage.createImage(sourceBands, clusters, NO_FILTERING));
-//            setImageInfo(targetBand);
+            targetBand.setSourceImage(ClassOpImage.createImage(sourceProduct, sourceBandNames, clusters, NO_FILTERING));
         } catch (Throwable e) {
             throw new OperatorException(e);
         }

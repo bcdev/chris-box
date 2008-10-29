@@ -39,7 +39,7 @@
         <optional>true</optional>
     </dependency>
     <dependency>
-        <module>chris-util</module>
+        <module>chris-toa-reflectance-computation</module>
     </dependency>
 
     <categories>Application,Processor,CHRIS</categories>

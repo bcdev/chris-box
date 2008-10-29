@@ -18,8 +18,6 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.FindClustersOp;
-import org.esa.beam.chris.operators.internal.ClassificationOpImage;
-import org.esa.beam.chris.operators.internal.CloudMaskOpImage;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.*;
@@ -92,12 +90,12 @@ public class CloudLabeler {
     }
 
     public void createRgbSceneView() throws IOException {
-        final RasterDataNode[] rgbBands = getRgbBands(radianceProduct);
-        ProductSceneImage productSceneImage = ProductSceneImage.create(rgbBands[0], rgbBands[1], rgbBands[2],
-                                                                       ProgressMonitor.NULL);
-        rgbSceneView = new ProductSceneView(productSceneImage);
-
-        assignImageInfo(rgbSceneView.getSourceImage());
+//        final RasterDataNode[] rgbBands = getRgbBands(radianceProduct);
+//        ProductSceneImage productSceneImage = ProductSceneImage.create(rgbBands[0], rgbBands[1], rgbBands[2],
+//                                                                       ProgressMonitor.NULL);
+//        rgbSceneView = new ProductSceneView(productSceneImage);
+//
+//        assignImageInfo(rgbSceneView.getSourceImage());
     }
 
     public ProductSceneView getRgbSceneView() {
@@ -105,44 +103,44 @@ public class CloudLabeler {
     }
 
     private void assignImageInfo(RenderedImage rgbImage) {
-        final int[] r = new int[clusters.length];
-        final int[] g = new int[clusters.length];
-        final int[] b = new int[clusters.length];
-        final int[] clusterCount = new int[clusters.length];
-
-        final RenderedImage image = getClusterMapBand().getImage();
-        final Raster membershipImageData = image.getData();
-        final Raster rgbImageData = rgbImage.getData();
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                final int clusterIndex = membershipImageData.getSample(x, y, 0);
-                r[clusterIndex] += rgbImageData.getSample(x, y, 0);
-                g[clusterIndex] += rgbImageData.getSample(x, y, 1);
-                b[clusterIndex] += rgbImageData.getSample(x, y, 2);
-                clusterCount[clusterIndex]++;
-            }
-        }
-
-        for (int i = 0; i < clusterCount.length; i++) {
-            if (clusterCount[i] > 0) {
-                r[i] /= clusterCount[i];
-                g[i] /= clusterCount[i];
-                b[i] /= clusterCount[i];
-            }
-        }
-
-        final IndexCoding indexCoding = getClusterMapBand().getIndexCoding();
-        final String[] classNames = indexCoding.getIndexNames();
-        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[classNames.length];
-        for (int index = 0; index < points.length; index++) {
-            String className = classNames[index];
-            final int sample = indexCoding.getIndexValue(className);
-            final Color color = new Color(r[index], g[index], b[index]);
-            points[index] = new ColorPaletteDef.Point(sample, color, className);
-        }
-        final ColorPaletteDef def = new ColorPaletteDef(points);
-        final ImageInfo imageInfo = new ImageInfo(def);
-        getClusterMapBand().setImageInfo(imageInfo);
+//        final int[] r = new int[clusters.length];
+//        final int[] g = new int[clusters.length];
+//        final int[] b = new int[clusters.length];
+//        final int[] clusterCount = new int[clusters.length];
+//
+//        final RenderedImage image = getClusterMapBand().getImage();
+//        final Raster membershipImageData = image.getData();
+//        final Raster rgbImageData = rgbImage.getData();
+//        for (int y = 0; y < image.getHeight(); y++) {
+//            for (int x = 0; x < image.getWidth(); x++) {
+//                final int clusterIndex = membershipImageData.getSample(x, y, 0);
+//                r[clusterIndex] += rgbImageData.getSample(x, y, 0);
+//                g[clusterIndex] += rgbImageData.getSample(x, y, 1);
+//                b[clusterIndex] += rgbImageData.getSample(x, y, 2);
+//                clusterCount[clusterIndex]++;
+//            }
+//        }
+//
+//        for (int i = 0; i < clusterCount.length; i++) {
+//            if (clusterCount[i] > 0) {
+//                r[i] /= clusterCount[i];
+//                g[i] /= clusterCount[i];
+//                b[i] /= clusterCount[i];
+//            }
+//        }
+//
+//        final IndexCoding indexCoding = getClusterMapBand().getIndexCoding();
+//        final String[] classNames = indexCoding.getIndexNames();
+//        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[classNames.length];
+//        for (int index = 0; index < points.length; index++) {
+//            String className = classNames[index];
+//            final int sample = indexCoding.getIndexValue(className);
+//            final Color color = new Color(r[index], g[index], b[index]);
+//            points[index] = new ColorPaletteDef.Point(sample, color, className);
+//        }
+//        final ColorPaletteDef def = new ColorPaletteDef(points);
+//        final ImageInfo imageInfo = new ImageInfo(def);
+//        getClusterMapBand().setImageInfo(imageInfo);
     }
 
     private static RasterDataNode[] getRgbBands(Product product) {
@@ -176,7 +174,7 @@ public class CloudLabeler {
         final Band clusterMapBand = getClusterMapBand();
         final Band[] featureBands = getFeatureBands(featureProduct);
 
-        clusterMapBand.setImage(ClassificationOpImage.createImage(featureBands, clusters, indexFilter));
+//        clusterMapBand.setImage(ClassificationOpImage.createImage(featureBands, clusters, indexFilter));
     }
 
     public static class LabelingPerformer {
@@ -197,7 +195,7 @@ public class CloudLabeler {
                     return !invalids[index];
                 }
             };
-            classificationBand.setImage(ClassificationOpImage.createImage(featureBands, clusters, indexFilter));
+//            classificationBand.setImage(ClassificationOpImage.createImage(featureBands, clusters, indexFilter));
             // todo - compute brightnesses and occurrences
         }
     }
@@ -209,9 +207,9 @@ public class CloudLabeler {
         try {
             if (computeAbundances) {
                 // 4. Cloud probabilities
-                final Band[] featureBands = getFeatureBands(featureProduct);
-                final OpImage cloudProbImage =
-                        CloudMaskOpImage.createProbabilisticImage(featureBands, clusters, validFilter, cloudFilter);
+//                final Band[] featureBands = getFeatureBands(featureProduct);
+//                final OpImage cloudProbImage =
+//                        CloudMaskOpImage.createProbabilisticImage(featureBands, clusters, validFilter, cloudFilter);
                 // 5. Endmember extraction
 //////                final Operator endmemberOp = new ExtractEndmembersOp(reflectanceProduct,
 //////                                                                     featureProduct,
@@ -230,9 +228,9 @@ public class CloudLabeler {
 //                addCloudImageToInput(createCloudProductImage(cloudProbImage, cloudAbundancesProduct));
             } else {
                 final Band[] featureBands = getFeatureBands(featureProduct);
-                final OpImage cloudMaskImage =
-                        CloudMaskOpImage.createBinaryImage(featureBands, clusters, validFilter, cloudFilter);
-                addCloudImageToInput(cloudMaskImage);
+//                final OpImage cloudMaskImage =
+//                        CloudProbabilityOpImage.createBinaryImage(featureBands, clusters, validFilter, cloudFilter);
+//                addCloudImageToInput(cloudMaskImage);
             }
         } finally {
             pm.done();
@@ -263,16 +261,16 @@ public class CloudLabeler {
         if (targetBandFrame != null) {
             visatApp.updateImage((ProductSceneView) targetBandFrame.getContentPane());
         } else {
-            visatApp.openProductSceneView(targetBand, "");
+//            visatApp.openProductSceneView(targetBand, "");
         }
     }
 
-    private static RenderedImage createCloudProductImage(OpImage cloudProbabilityImage,
-                                                         Product cloudAbundancesProduct) {
-        final RenderedImage cloudProbability = cloudProbabilityImage;
-        final RenderedImage cloudAbundance = cloudAbundancesProduct.getBand("cloud_abundance").getImage();
-        return MultiplyDescriptor.create(cloudProbability, cloudAbundance, null);
-    }
+//    private static RenderedImage createCloudProductImage(OpImage cloudProbabilityImage,
+//                                                         Product cloudAbundancesProduct) {
+//        final RenderedImage cloudProbability = cloudProbabilityImage;
+//        final RenderedImage cloudAbundance = cloudAbundancesProduct.getBand("cloud_abundance").getImage();
+//        return MultiplyDescriptor.create(cloudProbability, cloudAbundance, null);
+//    }
 
     private Product createCloudAbundancesProduct(Endmember[] endmembers, String[] reflectanceBandNames) {
         final Map<String, Object> parameterMap = new HashMap<String, Object>(3);

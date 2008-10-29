@@ -18,7 +18,7 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.BandOpImage;
 
 /**
  * Tests for class {@link ExtractEndmembersOp}.
@@ -143,7 +143,7 @@ public class ExtractEndmembersOpTest {
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(values));
-        band.setImage(new RasterDataNodeOpImage(band));
+        band.setSourceImage(new BandOpImage(band));
 
         return band;
     }
@@ -153,7 +153,7 @@ public class ExtractEndmembersOpTest {
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(values));
-        band.setImage(new RasterDataNodeOpImage(band));
+        band.setSourceImage(new BandOpImage(band));
 
         return band;
     }

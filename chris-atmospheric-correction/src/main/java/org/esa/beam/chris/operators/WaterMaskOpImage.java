@@ -1,7 +1,7 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.BandOpImage;
 
 import javax.media.jai.*;
 import java.awt.*;
@@ -34,15 +34,15 @@ class WaterMaskOpImage extends PointOpImage {
      * @return the water mask image.
      */
     public static OpImage createImage(Band redBand, Band nirBand, double redScaling, double nirScaling) {
-        RenderedImage redImage = redBand.getImage();
+        RenderedImage redImage = redBand.getSourceImage();
         if (redImage == null) {
-            redImage = new RasterDataNodeOpImage(redBand);
-            redBand.setImage(redImage);
+            redImage = new BandOpImage(redBand);
+            redBand.setSourceImage(redImage);
         }
-        RenderedImage nirImage = nirBand.getImage();
+        RenderedImage nirImage = nirBand.getSourceImage();
         if (nirImage == null) {
-            nirImage = new RasterDataNodeOpImage(nirBand);
-            nirBand.setImage(nirImage);
+            nirImage = new BandOpImage(nirBand);
+            nirBand.setSourceImage(nirImage);
         }
 
         int w = redBand.getRasterWidth();

@@ -1,5 +1,6 @@
-package org.esa.beam.chris.operators;
+package org.esa.beam.chris.operators.internal;
 
+import com.bc.ceres.core.CanceledException;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -10,22 +11,40 @@ import java.awt.image.RenderedImage;
 import java.io.IOException;
 import java.text.MessageFormat;
 
-class ImageBand extends Band {
+public class ImageBand extends Band {
 
-    ImageBand(String name, int dataType, int width, int height) {
+    public ImageBand(String name, int dataType, int width, int height) {
         super(name, dataType, width, height);
     }
 
+
+    /**
+     * Sets the rendered image for this {@code Band} and sets the raster
+     * data accordingly.
+     *
+     * @param image the rendered image.
+     * @param pm    the progress monitor.
+     */
+    public void setSourceImage(RenderedImage image, ProgressMonitor pm) {
+        super.setSourceImage(image);
+        resetRasterData(pm);
+    }
+
+    /**
+     * Sets the rendered image for this {@code Band} and sets the raster
+     * data accordingly.
+     *
+     * @param image the rendered image.
+     */
     @Override
-    public void setImage(RenderedImage image) {
-        super.setImage(image);
-        reloadData();
+    public void setSourceImage(RenderedImage image) {
+        setSourceImage(image, ProgressMonitor.NULL);
     }
 
     @Override
     public void readRasterData(int offsetX, int offsetY, int width, int height, ProductData rasterData,
-                               ProgressMonitor pm) throws IOException {
-        final RenderedImage image = getImage();
+                               ProgressMonitor pm) {
+        final RenderedImage image = getSourceImage();
         if (image == null) {
             throw new IllegalStateException(MessageFormat.format("No image available for band ''{0}''.", getName()));
         }
@@ -42,6 +61,9 @@ class ImageBand extends Band {
         try {
             for (int tileX = minTileX; tileX < minTileX + numXTiles; ++tileX) {
                 for (int tileY = minTileY; tileY < minTileY + numYTiles; ++tileY) {
+                    if (pm.isCanceled()) {
+                        throw new RuntimeException(new CanceledException());
+                    }
                     final Rectangle tileRectangle = new Rectangle(
                             image.getTileGridXOffset() + tileX * image.getTileWidth(),
                             image.getTileGridYOffset() + tileY * image.getTileHeight(),
@@ -64,7 +86,6 @@ class ImageBand extends Band {
                             System.arraycopy(source, i * w, target, (y + i) * width + x, w);
                         }
                     }
-
                     pm.worked(1);
                 }
             }
@@ -73,10 +94,10 @@ class ImageBand extends Band {
         }
     }
 
-    private void reloadData() {
-        if (getImage() != null) {
+    private void resetRasterData(ProgressMonitor pm) {
+        if (getSourceImage() != null) {
             try {
-                readRasterDataFully();
+                readRasterDataFully(pm);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }

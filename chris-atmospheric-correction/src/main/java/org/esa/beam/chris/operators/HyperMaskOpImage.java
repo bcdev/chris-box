@@ -15,7 +15,8 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.BandOpImage;
 
 import javax.media.jai.*;
 import java.awt.*;
@@ -43,10 +44,10 @@ class HyperMaskOpImage extends PointOpImage {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band maskBand : maskBands) {
-            RenderedImage image = maskBand.getImage();
+            RenderedImage image = maskBand.getSourceImage();
             if (image == null) {
-                image = new RasterDataNodeOpImage(maskBand);
-                maskBand.setImage(image);
+                image = new BandOpImage(maskBand);
+                maskBand.setSourceImage(image);
             }
             sourceImageVector.add(image);
         }

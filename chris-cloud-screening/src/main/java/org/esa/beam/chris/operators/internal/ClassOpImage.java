@@ -18,7 +18,8 @@ import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.cluster.ProbabilityCalculator;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.jai.BandOpImage;
 
 import javax.media.jai.*;
 import javax.media.jai.PixelAccessor;
@@ -27,20 +28,30 @@ import java.awt.image.*;
 import java.util.Vector;
 
 /**
- * todo - add API doc
+ * Class image.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
- * @since BEAM 4.2
  */
-public class ClassificationOpImage extends PointOpImage {
+public class ClassOpImage extends PointOpImage {
 
-    private final Band[] featureBands;
+    private final Band[] sourceBands;
     private final ProbabilityCalculator calculator;
     private final IndexFilter clusterFilter;
     private final int clusterCount;
 
-    public static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter) {
+    public static OpImage createImage(Product sourceProduct, String[] sourceBandNames, EMCluster[] clusters, IndexFilter clusterFilter) {
+        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
+
+        final Band[] sourceBands = new Band[sourceBandNames.length];
+        for (int i = 0; i < sourceBandNames.length; i++) {
+            sourceBands[i] = sourceProduct.getBand(sourceBandNames[i]);
+        }
+
+        return createImage(sourceBands, calculator, clusterFilter, clusters.length);
+    }
+
+    static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter) {
         final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
         return createImage(featureBands, calculator, clusterFilter, clusters.length);
@@ -51,10 +62,10 @@ public class ClassificationOpImage extends PointOpImage {
         final Vector<RenderedImage> sourceImageVector = new Vector<RenderedImage>();
 
         for (final Band band : featureBands) {
-            RenderedImage sourceImage = band.getImage();
+            RenderedImage sourceImage = band.getSourceImage();
             if (sourceImage == null) {
-                sourceImage = new RasterDataNodeOpImage(band);
-                band.setImage(sourceImage);
+                sourceImage = new BandOpImage(band);
+                band.setSourceImage(sourceImage);
             }
             sourceImageVector.add(sourceImage);
         }
@@ -64,18 +75,20 @@ public class ClassificationOpImage extends PointOpImage {
 
         final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_BYTE, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
-        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
+        final int tileW = 16;
+        final int tileH = 16;
+        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, tileW, tileH, sampleModel, colorModel);
 
-        return new ClassificationOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
+        return new ClassOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
                                          clusterCount);
     }
 
-    private ClassificationOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                                  Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
+    private ClassOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
+                                  Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
                                   int clusterCount) {
         super(sourceImageVector, imageLayout, null, true);
 
-        this.featureBands = featureBands;
+        this.sourceBands = sourceBands;
         this.calculator = calculator;
         this.clusterFilter = clusterFilter;
         this.clusterCount = clusterCount;
@@ -116,13 +129,13 @@ public class ClassificationOpImage extends PointOpImage {
         final double[] sourceSamples = new double[sources.length];
         final double[] posteriors = new double[clusterCount];
 
-        for (int y = 0; y < target.getHeight(); y++) {
+        for (int y = 0; y < rectangle.getHeight(); y++) {
             int sourcePixelOffset = sourceLineOffset;
             int targetPixelOffset = targetLineOffset;
 
-            for (int x = 0; x < target.getWidth(); x++) {
+            for (int x = 0; x < rectangle.getWidth(); x++) {
                 for (int i = 0; i < sources.length; i++) {
-                    sourceSamples[i] = featureBands[i].scale(sourcePixels[i][sourcePixelOffset]);
+                    sourceSamples[i] = sourceBands[i].scale(sourcePixels[i][sourcePixelOffset]);
                 }
                 calculator.calculate(sourceSamples, posteriors, clusterFilter);
                 targetPixels[targetPixelOffset] = findMaxIndex(posteriors);

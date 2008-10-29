@@ -14,10 +14,14 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.glayer.support.ImageLayer;
+import com.bc.ceres.swing.SwingHelper;
+import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 import com.jidesoft.grid.ColorCellEditor;
 import com.jidesoft.grid.ColorCellRenderer;
-import com.bc.ceres.swing.SwingHelper;
+import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.help.HelpSys;
+import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.PixelPositionListener;
 import org.esa.beam.framework.ui.UIUtils;
 import org.esa.beam.framework.ui.product.ProductSceneView;
@@ -35,12 +39,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.image.RenderedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Cloud labeling form.
@@ -52,25 +56,34 @@ import java.text.NumberFormat;
  */
 class LabelingDialog extends JDialog {
 
-    private final CloudScreeningPerformer cloudLabeler;
+    private final AppContext appContext;
+    private final String radianceProductName;
+    private final CloudScreeningPerformer performer;
+
     private final JTable labelingTable;
     private final ClassSelector classSelector;
 
-    private JInternalFrame classificationFrame;
     private JInternalFrame rgbFrame;
+    private JInternalFrame classFrame;
+
     private VetoableChangeListener classificationFrameClosedListener;
     private VetoableChangeListener rgbFrameClosedListener;
 
-    LabelingDialog(Window owner, String title, CloudScreeningPerformer cloudLabeler) {
-        super(owner, title, ModalityType.MODELESS);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setName("chrisCloudLabelingDialog");
+    LabelingDialog(AppContext appContext, String radianceProductName, CloudScreeningPerformer performer) {
+        super(appContext.getApplicationWindow(),
+              MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}", radianceProductName),
+              ModalityType.MODELESS);
 
-        this.cloudLabeler = cloudLabeler;
-        final LabelingContext labelingContext = cloudLabeler.createLabelingContext();
+        this.appContext = appContext;
+        this.performer = performer;
+        this.radianceProductName = radianceProductName;
+
+        final LabelingContext labelingContext = performer.createLabelingContext();
         labelingTable = createLabelingTable(labelingContext);
         classSelector = new ClassSelector(labelingContext, labelingTable.getSelectionModel());
 
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setName("chrisCloudLabelingDialog");
         getContentPane().add(createControl());
     }
 
@@ -80,10 +93,9 @@ class LabelingDialog extends JDialog {
             final VisatApp visatApp = VisatApp.getApp();
 
             if (rgbFrame == null) {
-                final ProductSceneView view = cloudLabeler.getRgbSceneView();
-                final String title = MessageFormat.format("{0} - RGB", cloudLabeler.getRadianceProduct().getName());
+                final ProductSceneView view = performer.getRgbView();
+                final String title = MessageFormat.format("{0} - RGB", radianceProductName);
 
-                view.getScene().setName(title);
                 view.setCommandUIFactory(visatApp.getCommandUIFactory());
                 view.setNoDataOverlayEnabled(false);
                 view.setROIOverlayEnabled(false);
@@ -106,12 +118,10 @@ class LabelingDialog extends JDialog {
                 });
             }
 
-            if (classificationFrame == null) {
-                final ProductSceneView view = cloudLabeler.getClassificationSceneView();
-                final String title = MessageFormat.format("{0} - Classification",
-                                                          cloudLabeler.getRadianceProduct().getName());
+            if (classFrame == null) {
+                final ProductSceneView view = performer.getClassView();
+                final String title = MessageFormat.format("{0} - Classification", radianceProductName);
 
-                view.getScene().setName(title);
                 view.setCommandUIFactory(visatApp.getCommandUIFactory());
                 view.setNoDataOverlayEnabled(false);
                 view.setROIOverlayEnabled(false);
@@ -122,12 +132,12 @@ class LabelingDialog extends JDialog {
 
                 final Icon icon = UIUtils.loadImageIcon("icons/RsBandAsSwath16.gif");
 
-                classificationFrame = visatApp.createInternalFrame(title, icon, view, "");
-                classificationFrame.addVetoableChangeListener(new VetoableFrameClosedListener());
-                classificationFrame.addInternalFrameListener(new InternalFrameAdapter() {
+                classFrame = visatApp.createInternalFrame(title, icon, view, "");
+                classFrame.addVetoableChangeListener(new VetoableFrameClosedListener());
+                classFrame.addInternalFrameListener(new InternalFrameAdapter() {
                     @Override
                     public void internalFrameClosed(InternalFrameEvent e) {
-                        classificationFrame.removeInternalFrameListener(this);
+                        classFrame.removeInternalFrameListener(this);
                         view.removePixelPositionListener(classSelector);
                         dispose();
                     }
@@ -143,8 +153,8 @@ class LabelingDialog extends JDialog {
 
     @Override
     public void dispose() {
-        closeFrame(classificationFrame);
-        classificationFrame = null;
+        closeFrame(classFrame);
+        classFrame = null;
 
         closeFrame(rgbFrame);
         rgbFrame = null;
@@ -185,7 +195,7 @@ class LabelingDialog extends JDialog {
             @Override
             public void tableChanged(TableModelEvent e) {
                 if (e.getColumn() == LabelingTableModel.CLOUD_COLUMN) {
-                    if (cloudLabeler.hasCloudClasses()) {
+                    if (performer.hasCloudClasses()) {
                         checkBox.setEnabled(true);
                     } else {
                         checkBox.setEnabled(false);
@@ -198,7 +208,7 @@ class LabelingDialog extends JDialog {
 
         final JScrollPane scrollPane = new JScrollPane(labelingTable);
         scrollPane.getViewport().setPreferredSize(labelingTable.getPreferredSize());
-        
+
         final JPanel panel = new JPanel(new BorderLayout(2, 2));
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(checkBox, BorderLayout.SOUTH);
@@ -212,7 +222,8 @@ class LabelingDialog extends JDialog {
         applyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cloudLabeler.performCloudMaskCreation();
+                final CloudMaskWorker worker = new CloudMaskWorker(appContext, "Creating cloud mask...", performer);
+                worker.execute();
                 dispose();
             }
         });
@@ -300,15 +311,53 @@ class LabelingDialog extends JDialog {
         }
 
         @Override
-        public void pixelPosChanged(RenderedImage image, int pixelX, int pixelY, boolean pixelPosValid, MouseEvent e) {
+        public void pixelPosChanged(ImageLayer baseImageLayer, int pixelX, int pixelY, int currentLevel,
+                                    boolean pixelPosValid, MouseEvent e) {
             if (pixelPosValid) {
-                final int classIndex = labelingContext.getClassIndex(pixelX, pixelY);
+                final int classIndex = labelingContext.getClassIndex(pixelX, pixelY, currentLevel);
                 selectionModel.setSelectionInterval(classIndex, classIndex);
             }
         }
 
         @Override
-        public void pixelPosNotAvailable(RenderedImage sourceImage) {
+        public void pixelPosNotAvailable() {
+        }
+    }
+
+    private static class CloudMaskWorker extends ProgressMonitorSwingWorker<Band, Object> {
+        private final AppContext appContext;
+        private final CloudScreeningPerformer performer;
+
+        public CloudMaskWorker(AppContext appContext, String title, CloudScreeningPerformer performer) {
+            super(appContext.getApplicationWindow(), title);
+            this.appContext = appContext;
+            this.performer = performer;
+        }
+
+        @Override
+        protected Band doInBackground(com.bc.ceres.core.ProgressMonitor pm) throws Exception {
+            return performer.performCloudMaskCreation(pm);
+        }
+
+        @Override
+        protected void done() {
+            try {
+                final Band cloudProductBand = get();
+                final VisatApp visatApp = VisatApp.getApp();
+                final JInternalFrame frame = visatApp.findInternalFrame(cloudProductBand);
+
+                if (frame != null) {
+                    visatApp.updateImage((ProductSceneView) frame.getContentPane());
+                } else {
+                    visatApp.openProductSceneView(cloudProductBand);
+                }
+            } catch (InterruptedException e) {
+                appContext.handleError(e);
+            } catch (ExecutionException e) {
+                appContext.handleError(e.getCause());
+            } finally {
+                performer.dispose();
+            }
         }
     }
 

@@ -107,7 +107,9 @@ public class FindClustersOp extends Operator {
 
             final Rectangle sourceRectangle = new Rectangle(0, 0, w, h);
             for (int i = 0; i < sourceBandNames.length; i++) {
-                tiles[i] = op.getSourceTile(sourceProduct.getBand(sourceBandNames[i]), sourceRectangle, pm);
+                tiles[i] = op.getSourceTile(sourceProduct.getBand(sourceBandNames[i]),
+                                            sourceRectangle,
+                                            ProgressMonitor.NULL);
             }
 
             clusterer = new Clusterer(new TilePixelAccessor(tiles), clusterCount, seed);

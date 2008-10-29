@@ -5,7 +5,7 @@ import org.esa.beam.chris.util.math.internal.LowessRegressionWeightCalculator;
 import org.esa.beam.chris.util.math.internal.Min;
 import org.esa.beam.chris.util.math.internal.UnivariateFunction;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.BandOpImage;
 
 import javax.media.jai.*;
 import java.awt.*;
@@ -56,10 +56,10 @@ class SmileOpImage extends OpImage {
         sourceImageVector.add(cloudMaskImage);
 
         for (final Band band : radianceBands) {
-            RenderedImage image = band.getImage();
+            RenderedImage image = band.getSourceImage();
             if (image == null) {
-                image = new RasterDataNodeOpImage(band);
-                band.setImage(image);
+                image = new BandOpImage(band);
+                band.setSourceImage(image);
             }
             sourceImageVector.add(image);
         }

@@ -15,11 +15,12 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
-import org.esa.beam.chris.operators.ExtractEndmembersOp;
-import org.esa.beam.chris.operators.FindClustersOp;
-import org.esa.beam.chris.operators.internal.ClassificationOpImage;
-import org.esa.beam.chris.operators.internal.CloudMaskOpImage;
+import com.bc.ceres.core.SubProgressMonitor;
+import org.esa.beam.chris.operators.*;
+import org.esa.beam.chris.operators.internal.ClassOpImage;
+import org.esa.beam.chris.operators.internal.CloudProbabilityOpImage;
+import org.esa.beam.chris.operators.internal.ImageBand;
+import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
@@ -32,116 +33,381 @@ import org.esa.beam.framework.ui.product.ProductSceneImage;
 import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
-import org.esa.beam.visat.VisatApp;
 
 import javax.media.jai.OpImage;
 import javax.media.jai.operator.MultiplyDescriptor;
-import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
- * todo - add API doc
+ * Cloud screening performer.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
- * @since BEAM 4.2
  */
 class CloudScreeningPerformer {
     private static final double WAVELENGTH_R = 650.0;
     private static final double WAVELENGTH_G = 550.0;
     private static final double WAVELENGTH_B = 450.0;
 
-    private final boolean[] clouds;
-    private final boolean[] ignoreds;
+    private final boolean[] cloudClusters;
+    private final boolean[] ignoredClusters;
 
-    private final AppContext appContext;
     private final CloudScreeningFormModel model;
-    private Product classificationProduct;
+    private Product classProduct;
     private Product featureProduct;
 
     private Product reflectanceProduct;
-    private ProductSceneView rgbSceneView; // todo - move to view?
-    private ProductSceneView classificationSceneView; // todo - move to view?
+    private ProductSceneView rgbView; // todo - move to view?
+    private ProductSceneView classView; // todo - move to view?
 
-    private Band[] featureBands;
     private EMCluster[] clusters;
-    private Band classificationBand;
     private boolean probabilisticCloudMask = true;
 
-    CloudScreeningPerformer(AppContext appContext, CloudScreeningFormModel formModel) {
-        this.appContext = appContext;
+    CloudScreeningPerformer(CloudScreeningFormModel formModel) {
         this.model = formModel;
 
-        clouds = new boolean[formModel.getClusterCount()];
-        ignoreds = new boolean[formModel.getClusterCount()];
+        cloudClusters = new boolean[formModel.getClusterCount()];
+        ignoredClusters = new boolean[formModel.getClusterCount()];
     }
 
-    // todo - progress monitoring
-    void performClusterAnalysis(ProgressMonitor pm) throws OperatorException {
-        final Product radianceProduct = model.getRadianceProduct();
-        final Map<String, Object> emptyMap = Collections.emptyMap();
-
+    void performClusterAnalysis(AppContext appContext, ProgressMonitor pm) throws Exception {
         try {
-            pm.beginTask("Performing cluster analysis...", 1);
-            // 1. RGB image
-            try {
-                final Band r = findBand(radianceProduct, "radiance", WAVELENGTH_R);
-                final Band g = findBand(radianceProduct, "radiance", WAVELENGTH_G);
-                final Band b = findBand(radianceProduct, "radiance", WAVELENGTH_B);
+            pm.beginTask("Performing cluster analysis...", 100);
 
-                rgbSceneView = new ProductSceneView(ProductSceneImage.create(r, g, b, ProgressMonitor.NULL));
-            } catch (IOException e) {
-                throw new OperatorException(e.getMessage(), e);
-            }
-            // 2. TOA reflectances
-            reflectanceProduct = GPF.createProduct("chris.ComputeToaReflectances", emptyMap, radianceProduct);
-            // 3. Features
-            featureProduct = GPF.createProduct("chris.ExtractFeatures", emptyMap, reflectanceProduct);
-            final String[] featureBandNames = model.getFeatureBandNames();
-            featureBands = new Band[featureBandNames.length];
-            for (int i = 0; i < featureBandNames.length; i++) {
-                featureBands[i] = featureProduct.getBand(featureBandNames[i]);
-            }
-            // 4. Clustering
-            final BrightnessComparator bc = new BrightnessComparator();
-            clusters = FindClustersOp.findClusters(featureProduct, featureBandNames, model.getClusterCount(),
-                                                   model.getIterationCount(), model.getSeed(), bc,
-                                                   ProgressMonitor.NULL);
-            // 5. Unlabeled classification
-            final Map<String, Object> parameterMap = new HashMap<String, Object>();
-            parameterMap.put("sourceBandNames", featureBandNames);
-            parameterMap.put("clusters", clusters);
-            classificationProduct = GPF.createProduct("chris.Classify", parameterMap, featureProduct);
-            classificationBand = classificationProduct.getBand("class_indices");
-            setImageInfo(classificationBand);
+            // 1. Reflectances
+            final Map<String, Object> emptyMap = Collections.emptyMap();
+            reflectanceProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(ComputeToaReflectancesOp.class),
+                                                   emptyMap,
+                                                   model.getRadianceProduct());
 
-            try {
-                classificationSceneView = new ProductSceneView(ProductSceneImage.create(classificationBand,
-                                                                                        ProgressMonitor.NULL));
-            } catch (IOException e) {
-                throw new OperatorException(e.getMessage(), e);
-            }
+            // 2. Features
+            featureProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(ExtractFeaturesOp.class),
+                                               emptyMap,
+                                               reflectanceProduct);
+
+            // 3. Clustering
+            clusters = FindClustersOp.findClusters(featureProduct,
+                                                   model.getFeatureBandNames(),
+                                                   model.getClusterCount(),
+                                                   model.getIterationCount(),
+                                                   model.getSeed(),
+                                                   new BrightnessComparator(),
+                                                   SubProgressMonitor.create(pm, 100));
+
+            // 4. Classification
+            final Map<String, Object> classificationParameterMap = new HashMap<String, Object>();
+            classificationParameterMap.put("sourceBandNames", model.getFeatureBandNames());
+            classificationParameterMap.put("clusters", clusters);
+            classProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(ClassifyOp.class),
+                                             classificationParameterMap,
+                                             featureProduct);
+
+            // 5. Scene views
+            rgbView = createRgbView(model.getRadianceProduct(), appContext, ProgressMonitor.NULL);
+            final Raster rgbRaster = rgbView.getBaseImageLayer().getImage().getData();
+            classView = createClassView(classProduct, rgbRaster, appContext, ProgressMonitor.NULL);
         } finally {
             pm.done();
         }
     }
 
-    private void setImageInfo(Band targetBand) {
-        final RenderedImage targetImage = targetBand.getImage();
-        final Raster targetImageData = targetImage.getData();
-        final Raster rgbImageData = rgbSceneView.getSourceImage().getData();
+    // todo - progress monitoring
+    Band performCloudMaskCreation(ProgressMonitor pm) throws OperatorException {
+        final IndexFilter clusterFilter = new IndexFilter() {
+            @Override
+            public boolean accept(int index) {
+                return !ignoredClusters[index];
+            }
+        };
+        final IndexFilter cloudClusterFilter = new IndexFilter() {
+            @Override
+            public boolean accept(int index) {
+                return cloudClusters[index];
+            }
+        };
 
-        final int[] r = new int[clusters.length];
-        final int[] g = new int[clusters.length];
-        final int[] b = new int[clusters.length];
+        try {
+            pm.beginTask("Creating cloud mask...", probabilisticCloudMask ? 110 : 100);
+
+            final RenderedImage cloudMaskImage;
+            if (probabilisticCloudMask) {
+                // 1. Cloud probability
+                final OpImage probabilityImage =
+                        CloudProbabilityOpImage.createProbabilityImage(featureProduct,
+                                                                       model.getFeatureBandNames(),
+                                                                       clusters,
+                                                                       clusterFilter,
+                                                                       cloudClusterFilter);
+                // 2. Endmembers
+                final Endmember[] endmembers =
+                        ExtractEndmembersOp.extractEndmembers(reflectanceProduct,
+                                                              featureProduct,
+                                                              classProduct,
+                                                              model.getFeatureBandNames(),
+                                                              clusters,
+                                                              cloudClusters,
+                                                              ignoredClusters,
+                                                              SubProgressMonitor.create(pm, 10));
+
+                // 3. Cloud abundance
+                final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct,
+                                                                  "toa_refl",
+                                                                  ExtractEndmembersOp.BAND_FILTER);
+                final String[] reflectanceBandNames = new String[reflectanceBands.length];
+                for (int i = 0; i < reflectanceBands.length; ++i) {
+                    reflectanceBandNames[i] = reflectanceBands[i].getName();
+                }
+                final Map<String, Object> unmixingParameterMap = new HashMap<String, Object>(3);
+                unmixingParameterMap.put("sourceBandNames", reflectanceBandNames);
+                unmixingParameterMap.put("endmembers", endmembers);
+                unmixingParameterMap.put("unmixingModelName", "Fully Constrained LSU");
+                final RenderingHints renderingHints = new RenderingHints(GPF.KEY_TILE_SIZE, new Dimension(16, 16));
+                final Product abundanceProduct = GPF.createProduct(
+                        OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
+                        unmixingParameterMap,
+                        reflectanceProduct,
+                        renderingHints);
+                final RenderedImage abundanceImage = abundanceProduct.getBand("cloud_abundance").getSourceImage();
+
+                // 4. Cloud mask
+                cloudMaskImage = MultiplyDescriptor.create(probabilityImage, abundanceImage, renderingHints);
+            } else {
+                cloudMaskImage = CloudProbabilityOpImage.createDiscretizedImage(featureProduct,
+                                                                                model.getFeatureBandNames(),
+                                                                                clusters,
+                                                                                clusterFilter,
+                                                                                cloudClusterFilter);
+            }
+
+            final int width = cloudMaskImage.getWidth();
+            final int height = cloudMaskImage.getHeight();
+
+//            Band cloudProductBand = model.getRadianceProduct().getBand("cloud_product");
+//            if (cloudProductBand == null) {
+            final ImageBand cloudMaskBand = new ImageBand("cloud_product", ProductData.TYPE_FLOAT64, width, height);
+//                cloudProductBand.setSynthetic(true);
+            cloudMaskBand.setDescription("Cloud product");
+            cloudMaskBand.setSourceImage(cloudMaskImage, SubProgressMonitor.create(pm, 100));
+//            }
+
+//            ProductData rasterData = cloudProductBand.getRasterData();
+//            if (rasterData == null) {
+//                rasterData = cloudProductBand.createCompatibleRasterData();
+//            }
+//            cloudMaskImage.getData().getDataElements(0, 0, width, height, rasterData.getElems());
+//            cloudProductBand.setRasterData(rasterData);
+            if (model.getRadianceProduct().containsBand(cloudMaskBand.getName())) {
+                model.getRadianceProduct().removeBand(model.getRadianceProduct().getBand(cloudMaskBand.getName()));
+            }
+            model.getRadianceProduct().addBand(cloudMaskBand);
+
+            return cloudMaskBand;
+        } finally {
+            pm.done();
+        }
+    }
+
+    void dispose() {
+        if (classView != null) {
+            classView.dispose();
+            classView = null;
+        }
+        if (rgbView != null) {
+            rgbView.dispose();
+            rgbView = null;
+        }
+        if (classProduct != null) {
+            classProduct.dispose();
+            classProduct = null;
+        }
+        if (featureProduct != null) {
+            featureProduct.dispose();
+            featureProduct = null;
+        }
+        if (reflectanceProduct != null) {
+            reflectanceProduct.dispose();
+            reflectanceProduct = null;
+        }
+        if (clusters != null) {
+            for (int i = 0; i < clusters.length; i++) {
+                clusters[i] = null;
+            }
+            clusters = null;
+        }
+    }
+
+    Band getCloudProductBand() {
+        return model.getRadianceProduct().getBand("cloud_product");
+    }
+
+    ProductSceneView getRgbView() {
+        return rgbView;
+    }
+
+    ProductSceneView getClassView() {
+        return classView;
+    }
+
+
+    boolean isProbabilisticCloudMask() {
+        return probabilisticCloudMask;
+    }
+
+    void setProbabilisticCloudMask(boolean b) {
+        probabilisticCloudMask = b;
+    }
+
+    boolean hasCloudClasses() {
+        for (final boolean cloud : cloudClusters) {
+            if (cloud) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    LabelingContext createLabelingContext() {
+        return new LabelingContext() {
+            @Override
+            public String getLabel(int index) {
+                final ImageInfo imageInfo = getClassBand().getImageInfo();
+                return imageInfo.getColorPaletteDef().getPointAt(index).getLabel();
+            }
+
+            @Override
+            public void setLabel(int index, String label) {
+                final ImageInfo imageInfo = getClassBand().getImageInfo();
+                imageInfo.getColorPaletteDef().getPointAt(index).setLabel(label);
+            }
+
+            @Override
+            public Color getColor(int index) {
+                final ImageInfo imageInfo = getClassBand().getImageInfo();
+                return imageInfo.getColorPaletteDef().getPointAt(index).getColor();
+            }
+
+            @Override
+            public void setColor(int index, Color color) {
+                final ImageInfo imageInfo = getClassBand().getImageInfo();
+                imageInfo.getColorPaletteDef().getPointAt(index).setColor(color);
+                updateClassificationSceneView();
+            }
+
+            @Override
+            public boolean isCloud(int index) {
+                return cloudClusters[index];
+            }
+
+            @Override
+            public void setCloud(int index, boolean b) {
+                cloudClusters[index] = b;
+            }
+
+            @Override
+            public boolean isIgnored(int index) {
+                return ignoredClusters[index];
+            }
+
+            @Override
+            public void setIgnored(int index, boolean b) {
+                if (b != ignoredClusters[index]) {
+                    ignoredClusters[index] = b;
+                }
+            }
+
+            @Override
+            public EMCluster[] getClusters() {
+                return clusters;
+            }
+
+            @Override
+            public RenderedImage getClassificationImage() {
+                return getClassBand().getSourceImage();
+            }
+
+            @Override
+            public int getClassIndex(int x, int y, int currentLevel) {
+                // todo - review 
+                final AffineTransform i2m = classView.getBaseImageLayer().getImageToModelTransform(currentLevel);
+                final AffineTransform m2i = classView.getBaseImageLayer().getModelToImageTransform();
+
+                final AffineTransform transform = new AffineTransform();
+                transform.concatenate(i2m);
+                transform.concatenate(m2i);
+                final Point2D point = new Point2D.Double(x, y);
+                transform.transform(point, point);
+
+                final int x1 = (int) point.getX();
+                final int y1 = (int) point.getY();
+                final Raster raster = getClassificationImage().getData(new Rectangle(x1, y1, 1, 1));
+
+                return raster.getSample(x1, y1, 0);
+            }
+
+            @Override
+            public void recomputeClassificationImage() {
+                final IndexFilter indexFilter = new IndexFilter() {
+                    @Override
+                    public boolean accept(int index) {
+                        return !ignoredClusters[index];
+                    }
+                };
+                final RenderedImage classificationImage = ClassOpImage.createImage(featureProduct,
+                                                                                   model.getFeatureBandNames(),
+                                                                                   clusters,
+                                                                                   indexFilter);
+                getClassBand().setSourceImage(classificationImage);
+                updateClassificationSceneView();
+            }
+
+            private Band getClassBand() {
+                return classProduct.getBand("class_indices");
+            }
+
+            private void updateClassificationSceneView() {
+                try {
+                    classView.updateImage(ProgressMonitor.NULL);
+                } catch (IOException ignored) {
+                }
+            }
+        };
+    }
+
+    private static ProductSceneView createRgbView(Product radianceProduct,
+                                                  AppContext appContext,
+                                                  ProgressMonitor pm) throws Exception {
+        final Band r = findBand(radianceProduct, "radiance", WAVELENGTH_R);
+        final Band g = findBand(radianceProduct, "radiance", WAVELENGTH_G);
+        final Band b = findBand(radianceProduct, "radiance", WAVELENGTH_B);
+
+        return new ProductSceneView(new ProductSceneImage("RGB", r, g, b, appContext.getPreferences(), pm));
+    }
+
+    private static ProductSceneView createClassView(Product classProduct,
+                                                    Raster rgbRaster,
+                                                    AppContext appContext,
+                                                    ProgressMonitor pm) throws Exception {
+        final Band classBand = classProduct.getBand("class_indices");
+        final SampleCoding sampleCoding = classBand.getIndexCoding();
+        final int classCount = sampleCoding.getSampleCount();
+
+        final RenderedImage targetImage = classBand.getSourceImage();
+        final Raster targetImageData = targetImage.getData();
+
+        final int[] r = new int[classCount];
+        final int[] g = new int[classCount];
+        final int[] b = new int[classCount];
 
         // class index color = median RGB image color
-        for (int k = 0; k < clusters.length; ++k) {
+        for (int k = 0; k < classCount; ++k) {
             final ArrayList<Integer> rList = new ArrayList<Integer>(100000);
             final ArrayList<Integer> gList = new ArrayList<Integer>(100000);
             final ArrayList<Integer> bList = new ArrayList<Integer>(100000);
@@ -150,9 +416,9 @@ class CloudScreeningPerformer {
                 for (int x = 0; x < targetImage.getWidth(); ++x) {
                     final int classIndex = targetImageData.getSample(x, y, 0);
                     if (classIndex == k) {
-                        rList.add(rgbImageData.getSample(x, y, 0));
-                        gList.add(rgbImageData.getSample(x, y, 1));
-                        bList.add(rgbImageData.getSample(x, y, 2));
+                        rList.add(rgbRaster.getSample(x, y, 0));
+                        gList.add(rgbRaster.getSample(x, y, 1));
+                        bList.add(rgbRaster.getSample(x, y, 2));
                     }
                 }
             }
@@ -172,10 +438,8 @@ class CloudScreeningPerformer {
             }
         }
 
-        final SampleCoding sampleCoding = targetBand.getIndexCoding();
-        final int sampleCount = sampleCoding.getSampleCount();
-        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[sampleCount];
-
+        // set image info according to median RGB image colors
+        final ColorPaletteDef.Point[] points = new ColorPaletteDef.Point[classCount];
         for (int i = 0; i < points.length; ++i) {
             final int value = sampleCoding.getSampleValue(i);
             final Color color = new Color(r[i], g[i], b[i]);
@@ -183,235 +447,25 @@ class CloudScreeningPerformer {
 
             points[i] = new ColorPaletteDef.Point(value, color, label);
         }
+        classBand.setImageInfo(new ImageInfo(new ColorPaletteDef(points)));
 
-        targetBand.setImageInfo(new ImageInfo(new ColorPaletteDef(points)));
+        return new ProductSceneView(new ProductSceneImage(classBand, appContext.getPreferences(), pm));
     }
 
-    // todo - progress monitoring
-    void performCloudProductComputation(ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("Computing cloud product...", 1);
-
-        final IndexFilter validFilter = new IndexFilter() {
+    private static Band findBand(Product product, String prefix, final double wavelength) throws Exception {
+        final Band band = OpUtils.findBand(product, prefix, new BandFilter() {
             @Override
-            public boolean accept(int index) {
-                return !ignoreds[index];
+            public boolean accept(Band band) {
+                return Math.abs(band.getSpectralWavelength() - wavelength) < band.getSpectralBandwidth();
             }
-        };
-        final IndexFilter cloudFilter = new IndexFilter() {
-            @Override
-            public boolean accept(int index) {
-                return clouds[index];
-            }
-        };
+        });
 
-        try {
-            if (probabilisticCloudMask) {
-                // 4. Cloud probabilities
-                final OpImage cloudProbImage =
-                        CloudMaskOpImage.createProbabilisticImage(featureBands, clusters, validFilter, cloudFilter);
-                // 5. Endmember extraction
-                final Endmember[] endmembers = ExtractEndmembersOp.extractEndmembers(reflectanceProduct,
-                                                                                     featureProduct,
-                                                                                     classificationProduct,
-                                                                                     model.getFeatureBandNames(),
-                                                                                     clusters,
-                                                                                     clouds, ignoreds, pm);
-
-                final Band[] reflectanceBands =
-                        OpUtils.findBands(reflectanceProduct, "toa_refl", ExtractEndmembersOp.BAND_FILTER);
-                final String[] reflectanceBandNames = new String[reflectanceBands.length];
-                for (int i = 0; i < reflectanceBands.length; ++i) {
-                    reflectanceBandNames[i] = reflectanceBands[i].getName();
-                }
-                // 6. Cloud abundances
-                final Product cloudAbundancesProduct = createCloudAbundancesProduct(endmembers, reflectanceBandNames);
-
-                // 7. Cloud probability * cloud abundance
-                addCloudImageToInput(createCloudProductImage(cloudProbImage, cloudAbundancesProduct));
-            } else {
-                final OpImage cloudMaskImage =
-                        CloudMaskOpImage.createBinaryImage(featureBands, clusters, validFilter, cloudFilter);
-                addCloudImageToInput(cloudMaskImage);
-            }
-        } finally {
-            pm.done();
-        }
-    }
-
-    private static RenderedImage createCloudProductImage(OpImage cloudProbabilityImage,
-                                                         Product cloudAbundancesProduct) {
-        final RenderedImage cloudAbundance = cloudAbundancesProduct.getBand("cloud_abundance").getImage();
-        return MultiplyDescriptor.create(cloudProbabilityImage, cloudAbundance, null);
-    }
-
-    private void addCloudImageToInput(RenderedImage image) {
-        Band targetBand = getCloudProductBand();
-        final int width = image.getWidth();
-        final int height = image.getHeight();
-        if (targetBand == null) {
-            targetBand = new Band("cloud_product", ProductData.TYPE_FLOAT64, width, height);
-            targetBand.setSynthetic(true);
-            targetBand.setDescription("Cloud product");
-        }
-        ProductData rasterData = targetBand.getRasterData();
-        if (rasterData == null) {
-            rasterData = targetBand.createCompatibleRasterData();
-        }
-        final Object data = rasterData.getElems();
-        image.getData().getDataElements(0, 0, width, height, data);
-        targetBand.setRasterData(rasterData);
-        if (!model.getRadianceProduct().containsBand(targetBand.getName())) {
-            model.getRadianceProduct().addBand(targetBand);
-        }
-        final VisatApp visatApp = VisatApp.getApp();
-        final JInternalFrame targetBandFrame = visatApp.findInternalFrame(targetBand);
-        if (targetBandFrame != null) {
-            visatApp.updateImage((ProductSceneView) targetBandFrame.getContentPane());
-        } else {
-            visatApp.openProductSceneView(targetBand, "");
-        }
-    }
-
-    Band getCloudProductBand() {
-        return model.getRadianceProduct().getBand("cloud_product");
-    }
-
-    void dispose() {
-        if (classificationSceneView != null) {
-            classificationSceneView.dispose();
-            classificationSceneView = null;
+        if (band == null) {
+            throw new Exception(MessageFormat.format(
+                    "could not find band with prefix = ''{0}'' and spectral wavelength = {1}", prefix, wavelength));
         }
 
-        if (rgbSceneView != null) {
-            rgbSceneView.dispose();
-            rgbSceneView = null;
-        }
-
-        classificationBand = null;
-        if (classificationProduct != null) {
-            classificationProduct.dispose();
-            classificationProduct = null;
-        }
-        for (int i = 0; i < clusters.length; i++) {
-            clusters[i] = null;
-        }
-        clusters = null;
-        for (int i = 0; i < featureBands.length; i++) {
-            featureBands[i] = null;
-        }
-        featureBands = null;
-        if (featureProduct != null) {
-            featureProduct.dispose();
-            featureProduct = null;
-        }
-        if (reflectanceProduct != null) {
-            reflectanceProduct.dispose();
-            reflectanceProduct = null;
-        }
-    }
-
-    private Product createCloudAbundancesProduct(Endmember[] endmembers, String[] reflectanceBandNames) {
-        final Map<String, Object> parameterMap = new HashMap<String, Object>(3);
-        parameterMap.put("sourceBandNames", reflectanceBandNames);
-        parameterMap.put("endmembers", endmembers);
-        parameterMap.put("unmixingModelName", "Fully Constrained LSU");
-
-        return GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
-                                 parameterMap, reflectanceProduct);
-    }
-
-    private static Band findBand(Product product, String prefix, double wavelength) {
-        final Band[] bands = OpUtils.findBands(product, prefix);
-        return bands[OpUtils.findBandIndex(bands, wavelength)];
-    }
-
-
-    public Product getRadianceProduct() {
-        return model.getRadianceProduct();
-    }
-
-    public String getRadianceProductName() {
-        return model.getRadianceProduct().getName();
-    }
-
-    public String getRadianceProductDisplayName() {
-        return model.getRadianceProduct().getDisplayName();
-    }
-
-    public RenderedImage getClassificationImage() {
-        return classificationBand.getImage();
-    }
-
-    public Band getClassificationBand() {
-        return classificationBand;
-    }
-
-    public ProductSceneView getRgbSceneView() {
-        return rgbSceneView;
-    }
-
-    public ProductSceneView getClassificationSceneView() {
-        return classificationSceneView;
-    }
-
-    EMCluster[] getClusters() {
-        return clusters;
-    }
-
-    boolean isProbabilisticCloudMask() {
-        return probabilisticCloudMask;
-    }
-
-    void setProbabilisticCloudMask(boolean b) {
-        probabilisticCloudMask = b;
-    }
-
-    boolean hasCloudClasses() {
-        for (final boolean cloud : clouds) {
-            if (cloud) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    boolean isCloud(int index) {
-        return clouds[index];
-    }
-
-    void setCloud(int index, boolean b) {
-        clouds[index] = b;
-    }
-
-    boolean isIgnored(int index) {
-        return ignoreds[index];
-    }
-
-    void setIgnored(int index, boolean b) {
-        if (b != ignoreds[index]) {
-            ignoreds[index] = b;
-        }
-    }
-
-    void recomputeClassificationImage() {
-        final IndexFilter indexFilter = new IndexFilter() {
-            @Override
-            public boolean accept(int index) {
-                return !ignoreds[index];
-            }
-        };
-        final RenderedImage classificationImage =
-                ClassificationOpImage.createImage(featureBands, clusters, indexFilter);
-        classificationBand.setImage(classificationImage);
-        updateClassificationSceneView();
-    }
-
-    private void updateClassificationSceneView() {
-        try {
-            classificationSceneView.updateImage(ProgressMonitor.NULL);
-        } catch (IOException ignored) {
-        }
+        return band;
     }
 
     private static class BrightnessComparator implements Comparator<EMCluster> {
@@ -419,101 +473,5 @@ class CloudScreeningPerformer {
         public int compare(EMCluster c1, EMCluster c2) {
             return Double.compare(c2.getMean()[0], c1.getMean()[0]);
         }
-    }
-
-    void performCloudMaskCreation() {
-        final Component parent = appContext.getApplicationWindow();
-        final String title = "Generating cloud mask...";
-
-        final ProgressMonitorSwingWorker<Object, Object> worker = new ProgressMonitorSwingWorker<Object, Object>(parent,
-                                                                                                                 title) {
-            @Override
-            protected Object doInBackground(ProgressMonitor pm) throws Exception {
-                performCloudProductComputation(pm);
-                return null;
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    get();
-                } catch (InterruptedException e) {
-                    appContext.handleError(e);
-                } catch (ExecutionException e) {
-                    appContext.handleError(e.getCause());
-                }
-            }
-        };
-
-        worker.execute();
-    }
-
-    LabelingContext createLabelingContext() {
-        return new LabelingContext() {
-            @Override
-            public String getLabel(int index) {
-                final ImageInfo imageInfo = getClassificationBand().getImageInfo();
-                return imageInfo.getColorPaletteDef().getPointAt(index).getLabel();
-            }
-
-            @Override
-            public void setLabel(int index, String label) {
-                final ImageInfo imageInfo = getClassificationBand().getImageInfo();
-                imageInfo.getColorPaletteDef().getPointAt(index).setLabel(label);
-            }
-
-            @Override
-            public Color getColor(int index) {
-                final ImageInfo imageInfo = getClassificationBand().getImageInfo();
-                return imageInfo.getColorPaletteDef().getPointAt(index).getColor();
-            }
-
-            @Override
-            public void setColor(int index, Color color) {
-                final ImageInfo imageInfo = getClassificationBand().getImageInfo();
-                imageInfo.getColorPaletteDef().getPointAt(index).setColor(color);
-                updateClassificationSceneView();
-            }
-
-            @Override
-            public boolean isCloud(int index) {
-                return CloudScreeningPerformer.this.isCloud(index);
-            }
-
-            @Override
-            public void setCloud(int index, boolean b) {
-                CloudScreeningPerformer.this.setCloud(index, b);
-            }
-
-            @Override
-            public boolean isIgnored(int index) {
-                return CloudScreeningPerformer.this.isIgnored(index);
-            }
-
-            @Override
-            public void setIgnored(int index, boolean b) {
-                CloudScreeningPerformer.this.setIgnored(index, b);
-            }
-
-            @Override
-            public EMCluster[] getClusters() {
-                return CloudScreeningPerformer.this.getClusters();
-            }
-
-            @Override
-            public void recomputeClassificationImage() {
-                CloudScreeningPerformer.this.recomputeClassificationImage();
-            }
-
-            @Override
-            public RenderedImage getClassificationImage() {
-                return classificationBand.getImage();
-            }
-
-            @Override
-            public int getClassIndex(int x, int y) {
-                return classificationBand.getRasterData().getElemIntAt(y * classificationBand.getRasterWidth() + x);
-            }
-        };
     }
 }

@@ -1,7 +1,7 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.util.jai.RasterDataNodeOpImage;
+import org.esa.beam.jai.BandOpImage;
 
 import javax.media.jai.*;
 import java.awt.*;
@@ -27,10 +27,10 @@ class CloudMaskOpImage extends PointOpImage {
      * @return the cloud mask image.
      */
     public static OpImage createImage(Band cloudProductBand, double cloudProductThreshold) {
-        RenderedImage cloudProductImage = cloudProductBand.getImage();
+        RenderedImage cloudProductImage = cloudProductBand.getSourceImage();
         if (cloudProductImage == null) {
-            cloudProductImage = new RasterDataNodeOpImage(cloudProductBand);
-            cloudProductBand.setImage(cloudProductImage);
+            cloudProductImage = new BandOpImage(cloudProductBand);
+            cloudProductBand.setSourceImage(cloudProductImage);
         }
 
         int w = cloudProductImage.getWidth();
