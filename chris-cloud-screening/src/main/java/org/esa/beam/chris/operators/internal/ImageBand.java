@@ -9,7 +9,7 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
 
-public class ImageBand extends Band {
+class ImageBand extends Band {
 
     public ImageBand(String name, int dataType, int width, int height) {
         super(name, dataType, width, height);

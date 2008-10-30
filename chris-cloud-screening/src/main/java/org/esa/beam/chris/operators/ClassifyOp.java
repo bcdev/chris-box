@@ -15,7 +15,6 @@
 package org.esa.beam.chris.operators;
 
 import org.esa.beam.chris.operators.internal.ClassOpImage;
-import org.esa.beam.chris.operators.internal.ImageBand;
 import org.esa.beam.cluster.EMCluster;
 import org.esa.beam.cluster.IndexFilter;
 import org.esa.beam.framework.datamodel.Band;
