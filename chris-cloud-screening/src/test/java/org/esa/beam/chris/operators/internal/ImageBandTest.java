@@ -35,17 +35,14 @@ import java.awt.image.SampleModel;
  */
 public class ImageBandTest extends TestCase {
 
-    private static final int BAND_W = 5;
-    private static final int BAND_H = 5;
+    private static final int W = 5;
+    private static final int H = 5;
     private static final int TILE_W = 2;
     private static final int TILE_H = 2;
 
     public void testSetGetImage() {
-        final ImageBand imageBand = new ImageBand("test", ProductData.TYPE_INT32, BAND_W, BAND_H);
-        final RenderedImage image = createConstantImage(BAND_W, BAND_H, 1);
-
-//        assertNull(imageBand.getSourceImage());
-        assertNull(imageBand.getData());
+        final ImageBand imageBand = new ImageBand("test", ProductData.TYPE_INT32, W, H);
+        final RenderedImage image = createTestImage(1, W, H);
 
         // 1. Set image
         imageBand.setSourceImage(image);
@@ -54,35 +51,38 @@ public class ImageBandTest extends TestCase {
         // new data buffer
         final ProductData data = imageBand.getData();
         assertNotNull(data);
-        assertEquals(BAND_H * BAND_W, data.getNumElems());
+        assertEquals(H * W, data.getNumElems());
         assertEachElementEquals(1, data);
 
         // 2. Set image again
-        imageBand.setSourceImage(createConstantImage(BAND_W, BAND_H, 7));
+        imageBand.setSourceImage(createTestImage(7, W, H));
         // different image...
         assertNotNull(imageBand.getSourceImage());
         assertNotSame(image, imageBand.getSourceImage());
         // ... but same data buffer...
         assertSame(data, imageBand.getData());
-        assertEquals(BAND_H * BAND_W, data.getNumElems());
+        assertEquals(H * W, data.getNumElems());
         assertEachElementEquals(7, data);
     }
 
     @SuppressWarnings({"UnnecessaryBoxing"})
-    private static RenderedImage createConstantImage(int imageW, int imageH, int value) {
+    private static RenderedImage createTestImage(int value, int imageW, int imageH) {
         return ConstantDescriptor.create(new Float(imageW),
                                          new Float(imageH),
                                          new Integer[]{value},
-                                         createTileSizeRenderingHints(imageW, imageH, TILE_W, TILE_H));
+                                         createRenderingHints(imageW, imageH, TILE_W, TILE_H));
     }
 
-    private static RenderingHints createTileSizeRenderingHints(int imageW, int imageH, int tileW, int tileH) {
+    private static RenderingHints createRenderingHints(int imageW, int imageH, int tileW, int tileH) {
         final SampleModel sm =
                 new ComponentSampleModelJAI(DataBuffer.TYPE_INT, imageW, imageH, 1, imageW, new int[]{0});
         final ImageLayout imageLayout =
                 new ImageLayout(0, 0, imageW, imageH, 0, 0, tileW, tileH, sm, PlanarImage.createColorModel(sm));
 
-        return new RenderingHints(JAI.KEY_IMAGE_LAYOUT, imageLayout);
+        final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
+        renderingHints.put(JAI.KEY_IMAGE_LAYOUT, imageLayout);
+
+        return renderingHints;
     }
 
     private static void assertEachElementEquals(int expected, ProductData actual) {

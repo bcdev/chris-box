@@ -130,6 +130,8 @@ public class ComputeToaReflectancesOp extends Operator {
 
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+
+        targetProduct.setPreferredTileSize(sourceProduct.getSceneRasterWidth(), sourceProduct.getSceneRasterHeight());
     }
 
     @Override

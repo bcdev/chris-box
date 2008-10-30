@@ -35,12 +35,16 @@ import java.util.Vector;
  */
 public class ClassOpImage extends PointOpImage {
 
+    private static final int TILE_W = 32;
+    private static final int TILE_H = 32;
+
     private final Band[] sourceBands;
     private final ProbabilityCalculator calculator;
     private final IndexFilter clusterFilter;
     private final int clusterCount;
 
-    public static OpImage createImage(Product sourceProduct, String[] sourceBandNames, EMCluster[] clusters, IndexFilter clusterFilter) {
+    public static OpImage createImage(Product sourceProduct, String[] sourceBandNames, EMCluster[] clusters,
+                                      IndexFilter clusterFilter) {
         final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
         final Band[] sourceBands = new Band[sourceBandNames.length];
@@ -75,9 +79,7 @@ public class ClassOpImage extends PointOpImage {
 
         final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_BYTE, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
-        final int tileW = 16;
-        final int tileH = 16;
-        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, tileW, tileH, sampleModel, colorModel);
+        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
 
         return new ClassOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
                                          clusterCount);
@@ -86,7 +88,7 @@ public class ClassOpImage extends PointOpImage {
     private ClassOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
                                   Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
                                   int clusterCount) {
-        super(sourceImageVector, imageLayout, null, true);
+        super(sourceImageVector, imageLayout, /* new RenderingHints(JAI.KEY_TILE_CACHE, null) */ null, true);
 
         this.sourceBands = sourceBands;
         this.calculator = calculator;

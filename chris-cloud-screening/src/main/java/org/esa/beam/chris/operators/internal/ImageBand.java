@@ -1,6 +1,5 @@
 package org.esa.beam.chris.operators.internal;
 
-import com.bc.ceres.core.CanceledException;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.ProductData;
@@ -9,7 +8,6 @@ import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.io.IOException;
-import java.text.MessageFormat;
 
 public class ImageBand extends Band {
 
@@ -44,11 +42,7 @@ public class ImageBand extends Band {
     @Override
     public void readRasterData(int offsetX, int offsetY, int width, int height, ProductData rasterData,
                                ProgressMonitor pm) {
-        final RenderedImage image = getSourceImage();
-        if (image == null) {
-            throw new IllegalStateException(MessageFormat.format("No image available for band ''{0}''.", getName()));
-        }
-
+        final RenderedImage image = this.getSourceImage();
         final int minTileX = image.getMinTileX();
         final int minTileY = image.getMinTileY();
 
@@ -62,7 +56,7 @@ public class ImageBand extends Band {
             for (int tileX = minTileX; tileX < minTileX + numXTiles; ++tileX) {
                 for (int tileY = minTileY; tileY < minTileY + numYTiles; ++tileY) {
                     if (pm.isCanceled()) {
-                        throw new RuntimeException(new CanceledException());
+                        return;
                     }
                     final Rectangle tileRectangle = new Rectangle(
                             image.getTileGridXOffset() + tileX * image.getTileWidth(),

@@ -35,6 +35,9 @@ import java.util.Vector;
  */
 public class CloudProbabilityOpImage extends PointOpImage {
 
+    public static final int TILE_W = 32;
+    public static final int TILE_H = 32;
+
     private final Band[] sourceBands;
     private final ProbabilityCalculator calculator;
     private final IndexFilter validClusterFilter;
@@ -90,10 +93,7 @@ public class CloudProbabilityOpImage extends PointOpImage {
 
         final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_DOUBLE, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
-
-        final int tileW = 16;
-        final int tileH = 16;
-        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, tileW, tileH, sampleModel, colorModel);
+        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, TILE_W, TILE_H, sampleModel, colorModel);
 
         return new CloudProbabilityOpImage(imageLayout, sourceImageVector, sourceBands, calculator, clusterFilter,
                                            cloudClusterFilter, clusterCount, discrete);

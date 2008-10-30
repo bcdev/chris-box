@@ -22,7 +22,10 @@ import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
-import org.esa.beam.framework.gpf.annotations.*;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
+import org.esa.beam.framework.gpf.annotations.Parameter;
+import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.framework.gpf.annotations.TargetProperty;
 
 import java.awt.*;
 import java.util.Comparator;
@@ -43,8 +46,6 @@ public class FindClustersOp extends Operator {
 
     @SourceProduct(alias = "source")
     private Product sourceProduct;
-    @TargetProduct
-    private Product targetProduct;
 
     @TargetProperty
     private EMCluster[] clusters;
@@ -83,8 +84,7 @@ public class FindClustersOp extends Operator {
 
         clusters = findClusters(sourceProduct, sourceBandNames, clusterCount, iterationCount, seed, cc,
                                 ProgressMonitor.NULL);
-        targetProduct = new Product("NULL", "NULL", 0, 0);
-        setTargetProduct(targetProduct);
+        setTargetProduct(new Product("NULL", "NULL", 0, 0));
     }
 
     public static EMCluster[] findClusters(Product sourceProduct,

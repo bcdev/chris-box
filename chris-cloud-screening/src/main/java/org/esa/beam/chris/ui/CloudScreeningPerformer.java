@@ -19,7 +19,6 @@ import com.bc.ceres.core.SubProgressMonitor;
 import org.esa.beam.chris.operators.*;
 import org.esa.beam.chris.operators.internal.ClassOpImage;
 import org.esa.beam.chris.operators.internal.CloudProbabilityOpImage;
-import org.esa.beam.chris.operators.internal.ImageBand;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.cluster.EMCluster;
@@ -31,9 +30,12 @@ import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.product.ProductSceneImage;
 import org.esa.beam.framework.ui.product.ProductSceneView;
+import org.esa.beam.jai.ImageManager;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 
+import javax.media.jai.ImageLayout;
+import javax.media.jai.JAI;
 import javax.media.jai.OpImage;
 import javax.media.jai.operator.MultiplyDescriptor;
 import java.awt.*;
@@ -41,7 +43,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -118,7 +119,6 @@ class CloudScreeningPerformer {
         }
     }
 
-    // todo - progress monitoring
     Band performCloudMaskCreation(ProgressMonitor pm) throws OperatorException {
         final IndexFilter clusterFilter = new IndexFilter() {
             @Override
@@ -138,14 +138,14 @@ class CloudScreeningPerformer {
 
             final RenderedImage cloudMaskImage;
             if (probabilisticCloudMask) {
-                // 1. Cloud probability
+                // 1. Calculate cloud probability
                 final OpImage probabilityImage =
                         CloudProbabilityOpImage.createProbabilityImage(featureProduct,
                                                                        model.getFeatureBandNames(),
                                                                        clusters,
                                                                        clusterFilter,
                                                                        cloudClusterFilter);
-                // 2. Endmembers
+                // 2. Extract endmembers
                 final Endmember[] endmembers =
                         ExtractEndmembersOp.extractEndmembers(reflectanceProduct,
                                                               featureProduct,
@@ -156,27 +156,20 @@ class CloudScreeningPerformer {
                                                               ignoredClusters,
                                                               SubProgressMonitor.create(pm, 10));
 
-                // 3. Cloud abundance
-                final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct,
-                                                                  "toa_refl",
-                                                                  ExtractEndmembersOp.BAND_FILTER);
+                // 3. Calculate cloud abundance
+                final Band[] reflectanceBands =
+                        OpUtils.findBands(reflectanceProduct, "toa_refl", ExtractEndmembersOp.BAND_FILTER);
                 final String[] reflectanceBandNames = new String[reflectanceBands.length];
                 for (int i = 0; i < reflectanceBands.length; ++i) {
                     reflectanceBandNames[i] = reflectanceBands[i].getName();
                 }
-                final Map<String, Object> unmixingParameterMap = new HashMap<String, Object>(3);
-                unmixingParameterMap.put("sourceBandNames", reflectanceBandNames);
-                unmixingParameterMap.put("endmembers", endmembers);
-                unmixingParameterMap.put("unmixingModelName", "Fully Constrained LSU");
-                final RenderingHints renderingHints = new RenderingHints(GPF.KEY_TILE_SIZE, new Dimension(16, 16));
-                final Product abundanceProduct = GPF.createProduct(
-                        OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
-                        unmixingParameterMap,
-                        reflectanceProduct,
-                        renderingHints);
-                final RenderedImage abundanceImage = abundanceProduct.getBand("cloud_abundance").getSourceImage();
+                final RenderedImage abundanceImage = createCloudAbundanceImage(reflectanceProduct,
+                                                                               reflectanceBandNames,
+                                                                               endmembers);
 
-                // 4. Cloud mask
+                // 4. Calculate cloud mask
+                final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
+                renderingHints.put(JAI.KEY_IMAGE_LAYOUT, new ImageLayout(probabilityImage));
                 cloudMaskImage = MultiplyDescriptor.create(probabilityImage, abundanceImage, renderingHints);
             } else {
                 cloudMaskImage = CloudProbabilityOpImage.createDiscretizedImage(featureProduct,
@@ -185,24 +178,9 @@ class CloudScreeningPerformer {
                                                                                 clusterFilter,
                                                                                 cloudClusterFilter);
             }
-
-            final int width = cloudMaskImage.getWidth();
-            final int height = cloudMaskImage.getHeight();
-
-//            Band cloudProductBand = model.getRadianceProduct().getBand("cloud_product");
-//            if (cloudProductBand == null) {
-            final ImageBand cloudMaskBand = new ImageBand("cloud_product", ProductData.TYPE_FLOAT64, width, height);
-//                cloudProductBand.setSynthetic(true);
-            cloudMaskBand.setDescription("Cloud product");
-            cloudMaskBand.setSourceImage(cloudMaskImage, SubProgressMonitor.create(pm, 100));
-//            }
-
-//            ProductData rasterData = cloudProductBand.getRasterData();
-//            if (rasterData == null) {
-//                rasterData = cloudProductBand.createCompatibleRasterData();
-//            }
-//            cloudMaskImage.getData().getDataElements(0, 0, width, height, rasterData.getElems());
-//            cloudProductBand.setRasterData(rasterData);
+            // 5. Add cloud mask to radiance product
+            final Band cloudMaskBand = createSyntheticBand("cloud_product", cloudMaskImage,
+                                                           SubProgressMonitor.create(pm, 100));
             if (model.getRadianceProduct().containsBand(cloudMaskBand.getName())) {
                 model.getRadianceProduct().removeBand(model.getRadianceProduct().getBand(cloudMaskBand.getName()));
             }
@@ -243,10 +221,6 @@ class CloudScreeningPerformer {
         }
     }
 
-    Band getCloudProductBand() {
-        return model.getRadianceProduct().getBand("cloud_product");
-    }
-
     ProductSceneView getRgbView() {
         return rgbView;
     }
@@ -254,7 +228,6 @@ class CloudScreeningPerformer {
     ProductSceneView getClassView() {
         return classView;
     }
-
 
     boolean isProbabilisticCloudMask() {
         return probabilisticCloudMask;
@@ -335,7 +308,7 @@ class CloudScreeningPerformer {
 
             @Override
             public int getClassIndex(int x, int y, int currentLevel) {
-                // todo - review 
+                // todo - review
                 final AffineTransform i2m = classView.getBaseImageLayer().getImageToModelTransform(currentLevel);
                 final AffineTransform m2i = classView.getBaseImageLayer().getModelToImageTransform();
 
@@ -373,10 +346,7 @@ class CloudScreeningPerformer {
             }
 
             private void updateClassificationSceneView() {
-                try {
-                    classView.updateImage(ProgressMonitor.NULL);
-                } catch (IOException ignored) {
-                }
+                classView.updateImage();
             }
         };
     }
@@ -450,6 +420,36 @@ class CloudScreeningPerformer {
         classBand.setImageInfo(new ImageInfo(new ColorPaletteDef(points)));
 
         return new ProductSceneView(new ProductSceneImage(classBand, appContext.getPreferences(), pm));
+    }
+
+    private static RenderedImage createCloudAbundanceImage(Product reflectanceProduct,
+                                                           String[] reflectanceBandNames,
+                                                           Endmember[] endmembers) {
+        final Map<String, Object> parameterMap = new HashMap<String, Object>(3);
+        parameterMap.put("sourceBandNames", reflectanceBandNames);
+        parameterMap.put("endmembers", endmembers);
+        parameterMap.put("unmixingModelName", "Fully Constrained LSU");
+
+        final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
+        renderingHints.put(GPF.KEY_TILE_SIZE,
+                           new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H));
+
+        final Product product = GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
+                                                  parameterMap,
+                                                  reflectanceProduct,
+                                                  renderingHints);
+
+        return product.getBand("cloud_abundance").getSourceImage();
+    }
+
+    private static Band createSyntheticBand(String name, RenderedImage sourceImage, ProgressMonitor pm) {
+        final int dataType = ImageManager.getProductDataType(sourceImage.getSampleModel().getDataType());
+        final Band band = new Band(name, dataType, sourceImage.getWidth(), sourceImage.getHeight());
+
+        band.setRasterData(RasterDataUtils.createRasterData(sourceImage, pm));
+        band.setSynthetic(true);
+
+        return band;
     }
 
     private static Band findBand(Product product, String prefix, final double wavelength) throws Exception {

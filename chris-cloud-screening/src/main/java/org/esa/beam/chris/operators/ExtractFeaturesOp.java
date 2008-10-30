@@ -146,6 +146,7 @@ public class ExtractFeaturesOp extends Operator {
         }
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        targetProduct.setPreferredTileSize(sourceProduct.getSceneRasterWidth(), sourceProduct.getSceneRasterHeight());
     }
 
     private static Band[] getReflectanceBands(Band[] bands) {

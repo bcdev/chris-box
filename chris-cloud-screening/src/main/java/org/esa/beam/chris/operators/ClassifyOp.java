@@ -71,22 +71,20 @@ public class ClassifyOp extends Operator {
             targetProduct = new Product(sourceProduct.getName() + "_CLASS",
                                         sourceProduct.getProductType() + "_CLASS", w, h);
 
-            final Band targetBand = new ImageBand("class_indices", ProductData.TYPE_INT8, w, h);
-            targetBand.setDescription("Class indices");
-            targetProduct.addBand(targetBand);
+            final Band classBand = new Band("class_indices", ProductData.TYPE_INT8, w, h);
+            classBand.setDescription("Class indices");
+            targetProduct.addBand(classBand);
 
             final IndexCoding indexCoding = new IndexCoding("Class indices");
             for (int i = 0; i < clusters.length; i++) {
                 indexCoding.addIndex("class_" + (i + 1), i, "Class label");
             }
             targetProduct.getIndexCodingGroup().add(indexCoding);
-            targetBand.setSampleCoding(indexCoding);
-            targetBand.setSourceImage(ClassOpImage.createImage(sourceProduct, sourceBandNames, clusters, NO_FILTERING));
+            classBand.setSampleCoding(indexCoding);
+            classBand.setSourceImage(ClassOpImage.createImage(sourceProduct, sourceBandNames, clusters, NO_FILTERING));
         } catch (Throwable e) {
             throw new OperatorException(e);
         }
-
-        setTargetProduct(targetProduct);
     }
 
     public static class Spi extends OperatorSpi {
