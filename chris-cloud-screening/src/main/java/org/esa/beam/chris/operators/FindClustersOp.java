@@ -75,14 +75,14 @@ public class FindClustersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        final Comparator<EMCluster> cc = new Comparator<EMCluster>() {
+        final Comparator<EMCluster> comparator = new Comparator<EMCluster>() {
             @Override
             public int compare(EMCluster o1, EMCluster o2) {
                 return Double.compare(o2.getPriorProbability(), o1.getPriorProbability());
             }
         };
 
-        clusters = findClusters(sourceProduct, sourceBandNames, clusterCount, iterationCount, seed, cc,
+        clusters = findClusters(sourceProduct, sourceBandNames, clusterCount, iterationCount, seed, comparator,
                                 ProgressMonitor.NULL);
         setTargetProduct(new Product("NULL", "NULL", 0, 0));
     }
