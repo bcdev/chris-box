@@ -181,27 +181,22 @@ class CloudScreeningFormModel {
      * Cloud screening parameters.
      */
     private static class ParameterBlock {
-        @Parameter(defaultValue = "14",
-                   label = "Number of clusters")
-        private int clusterCount = 14;
-        @Parameter(defaultValue = "30",
-                   label = "Number of iterations")
-        private int iterationCount = 30;
-        @Parameter(defaultValue = "31415",
-                   label = "Random seed")
-        private int seed = 31415;
+        @Parameter(label = "Number of clusters", defaultValue = "14", interval = "[2,99]")
+        private int clusterCount;
+        @Parameter(label = "Number of iterations", defaultValue = "30", interval = "[1,999]")
+        private int iterationCount;
+        @Parameter(label = "Random seed",
+                   defaultValue = "31415",
+                   description = "The seed used for initializing the EM clustering algorithm.")
+        private int seed;
 
-        @Parameter(defaultValue = "true",
-                   label = "Use NIR brightness")
+        @Parameter(label = "Use NIR brightness", defaultValue = "true")
         private boolean useNirBr = true;
-        @Parameter(defaultValue = "true",
-                   label = "Use NIR whiteness")
+        @Parameter(label = "Use NIR whiteness", defaultValue = "true")
         private boolean useNirWh = true;
-        @Parameter(defaultValue = "false",
-                   label = "Use atmospheric water vapour feature")
+        @Parameter(label = "Use atmospheric water vapour feature", defaultValue = "false")
         private boolean useWv = false;
-        @Parameter(defaultValue = "false",
-                   label = "Use atmospheric oxygen feature")
+        @Parameter(label = "Use atmospheric oxygen feature", defaultValue = "false")
         private boolean useO2 = false;
     }
 }

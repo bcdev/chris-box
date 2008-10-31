@@ -79,7 +79,7 @@ public class ClassOpImage extends PointOpImage {
 
         final SampleModel sampleModel = new ComponentSampleModelJAI(DataBuffer.TYPE_BYTE, w, h, 1, w, new int[]{0});
         final ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
-        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, w, h, sampleModel, colorModel);
+        final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, TILE_W, TILE_H, sampleModel, colorModel);
 
         return new ClassOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
                                          clusterCount);
