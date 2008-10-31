@@ -60,7 +60,7 @@ public class ClassifyOp extends Operator {
     private String[] sourceBandNames;
     @Parameter
     private EMCluster[] clusters;
-
+    
     @Override
     public void initialize() throws OperatorException {
         try {

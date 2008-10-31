@@ -79,9 +79,9 @@ public class ExtractEndmembersOp extends Operator {
     @Parameter
     private EMCluster[] clusters;
     @Parameter
-    private boolean[] cloudClusters;
+    private boolean[] cloudFlags;
     @Parameter
-    private boolean[] ignoredClusters;
+    private boolean[] invalidFlags;
 
     @TargetProperty
     private Endmember[] endmembers;
@@ -97,15 +97,15 @@ public class ExtractEndmembersOp extends Operator {
                                 Product classificationProduct,
                                 String[] featureBandNames,
                                 EMCluster[] clusters,
-                                boolean[] cloudClusters,
-                                boolean[] ignoredClusters) {
+                                boolean[] cloudFlags,
+                                boolean[] invalidFlags) {
         this.reflectanceProduct = reflectanceProduct;
         this.featureProduct = featureProduct;
         this.classificationProduct = classificationProduct;
         this.featureBandNames = featureBandNames;
         this.clusters = clusters;
-        this.cloudClusters = cloudClusters;
-        this.ignoredClusters = ignoredClusters;
+        this.cloudFlags = cloudFlags;
+        this.invalidFlags = invalidFlags;
     }
 
     @Override
@@ -115,8 +115,9 @@ public class ExtractEndmembersOp extends Operator {
                                        classificationProduct,
                                        featureBandNames,
                                        clusters,
-                                       cloudClusters,
-                                       ignoredClusters, ProgressMonitor.NULL);
+                                       cloudFlags,
+                                       invalidFlags,
+                                       ProgressMonitor.NULL);
         setTargetProduct(new Product("EMPTY", "EMPTY_TYPE", 0, 0));
     }
 
@@ -125,8 +126,8 @@ public class ExtractEndmembersOp extends Operator {
                                                 Product classificationProduct,
                                                 String[] featureBandNames,
                                                 EMCluster[] clusters,
-                                                final boolean[] cloudClusters,
-                                                final boolean[] ignoredClusters, ProgressMonitor pm) {
+                                                final boolean[] cloudFlags,
+                                                final boolean[] invalidFlags, ProgressMonitor pm) {
         try {
             pm.beginTask("Extracting endmembers...", 100);
 
@@ -135,30 +136,30 @@ public class ExtractEndmembersOp extends Operator {
                                                                    classificationProduct,
                                                                    featureBandNames,
                                                                    clusters,
-                                                                   cloudClusters,
-                                                                   ignoredClusters);
+                                                                   cloudFlags,
+                                                                   invalidFlags);
             final Band[] reflectanceBands = OpUtils.findBands(reflectanceProduct, "toa_refl", BAND_FILTER);
             final double[] wavelengths = OpUtils.getWavelenghts(reflectanceBands);
 
             final PixelAccessor featAccessor = createPixelAccessor(op, featureProduct, featureBandNames);
             final PixelAccessor reflAccessor = createPixelAccessor(op, reflectanceBands);
 
-            final IndexFilter clusterFilter = new ExclusiveIndexFilter(ignoredClusters);
-            final IndexFilter surfaceFilter = new ExclusiveIndexFilter(cloudClusters, ignoredClusters);
-            final IndexFilter cloudFilter = new InclusiveIndexFilter(cloudClusters);
+            final IndexFilter validFilter = new ExclusiveIndexFilter(invalidFlags);
+            final IndexFilter cloudFilter = new InclusiveIndexFilter(cloudFlags);
+            final IndexFilter earthFilter = new ExclusiveIndexFilter(cloudFlags, invalidFlags);
 
             final double[] cloudReflectances = extractCloudReflectances(op, featAccessor,
                                                                         reflAccessor,
                                                                         clusters,
                                                                         cloudFilter,
-                                                                        clusterFilter,
+                                                                        validFilter,
                                                                         SubProgressMonitor.create(pm, 40));
 
             final double[][] surfaceReflectances = extractSurfaceReflectances(op, featAccessor,
                                                                               reflAccessor,
                                                                               clusters,
-                                                                              surfaceFilter,
-                                                                              clusterFilter,
+                                                                              earthFilter,
+                                                                              validFilter,
                                                                               SubProgressMonitor.create(pm, 60));
 
             final ArrayList<Endmember> endmemberList = new ArrayList<Endmember>();
@@ -166,7 +167,7 @@ public class ExtractEndmembersOp extends Operator {
 
             final SampleCoding sampleCoding = classificationProduct.getBand("class_indices").getSampleCoding();
             for (int k = 0; k < clusters.length; ++k) {
-                if (surfaceFilter.accept(k)) {
+                if (earthFilter.accept(k)) {
                     final String name = sampleCoding.getSampleName(k);
                     endmemberList.add(new Endmember(name, wavelengths, surfaceReflectances[k]));
                 }
@@ -182,7 +183,7 @@ public class ExtractEndmembersOp extends Operator {
                                                      PixelAccessor reflAccessor,
                                                      EMCluster[] clusters,
                                                      IndexFilter cloudFilter,
-                                                     IndexFilter clusterFilter,
+                                                     IndexFilter validFilter,
                                                      ProgressMonitor pm) {
         try {
             pm.beginTask("Extracting cloud endmember", featAccessor.getPixelCount() / 500);
@@ -198,7 +199,7 @@ public class ExtractEndmembersOp extends Operator {
 
                 if (features[1] > 0.0) {
                     final double[] posteriors = new double[clusters.length];
-                    calculator.calculate(features, posteriors, clusterFilter);
+                    calculator.calculate(features, posteriors, validFilter);
 
                     for (int k = 0; k < clusters.length; ++k) {
                         if (posteriors[k] > 0.5) {
@@ -228,8 +229,8 @@ public class ExtractEndmembersOp extends Operator {
                                                          PixelAccessor featAccessor,
                                                          PixelAccessor reflAccessor,
                                                          EMCluster[] clusters,
-                                                         IndexFilter surfaceFilter,
-                                                         IndexFilter clusterFilter,
+                                                         IndexFilter earthFilter,
+                                                         IndexFilter validFilter,
                                                          ProgressMonitor pm) {
         try {
             pm.beginTask("Extracting surface endmembers", featAccessor.getPixelCount() / 500);
@@ -243,11 +244,11 @@ public class ExtractEndmembersOp extends Operator {
                 final double[] features = new double[featAccessor.getSampleCount()];
                 featAccessor.getSamples(i, features);
                 final double[] posteriors = new double[clusters.length];
-                calculator.calculate(features, posteriors, clusterFilter);
+                calculator.calculate(features, posteriors, validFilter);
 
                 for (int k = 0; k < clusters.length; ++k) {
                     if (posteriors[k] > 0.5) {
-                        if (surfaceFilter.accept(k)) {
+                        if (earthFilter.accept(k)) {
                             reflAccessor.addSamples(i, reflectances[k]);
                             ++count[k];
                             break;

@@ -72,22 +72,22 @@ public class CloudLabeler {
         return radianceProduct.getBand("cloud_product");
     }
 
-    public void performClusterAnalysis(ProgressMonitor pm) throws OperatorException {
-        try {
-            pm.beginTask("Performing cluster analysis...", 1);
-            // 1. Extract features
-            reflectanceProduct = createReflectanceProduct(radianceProduct);
-            featureProduct = createFeatureProduct(reflectanceProduct);
-
-            // 2. Find clusters
-            clusters = findClusters(featureProduct);
-
-            // 3. Cluster labeling
-            clusterMapProduct = createClusterMapProduct(featureProduct, clusters);
-        } finally {
-            pm.done();
-        }
-    }
+//    public void performClusterAnalysis(ProgressMonitor pm) throws OperatorException {
+//        try {
+//            pm.beginTask("Performing cluster analysis...", 1);
+//            // 1. Extract features
+//            reflectanceProduct = createReflectanceProduct(radianceProduct);
+//            featureProduct = createFeatureProduct(reflectanceProduct);
+//
+//            // 2. Find clusters
+//            clusters = findClusters(featureProduct);
+//
+//            // 3. Cluster labeling
+//            clusterMapProduct = createClusterMapProduct(featureProduct, clusters);
+//        } finally {
+//            pm.done();
+//        }
+//    }
 
     public void createRgbSceneView() throws IOException {
 //        final RasterDataNode[] rgbBands = getRgbBands(radianceProduct);
@@ -282,23 +282,23 @@ public class CloudLabeler {
                                  parameterMap, reflectanceProduct);
     }
 
-    private EMCluster[] findClusters(Product featureProduct) {
-        // todo -- make GUI parameters
-        final int clusterCount = 14;
-        final int iterationCount = 60;
-        final int seed = 31415;
-
-        final String[] sourceBandNames = getFeatureBandNames(featureProduct);
-        final Comparator<EMCluster> clusterComparator = new Comparator<EMCluster>() {
-            @Override
-            public int compare(EMCluster c1, EMCluster c2) {
-                return Double.compare(c2.getMean()[0], c1.getMean()[0]);
-            }
-        };
-
-        return FindClustersOp.findClusters(featureProduct, sourceBandNames, clusterCount, iterationCount, seed,
-                                           clusterComparator, ProgressMonitor.NULL);
-    }
+//    private EMCluster[] findClusters(Product featureProduct) {
+//        // todo -- make GUI parameters
+//        final int clusterCount = 14;
+//        final int iterationCount = 60;
+//        final int seed = 31415;
+//
+//        final String[] sourceBandNames = getFeatureBandNames(featureProduct);
+//        final Comparator<EMCluster> clusterComparator = new Comparator<EMCluster>() {
+//            @Override
+//            public int compare(EMCluster c1, EMCluster c2) {
+//                return Double.compare(c2.getMean()[0], c1.getMean()[0]);
+//            }
+//        };
+//
+//        return FindClustersOp.findClusters(featureProduct, sourceBandNames, clusterCount, iterationCount, seed,
+//                                           clusterComparator, ProgressMonitor.NULL);
+//    }
 
     private String[] getFeatureBandNames(Product featureProduct) {
         final List<String> sourceBandNameList = new ArrayList<String>(5);

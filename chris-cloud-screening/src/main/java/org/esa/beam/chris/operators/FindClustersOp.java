@@ -75,32 +75,26 @@ public class FindClustersOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        final Comparator<EMCluster> comparator = new Comparator<EMCluster>() {
-            @Override
-            public int compare(EMCluster o1, EMCluster o2) {
-                return Double.compare(o2.getPriorProbability(), o1.getPriorProbability());
-            }
-        };
-
-        clusters = findClusters(sourceProduct, sourceBandNames, clusterCount, iterationCount, seed, comparator,
-                                ProgressMonitor.NULL);
+        final Comparator<EMCluster> comparator = new Clusterer.PriorProbabilityClusterComparator();
+        clusters = new EMCluster[clusterCount];
+        findClusters(sourceProduct, sourceBandNames, clusters, iterationCount, seed, comparator,
+                     ProgressMonitor.NULL);
         setTargetProduct(new Product("NULL", "NULL", 0, 0));
     }
 
-    public static EMCluster[] findClusters(Product sourceProduct,
-                                           String[] sourceBandNames,
-                                           int clusterCount,
-                                           int iterationCount,
-                                           int seed,
-                                           Comparator<EMCluster> clusterComparator,
-                                           ProgressMonitor pm) {
-        final FindClustersOp op = new FindClustersOp(sourceProduct, clusterCount, iterationCount, seed,
+    public static void findClusters(Product sourceProduct,
+                                    String[] sourceBandNames,
+                                    EMCluster[] clusters,
+                                    int iterationCount,
+                                    int seed,
+                                    Comparator<EMCluster> clusterComparator,
+                                    ProgressMonitor pm) {
+        final FindClustersOp op = new FindClustersOp(sourceProduct, clusters.length, iterationCount, seed,
                                                      sourceBandNames);
 
         final Tile[] tiles = new Tile[sourceBandNames.length];
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
-        final Clusterer clusterer;
 
         try {
             pm.beginTask("Performing cluster analysis...", iterationCount);
@@ -112,12 +106,13 @@ public class FindClustersOp extends Operator {
                                             ProgressMonitor.NULL);
             }
 
-            clusterer = new Clusterer(new TilePixelAccessor(tiles), clusterCount, seed);
+            final Clusterer clusterer = new Clusterer(new TilePixelAccessor(tiles), clusters.length, seed);
             for (int i = 0; i < iterationCount; ++i) {
                 op.checkForCancelation(pm);
                 clusterer.iterate();
                 pm.worked(1);
             }
+            clusterer.getClusters(clusterComparator, clusters);
         } catch (OperatorException e) {
             throw e;
         } catch (Throwable t) {
@@ -125,8 +120,6 @@ public class FindClustersOp extends Operator {
         } finally {
             pm.done();
         }
-
-        return clusterer.getClusters(clusterComparator);
     }
 
     public static class Spi extends OperatorSpi {

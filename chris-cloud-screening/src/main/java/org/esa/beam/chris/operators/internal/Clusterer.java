@@ -118,21 +118,40 @@ public class Clusterer {
     }
 
     /**
-     * Returns the clusters found.
+     * Returns the clusters found, sorted according to their prior
+     * probability.
      *
      * @return the clusters found.
      */
-    EMCluster[] getClusters() {
+    public EMCluster[] getClusters() {
         return getClusters(new PriorProbabilityClusterComparator());
     }
 
-    public EMCluster[] getClusters(Comparator<EMCluster> clusterComparator) {
-        final EMCluster[] clusters = new EMCluster[clusterCount];
+    /**
+     * Returns the clusters found, sorted according to a comparator.
+     *
+     * @param comparator a comparator.
+     *
+     * @return the clusters found.
+     */
+    public EMCluster[] getClusters(Comparator<EMCluster> comparator) {
+        return getClusters(comparator, new EMCluster[clusterCount]);
+    }
 
+    /**
+     * Returns the clusters found, sorted according to a comparator.
+     *
+     * @param comparator a comparator.
+     * @param clusters   a preallocated array of clusters, on return holding the
+     *                   clusters found.
+     *
+     * @return the clusters found.
+     */
+    public EMCluster[] getClusters(Comparator<EMCluster> comparator, EMCluster[] clusters) {
         for (int k = 0; k < clusterCount; ++k) {
             clusters[k] = new EMCluster(means[k], covariances[k], priors[k]);
         }
-        Arrays.sort(clusters, clusterComparator);
+        Arrays.sort(clusters, comparator);
 
         return clusters;
     }
@@ -242,8 +261,7 @@ public class Clusterer {
      * <p/>
      * Compares two clusters according to their prior probability.
      */
-    private static class PriorProbabilityClusterComparator implements Comparator<EMCluster> {
-
+    public static class PriorProbabilityClusterComparator implements Comparator<EMCluster> {
         @Override
         public int compare(EMCluster c1, EMCluster c2) {
             return Double.compare(c2.getPriorProbability(), c1.getPriorProbability());

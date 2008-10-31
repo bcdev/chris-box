@@ -14,6 +14,7 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.glayer.support.ImageLayer;
 import com.bc.ceres.swing.SwingHelper;
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
@@ -57,8 +58,7 @@ import java.util.concurrent.ExecutionException;
 class LabelingDialog extends JDialog {
 
     private final AppContext appContext;
-    private final String radianceProductName;
-    private final CloudScreeningPerformer performer;
+    private final LabelingContext labelingContext;
 
     private final JTable labelingTable;
     private final ClassSelector classSelector;
@@ -69,16 +69,14 @@ class LabelingDialog extends JDialog {
     private VetoableChangeListener classificationFrameClosedListener;
     private VetoableChangeListener rgbFrameClosedListener;
 
-    LabelingDialog(AppContext appContext, String radianceProductName, CloudScreeningPerformer performer) {
+    LabelingDialog(AppContext appContext, LabelingContext labelingContext) {
         super(appContext.getApplicationWindow(),
-              MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}", radianceProductName),
+              MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}", labelingContext.getRadianceProductName()),
               ModalityType.MODELESS);
 
         this.appContext = appContext;
-        this.performer = performer;
-        this.radianceProductName = radianceProductName;
+        this.labelingContext = labelingContext;
 
-        final LabelingContext labelingContext = performer.createLabelingContext();
         labelingTable = createLabelingTable(labelingContext);
         classSelector = new ClassSelector(labelingContext, labelingTable.getSelectionModel());
 
@@ -93,8 +91,9 @@ class LabelingDialog extends JDialog {
             final VisatApp visatApp = VisatApp.getApp();
 
             if (rgbFrame == null) {
-                final ProductSceneView view = performer.getRgbView();
-                final String title = MessageFormat.format("{0} - RGB", radianceProductName);
+                final ProductSceneView view = labelingContext.getRgbView();
+                final String title = MessageFormat.format("{0} - RGB",
+                                                          labelingContext.getRadianceProductName());
 
                 view.setCommandUIFactory(visatApp.getCommandUIFactory());
                 view.setNoDataOverlayEnabled(false);
@@ -119,8 +118,9 @@ class LabelingDialog extends JDialog {
             }
 
             if (classFrame == null) {
-                final ProductSceneView view = performer.getClassView();
-                final String title = MessageFormat.format("{0} - Classification", radianceProductName);
+                final ProductSceneView view = labelingContext.getClassView();
+                final String title = MessageFormat.format("{0} - Classification",
+                                                          labelingContext.getRadianceProductName());
 
                 view.setCommandUIFactory(visatApp.getCommandUIFactory());
                 view.setNoDataOverlayEnabled(false);
@@ -195,7 +195,7 @@ class LabelingDialog extends JDialog {
             @Override
             public void tableChanged(TableModelEvent e) {
                 if (e.getColumn() == LabelingTableModel.CLOUD_COLUMN) {
-                    if (performer.hasCloudClasses()) {
+                    if (labelingContext.isAnyCloudFlagSet()) {
                         checkBox.setEnabled(true);
                     } else {
                         checkBox.setEnabled(false);
@@ -222,9 +222,10 @@ class LabelingDialog extends JDialog {
         applyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final CloudMaskWorker worker = new CloudMaskWorker(appContext, "Creating cloud mask...", performer);
+                final CloudMaskWorker worker = new CloudMaskWorker(appContext,
+                                                                   labelingContext,
+                                                                   "Creating cloud mask...");
                 worker.execute();
-                dispose();
             }
         });
 
@@ -326,17 +327,17 @@ class LabelingDialog extends JDialog {
 
     private static class CloudMaskWorker extends ProgressMonitorSwingWorker<Band, Object> {
         private final AppContext appContext;
-        private final CloudScreeningPerformer performer;
+        private final LabelingContext labelingContext;
 
-        public CloudMaskWorker(AppContext appContext, String title, CloudScreeningPerformer performer) {
+        public CloudMaskWorker(AppContext appContext, LabelingContext labelingContext, String title) {
             super(appContext.getApplicationWindow(), title);
             this.appContext = appContext;
-            this.performer = performer;
+            this.labelingContext = labelingContext;
         }
 
         @Override
-        protected Band doInBackground(com.bc.ceres.core.ProgressMonitor pm) throws Exception {
-            return performer.performCloudMaskCreation(pm);
+        protected Band doInBackground(ProgressMonitor pm) throws Exception {
+            return labelingContext.performCloudMaskCreation(pm);
         }
 
         @Override
@@ -347,7 +348,7 @@ class LabelingDialog extends JDialog {
                 final JInternalFrame frame = visatApp.findInternalFrame(cloudProductBand);
 
                 if (frame != null) {
-                    visatApp.updateImage((ProductSceneView) frame.getContentPane());
+                    ((ProductSceneView) frame.getContentPane()).getBaseImageLayer().regenerate();
                 } else {
                     visatApp.openProductSceneView(cloudProductBand);
                 }
@@ -355,8 +356,6 @@ class LabelingDialog extends JDialog {
                 appContext.handleError(e);
             } catch (ExecutionException e) {
                 appContext.handleError(e.getCause());
-            } finally {
-                performer.dispose();
             }
         }
     }

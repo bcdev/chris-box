@@ -14,7 +14,10 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.cluster.EMCluster;
+import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.ui.product.ProductSceneView;
 
 import java.awt.*;
 import java.awt.image.RenderedImage;
@@ -26,6 +29,8 @@ import java.awt.image.RenderedImage;
  * @version $Revision$ $Date$
  */
 interface LabelingContext {
+
+    String getRadianceProductName();
 
     String getLabel(int index);
 
@@ -50,4 +55,12 @@ interface LabelingContext {
     int getClassIndex(int x, int y, int currentLevel);
 
     void recomputeClassificationImage();
+
+    ProductSceneView getRgbView();
+
+    ProductSceneView getClassView();
+
+    boolean isAnyCloudFlagSet();
+
+    Band performCloudMaskCreation(ProgressMonitor pm);
 }

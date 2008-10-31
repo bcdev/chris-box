@@ -37,6 +37,7 @@ import org.esa.beam.unmixing.SpectralUnmixingOp;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
 import javax.media.jai.OpImage;
+import javax.media.jai.PlanarImage;
 import javax.media.jai.operator.MultiplyDescriptor;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -47,38 +48,46 @@ import java.text.MessageFormat;
 import java.util.*;
 
 /**
- * Cloud screening performer.
+ * Cloud screening context.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-class CloudScreeningPerformer {
+class CloudScreeningContext {
     private static final double WAVELENGTH_R = 650.0;
     private static final double WAVELENGTH_G = 550.0;
     private static final double WAVELENGTH_B = 450.0;
 
-    private final boolean[] cloudClusters;
-    private final boolean[] ignoredClusters;
+    private final EMCluster[] clusters;
+    private final String[] featureBandNames;
 
-    private final CloudScreeningFormModel model;
-    private Product classProduct;
-    private Product featureProduct;
+    private final boolean[] cloudFlags;
+    private final boolean[] invalidFlags;
 
-    private Product reflectanceProduct;
-    private ProductSceneView rgbView; // todo - move to view?
-    private ProductSceneView classView; // todo - move to view?
+    private final Product radianceProduct;
+    private final Product reflectanceProduct;
+    private final Product featureProduct;
+    private final Product classProduct;
 
-    private EMCluster[] clusters;
+    private final ProductSceneView rgbView; // todo - move to view?
+    private final ProductSceneView classView; // todo - move to view?
+
     private boolean probabilisticCloudMask = true;
 
-    CloudScreeningPerformer(CloudScreeningFormModel formModel) {
-        this.model = formModel;
+    CloudScreeningContext(AppContext appContext,
+                          CloudScreeningFormModel formModel,
+                          ProgressMonitor pm) throws Exception {
+        final int iterationCount = formModel.getIterationCount();
+        final int seed = formModel.getSeed();
 
-        cloudClusters = new boolean[formModel.getClusterCount()];
-        ignoredClusters = new boolean[formModel.getClusterCount()];
-    }
+        clusters = new EMCluster[formModel.getClusterCount()];
+        featureBandNames = formModel.getFeatureBandNames();
 
-    void performClusterAnalysis(AppContext appContext, ProgressMonitor pm) throws Exception {
+        cloudFlags = new boolean[formModel.getClusterCount()];
+        invalidFlags = new boolean[formModel.getClusterCount()];
+
+        radianceProduct = formModel.getRadianceProduct();
+
         try {
             pm.beginTask("Performing cluster analysis...", 100);
 
@@ -86,7 +95,7 @@ class CloudScreeningPerformer {
             final Map<String, Object> emptyMap = Collections.emptyMap();
             reflectanceProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(ComputeToaReflectancesOp.class),
                                                    emptyMap,
-                                                   model.getRadianceProduct());
+                                                   radianceProduct);
 
             // 2. Features
             featureProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(ExtractFeaturesOp.class),
@@ -94,66 +103,67 @@ class CloudScreeningPerformer {
                                                reflectanceProduct);
 
             // 3. Clustering
-            clusters = FindClustersOp.findClusters(featureProduct,
-                                                   model.getFeatureBandNames(),
-                                                   model.getClusterCount(),
-                                                   model.getIterationCount(),
-                                                   model.getSeed(),
-                                                   new BrightnessComparator(),
-                                                   SubProgressMonitor.create(pm, 100));
+            final BrightnessComparator comparator = new BrightnessComparator();
+            FindClustersOp.findClusters(featureProduct,
+                                        featureBandNames,
+                                        clusters,
+                                        iterationCount,
+                                        seed,
+                                        comparator,
+                                        SubProgressMonitor.create(pm, 80));
 
             // 4. Classification
             final Map<String, Object> classificationParameterMap = new HashMap<String, Object>();
-            classificationParameterMap.put("sourceBandNames", model.getFeatureBandNames());
+            classificationParameterMap.put("sourceBandNames", featureBandNames);
             classificationParameterMap.put("clusters", clusters);
             classProduct = GPF.createProduct(OperatorSpi.getOperatorAlias(ClassifyOp.class),
                                              classificationParameterMap,
                                              featureProduct);
 
             // 5. Scene views
-            rgbView = createRgbView(model.getRadianceProduct(), appContext, ProgressMonitor.NULL);
+            rgbView = createRgbView(radianceProduct, appContext, SubProgressMonitor.create(pm, 10));
             final Raster rgbRaster = rgbView.getBaseImageLayer().getImage().getData();
-            classView = createClassView(classProduct, rgbRaster, appContext, ProgressMonitor.NULL);
+            classView = createClassView(classProduct, rgbRaster, appContext, SubProgressMonitor.create(pm, 10));
         } finally {
             pm.done();
         }
     }
 
     Band performCloudMaskCreation(ProgressMonitor pm) throws OperatorException {
-        final IndexFilter clusterFilter = new IndexFilter() {
+        final IndexFilter validFilter = new IndexFilter() {
             @Override
             public boolean accept(int index) {
-                return !ignoredClusters[index];
+                return !invalidFlags[index];
             }
         };
-        final IndexFilter cloudClusterFilter = new IndexFilter() {
+        final IndexFilter cloudFilter = new IndexFilter() {
             @Override
             public boolean accept(int index) {
-                return cloudClusters[index];
+                return cloudFlags[index];
             }
         };
 
+        PlanarImage cloudMaskImage = null;
         try {
             pm.beginTask("Creating cloud mask...", probabilisticCloudMask ? 110 : 100);
 
-            final RenderedImage cloudMaskImage;
             if (probabilisticCloudMask) {
                 // 1. Calculate cloud probability
                 final OpImage probabilityImage =
                         CloudProbabilityOpImage.createProbabilityImage(featureProduct,
-                                                                       model.getFeatureBandNames(),
+                                                                       featureBandNames,
                                                                        clusters,
-                                                                       clusterFilter,
-                                                                       cloudClusterFilter);
+                                                                       validFilter,
+                                                                       cloudFilter);
                 // 2. Extract endmembers
                 final Endmember[] endmembers =
                         ExtractEndmembersOp.extractEndmembers(reflectanceProduct,
                                                               featureProduct,
                                                               classProduct,
-                                                              model.getFeatureBandNames(),
+                                                              featureBandNames,
                                                               clusters,
-                                                              cloudClusters,
-                                                              ignoredClusters,
+                                                              cloudFlags,
+                                                              invalidFlags,
                                                               SubProgressMonitor.create(pm, 10));
 
                 // 3. Calculate cloud abundance
@@ -173,51 +183,43 @@ class CloudScreeningPerformer {
                 cloudMaskImage = MultiplyDescriptor.create(probabilityImage, abundanceImage, renderingHints);
             } else {
                 cloudMaskImage = CloudProbabilityOpImage.createDiscretizedImage(featureProduct,
-                                                                                model.getFeatureBandNames(),
+                                                                                featureBandNames,
                                                                                 clusters,
-                                                                                clusterFilter,
-                                                                                cloudClusterFilter);
+                                                                                validFilter,
+                                                                                cloudFilter);
             }
             // 5. Add cloud mask to radiance product
             final Band cloudMaskBand = createSyntheticBand("cloud_product", cloudMaskImage,
                                                            SubProgressMonitor.create(pm, 100));
-            if (model.getRadianceProduct().containsBand(cloudMaskBand.getName())) {
-                model.getRadianceProduct().removeBand(model.getRadianceProduct().getBand(cloudMaskBand.getName()));
+            if (radianceProduct.containsBand(cloudMaskBand.getName())) {
+                radianceProduct.removeBand(radianceProduct.getBand(cloudMaskBand.getName()));
             }
-            model.getRadianceProduct().addBand(cloudMaskBand);
+            radianceProduct.addBand(cloudMaskBand);
 
             return cloudMaskBand;
         } finally {
+            if (cloudMaskImage != null) {
+                cloudMaskImage.dispose();
+            }
             pm.done();
         }
     }
 
-    void dispose() {
+    private void dispose() {
         if (classView != null) {
             classView.dispose();
-            classView = null;
         }
         if (rgbView != null) {
             rgbView.dispose();
-            rgbView = null;
         }
         if (classProduct != null) {
             classProduct.dispose();
-            classProduct = null;
         }
         if (featureProduct != null) {
             featureProduct.dispose();
-            featureProduct = null;
         }
         if (reflectanceProduct != null) {
             reflectanceProduct.dispose();
-            reflectanceProduct = null;
-        }
-        if (clusters != null) {
-            for (int i = 0; i < clusters.length; i++) {
-                clusters[i] = null;
-            }
-            clusters = null;
         }
     }
 
@@ -237,18 +239,13 @@ class CloudScreeningPerformer {
         probabilisticCloudMask = b;
     }
 
-    boolean hasCloudClasses() {
-        for (final boolean cloud : cloudClusters) {
-            if (cloud) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     LabelingContext createLabelingContext() {
         return new LabelingContext() {
+            @Override
+            public String getRadianceProductName() {
+                return radianceProduct.getName();
+            }
+
             @Override
             public String getLabel(int index) {
                 final ImageInfo imageInfo = getClassBand().getImageInfo();
@@ -276,23 +273,23 @@ class CloudScreeningPerformer {
 
             @Override
             public boolean isCloud(int index) {
-                return cloudClusters[index];
+                return cloudFlags[index];
             }
 
             @Override
             public void setCloud(int index, boolean b) {
-                cloudClusters[index] = b;
+                cloudFlags[index] = b;
             }
 
             @Override
             public boolean isIgnored(int index) {
-                return ignoredClusters[index];
+                return invalidFlags[index];
             }
 
             @Override
             public void setIgnored(int index, boolean b) {
-                if (b != ignoredClusters[index]) {
-                    ignoredClusters[index] = b;
+                if (b != invalidFlags[index]) {
+                    invalidFlags[index] = b;
                 }
             }
 
@@ -330,15 +327,41 @@ class CloudScreeningPerformer {
                 final IndexFilter indexFilter = new IndexFilter() {
                     @Override
                     public boolean accept(int index) {
-                        return !ignoredClusters[index];
+                        return !invalidFlags[index];
                     }
                 };
                 final RenderedImage classificationImage = ClassOpImage.createImage(featureProduct,
-                                                                                   model.getFeatureBandNames(),
+                                                                                   featureBandNames,
                                                                                    clusters,
                                                                                    indexFilter);
                 getClassBand().setSourceImage(classificationImage);
                 updateClassificationSceneView();
+            }
+
+            @Override
+            public ProductSceneView getRgbView() {
+                return CloudScreeningContext.this.getRgbView();
+            }
+
+            @Override
+            public ProductSceneView getClassView() {
+                return CloudScreeningContext.this.getClassView();
+            }
+
+            @Override
+            public boolean isAnyCloudFlagSet() {
+                for (final boolean cloud : cloudFlags) {
+                    if (cloud) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            @Override
+            public Band performCloudMaskCreation(ProgressMonitor pm) {
+                return CloudScreeningContext.this.performCloudMaskCreation(pm);
             }
 
             private Band getClassBand() {

@@ -15,15 +15,10 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
-import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModelessDialog;
 
 import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -38,21 +33,17 @@ class CloudScreeningDialog extends ModelessDialog {
     private final CloudScreeningFormModel formModel;
     private final CloudScreeningForm form;
 
-    private final Set<Product> activeProductSet;
-
-    CloudScreeningDialog(AppContext appContext, String helpID, Set<Product> activeProductSet) {
+    CloudScreeningDialog(AppContext appContext, String helpID) {
         super(appContext.getApplicationWindow(), "CHRIS/PROBA Cloud Screening", ID_APPLY_CLOSE_HELP, helpID);
 
         this.appContext = appContext;
         formModel = new CloudScreeningFormModel();
         form = new CloudScreeningForm(formModel, appContext);
-        this.activeProductSet = activeProductSet;
     }
 
     @Override
     protected void onApply() {
-        // todo - disable button when active product is selected 
-        final ClusterAnalysisWorker worker = new ClusterAnalysisWorker(appContext, formModel, activeProductSet);
+        final ClusterAnalysisWorker worker = new ClusterAnalysisWorker(appContext, formModel);
         worker.execute();
     }
 
@@ -69,49 +60,27 @@ class CloudScreeningDialog extends ModelessDialog {
         return super.show();
     }
 
-    private static class ClusterAnalysisWorker extends ProgressMonitorSwingWorker<CloudScreeningPerformer, Object> {
+    private static class ClusterAnalysisWorker extends ProgressMonitorSwingWorker<CloudScreeningContext, Object> {
         private final AppContext appContext;
         private final CloudScreeningFormModel formModel;
-        private final Set<Product> activeProductSet;
 
-        private ClusterAnalysisWorker(AppContext appContext,
-                                      CloudScreeningFormModel formModel,
-                                      Set<Product> activeProductSet) {
+        private ClusterAnalysisWorker(AppContext appContext, CloudScreeningFormModel formModel) {
             super(appContext.getApplicationWindow(), "Performing Cluster Analysis...");
 
             this.appContext = appContext;
             this.formModel = formModel;
-            this.activeProductSet = activeProductSet;
-
-            activeProductSet.add(formModel.getRadianceProduct());
         }
 
         @Override
-        protected CloudScreeningPerformer doInBackground(com.bc.ceres.core.ProgressMonitor pm) throws Exception {
-            final CloudScreeningPerformer performer = new CloudScreeningPerformer(formModel);
-
-            try {
-                performer.performClusterAnalysis(appContext, pm);
-            } catch (Exception e) {
-                performer.dispose();
-                throw e;
-            }
-
-            return performer;
+        protected CloudScreeningContext doInBackground(com.bc.ceres.core.ProgressMonitor pm) throws Exception {
+            return new CloudScreeningContext(appContext, formModel, pm);
         }
 
         @Override
         protected void done() {
             try {
-                final CloudScreeningPerformer performer = get();
-                final String sourceProductName = formModel.getRadianceProduct().getName();
-                final JDialog dialog = new LabelingDialog(appContext, sourceProductName, performer);
-                dialog.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosed(WindowEvent e) {
-                        activeProductSet.remove(formModel.getRadianceProduct());
-                    }
-                });
+                final CloudScreeningContext context = get();
+                final JDialog dialog = new LabelingDialog(appContext, context.createLabelingContext());
                 dialog.setVisible(true);
             } catch (InterruptedException e) {
                 appContext.handleError(e);

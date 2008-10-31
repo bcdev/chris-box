@@ -68,10 +68,10 @@
             <id>chrisCloudMask</id>
             <parent>chris</parent>
             <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
-            <text>Compute Cloud Mask</text>
+            <text>Perfrom Cloud Screening</text>
             <mnemonic>M</mnemonic>
             <accelerator>ctrl alt M</accelerator>
-            <shortDescr>Computes a cloud mask.</shortDescr>
+            <shortDescr>Calculates a probabilistic cloud mask.</shortDescr>
             <helpId>chrisCloudScreeningTools</helpId>
         </action>
     </extension>
