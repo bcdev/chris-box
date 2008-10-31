@@ -17,6 +17,9 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.binding.ValidationException;
 import com.bc.ceres.binding.ValueContainer;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.gpf.annotations.Parameter;
+import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
+import org.esa.beam.framework.gpf.annotations.SourceProduct;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,65 +39,83 @@ class CloudScreeningFormModel {
     private static final String WV_NAME = "wv";
     private static final String O2_NAME = "o2";
 
+    private final ProductBlock productBlock;
     private final ParameterBlock parameterBlock;
-    private final ValueContainer valueContainer;
+
+    private final ValueContainer productValueContainer;
+    private final ValueContainer parameterValueContainer;
+
+    private boolean featureAvailability;
 
     CloudScreeningFormModel() {
+        productBlock = new ProductBlock();
         parameterBlock = new ParameterBlock();
-        valueContainer = ValueContainer.createObjectBacked(parameterBlock);
+
+        final ParameterDescriptorFactory descriptorFactory = new ParameterDescriptorFactory();
+        productValueContainer = ValueContainer.createObjectBacked(productBlock, descriptorFactory);
+        parameterValueContainer = ValueContainer.createObjectBacked(parameterBlock, descriptorFactory);
+    }
+
+    public final ValueContainer getProductValueContainer() {
+        return productValueContainer;
+    }
+
+    public final ValueContainer getParameterValueContainer() {
+        return parameterValueContainer;
     }
 
     final Product getRadianceProduct() {
-        return parameterBlock.radianceProduct;
+        return productBlock.radianceProduct;
     }
 
     void setRadianceProduct(Product radianceProduct) {
-        setValueContainerValue("radianceProduct", radianceProduct);
-        if (!isAtmosphericAbsorptionAvailable()) {
-            setValueContainerValue("wvSelected", false);
-            setValueContainerValue("o2Selected", false);
+        setValueContainerValue(productValueContainer, "radianceProduct", radianceProduct);
+    }
+
+    boolean updateFeatureAvailability(Product radianceProduct) {
+        featureAvailability = radianceProduct != null && radianceProduct.getProductType().matches("CHRIS_M[15].*");
+        if (!featureAvailability) {
+            setValueContainerValue(parameterValueContainer, "useWv", false);
+            setValueContainerValue(parameterValueContainer, "useO2", false);
+        }
+
+        return featureAvailability;
+    }
+
+    final boolean getUseNirBrightness() {
+        return parameterBlock.useNirBr;
+    }
+
+    final void setUseNirBrightness(boolean b) {
+        setValueContainerValue(parameterValueContainer, "useNirBr", b);
+    }
+
+    final boolean getUseNirWhiteness() {
+        return parameterBlock.useNirWh;
+    }
+
+    final void setUseNirWhiteness(boolean b) {
+        setValueContainerValue(parameterValueContainer, "useNirWh", b);
+    }
+
+    final boolean getUseWv() {
+        return parameterBlock.useWv;
+    }
+
+    void setUseWv(boolean b) {
+        if (featureAvailability) {
+            setValueContainerValue(parameterValueContainer, "useWv", b);
         }
     }
 
-    final boolean isNirBrightnessSelected() {
-        return parameterBlock.isNirBrightnessSelected;
+    final boolean getUseO2() {
+        return parameterBlock.useO2;
     }
 
-    final void setNirBrightnessSelected(boolean select) {
-        setValueContainerValue("nirBrightnessSelected", select);
-    }
-
-    final boolean isNirWhitenessSelected() {
-        return parameterBlock.isNirWhitenessSelected;
-    }
-
-    final void setNirWhitenessSelected(boolean select) {
-        setValueContainerValue("nirWhitenessSelected", select);
-    }
-
-    final boolean isWvSelected() {
-        return parameterBlock.wvSelected;
-    }
-
-    void setWvSelected(boolean wvSelected) {
-        if (isAtmosphericAbsorptionAvailable()) {
-            setValueContainerValue("wvSelected", wvSelected);
+    void setUseO2(boolean b) {
+        if (featureAvailability) {
+            setValueContainerValue(parameterValueContainer, "useO2", b);
         }
-    }
-
-    final boolean isO2Selected() {
-        return parameterBlock.o2Selected;
-    }
-
-    void setO2Selected(boolean o2Selected) {
-        if (isAtmosphericAbsorptionAvailable()) {
-            setValueContainerValue("o2Selected", o2Selected);
-        }
-    }
-
-    boolean isAtmosphericAbsorptionAvailable() {
-        final Product radianceProduct = getRadianceProduct();
-        return radianceProduct != null && radianceProduct.getProductType().matches("CHRIS_M[15].*");
     }
 
     final int getClusterCount() {
@@ -102,7 +123,7 @@ class CloudScreeningFormModel {
     }
 
     final void setClusterCount(int clusterCount) {
-        setValueContainerValue("clusterCount", clusterCount);
+        setValueContainerValue(parameterValueContainer, "clusterCount", clusterCount);
     }
 
     final int getIterationCount() {
@@ -110,7 +131,7 @@ class CloudScreeningFormModel {
     }
 
     final void setIterationCount(int iterationCount) {
-        setValueContainerValue("iterationCount", iterationCount);
+        setValueContainerValue(parameterValueContainer, "iterationCount", iterationCount);
     }
 
     final int getSeed() {
@@ -118,7 +139,7 @@ class CloudScreeningFormModel {
     }
 
     final void setSeed(int seed) {
-        setValueContainerValue("seed", seed);
+        setValueContainerValue(parameterValueContainer, "seed", seed);
     }
 
     String[] getFeatureBandNames() {
@@ -127,23 +148,23 @@ class CloudScreeningFormModel {
         nameList.add(BR_VIS_NAME);
         nameList.add(WH_VIS_NAME);
 
-        if (isNirBrightnessSelected()) {
+        if (getUseNirBrightness()) {
             nameList.add(BR_NIR_NAME);
         }
-        if (isNirWhitenessSelected()) {
+        if (getUseNirWhiteness()) {
             nameList.add(WH_NIR_NAME);
         }
-        if (isWvSelected()) {
+        if (getUseWv()) {
             nameList.add(WV_NAME);
         }
-        if (isO2Selected()) {
+        if (getUseO2()) {
             nameList.add(O2_NAME);
         }
 
         return nameList.toArray(new String[nameList.size()]);
     }
 
-    private void setValueContainerValue(String name, Object value) {
+    private static void setValueContainerValue(ValueContainer valueContainer, String name, Object value) {
         try {
             valueContainer.setValue(name, value);
         } catch (ValidationException e) {
@@ -151,20 +172,36 @@ class CloudScreeningFormModel {
         }
     }
 
+    private static class ProductBlock {
+        @SourceProduct
+        private Product radianceProduct;
+    }
+
     /**
      * Cloud screening parameters.
      */
-    @SuppressWarnings({"UnusedDeclaration"})
     private static class ParameterBlock {
-        private Product radianceProduct;
-
-        private boolean isNirBrightnessSelected = true;
-        private boolean isNirWhitenessSelected = true;
-        private boolean wvSelected = false;
-        private boolean o2Selected = false;
-
+        @Parameter(defaultValue = "14",
+                   label = "Number of clusters")
         private int clusterCount = 14;
-        private int iterationCount = 60;
+        @Parameter(defaultValue = "30",
+                   label = "Number of iterations")
+        private int iterationCount = 30;
+        @Parameter(defaultValue = "31415",
+                   label = "Random seed")
         private int seed = 31415;
+
+        @Parameter(defaultValue = "true",
+                   label = "Use NIR brightness")
+        private boolean useNirBr = true;
+        @Parameter(defaultValue = "true",
+                   label = "Use NIR whiteness")
+        private boolean useNirWh = true;
+        @Parameter(defaultValue = "false",
+                   label = "Use atmospheric water vapour feature")
+        private boolean useWv = false;
+        @Parameter(defaultValue = "false",
+                   label = "Use atmospheric oxygen feature")
+        private boolean useO2 = false;
     }
 }
