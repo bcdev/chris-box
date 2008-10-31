@@ -346,7 +346,7 @@ class CloudScreeningPerformer {
             }
 
             private void updateClassificationSceneView() {
-                classView.updateImage();
+                classView.getBaseImageLayer().regenerate();
             }
         };
     }

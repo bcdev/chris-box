@@ -32,16 +32,16 @@ class LabelingTableModel extends AbstractTableModel {
     };
 
     private final LabelingContext context;
-    private final double[] brightness;
-    private final double[] occurrence;
+    private final double[] brightnessValues;
+    private final double[] occurrenceValues;
     private final int rowCount;
 
     LabelingTableModel(LabelingContext context) {
         this.context = context;
         rowCount = context.getClusters().length;
 
-        brightness = new double[rowCount];
-        occurrence = new double[rowCount];
+        brightnessValues = new double[rowCount];
+        occurrenceValues = new double[rowCount];
 
         new Thread(new Runnable() {
             @Override
@@ -170,23 +170,23 @@ class LabelingTableModel extends AbstractTableModel {
     }
 
     private double getBrightness(int rowIndex) {
-        return brightness[rowIndex];
+        return brightnessValues[rowIndex];
     }
 
     private Object getOccurrence(int rowIndex) {
-        return occurrence[rowIndex];
+        return occurrenceValues[rowIndex];
     }
 
     private void resetInfoColumns() {
-        recomputeBrightnessColumn();
-        recomputeOccurrenceColumn();
+        recomputeBrightnessValues();
+        recomputeOccurrenceValues();
         for (int k = 0; k < rowCount; ++k) {
             fireTableCellUpdated(k, BRIGHTNESS_COLUMN);
             fireTableCellUpdated(k, OCCURRENCE_COLUMN);
         }
     }
 
-    private void recomputeBrightnessColumn() {
+    private void recomputeBrightnessValues() {
         final IndexFilter indexFilter = new IndexFilter() {
             @Override
             public boolean accept(int index) {
@@ -197,25 +197,25 @@ class LabelingTableModel extends AbstractTableModel {
         final EMCluster[] clusters = context.getClusters();
         final double[] sums = new double[clusters.length];
         final ProbabilityCalculator pc = Clusterer.createProbabilityCalculator(clusters);
-        Arrays.fill(brightness, 0.0);
+        Arrays.fill(brightnessValues, 0.0);
 
         for (final EMCluster cluster : clusters) {
             final double[] posteriors = new double[clusters.length];
             pc.calculate(cluster.getMean(), posteriors, indexFilter);
 
             for (int k = 0; k < clusters.length; ++k) {
-                brightness[k] += cluster.getMean(0) * posteriors[k];
+                brightnessValues[k] += cluster.getMean(0) * posteriors[k];
                 sums[k] += posteriors[k];
             }
         }
         for (int k = 0; k < clusters.length; ++k) {
             if (sums[k] > 0.0) {
-                brightness[k] /= sums[k];
+                brightnessValues[k] /= sums[k];
             }
         }
     }
 
-    private void recomputeOccurrenceColumn() {
+    private void recomputeOccurrenceValues() {
         final RenderedImage image = context.getClassificationImage();
         final double[] min = {0.0};
         final double[] max = {rowCount};
@@ -227,7 +227,7 @@ class LabelingTableModel extends AbstractTableModel {
         final int[] histogramCounts = histogram.getBins(0);
 
         for (int k = 0; k < rowCount; ++k) {
-            occurrence[k] = (4.0 * histogramCounts[k]) / totalCounts;
+            occurrenceValues[k] = (4.0 * histogramCounts[k]) / totalCounts;
         }
     }
 }
