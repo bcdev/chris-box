@@ -82,13 +82,16 @@ public class ClassOpImage extends PointOpImage {
         final ImageLayout imageLayout = new ImageLayout(0, 0, w, h, 0, 0, TILE_W, TILE_H, sampleModel, colorModel);
 
         return new ClassOpImage(imageLayout, sourceImageVector, featureBands, calculator, clusterFilter,
-                                         clusterCount);
+                                clusterCount);
     }
 
-    private ClassOpImage(ImageLayout imageLayout, Vector<RenderedImage> sourceImageVector,
-                                  Band[] sourceBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
-                                  int clusterCount) {
-        super(sourceImageVector, imageLayout, /* new RenderingHints(JAI.KEY_TILE_CACHE, null) */ null, true);
+    private ClassOpImage(ImageLayout imageLayout,
+                         Vector<RenderedImage> sourceImageVector,
+                         Band[] sourceBands,
+                         ProbabilityCalculator calculator,
+                         IndexFilter clusterFilter,
+                         int clusterCount) {
+        super(sourceImageVector, imageLayout, new RenderingHints(JAI.KEY_TILE_CACHE, null), true);
 
         this.sourceBands = sourceBands;
         this.calculator = calculator;
@@ -140,7 +143,7 @@ public class ClassOpImage extends PointOpImage {
                     sourceSamples[i] = sourceBands[i].scale(sourcePixels[i][sourcePixelOffset]);
                 }
                 calculator.calculate(sourceSamples, posteriors, clusterFilter);
-                targetPixels[targetPixelOffset] = findMaxIndex(posteriors);
+                targetPixels[targetPixelOffset] = findClassIndex(posteriors);
 
                 sourcePixelOffset += sourcePixelStride;
                 targetPixelOffset += targetPixelStride;
@@ -153,9 +156,15 @@ public class ClassOpImage extends PointOpImage {
         targetAccessor.setPixels(targetData);
     }
 
-    private static byte findMaxIndex(double[] posteriors) {
-        byte index = 0;
+    private static byte findClassIndex(double[] posteriors) {
+        // in most cases the class index is found in this loop
+        for (byte i = 0; i < posteriors.length; ++i) {
+            if (posteriors[i] > 0.5) {
+                return i;
+            }
+        }
 
+        byte index = 0;
         for (byte i = 1; i < posteriors.length; ++i) {
             if (posteriors[i] > posteriors[index]) {
                 index = i;

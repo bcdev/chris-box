@@ -182,13 +182,13 @@ class CloudScreeningFormModel {
      */
     private static class ParameterBlock {
         @Parameter(label = "Number of clusters", defaultValue = "14", interval = "[2,99]")
-        private int clusterCount;
+        private int clusterCount = 14;
         @Parameter(label = "Number of iterations", defaultValue = "30", interval = "[1,999]")
-        private int iterationCount;
+        private int iterationCount = 30;
         @Parameter(label = "Random seed",
                    defaultValue = "31415",
                    description = "The seed used for initializing the EM clustering algorithm.")
-        private int seed;
+        private int seed = 31415;
 
         @Parameter(label = "Use NIR brightness", defaultValue = "true")
         private boolean useNirBr = true;
