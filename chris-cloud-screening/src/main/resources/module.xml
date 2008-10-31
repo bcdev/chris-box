@@ -67,7 +67,7 @@
         <action>
             <id>chrisCloudMask</id>
             <parent>chris</parent>
-            <class>org.esa.beam.chris.ui.CloudMaskAction</class>
+            <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
             <text>Compute Cloud Mask</text>
             <mnemonic>M</mnemonic>
             <accelerator>ctrl alt M</accelerator>

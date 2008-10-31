@@ -15,11 +15,11 @@ import java.util.Set;
  * @author Marco Peters
  * @author Marco Zuehlke
  */
-public class CloudMaskAction extends AbstractVisatAction {
+public class CloudScreeningAction extends AbstractVisatAction {
 
     private final Set<Product> activeProductSet;
 
-    public CloudMaskAction() {
+    public CloudScreeningAction() {
         activeProductSet = new HashSet<Product>(7);
     }
 
