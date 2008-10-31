@@ -15,6 +15,7 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
+import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModelessDialog;
 
@@ -38,11 +39,17 @@ class CloudScreeningDialog extends ModelessDialog {
 
         this.appContext = appContext;
         formModel = new CloudScreeningFormModel();
-        form = new CloudScreeningForm(formModel, appContext);
+        form = new CloudScreeningForm(appContext, formModel);
     }
 
     @Override
     protected void onApply() {
+        final Product sourceProduct = formModel.getSourceProduct();
+
+        if (!appContext.getProductManager().contains(sourceProduct)) {
+            appContext.getProductManager().addProduct(sourceProduct);
+        }
+
         final ClusterAnalysisWorker worker = new ClusterAnalysisWorker(appContext, formModel);
         worker.execute();
     }
@@ -59,6 +66,15 @@ class CloudScreeningDialog extends ModelessDialog {
         setContent(form);
         return super.show();
     }
+
+    CloudScreeningForm getForm() {
+        return form;
+    }
+
+    CloudScreeningFormModel getFormModel() {
+        return formModel;
+    }
+
 
     private static class ClusterAnalysisWorker extends ProgressMonitorSwingWorker<CloudScreeningContext, Object> {
         private final AppContext appContext;

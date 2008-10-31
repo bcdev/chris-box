@@ -20,11 +20,11 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.ParametersPane;
 import org.esa.beam.framework.gpf.ui.SourceProductSelector;
 import org.esa.beam.framework.ui.AppContext;
+import org.esa.beam.framework.ui.application.SelectionChangeEvent;
+import org.esa.beam.framework.ui.application.SelectionChangeListener;
 
 import javax.swing.*;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 /**
  * todo - add API doc
@@ -36,20 +36,51 @@ import java.beans.PropertyChangeListener;
 class CloudScreeningForm extends JPanel {
 
     private final SourceProductSelector sourceProductSelector;
+    private final JCheckBox wvCheckBox;
+    private final JCheckBox o2CheckBox;
 
-    CloudScreeningForm(CloudScreeningFormModel formModel, AppContext appContext) {
+    CloudScreeningForm(AppContext appContext, final CloudScreeningFormModel formModel) {
         sourceProductSelector = new SourceProductSelector(appContext);
 
-        // configure the source product selector
+        // configure product selector
         final JComboBox comboBox = sourceProductSelector.getProductNameComboBox();
         comboBox.setPrototypeDisplayValue("[1] CHRIS_HH_HHHHHH_HHHH_HH_NR");
-        final ValueContainer vc = formModel.getProductValueContainer();
-        final BindingContext bc = new BindingContext(vc);
-        bc.bind("radianceProduct", comboBox);
+        final ValueContainer vc1 = formModel.getProductValueContainer();
+        final BindingContext bc1 = new BindingContext(vc1);
+        bc1.bind("sourceProduct", comboBox);
+
+        // create parameters panel
+        final ValueContainer vc2 = formModel.getParameterValueContainer();
+        final BindingContext bc2 = new BindingContext(vc2);
+        final JPanel panel = new ParametersPane(bc2).createPanel();
+        panel.setBorder(BorderFactory.createTitledBorder("Processing Parameters"));
+
+        wvCheckBox = (JCheckBox) bc2.getBinding("useWv").getComponents()[0];
+        o2CheckBox = (JCheckBox) bc2.getBinding("useO2").getComponents()[0];
+
+        // disable check boxes when corresponding features are not available
+        sourceProductSelector.addSelectionChangeListener(new SelectionChangeListener() {
+            @Override
+            public void selectionChanged(SelectionChangeEvent event) {
+                final Product selectedProduct = (Product) event.getSelection().getFirstElement();
+                final boolean available = checkFeatureAvailability(selectedProduct);
+
+                wvCheckBox.setEnabled(available);
+                o2CheckBox.setEnabled(available);
+                if (!available) {
+                    wvCheckBox.setSelected(false);
+                    o2CheckBox.setSelected(false);
+                }
+            }
+
+            private boolean checkFeatureAvailability(Product product) {
+                return product != null && product.getProductType().matches("CHRIS_M[15].*");
+            }
+        });
 
         setLayout(new BorderLayout(3, 3));
         add(sourceProductSelector.createDefaultPanel(), BorderLayout.NORTH);
-        add(createParametersPanel(formModel), BorderLayout.CENTER);
+        add(panel, BorderLayout.CENTER);
     }
 
     void prepareHide() {
@@ -63,27 +94,27 @@ class CloudScreeningForm extends JPanel {
         }
     }
 
-    private static JPanel createParametersPanel(final CloudScreeningFormModel formModel) {
-        final ValueContainer vc = formModel.getParameterValueContainer();
-        final BindingContext bc = new BindingContext(vc);
-        final ParametersPane pane = new ParametersPane(bc);
-        final JPanel panel = pane.createPanel();
-        panel.setBorder(BorderFactory.createTitledBorder("Processing Parameters"));
+    Product getSourceProduct() {
+        return sourceProductSelector.getSelectedProduct();
+    }
 
-        final JComponent wvCheckBox = bc.getBinding("useWv").getComponents()[0];
-        final JComponent o2CheckBox = bc.getBinding("useO2").getComponents()[0];
+    void setSourceProduct(Product product) {
+        sourceProductSelector.setSelectedProduct(product);
+    }
 
-        formModel.getProductValueContainer().addPropertyChangeListener("radianceProduct", new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getNewValue() instanceof Product) {
-                    final boolean enabled = formModel.updateFeatureAvailability((Product) evt.getNewValue());
-                    wvCheckBox.setEnabled(enabled);
-                    o2CheckBox.setEnabled(enabled);
-                }
-            }
-        });
+    boolean isWvCheckBoxEnabled() {
+        return wvCheckBox.isEnabled();
+    }
 
-        return panel;
+    boolean isWvCheckBoxSelected() {
+        return wvCheckBox.isSelected();
+    }
+
+    boolean isO2CheckBoxEnabled() {
+        return o2CheckBox.isEnabled();
+    }
+
+    boolean isO2CheckBoxSelected() {
+        return o2CheckBox.isSelected();
     }
 }

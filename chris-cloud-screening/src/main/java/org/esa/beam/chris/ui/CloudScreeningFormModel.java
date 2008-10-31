@@ -45,8 +45,6 @@ class CloudScreeningFormModel {
     private final ValueContainer productValueContainer;
     private final ValueContainer parameterValueContainer;
 
-    private boolean featureAvailability;
-
     CloudScreeningFormModel() {
         productBlock = new ProductBlock();
         parameterBlock = new ParameterBlock();
@@ -64,82 +62,36 @@ class CloudScreeningFormModel {
         return parameterValueContainer;
     }
 
-    final Product getRadianceProduct() {
-        return productBlock.radianceProduct;
-    }
-
-    void setRadianceProduct(Product radianceProduct) {
-        setValueContainerValue(productValueContainer, "radianceProduct", radianceProduct);
-    }
-
-    boolean updateFeatureAvailability(Product radianceProduct) {
-        featureAvailability = radianceProduct != null && radianceProduct.getProductType().matches("CHRIS_M[15].*");
-        if (!featureAvailability) {
-            setValueContainerValue(parameterValueContainer, "useWv", false);
-            setValueContainerValue(parameterValueContainer, "useO2", false);
-        }
-
-        return featureAvailability;
+    final Product getSourceProduct() {
+        return productBlock.sourceProduct;
     }
 
     final boolean getUseNirBrightness() {
         return parameterBlock.useNirBr;
     }
 
-    final void setUseNirBrightness(boolean b) {
-        setValueContainerValue(parameterValueContainer, "useNirBr", b);
-    }
-
     final boolean getUseNirWhiteness() {
         return parameterBlock.useNirWh;
-    }
-
-    final void setUseNirWhiteness(boolean b) {
-        setValueContainerValue(parameterValueContainer, "useNirWh", b);
     }
 
     final boolean getUseWv() {
         return parameterBlock.useWv;
     }
 
-    void setUseWv(boolean b) {
-        if (featureAvailability) {
-            setValueContainerValue(parameterValueContainer, "useWv", b);
-        }
-    }
-
     final boolean getUseO2() {
         return parameterBlock.useO2;
-    }
-
-    void setUseO2(boolean b) {
-        if (featureAvailability) {
-            setValueContainerValue(parameterValueContainer, "useO2", b);
-        }
     }
 
     final int getClusterCount() {
         return parameterBlock.clusterCount;
     }
 
-    final void setClusterCount(int clusterCount) {
-        setValueContainerValue(parameterValueContainer, "clusterCount", clusterCount);
-    }
-
     final int getIterationCount() {
         return parameterBlock.iterationCount;
     }
 
-    final void setIterationCount(int iterationCount) {
-        setValueContainerValue(parameterValueContainer, "iterationCount", iterationCount);
-    }
-
     final int getSeed() {
         return parameterBlock.seed;
-    }
-
-    final void setSeed(int seed) {
-        setValueContainerValue(parameterValueContainer, "seed", seed);
     }
 
     String[] getFeatureBandNames() {
@@ -164,17 +116,9 @@ class CloudScreeningFormModel {
         return nameList.toArray(new String[nameList.size()]);
     }
 
-    private static void setValueContainerValue(ValueContainer valueContainer, String name, Object value) {
-        try {
-            valueContainer.setValue(name, value);
-        } catch (ValidationException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
-    }
-
     private static class ProductBlock {
         @SourceProduct
-        private Product radianceProduct;
+        private Product sourceProduct;
     }
 
     /**

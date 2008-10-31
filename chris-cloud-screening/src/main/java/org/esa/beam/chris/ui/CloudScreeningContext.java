@@ -86,7 +86,7 @@ class CloudScreeningContext {
         cloudFlags = new boolean[formModel.getClusterCount()];
         invalidFlags = new boolean[formModel.getClusterCount()];
 
-        radianceProduct = formModel.getRadianceProduct();
+        radianceProduct = formModel.getSourceProduct();
 
         try {
             pm.beginTask("Performing cluster analysis...", 100);

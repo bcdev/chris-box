@@ -46,25 +46,25 @@
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-launcher</artifactId>
-                <version>0.8-SNAPSHOT</version>
+                <version>0.8</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-core</artifactId>
-                <version>0.8-SNAPSHOT</version>
+                <version>0.8</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-binding</artifactId>
-                <version>0.8-SNAPSHOT</version>
+                <version>0.8</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-ui</artifactId>
-                <version>0.8-SNAPSHOT</version>
+                <version>0.8</version>
             </dependency>
 
             <!-- BEAM System Level Modules ############################################# -->
@@ -72,33 +72,33 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-core</artifactId>
-                <version>4.5-SNAPSHOT</version>
+                <version>4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-ui</artifactId>
-                <version>4.5-SNAPSHOT</version>
+                <version>4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-visat</artifactId>
-                <version>4.5-SNAPSHOT</version>
+                <version>4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-bootstrap</artifactId>
-                <version>4.5-SNAPSHOT</version>
+                <version>4.5</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-gpf</artifactId>
-                <version>4.5-SNAPSHOT</version>
+                <version>4.5</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-cluster-analysis</artifactId>
-                <version>1.1-SNAPSHOT</version>
+                <version>1.1</version>
             </dependency>
 
             <dependency>
@@ -110,7 +110,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.4.101-SNAPSHOT</version>
+                <version>1.4.101</version>
             </dependency>
 
             <!-- JAI Libraries ############################################# -->
