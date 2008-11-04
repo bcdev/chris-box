@@ -34,6 +34,7 @@ import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
@@ -72,6 +73,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     @SourceProduct(alias = "source", type = "CHRIS_M.*")
     private Product sourceProduct;
+    @TargetProduct
+    private Product targetProduct;
 
     @Parameter(defaultValue = "0.0",
                interval = "[0.0, 1.0]",
@@ -142,34 +145,40 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         }
         // todo - further validation
 
-        // create target product
-        final Product targetProduct = createTargetProduct();
-        setTargetProduct(targetProduct);
+        targetProduct = createTargetProduct();
     }
 
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
-        synchronized (this) {
-            if (hyperMaskImage == null) {
-                initialize2(targetRectangle, pm);
-            }
-        }
+        try {
+            pm.beginTask("Performing atmospheric correction...", 100);
 
-        ac.computeTileStack(targetTileMap, targetRectangle, pm);
-
-        // compute remaining bands
-        for (final Band targetBand : targetTileMap.keySet()) {
-            final String name = targetBand.getName();
-            if (name.startsWith(SURFACE_REFL) || name.equals(WATER_VAPOUR)) {
-                continue;
+            synchronized (this) {
+                if (hyperMaskImage == null) {
+                    initialize2(targetRectangle, SubProgressMonitor.create(pm, 40));
+                } else {
+                    pm.worked(40);
+                }
             }
 
-            final Band sourceBand = sourceProduct.getBand(name);
-            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
-            final Tile targetTile = targetTileMap.get(targetBand);
+            ac.computeTileStack(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, 60));
 
-            targetTile.setRawSamples(sourceTile.getRawSamples());
+            // compute remaining bands
+            for (final Band targetBand : targetTileMap.keySet()) {
+                final String name = targetBand.getName();
+                if (name.startsWith(SURFACE_REFL) || name.equals(WATER_VAPOUR)) {
+                    continue;
+                }
+
+                final Band sourceBand = sourceProduct.getBand(name);
+                final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, ProgressMonitor.NULL);
+                final Tile targetTile = targetTileMap.get(targetBand);
+
+                targetTile.setRawSamples(sourceTile.getRawSamples());
+            }
+        } finally {
+            pm.done();
         }
     }
 
@@ -272,7 +281,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
-        // set preferred tile size
+        // set preferred tile size - ESSENTIAL
         targetProduct.setPreferredTileSize(w, h);
 
         return targetProduct;
@@ -304,7 +313,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         if (cloudProductBand != null) {
             cloudMaskImage = CloudMaskOpImage.createImage(cloudProductBand, cloudProductThreshold);
         } else {
-            // todo - replace with ConstantDescriptor.create(w, h, new Byte[]{0}, null)
+            // todo - can be replaced with ConstantDescriptor.create(w, h, new Byte[]{0}, null)
             cloudMaskImage = ZeroOpImage.createImage(sourceProduct.getSceneRasterWidth(),
                                                      sourceProduct.getSceneRasterHeight());
         }
@@ -387,71 +396,77 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     private void computeAotLand(RtcTableFactoryAot tableFactory, double toaScaling, Rectangle targetRectangle,
                                 ProgressMonitor pm) {
-        int lowerVis = -1;
-        int upperVis = -1;
-        for (int i = 0; i < nominalWavelengths.length; ++i) {
-            if (nominalWavelengths[i] >= 420.0) {
-                lowerVis = i;
-                break;
-            }
-        }
-        for (int i = lowerVis + 1; i < nominalWavelengths.length; ++i) {
-            if (nominalWavelengths[i] <= 690.0) {
-                upperVis = i;
-            } else {
-                break;
-            }
-        }
+        try {
+            pm.beginTask("Retrieving aerosol optical thickness...", toaBands.length * targetRectangle.height);
 
-        final double[][] darkPixels = new double[toaBands.length][DARK_PIXEL_COUNT];
-        for (double[] samples : darkPixels) {
-            Arrays.fill(samples, Double.POSITIVE_INFINITY);
-        }
-
-        final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-
-        for (int i = 0; i < toaBands.length; ++i) {
-            final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, pm);
-
-            for (final Tile.Pos pos : toaTile) {
-                if (pos.x == targetRectangle.x) {
-                    checkForCancelation(pm);
+            int lowerVis = -1;
+            int upperVis = -1;
+            for (int i = 0; i < nominalWavelengths.length; ++i) {
+                if (nominalWavelengths[i] >= 420.0) {
+                    lowerVis = i;
+                    break;
                 }
-                final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+            }
+            for (int i = lowerVis + 1; i < nominalWavelengths.length; ++i) {
+                if (nominalWavelengths[i] <= 690.0) {
+                    upperVis = i;
+                } else {
+                    break;
+                }
+            }
 
-                if ((hyperMask & 3) == 0) {
-                    final double toa = toaScaling * toaTile.getSampleDouble(pos.x, pos.y);
+            final double[][] darkPixels = new double[toaBands.length][DARK_PIXEL_COUNT];
+            for (double[] samples : darkPixels) {
+                Arrays.fill(samples, Double.POSITIVE_INFINITY);
+            }
 
-                    if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
-                        sort(darkPixels[i], toa);
+            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+
+            for (int i = 0; i < toaBands.length; ++i) {
+                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, ProgressMonitor.NULL);
+
+                for (final Tile.Pos pos : toaTile) {
+                    if (pos.x == targetRectangle.x) {
+                        checkForCancelation(pm);
+                    }
+                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+
+                    if ((hyperMask & 3) == 0) {
+                        final double toa = toaScaling * toaTile.getSampleDouble(pos.x, pos.y);
+
+                        if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
+                            sort(darkPixels[i], toa);
+                        }
+                    }
+                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                        pm.worked(1);
                     }
                 }
-
-//                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-//                    pm.worked(1);
-//                }
             }
-        }
 
-        aot550 = tableFactory.getMinAot();
-        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
-        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.005, lowerVis, upperVis);
+            aot550 = tableFactory.getMinAot();
+            aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
+            aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.005, lowerVis, upperVis);
 
-        if (aot550 == tableFactory.getMinAot()) {
-            final double fza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
+            if (aot550 == tableFactory.getMinAot()) {
+                final double fza = OpUtils.getAnnotationDouble(sourceProduct,
+                                                               ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
 
-            if (fza >= 55.0 || fza <= -55.0) {
-                final RtcTable table = tableFactory.createRtcTable(aot550);
+                if (fza >= 55.0 || fza <= -55.0) {
+                    final RtcTable table = tableFactory.createRtcTable(aot550);
 
-                for (int i = 0; i < lpwCor.length; ++i) {
-                    lpwCor[i] = table.getLpw(i) - Statistics.mean(darkPixels[i]);
+                    for (int i = 0; i < lpwCor.length; ++i) {
+                        lpwCor[i] = table.getLpw(i) - Statistics.mean(darkPixels[i]);
+                    }
                 }
             }
-        }
-        for (int i = 0; i < lpwCor.length; ++i) {
-            if (lpwCor[i] < 0.0) {
-                lpwCor[i] = 0.0;
+            for (int i = 0; i < lpwCor.length; ++i) {
+                if (lpwCor[i] < 0.0) {
+                    lpwCor[i] = 0.0;
+                }
             }
+        } finally {
+            pm.done();
         }
     }
 
@@ -468,77 +483,83 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     private void computeAotWater(RtcTableFactoryAot tableFactory, double toaScaling, Rectangle targetRectangle,
                                  ProgressMonitor pm) {
-        int lowerVis = -1;
-        int upperVis = -1;
-        for (int i = 0; i < nominalWavelengths.length; ++i) {
-            if (nominalWavelengths[i] >= 435.0) {
-                lowerVis = i;
-                break;
-            }
-        }
-        for (int i = lowerVis + 1; i < nominalWavelengths.length; ++i) {
-            if (nominalWavelengths[i] <= 690.0) {
-                upperVis = i;
-            } else {
-                break;
-            }
-        }
+        try {
+            pm.beginTask("Retrieving aerosol optical thickness...", toaBands.length * targetRectangle.height);
 
-        final double[][] darkPixels = new double[toaBands.length][DARK_PIXEL_COUNT];
-        for (double[] samples : darkPixels) {
-            Arrays.fill(samples, Double.POSITIVE_INFINITY);
-        }
-
-        final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
-        final Raster waterMaskRaster = waterMaskImage.getData(targetRectangle);
-
-        for (int i = 0; i < toaBands.length; ++i) {
-            final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, pm);
-
-            for (final Tile.Pos pos : toaTile) {
-                if (pos.x == targetRectangle.x) {
-                    checkForCancelation(pm);
+            int lowerVis = -1;
+            int upperVis = -1;
+            for (int i = 0; i < nominalWavelengths.length; ++i) {
+                if (nominalWavelengths[i] >= 435.0) {
+                    lowerVis = i;
+                    break;
                 }
-                final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
-                final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
+            }
+            for (int i = lowerVis + 1; i < nominalWavelengths.length; ++i) {
+                if (nominalWavelengths[i] <= 690.0) {
+                    upperVis = i;
+                } else {
+                    break;
+                }
+            }
 
-                if ((hyperMask & 3) == 0 && waterMask != 0) {
-                    final double toa = toaScaling * toaTile.getSampleDouble(pos.x, pos.y);
+            final double[][] darkPixels = new double[toaBands.length][DARK_PIXEL_COUNT];
+            for (double[] samples : darkPixels) {
+                Arrays.fill(samples, Double.POSITIVE_INFINITY);
+            }
 
-                    if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
-                        sort(darkPixels[i], toa);
+            final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
+            final Raster waterMaskRaster = waterMaskImage.getData(targetRectangle);
+
+            for (int i = 0; i < toaBands.length; ++i) {
+                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, ProgressMonitor.NULL);
+
+                for (final Tile.Pos pos : toaTile) {
+                    if (pos.x == targetRectangle.x) {
+                        checkForCancelation(pm);
+                    }
+                    final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
+                    final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
+
+                    if ((hyperMask & 3) == 0 && waterMask != 0) {
+                        final double toa = toaScaling * toaTile.getSampleDouble(pos.x, pos.y);
+
+                        if (toa > 0.0 && toa < darkPixels[i][DARK_PIXEL_COUNT - 1]) {
+                            sort(darkPixels[i], toa);
+                        }
+                    }
+                    if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
+                        pm.worked(1);
                     }
                 }
-
-//                if (pos.x == targetRectangle.x + targetRectangle.width - 1) {
-//                    pm.worked(1);
-//                }
             }
-        }
 
-        aot550 = tableFactory.getMinAot();
-        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
-        aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.001, lowerVis, upperVis);
+            aot550 = tableFactory.getMinAot();
+            aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
+            aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.001, lowerVis, upperVis);
 
-        if (aot550 == tableFactory.getMinAot()) {
-            final double fza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
+            if (aot550 == tableFactory.getMinAot()) {
+                final double fza = OpUtils.getAnnotationDouble(sourceProduct,
+                                                               ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
 
-            if (fza >= 55.0 || fza <= -55.0) {
-                final RtcTable table = tableFactory.createRtcTable(aot550);
+                if (fza >= 55.0 || fza <= -55.0) {
+                    final RtcTable table = tableFactory.createRtcTable(aot550);
 
-                for (int i = 0; i < lpwCor.length; ++i) {
-                    lpwCor[i] = table.getLpw(i) - Statistics.mean(darkPixels[i]);
+                    for (int i = 0; i < lpwCor.length; ++i) {
+                        lpwCor[i] = table.getLpw(i) - Statistics.mean(darkPixels[i]);
+                    }
+                    // polynomial fit
+                    final double[][] p = new double[4][lpwCor.length];
+                    new LegendrePolynomials().calculate(nominalWavelengths, p);
+                    new Regression(p).fit(lpwCor, lpwCor);
                 }
-                // polynomial fit
-                final double[][] p = new double[4][lpwCor.length];
-                new LegendrePolynomials().calculate(nominalWavelengths, p);
-                new Regression(p).fit(lpwCor, lpwCor);
             }
-        }
-        for (int i = 0; i < lpwCor.length; ++i) {
-            if (lpwCor[i] < 0.0) {
-                lpwCor[i] = 0.0;
+            for (int i = 0; i < lpwCor.length; ++i) {
+                if (lpwCor[i] < 0.0) {
+                    lpwCor[i] = 0.0;
+                }
             }
+        } finally {
+            pm.done();
         }
     }
 
@@ -712,7 +733,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 if (spikyPixelList.size() > SPIKY_PIXEL_COUNT) {
                     // 2. Select pixels with reference spectra
                     Collections.sort(spikyPixelList);
-                    spikyPixelList.subList(SPIKY_PIXEL_COUNT / 2, spikyPixelList.size() - SPIKY_PIXEL_COUNT / 2).clear();
+                    spikyPixelList.subList(SPIKY_PIXEL_COUNT / 2,
+                                           spikyPixelList.size() - SPIKY_PIXEL_COUNT / 2).clear();
 
                     // 3. Calculate smoothed spectra
                     final double[][] originalSpectra = new double[SPIKY_PIXEL_COUNT][rhoBands.length];
@@ -765,7 +787,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     });
 
                     // 5. Special treatment for calibration factors for bands in the red
-                    final double[] originalRedCalibrationFactors = Arrays.copyOfRange(calibrationFactors, lowerRed, upperRed);
+                    final double[] originalRedCalibrationFactors = Arrays.copyOfRange(calibrationFactors, lowerRed,
+                                                                                      upperRed);
                     final double[] smoothedRedCalibrationFactors = new double[upperRed - lowerRed];
                     final LowessRegressionWeightCalculator weightCalculator = new LowessRegressionWeightCalculator();
                     final LocalRegressionSmoother smoother = new LocalRegressionSmoother(weightCalculator, 0, 5);
@@ -824,7 +847,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final Tile[] rhoTiles = new Tile[rhoBands.length];
 
                 for (int i = 0; i < toaBands.length; i++) {
-                    toaTiles[i] = getSourceTile(toaBands[i], targetRectangle, pm);
+                    toaTiles[i] = getSourceTile(toaBands[i], targetRectangle, ProgressMonitor.NULL);
                 }
                 for (int i = 0; i < rhoBands.length; i++) {
                     rhoTiles[i] = targetTileMap.get(rhoBands[i]);
@@ -1150,7 +1173,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                                                                                               maxX, maxY);
                         }
                     }
-
                     pm.worked(1);
                 }
 
