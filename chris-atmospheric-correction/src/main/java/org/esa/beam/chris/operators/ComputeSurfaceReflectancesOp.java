@@ -128,14 +128,14 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     private transient Ac ac;
     private transient double smileCorrection;
     private transient double[] lpwCor;
+    private transient double vaa;
+    private transient double saa;
+    private transient double vza;
+    private transient double sza;
+    private transient double alt;
 
     @Override
     public void initialize() throws OperatorException {
-        // get source bands
-        toaBands = OpUtils.findBands(sourceProduct, "radiance");
-        toaMaskBands = OpUtils.findBands(sourceProduct, "mask");
-        cloudProductBand = sourceProduct.getBand("cloud_product");
-
         // get CHRIS mode
         mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
 
@@ -143,7 +143,18 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             throw new OperatorException(MessageFormat.format(
                     "unsupported CHRIS mode: {0} = {1}", ChrisConstants.ATTR_NAME_CHRIS_MODE, mode));
         }
+        // get annotations
+        vaa = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
+        vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
+        saa = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
+        sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
+        alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT) / 1000.0;
         // todo - further validation
+
+        // get source bands
+        toaBands = OpUtils.findBands(sourceProduct, "radiance");
+        toaMaskBands = OpUtils.findBands(sourceProduct, "mask");
+        cloudProductBand = sourceProduct.getBand("cloud_product");
 
         targetProduct = createTargetProduct();
     }
@@ -288,18 +299,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
     }
 
     private void initialize2(Rectangle targetRectangle, ProgressMonitor pm) {
-        // get annotations
-        final double vaa = OpUtils.getAnnotationDouble(sourceProduct,
-                                                       ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
-        final double saa = OpUtils.getAnnotationDouble(sourceProduct,
-                                                       ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
-        final double vza = OpUtils.getAnnotationDouble(sourceProduct,
-                                                       ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
-        final double sza = OpUtils.getAnnotationDouble(sourceProduct,
-                                                       ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         final double ada = OpUtils.getAzimuthalDifferenceAngle(vaa, saa);
-        final double alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT) / 1000.0;
-
         // get nominal wavelengths and bandwidths
         nominalWavelengths = OpUtils.getWavelenghts(toaBands);
         nominalBandwidths = OpUtils.getBandwidths(toaBands);
