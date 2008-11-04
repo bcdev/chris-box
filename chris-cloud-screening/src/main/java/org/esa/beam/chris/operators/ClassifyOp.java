@@ -60,7 +60,7 @@ public class ClassifyOp extends Operator {
     private String[] sourceBandNames;
     @Parameter
     private EMCluster[] clusters;
-    
+
     @Override
     public void initialize() throws OperatorException {
         try {
@@ -70,7 +70,7 @@ public class ClassifyOp extends Operator {
             targetProduct = new Product(sourceProduct.getName() + "_CLASS",
                                         sourceProduct.getProductType() + "_CLASS", w, h);
 
-            final Band classBand = new Band("class_indices", ProductData.TYPE_INT8, w, h);
+            final Band classBand = new Band("class_indices", ProductData.TYPE_UINT8, w, h);
             classBand.setDescription("Class indices");
             targetProduct.addBand(classBand);
 

@@ -40,11 +40,11 @@ public class ClassOpImage extends PointOpImage {
 
     private final Band[] sourceBands;
     private final ProbabilityCalculator calculator;
-    private final IndexFilter clusterFilter;
+    private final IndexFilter validClusterFilter;
     private final int clusterCount;
 
     public static OpImage createImage(Product sourceProduct, String[] sourceBandNames, EMCluster[] clusters,
-                                      IndexFilter clusterFilter) {
+                                      IndexFilter validClusterFilter) {
         final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
 
         final Band[] sourceBands = new Band[sourceBandNames.length];
@@ -52,13 +52,7 @@ public class ClassOpImage extends PointOpImage {
             sourceBands[i] = sourceProduct.getBand(sourceBandNames[i]);
         }
 
-        return createImage(sourceBands, calculator, clusterFilter, clusters.length);
-    }
-
-    static OpImage createImage(Band[] featureBands, EMCluster[] clusters, IndexFilter clusterFilter) {
-        final ProbabilityCalculator calculator = Clusterer.createProbabilityCalculator(clusters);
-
-        return createImage(featureBands, calculator, clusterFilter, clusters.length);
+        return createImage(sourceBands, calculator, validClusterFilter, clusters.length);
     }
 
     static OpImage createImage(Band[] featureBands, ProbabilityCalculator calculator, IndexFilter clusterFilter,
@@ -89,13 +83,13 @@ public class ClassOpImage extends PointOpImage {
                          Vector<RenderedImage> sourceImageVector,
                          Band[] sourceBands,
                          ProbabilityCalculator calculator,
-                         IndexFilter clusterFilter,
+                         IndexFilter validClusterFilter,
                          int clusterCount) {
         super(sourceImageVector, imageLayout, new RenderingHints(JAI.KEY_TILE_CACHE, null), true);
 
         this.sourceBands = sourceBands;
         this.calculator = calculator;
-        this.clusterFilter = clusterFilter;
+        this.validClusterFilter = validClusterFilter;
         this.clusterCount = clusterCount;
     }
 
@@ -142,7 +136,7 @@ public class ClassOpImage extends PointOpImage {
                 for (int i = 0; i < sources.length; i++) {
                     sourceSamples[i] = sourceBands[i].scale(sourcePixels[i][sourcePixelOffset]);
                 }
-                calculator.calculate(sourceSamples, posteriors, clusterFilter);
+                calculator.calculate(sourceSamples, posteriors, validClusterFilter);
                 targetPixels[targetPixelOffset] = findClassIndex(posteriors);
 
                 sourcePixelOffset += sourcePixelStride;
@@ -157,7 +151,7 @@ public class ClassOpImage extends PointOpImage {
     }
 
     private static byte findClassIndex(double[] posteriors) {
-        // in most cases the class index is found in this loop
+        // for most cases the class index is found in this loop
         for (byte i = 0; i < posteriors.length; ++i) {
             if (posteriors[i] > 0.5) {
                 return i;

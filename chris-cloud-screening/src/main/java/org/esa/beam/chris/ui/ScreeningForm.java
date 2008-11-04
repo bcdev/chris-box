@@ -33,13 +33,13 @@ import java.awt.*;
  * @version $Revision$ $Date$
  * @since BEAM 4.5
  */
-class CloudScreeningForm extends JPanel {
+class ScreeningForm extends JPanel {
 
     private final SourceProductSelector sourceProductSelector;
     private final JCheckBox wvCheckBox;
     private final JCheckBox o2CheckBox;
 
-    CloudScreeningForm(AppContext appContext, final CloudScreeningFormModel formModel) {
+    ScreeningForm(AppContext appContext, final ScreeningFormModel formModel) {
         sourceProductSelector = new SourceProductSelector(appContext);
 
         // configure product selector
@@ -78,7 +78,7 @@ class CloudScreeningForm extends JPanel {
             }
         });
 
-        setLayout(new BorderLayout(3, 3));
+        setLayout(new BorderLayout(4, 4));
         add(sourceProductSelector.createDefaultPanel(), BorderLayout.NORTH);
         add(panel, BorderLayout.CENTER);
     }

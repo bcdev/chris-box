@@ -20,15 +20,15 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.DefaultAppContext;
 
 /**
- * Tests for class {@link CloudScreeningForm}.
+ * Tests for class {@link ScreeningForm}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.5
  */
-public class CloudScreeningFormTest extends TestCase {
+public class ScreeningFormTest extends TestCase {
 
-    private CloudScreeningForm form;
+    private ScreeningForm form;
 
     public void testFeatureCheckBoxStatus() throws ValidationException {
         // for mode 1 all features are available
@@ -83,10 +83,10 @@ public class CloudScreeningFormTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        final CloudScreeningFormModel formModel = new CloudScreeningFormModel();
+        final ScreeningFormModel formModel = new ScreeningFormModel();
         formModel.getParameterValueContainer().setValue("useWv", true);
         formModel.getParameterValueContainer().setValue("useO2", true);
 
-        form = new CloudScreeningForm(new DefaultAppContext("test"), formModel);
+        form = new ScreeningForm(new DefaultAppContext("test"), formModel);
     }
 }

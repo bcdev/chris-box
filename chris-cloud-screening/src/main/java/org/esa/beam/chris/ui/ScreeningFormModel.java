@@ -30,7 +30,7 @@ import java.util.List;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-class CloudScreeningFormModel {
+class ScreeningFormModel {
 
     private static final String BR_VIS_NAME = "brightness_vis";
     private static final String WH_VIS_NAME = "whiteness_vis";
@@ -45,7 +45,7 @@ class CloudScreeningFormModel {
     private final ValueContainer productValueContainer;
     private final ValueContainer parameterValueContainer;
 
-    CloudScreeningFormModel() {
+    ScreeningFormModel() {
         productBlock = new ProductBlock();
         parameterBlock = new ParameterBlock();
 

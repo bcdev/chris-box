@@ -16,26 +16,17 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.glayer.support.ImageLayer;
-import com.bc.ceres.swing.SwingHelper;
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
-import com.jidesoft.grid.ColorCellEditor;
-import com.jidesoft.grid.ColorCellRenderer;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.help.HelpSys;
+import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.AppContext;
+import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.PixelPositionListener;
 import org.esa.beam.framework.ui.UIUtils;
 import org.esa.beam.framework.ui.product.ProductSceneView;
 import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
-import javax.swing.event.InternalFrameAdapter;
-import javax.swing.event.InternalFrameEvent;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,7 +35,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
 import java.text.MessageFormat;
-import java.text.NumberFormat;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -55,323 +45,198 @@ import java.util.concurrent.ExecutionException;
  * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
-class LabelingDialog extends JDialog {
+class LabelingDialog extends ModelessDialog {
 
     private final AppContext appContext;
-    private final LabelingContext labelingContext;
+    private final ScreeningContext screeningContext;
 
-    private final JTable labelingTable;
-    private final ClassSelector classSelector;
+    private final LabelingFormModel formModel;
+    private final LabelingForm form;
 
-    private JInternalFrame rgbFrame;
-    private JInternalFrame classFrame;
+    private final PixelPositionListener pixelPositionListener;
+    private final VetoableChangeListener frameClosedListener;
 
-    private VetoableChangeListener classificationFrameClosedListener;
-    private VetoableChangeListener rgbFrameClosedListener;
+    private final JInternalFrame colorFrame;
+    private final JInternalFrame classFrame;
 
-    LabelingDialog(AppContext appContext, LabelingContext labelingContext) {
+    LabelingDialog(final AppContext appContext, final ScreeningContext screeningContext) {
         super(appContext.getApplicationWindow(),
-              MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}", labelingContext.getRadianceProductName()),
-              ModalityType.MODELESS);
+              MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}", screeningContext.getRadianceProduct().getName()),
+              ID_APPLY_CLOSE_HELP, CloudScreeningAction.HELP_ID);
 
         this.appContext = appContext;
-        this.labelingContext = labelingContext;
+        this.screeningContext = screeningContext;
 
-        labelingTable = createLabelingTable(labelingContext);
-        classSelector = new ClassSelector(labelingContext, labelingTable.getSelectionModel());
+        formModel = new LabelingFormModel(screeningContext);
+        form = new LabelingForm(formModel);
 
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setName("chrisCloudLabelingDialog");
-        getContentPane().add(createControl());
-    }
-
-    @Override
-    public void setVisible(boolean visible) {
-        if (visible) {
-            final VisatApp visatApp = VisatApp.getApp();
-
-            if (rgbFrame == null) {
-                final ProductSceneView view = labelingContext.getRgbView();
-                final String title = MessageFormat.format("{0} - RGB",
-                                                          labelingContext.getRadianceProductName());
-
-                view.setCommandUIFactory(visatApp.getCommandUIFactory());
-                view.setNoDataOverlayEnabled(false);
-                view.setROIOverlayEnabled(false);
-                view.setGraticuleOverlayEnabled(false);
-                view.setPinOverlayEnabled(false);
-                view.setLayerProperties(visatApp.getPreferences());
-                view.addPixelPositionListener(classSelector);
-
-                final Icon icon = UIUtils.loadImageIcon("icons/RsBandAsSwath16.gif");
-
-                rgbFrame = visatApp.createInternalFrame(title, icon, view, "");
-                rgbFrame.addVetoableChangeListener(new VetoableFrameClosedListener());
-                rgbFrame.addInternalFrameListener(new InternalFrameAdapter() {
-                    @Override
-                    public void internalFrameClosed(InternalFrameEvent e) {
-                        rgbFrame.removeInternalFrameListener(this);
-                        view.removePixelPositionListener(classSelector);
-                        dispose();
-                    }
-                });
-            }
-
-            if (classFrame == null) {
-                final ProductSceneView view = labelingContext.getClassView();
-                final String title = MessageFormat.format("{0} - Classification",
-                                                          labelingContext.getRadianceProductName());
-
-                view.setCommandUIFactory(visatApp.getCommandUIFactory());
-                view.setNoDataOverlayEnabled(false);
-                view.setROIOverlayEnabled(false);
-                view.setGraticuleOverlayEnabled(false);
-                view.setPinOverlayEnabled(false);
-                view.setLayerProperties(visatApp.getPreferences());
-                view.addPixelPositionListener(classSelector);
-
-                final Icon icon = UIUtils.loadImageIcon("icons/RsBandAsSwath16.gif");
-
-                classFrame = visatApp.createInternalFrame(title, icon, view, "");
-                classFrame.addVetoableChangeListener(new VetoableFrameClosedListener());
-                classFrame.addInternalFrameListener(new InternalFrameAdapter() {
-                    @Override
-                    public void internalFrameClosed(InternalFrameEvent e) {
-                        classFrame.removeInternalFrameListener(this);
-                        view.removePixelPositionListener(classSelector);
-                        dispose();
-                    }
-                });
-            }
-
-            pack();
-            SwingHelper.centerComponent(this, visatApp.getMainFrame());
-        }
-
-        super.setVisible(visible);
-    }
-
-    @Override
-    public void dispose() {
-        closeFrame(classFrame);
-        classFrame = null;
-
-        closeFrame(rgbFrame);
-        rgbFrame = null;
-
-        super.dispose();
-    }
-
-    private void closeFrame(JInternalFrame internalFrame) {
-        if (internalFrame != null && !internalFrame.isClosed()) {
-            VisatApp.getApp().getDesktopPane().closeFrame(internalFrame);
-        }
-    }
-
-    private JComponent createControl() {
-        final JPanel panel = new JPanel(new BorderLayout(4, 4));
-        panel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-
-        panel.add(createCenterPanel(), BorderLayout.CENTER);
-        panel.add(createButtonPanel(), BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    private JPanel createCenterPanel() {
-        final JCheckBox checkBox = new JCheckBox("Calculate probabilistic cloud mask", false);
-        checkBox.setToolTipText("If checked, a probabilistic cloud mask is calculated");
-        checkBox.addActionListener(new ActionListener() {
+        form.getCheckBox().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (checkBox.isSelected()) {
-                    final String message = "Calculating the probabilistic cloud mask can be extremely time consuming!";
-                    VisatApp.getApp().showInfoDialog("CHRIS/PROBA Cloud Screening", message,
+                if (form.getCheckBox().isSelected()) {
+                    VisatApp.getApp().showInfoDialog("CHRIS/PROBA Cloud Screening",
+                                                     "Calculating the probabilistic cloud mask might be extremely time consuming!",
                                                      "chrisbox.postLabling.showWarning");
                 }
             }
         });
-        labelingTable.getModel().addTableModelListener(new TableModelListener() {
+
+        pixelPositionListener = new PixelPositionListener() {
             @Override
-            public void tableChanged(TableModelEvent e) {
-                if (e.getColumn() == LabelingTableModel.CLOUD_COLUMN) {
-                    if (labelingContext.isAnyCloudFlagSet()) {
-                        checkBox.setEnabled(true);
-                    } else {
-                        checkBox.setEnabled(false);
-                        checkBox.setSelected(false);
+            public void pixelPosChanged(ImageLayer baseImageLayer, int pixelX, int pixelY, int currentLevel,
+                                        boolean pixelPosValid, MouseEvent e) {
+                if (pixelPosValid) {
+                    final int classIndex = screeningContext.getClassIndex(pixelX, pixelY, currentLevel);
+                    form.getTable().getSelectionModel().setSelectionInterval(classIndex, classIndex);
+                }
+            }
+
+            @Override
+            public void pixelPosNotAvailable() {
+            }
+        };
+
+        frameClosedListener = new VetoableChangeListener() {
+            @Override
+            public final void vetoableChange(PropertyChangeEvent evt) throws PropertyVetoException {
+                if (JInternalFrame.IS_CLOSED_PROPERTY.equals(evt.getPropertyName())) {
+                    if ((Boolean) evt.getNewValue()) {
+                        final int answer = VisatApp.getApp().showQuestionDialog(
+                                "All windows associated with the cloud labeling dialog will be closed. Do you really want to close the cloud labeling dialog?",
+                                null);
+                        if (answer == JOptionPane.NO_OPTION) {
+                            throw new PropertyVetoException("Do not close.", evt);
+                        } else {
+                            close();
+                        }
                     }
                 }
             }
-        });
-        // todo - bind checkBox
+        };
 
-        final JScrollPane scrollPane = new JScrollPane(labelingTable);
-        scrollPane.getViewport().setPreferredSize(labelingTable.getPreferredSize());
+        final String radianceProductName = screeningContext.getRadianceProduct().getName();
+        final String rgbFrameTitle = MessageFormat.format("{0} - RGB", radianceProductName);
+        colorFrame = createInternalFrame(screeningContext.getColorView(), rgbFrameTitle);
 
-        final JPanel panel = new JPanel(new BorderLayout(2, 2));
-        panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(checkBox, BorderLayout.SOUTH);
+        final String classFrameTitle = MessageFormat.format("{0} - Classes", radianceProductName);
+        classFrame = createInternalFrame(screeningContext.getClassView(), classFrameTitle);
 
-        return panel;
+        final AbstractButton button = getButton(ID_APPLY);
+        button.setText("Run");
+        button.setMnemonic('R');
+        button.setToolTipText("Creates the cloud mask for the associated product.");
     }
 
-    private JPanel createButtonPanel() {
-        final JButton applyButton = new JButton("Create Cloud Mask");
-        applyButton.setMnemonic('M');
-        applyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final CloudMaskWorker worker = new CloudMaskWorker(appContext,
-                                                                   labelingContext,
-                                                                   "Creating cloud mask...");
-                worker.execute();
-            }
-        });
-
-        final JButton closeButton = new JButton("Close");
-        closeButton.setMnemonic('C');
-        closeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-
-        final JButton helpButton = new JButton("Help");
-        helpButton.setMnemonic('H');
-        helpButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                HelpSys.showTheme("chrisCloudScreeningTools");
-            }
-        });
-
-        final JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panel.add(applyButton);
-        panel.add(closeButton);
-        panel.add(helpButton);
-
-        return panel;
+    @Override
+    protected void onApply() {
+        final Worker worker = new Worker(appContext, screeningContext, formModel);
+        worker.execute();
     }
 
-    private static JTable createLabelingTable(LabelingContext labelingContext) {
-        final TableModel tableModel = new LabelingTableModel(labelingContext);
-        final JTable labelingTable = new JTable(tableModel);
+    @Override
+    public void hide() {
+        form.prepareHide();
 
-        labelingTable.setDefaultRenderer(Color.class, createColorRenderer());
-        labelingTable.setDefaultEditor(Color.class, createColorEditor());
-        labelingTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        classFrame.hide();
+        colorFrame.hide();
 
-        labelingTable.getColumnModel().getColumn(LabelingTableModel.BRIGHTNESS_COLUMN).setCellRenderer(
-                createBrightnessRenderer());
-        labelingTable.getColumnModel().getColumn(LabelingTableModel.OCCURRENCE_COLUMN).setCellRenderer(
-                createOccurrenceRenderer());
-
-        return labelingTable;
+        super.hide();
     }
 
-    private static TableCellEditor createColorEditor() {
-        return new ColorCellEditor();
+    @Override
+    public int show() {
+        form.prepareShow();
+        setContent(form);
+
+        colorFrame.show();
+        classFrame.show();
+
+        return super.show();
     }
 
-    private static TableCellRenderer createColorRenderer() {
-        final ColorCellRenderer renderer = new ColorCellRenderer();
-        renderer.setColorValueVisible(false);
-
-        return renderer;
+    @Override
+    protected void onClose() {
+        close();
     }
 
-    private static TableCellRenderer createBrightnessRenderer() {
-        final NumberFormat numberFormat = NumberFormat.getInstance();
+    @Override
+    public void close() {
+        disposeInternalFrame(classFrame);
+        disposeInternalFrame(colorFrame);
 
-        numberFormat.setMinimumIntegerDigits(1);
-        numberFormat.setMaximumIntegerDigits(1);
-        numberFormat.setMinimumFractionDigits(3);
-        numberFormat.setMaximumFractionDigits(3);
-
-        return new FormattedNumberRenderer(numberFormat);
+        getJDialog().dispose();
     }
 
-    private static TableCellRenderer createOccurrenceRenderer() {
-        final NumberFormat numberFormat = NumberFormat.getPercentInstance();
+    private JInternalFrame createInternalFrame(ProductSceneView view, String title) {
+        final VisatApp visatApp = VisatApp.getApp();
 
-        numberFormat.setMinimumFractionDigits(1);
-        numberFormat.setMaximumFractionDigits(3);
+        view.setCommandUIFactory(visatApp.getCommandUIFactory());
+        view.setNoDataOverlayEnabled(false);
+        view.setROIOverlayEnabled(false);
+        view.setGraticuleOverlayEnabled(false);
+        view.setPinOverlayEnabled(false);
+        view.setLayerProperties(visatApp.getPreferences());
+        view.addPixelPositionListener(pixelPositionListener);
 
-        return new FormattedNumberRenderer(numberFormat);
+        final Icon icon = UIUtils.loadImageIcon("icons/RsBandAsSwath16.gif");
+
+        final JInternalFrame frame = visatApp.createInternalFrame(title, icon, view, "");
+        frame.addVetoableChangeListener(frameClosedListener);
+
+        return frame;
     }
 
-    private static final class ClassSelector implements PixelPositionListener {
-        private final LabelingContext labelingContext;
-        private final ListSelectionModel selectionModel;
+    private void disposeInternalFrame(JInternalFrame frame) {
+        if (frame != null && !frame.isClosed()) {
+            frame.removeVetoableChangeListener(frameClosedListener);
 
-        private ClassSelector(LabelingContext labelingContext, ListSelectionModel selectionModel) {
-            this.labelingContext = labelingContext;
-            this.selectionModel = selectionModel;
-        }
-
-        @Override
-        public void pixelPosChanged(ImageLayer baseImageLayer, int pixelX, int pixelY, int currentLevel,
-                                    boolean pixelPosValid, MouseEvent e) {
-            if (pixelPosValid) {
-                final int classIndex = labelingContext.getClassIndex(pixelX, pixelY, currentLevel);
-                selectionModel.setSelectionInterval(classIndex, classIndex);
+            final Container contentPane = frame.getContentPane();
+            if (contentPane instanceof ProductSceneView) {
+                final ProductSceneView view = (ProductSceneView) contentPane;
+                view.removePixelPositionListener(pixelPositionListener);
+                VisatApp.getApp().getDesktopPane().closeFrame(frame);
             }
         }
-
-        @Override
-        public void pixelPosNotAvailable() {
-        }
     }
 
-    private static class CloudMaskWorker extends ProgressMonitorSwingWorker<Band, Object> {
+    private static class Worker extends ProgressMonitorSwingWorker<Band, Object> {
         private final AppContext appContext;
-        private final LabelingContext labelingContext;
+        private final ScreeningContext screeningContext;
+        private final LabelingFormModel formModel;
 
-        public CloudMaskWorker(AppContext appContext, LabelingContext labelingContext, String title) {
-            super(appContext.getApplicationWindow(), title);
+        Worker(AppContext appContext, ScreeningContext screeningContext, LabelingFormModel formModel) {
+            super(appContext.getApplicationWindow(), "Creating cloud mask...");
             this.appContext = appContext;
-            this.labelingContext = labelingContext;
+            this.screeningContext = screeningContext;
+            this.formModel = formModel;
         }
 
         @Override
         protected Band doInBackground(ProgressMonitor pm) throws Exception {
-            return labelingContext.performCloudMaskCreation(pm);
+            return screeningContext.performCloudMaskCreation(formModel.getCloudyFlags(),
+                                                             formModel.getIgnoreFlags(),
+                                                             formModel.isProbabilistic(), pm);
         }
 
         @Override
         protected void done() {
             try {
-                final Band cloudProductBand = get();
-                final VisatApp visatApp = VisatApp.getApp();
-                final JInternalFrame frame = visatApp.findInternalFrame(cloudProductBand);
-
-                if (frame != null) {
-                    ((ProductSceneView) frame.getContentPane()).getBaseImageLayer().regenerate();
-                } else {
-                    visatApp.openProductSceneView(cloudProductBand);
+                final Product radianceProduct = screeningContext.getRadianceProduct();
+                final Band newBand = get();
+                if (radianceProduct.containsBand(newBand.getName())) {
+                    final Band oldBand = radianceProduct.getBand(newBand.getName());
+                    final JInternalFrame oldFrame = VisatApp.getApp().findInternalFrame(oldBand);
+                    if (oldFrame != null) {
+                        VisatApp.getApp().getDesktopPane().closeFrame(oldFrame);
+                    }
+                    radianceProduct.removeBand(oldBand);
                 }
+                radianceProduct.addBand(newBand);
+                VisatApp.getApp().openProductSceneView(newBand);
             } catch (InterruptedException e) {
                 appContext.handleError(e);
             } catch (ExecutionException e) {
                 appContext.handleError(e.getCause());
-            }
-        }
-    }
-
-    private static final class VetoableFrameClosedListener implements VetoableChangeListener {
-        private static final String MESSAGE = "Do you really want to exit the cloud labeling dialog?";
-
-        @Override
-        public final void vetoableChange(PropertyChangeEvent evt) throws PropertyVetoException {
-            if (JInternalFrame.IS_CLOSED_PROPERTY.equals(evt.getPropertyName())) {
-                if ((Boolean) evt.getNewValue()) {
-                    final int answer = VisatApp.getApp().showQuestionDialog(MESSAGE, null);
-                    if (answer == JOptionPane.NO_OPTION) {
-                        throw new PropertyVetoException("Do not close.", evt);
-                    }
-                }
             }
         }
     }

@@ -29,17 +29,24 @@ import java.util.concurrent.ExecutionException;
  * @version $Revision$ $Date$
  * @since BEAM 4.5
  */
-class CloudScreeningDialog extends ModelessDialog {
-    private final AppContext appContext;
-    private final CloudScreeningFormModel formModel;
-    private final CloudScreeningForm form;
+class ScreeningDialog extends ModelessDialog {
 
-    CloudScreeningDialog(AppContext appContext, String helpID) {
-        super(appContext.getApplicationWindow(), "CHRIS/PROBA Cloud Screening", ID_APPLY_CLOSE_HELP, helpID);
+    private final AppContext appContext;
+    private final ScreeningFormModel formModel;
+    private final ScreeningForm form;
+
+    ScreeningDialog(AppContext appContext) {
+        super(appContext.getApplicationWindow(), "CHRIS/PROBA Cloud Screening", ID_APPLY_CLOSE_HELP,
+              CloudScreeningAction.HELP_ID);
 
         this.appContext = appContext;
-        formModel = new CloudScreeningFormModel();
-        form = new CloudScreeningForm(appContext, formModel);
+        formModel = new ScreeningFormModel();
+        form = new ScreeningForm(appContext, formModel);
+
+        final AbstractButton button = getButton(ID_APPLY);
+        button.setText("Run");
+        button.setMnemonic('R');
+        button.setToolTipText("Performs an EM cluster analysis on the selected product.");
     }
 
     @Override
@@ -50,7 +57,7 @@ class CloudScreeningDialog extends ModelessDialog {
             appContext.getProductManager().addProduct(sourceProduct);
         }
 
-        final ClusterAnalysisWorker worker = new ClusterAnalysisWorker(appContext, formModel);
+        final Worker worker = new Worker(appContext, formModel);
         worker.execute();
     }
 
@@ -67,20 +74,19 @@ class CloudScreeningDialog extends ModelessDialog {
         return super.show();
     }
 
-    CloudScreeningForm getForm() {
+    ScreeningForm getForm() {
         return form;
     }
 
-    CloudScreeningFormModel getFormModel() {
+    ScreeningFormModel getFormModel() {
         return formModel;
     }
 
-
-    private static class ClusterAnalysisWorker extends ProgressMonitorSwingWorker<CloudScreeningContext, Object> {
+    private static class Worker extends ProgressMonitorSwingWorker<ScreeningContext, Object> {
         private final AppContext appContext;
-        private final CloudScreeningFormModel formModel;
+        private final ScreeningFormModel formModel;
 
-        private ClusterAnalysisWorker(AppContext appContext, CloudScreeningFormModel formModel) {
+        private Worker(AppContext appContext, ScreeningFormModel formModel) {
             super(appContext.getApplicationWindow(), "Performing Cluster Analysis...");
 
             this.appContext = appContext;
@@ -88,16 +94,16 @@ class CloudScreeningDialog extends ModelessDialog {
         }
 
         @Override
-        protected CloudScreeningContext doInBackground(com.bc.ceres.core.ProgressMonitor pm) throws Exception {
-            return new CloudScreeningContext(appContext, formModel, pm);
+        protected ScreeningContext doInBackground(com.bc.ceres.core.ProgressMonitor pm) throws Exception {
+            return new ScreeningContext(formModel, appContext.getPreferences(), pm);
         }
 
         @Override
         protected void done() {
             try {
-                final CloudScreeningContext context = get();
-                final JDialog dialog = new LabelingDialog(appContext, context.createLabelingContext());
-                dialog.setVisible(true);
+                final ScreeningContext context = get();
+                final ModelessDialog dialog = new LabelingDialog(appContext, context);
+                dialog.show();
             } catch (InterruptedException e) {
                 appContext.handleError(e);
             } catch (ExecutionException e) {

@@ -19,14 +19,14 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.DefaultAppContext;
 
 /**
- * Tests for class {@link CloudScreeningDialog}.
+ * Tests for class {@link ScreeningDialog}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.5
  */
-public class CloudScreeningDialogTest extends TestCase {
-    private CloudScreeningDialog dialog;
+public class ScreeningDialogTest extends TestCase {
+    private ScreeningDialog dialog;
 
     public void testSourceProductIsReleasedWhenDialogIsHidden() {
         final Product product = new Product("test", "test", 1, 1);
@@ -40,7 +40,7 @@ public class CloudScreeningDialogTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        dialog = new CloudScreeningDialog(new DefaultAppContext("test"), "");
+        dialog = new ScreeningDialog(new DefaultAppContext("test"));
         dialog.show();
     }
 

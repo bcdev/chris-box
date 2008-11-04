@@ -30,9 +30,9 @@ import java.awt.image.RenderedImage;
  * @version $Revision$ $Date$
  * @since BEAM 4.5
  */
-class RasterDataUtils {
+public class RasterDataUtils {
 
-    static ProductData createRasterData(RenderedImage sourceImage, ProgressMonitor pm) {
+    public static ProductData createRasterData(RenderedImage sourceImage, ProgressMonitor pm) {
         final int type = ImageManager.getProductDataType(sourceImage.getSampleModel().getDataType());
         final int w = sourceImage.getWidth();
         final int h = sourceImage.getHeight();
@@ -43,13 +43,13 @@ class RasterDataUtils {
         return targetRaster;
     }
 
-    static void setRasterData(ProductData targetRaster, RenderedImage sourceImage, ProgressMonitor pm) {
+    public static void setRasterData(ProductData targetRaster, RenderedImage sourceImage, ProgressMonitor pm) {
         final Rectangle sourceRectangle = new Rectangle(0, 0, sourceImage.getWidth(), sourceImage.getHeight());
         setRasterData(targetRaster, sourceImage, sourceRectangle, pm);
     }
 
-    static void setRasterData(ProductData targetRaster, RenderedImage sourceImage, Rectangle sourceRectangle,
-                              ProgressMonitor pm) {
+    public static void setRasterData(ProductData targetRaster, RenderedImage sourceImage, Rectangle sourceRectangle,
+                                     ProgressMonitor pm) {
         final int minTileX = sourceImage.getMinTileX();
         final int minTileY = sourceImage.getMinTileY();
 

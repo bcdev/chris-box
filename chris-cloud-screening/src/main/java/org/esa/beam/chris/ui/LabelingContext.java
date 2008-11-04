@@ -16,6 +16,7 @@ package org.esa.beam.chris.ui;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.cluster.EMCluster;
+import org.esa.beam.cluster.ProbabilityCalculator;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.ui.product.ProductSceneView;
 
@@ -30,7 +31,7 @@ import java.awt.image.RenderedImage;
  */
 interface LabelingContext {
 
-    String getRadianceProductName();
+    int getClusterCount();
 
     String getLabel(int index);
 
@@ -40,27 +41,9 @@ interface LabelingContext {
 
     void setColor(int index, Color color);
 
-    boolean isCloud(int index);
+    void regenerateClassView(boolean[] ignoreFlags);
 
-    void setCloud(int index, boolean b);
+    void computeBrightnessValues(double[] brightnessValues, boolean[] ignoreFlags);
 
-    boolean isIgnored(int index);
-
-    void setIgnored(int index, boolean b);
-
-    EMCluster[] getClusters();
-
-    RenderedImage getClassificationImage();
-
-    int getClassIndex(int x, int y, int currentLevel);
-
-    void recomputeClassificationImage();
-
-    ProductSceneView getRgbView();
-
-    ProductSceneView getClassView();
-
-    boolean isAnyCloudFlagSet();
-
-    Band performCloudMaskCreation(ProgressMonitor pm);
+    void computeOccurrenceValues(double[] occurrenceValues);
 }

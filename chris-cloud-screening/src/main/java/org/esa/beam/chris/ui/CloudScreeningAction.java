@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since BEAM 4.2
  */
 public class CloudScreeningAction extends AbstractVisatAction {
+    // todo - help id
+    public static final String HELP_ID = "";
 
     private final AtomicReference<ModelessDialog> dialog;
 
@@ -29,7 +31,7 @@ public class CloudScreeningAction extends AbstractVisatAction {
     @Override
     public void actionPerformed(CommandEvent event) {
         // todo - helpId
-        dialog.compareAndSet(null, new CloudScreeningDialog(getAppContext(), ""));
+        dialog.compareAndSet(null, new ScreeningDialog(getAppContext()));
         dialog.get().show();
     }
 
