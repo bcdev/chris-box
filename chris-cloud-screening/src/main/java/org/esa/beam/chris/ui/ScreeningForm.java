@@ -43,6 +43,9 @@ class ScreeningForm extends JPanel {
         sourceProductSelector = new SourceProductSelector(appContext);
 
         // configure product selector
+        if (appContext.getSelectedProduct() != null) {
+            sourceProductSelector.setSelectedProduct(appContext.getSelectedProduct());
+        }
         sourceProductSelector.setProductFilter(new CloudScreeningProductFilter());
         final JComboBox comboBox = sourceProductSelector.getProductNameComboBox();
         comboBox.setPrototypeDisplayValue("[1] CHRIS_HH_HHHHHH_HHHH_HH_NR");
