@@ -3,7 +3,13 @@
     <symbolicName>chris-toa-reflectance-computation</symbolicName>
     <version>1.0-SNAPSHOT</version>
     <name>CHRIS/PROBA TOA Reflectance Computation Tool</name>
-    <description>CHRIS/PROBA TOA Reflectance Computation Tool</description>
+
+    <description>
+        <![CDATA[
+        The TOA Reflectance Computation Tool computes TOA apparent reflectance from the
+        top of atmosphere (TOA) radiance (radiometrically calibrated data).<br/>
+        ]]>
+    </description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>

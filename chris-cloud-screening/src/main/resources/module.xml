@@ -5,8 +5,15 @@
     <name>CHRIS/PROBA Cloud Screening Tools</name>
 
     <description>
-        The Cloud Screening Tool is used to mask
-        cloud and cloudy pixels in CHRIS images.
+        <![CDATA[
+        This module provides two tools for CHRIS/PROBA products:
+        <ol>
+          <li>The Cloud Screening Tool is used to mask
+          cloud and cloudy pixels in CHRIS images.</li>
+          <li>The Extract Features Tool which is used to extract surface and
+          atmospheric features from CHRIS images.</li>
+        </ol>
+        ]]>
     </description>
 
     <vendor>Brockmann Consult GmbH</vendor>
