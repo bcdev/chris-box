@@ -64,12 +64,65 @@
 
 <p>
     The Cloud Screening tool can be invoked from VISAT <b>Tools</b> menu by selecting
-    the <b>Compute Cloud Mask</b> command in the <b>CHRIS/PROBA Tools</b> submenu. It performs the cloud screening on
+    the <b>Perform Cloud Screening...</b> command in the <b>CHRIS/PROBA Tools</b> submenu. It performs the cloud screening on
     the currently selected product, if applicable.
 </p>
 
 <p>
-    Selecting the <b>Compute Cloud Mask</b> command brings up a progress dialog :
+    Selecting the <b>Perform Cloud Screening...</b> command brings up a the following dialog :
+</p>
+
+<p align="center">
+    <img src="images/CloudScreeningInitialDialog.png" alt="Cluster Analysis Progress Dialog"/>
+</p>
+<h6>Source Product</h6>
+
+<p class="i1">
+    <b>Name:</b>
+    Here the user specifies the source product. The combo box presents
+    a list of all products open in VISAT. The user may select one of these
+    or, by clicking on the button next to the combo box, choose a product
+    from the file system.
+</p>
+
+<h6>Processing Parameter</h6>
+<p class="i1">
+    <b>Number of clusters:</b>
+    Use this field to specify the number of clusters. The default is 14 clusters.
+</p>
+
+<p class="i1">
+    <b>Number of iterations:</b>
+    Use this field to specify the maximum number of iterations to be carried out. The default is 30 iterations.
+    The cluster analysis stops when the maximum number of iterations is exceeded.
+</p>
+
+<p class="i1">
+    <b>Random seed:</b>
+    Use this field to specify the random seed used to initialize the clustering algorithm. The default seed is 31415.
+</p>
+
+<p class="i1">
+    <b>Use NIR brightness:</b>
+    Specifies whether or not to use the NIR brigthnness for clustering.
+</p>
+<p class="i1">
+    <b>Use NIR whiteness:</b>
+    Specifies whether or not to use the NIR whiteness for clustering.
+</p>
+<p class="i1">
+    <b>Use atmospheric water vapour feature:</b>
+    Specifies whether or not to use the atmospheric water vapour feature for clustering.
+</p>
+<p class="i1">
+    <b>Use atmospheric oxygen feature:</b>
+    Specifies whether or not to use atmospheric oxygen feature for clustering.
+</p>
+
+<p>
+    While the progress dialog is shown the first three steps (Image Pre-Processing, Feature extraction, Image
+    clustering) of the algorithm are performed. This might take some time. Depending on the size of the scene and on
+    the performance of your system.
 </p>
 
 <p align="center">
@@ -77,7 +130,7 @@
 </p>
 
 <p>
-    While the progress dialog is shown the first three steps (Image Pre-Processing, Feature extraction, Image
+    After clicking the <b>Run</b> button the progress dialog is shown and the first three steps (Image Pre-Processing, Feature extraction, Image
     clustering) of the algorithm are performed. This might take some time. Depending on the size of the scene and on
     the performance of your system.
 </p>
@@ -94,7 +147,7 @@
     <a href="visat/NavigationWindow.html#synchronise">Navigation Window</a> for that purpose.
 
 <p align="center">
-    <img src="images/CloudLabelingWindows.jpg" alt="Manual Cloud Labeling"/>
+    <img src="images/CloudLabelingWindows.png" alt="Manual Cloud Labeling"/>
 </p>
 
 <p>
@@ -102,22 +155,22 @@
     Mark the classes as cloud which you can identify to be a cloud class.<br/>
     If one class contains cloud and surface samples you can reject them. Thereby the concerned samples will be
     re-distributed to the classes with the second highest probability.<br/>
-    You can also enable a spectral unmixing on the cloud pixel spectra. This will give a better separation between
+    You can also enable the computation of the probabilistic cloud mask. This will give a better separation between
     real cloud pixels and those which were wrongly classified as cloud by the clustering.<br/>
-    After you're satisfied with your labeling settings you can click on the <b>Create Cloud Mask</b> button.
+    After you're satisfied with your labeling settings you can click on the <b>Run</b> button.
     The resulting mask is added to the source product as band named <b>cloud_product</b>.
 </p>
 
-<p class="inote"><b class="note">Note:</b> The spectral unmixing gives you better results in uncertain cases, but note
-    that it is very time consuming.
+<p class="inote"><b class="note">Note:</b> The probabilistic cloud mask gives you better results in uncertain cases, but note
+    that it can be very time consuming.
 </p>
 
 <h4>The Cloud Mask Result</h4>
 <ul>
-    <li><b>without spectral unmixing</b> results in a binary mask, only distinguishing between one and zero.
+    <li><b>without probabilistic cloud mask</b> results in a binary mask, only distinguishing between one and zero.
         Where one means cloud and zero means cloud free.<br/>
     </li>
-    <li><b>with spectral unmixing</b> results in a gradient mask, whose values vary from zero and one. The higher the
+    <li><b>with probabilistic cloud mask</b> results in a gradient mask, whose values vary from zero and one. The higher the
         value the higher is the probability that the sample is a cloud.<br/>
     </li>
 </ul>
@@ -131,8 +184,8 @@
                      alt="Result of cloud labeling using spectral unmixing"/></td>
         </tr>
         <tr align="center">
-            <td>Result without spectral unmixing</td>
-            <td>Result with spectral unmixing</td>
+            <td>Result without probabilistic cloud mask</td>
+            <td>Result with probabilistic cloud mask</td>
         </tr>
     </table>
 </div>
