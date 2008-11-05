@@ -22,6 +22,14 @@
         </repository>
     </repositories>
 
+    <distributionManagement>
+        <repository>
+            <id>bc-public</id>
+            <name>Public Maven Repository at Brockmann-Consult</name>
+            <url></url>
+        </repository>
+    </distributionManagement>    
+
     <modules>
         <module>chris-bootstrap</module>
         <module>chris-util</module>		
@@ -261,6 +269,18 @@
                     <finalName>chris-box</finalName>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>            
         </plugins>
     </build>
 
