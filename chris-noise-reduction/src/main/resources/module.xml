@@ -3,7 +3,11 @@
     <symbolicName>chris-noise-reduction</symbolicName>
     <version>1.1-SNAPSHOT</version>
     <name>CHRIS/PROBA Noise Reduction Tool</name>
-    <description>CHRIS/PROBA Noise Reduction Tool</description>
+
+    <description>
+        The Noise Reduction Tool is used to remove the vertical striping in CHRIS images
+        caused by the slit effect and a superposition of high frequency noise.
+    </description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
