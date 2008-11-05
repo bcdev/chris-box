@@ -3,7 +3,11 @@
     <symbolicName>chris-cloud-screening</symbolicName>
     <version>1.0-SNAPSHOT</version>
     <name>CHRIS/PROBA Cloud Screening Tools</name>
-    <description>CHRIS/PROBA Cloud Screening Tools</description>
+
+    <description>
+        The Cloud Screening Tool is used to mask
+        cloud and cloudy pixels in CHRIS images.
+    </description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>
