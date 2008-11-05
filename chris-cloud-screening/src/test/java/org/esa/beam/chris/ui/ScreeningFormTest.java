@@ -17,6 +17,7 @@ package org.esa.beam.chris.ui;
 import com.bc.ceres.binding.ValidationException;
 import junit.framework.TestCase;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductFilter;
 import org.esa.beam.framework.gpf.ui.DefaultAppContext;
 
 /**
@@ -32,49 +33,49 @@ public class ScreeningFormTest extends TestCase {
 
     public void testFeatureCheckBoxStatus() throws ValidationException {
         // for mode 1 all features are available
-        form.setSourceProduct(new Product("a", "CHRIS_M1", 1, 1));
+        form.setSourceProduct(new Product("a", "CHRIS_M1_NR", 1, 1));
         assertTrue(form.isWvCheckBoxEnabled());
         assertTrue(form.isO2CheckBoxEnabled());
         assertTrue(form.isWvCheckBoxSelected());
         assertTrue(form.isO2CheckBoxSelected());
 
         // for mode 5 all features are available
-        form.setSourceProduct(new Product("e", "CHRIS_M5", 1, 1));
+        form.setSourceProduct(new Product("e", "CHRIS_M5_NR", 1, 1));
         assertTrue(form.isWvCheckBoxEnabled());
         assertTrue(form.isO2CheckBoxEnabled());
         assertTrue(form.isWvCheckBoxSelected());
         assertTrue(form.isO2CheckBoxSelected());
 
         // for mode 2 atomospheric features are not available
-        form.setSourceProduct(new Product("b", "CHRIS_M2", 1, 1));
+        form.setSourceProduct(new Product("b", "CHRIS_M2_NR", 1, 1));
         assertFalse(form.isWvCheckBoxEnabled());
         assertFalse(form.isO2CheckBoxEnabled());
         assertFalse(form.isWvCheckBoxSelected());
         assertFalse(form.isO2CheckBoxSelected());
 
         // for mode 3 atomospheric features are not available
-        form.setSourceProduct(new Product("c", "CHRIS_M3", 1, 1));
+        form.setSourceProduct(new Product("c", "CHRIS_M3_NR", 1, 1));
         assertFalse(form.isWvCheckBoxEnabled());
         assertFalse(form.isO2CheckBoxEnabled());
         assertFalse(form.isWvCheckBoxSelected());
         assertFalse(form.isO2CheckBoxSelected());
 
         // for mode 4 atomospheric features are not available
-        form.setSourceProduct(new Product("d", "CHRIS_M4", 1, 1));
+        form.setSourceProduct(new Product("d", "CHRIS_M4_NR", 1, 1));
         assertFalse(form.isWvCheckBoxEnabled());
         assertFalse(form.isO2CheckBoxEnabled());
         assertFalse(form.isWvCheckBoxSelected());
         assertFalse(form.isO2CheckBoxSelected());
 
         // check again for mode 1 - checkboxes enabled, but not selected
-        form.setSourceProduct(new Product("a", "CHRIS_M1", 1, 1));
+        form.setSourceProduct(new Product("a", "CHRIS_M1_NR", 1, 1));
         assertTrue(form.isWvCheckBoxEnabled());
         assertTrue(form.isO2CheckBoxEnabled());
         assertFalse(form.isWvCheckBoxSelected());
         assertFalse(form.isO2CheckBoxSelected());
 
         // check again for mode 5 - checkboxes enabled, but not selected
-        form.setSourceProduct(new Product("e", "CHRIS_M5", 1, 1));
+        form.setSourceProduct(new Product("e", "CHRIS_M5_NR", 1, 1));
         assertTrue(form.isWvCheckBoxEnabled());
         assertTrue(form.isO2CheckBoxEnabled());
         assertFalse(form.isWvCheckBoxSelected());
@@ -86,7 +87,13 @@ public class ScreeningFormTest extends TestCase {
         final ScreeningFormModel formModel = new ScreeningFormModel();
         formModel.getParameterValueContainer().setValue("useWv", true);
         formModel.getParameterValueContainer().setValue("useO2", true);
-
         form = new ScreeningForm(new DefaultAppContext("test"), formModel);
+
+        form.getSourceProductSelector().setProductFilter(new ProductFilter() {
+            @Override
+            public boolean accept(Product product) {
+                return true;
+            }
+        });
     }
 }

@@ -15,17 +15,20 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.chris.operators.ComputeSurfaceReflectancesOp;
-import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
+import org.esa.beam.framework.gpf.ui.TargetProductSelector;
 import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModelessDialog;
+import org.esa.beam.framework.ui.BasicApp;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 
 /**
  * Dialog for invoking the CHRIS/PROBA atmospheric correction.

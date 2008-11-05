@@ -296,7 +296,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
-        // set preferred tile size - ESSENTIAL
+        // ESSENTIAL - ALGORITHM WILL NOT WORK WITH A DIFFERENT TILE SIZE!
         targetProduct.setPreferredTileSize(w, h);
 
         return targetProduct;
@@ -1145,7 +1145,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                         pm.worked(1);
                     }
-
                 }
             } finally {
                 pm.done();

@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
 
     <packaging>jar</packaging>

@@ -75,7 +75,7 @@ class ScreeningForm extends JPanel {
             }
 
             private boolean checkFeatureAvailability(Product product) {
-                return product != null && product.getProductType().matches("CHRIS_M[15].*");
+                return product != null && product.getProductType().matches("CHRIS_M[15].*_NR");
             }
         });
 
@@ -93,6 +93,10 @@ class ScreeningForm extends JPanel {
         if (sourceProductSelector.getProductCount() > 0) {
             sourceProductSelector.setSelectedIndex(0);
         }
+    }
+
+    SourceProductSelector getSourceProductSelector() {
+        return sourceProductSelector;
     }
 
     Product getSourceProduct() {
