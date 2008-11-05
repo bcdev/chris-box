@@ -18,93 +18,137 @@
 
 <h3>CHRIS/PROBA Noise Reduction</h3>
 
+<p>
+    The Noise Reduction Tool is used to correct and remove the coherent noises, known as <b>drop-outs</b> and <b>vertical striping</b>,
+    usually found in hyperspectral images acquired by push-broom sensors such as CHRIS.
+</p>
+
+<h5>Introduction</h5>
+
+<p>
+    Hyperspectral images acquired by remote sensing instruments are generally affected by two kinds of noise.
+    The first one can be defined as standard random noise, which varies with time and determines the minimum image signal-to-noise ratio
+    (SNR). In addition, hyperspectral images can present non-periodic partially deterministic disturbance patterns,
+    which come from the image formation process and are characterized by a high degree of spatial and spectral coherence.
+    The objective of the Noise Reduction Tool is to correct or reduce these noise signals before any further processing.
+</p>
+
+<ul>
+    <li> <b>Drop-outs:</b> One of the errors affecting CHRIS images is the fact that transmission of CHRIS channel 2
+    (odd and even pixels from each CCD row are read in parallel) randomly fails producing anomalous values at the odd pixels
+    in some image rows called drop-outs. Drop-outs hamper the operational use of CHRIS images since latter processing stages
+    are drastically affected by these anomalous pixels.
+    These errors must be identified and corrected by making use of both spatial and spectral information of the anomalous pixel and its neighbors.
+    </li>
+    <li> <b>Vertical striping:</b> Another well-known problem of CHRIS images is a spatial coherent noise usually found in
+    images acquired by push-broom sensors. This multiplicative noise in image columns comes from irregularities of the
+    entrance slit of the spectrometer and CCD elements in the across-track direction (horizontal lines).
+    Although the whole system was fully characterized after assembly, changes in temperature (due to the seasonal variation of
+    the in-orbit CHRIS instrument temperature) produce a dilation of the slit that results in a complex vertical pattern dependent
+    on the sensor's temperature, and thus it must be modeled and corrected.
+    </li>
+</ul>
+
+
 <h4>Noise Reduction Algorithm</h4>
 
-
-<h5>Motivation</h5>
-
 <p>
-    The Noise Reduction Tool is used to remove the vertical striping in CHRIS images caused by the slit effect and a
-    superposition of high frequency noise.<br/>
-    A well-known problem of CHRIS images is a spatial coherent noise known as vertical stripping (usually found in
-    images acquired by push-broom sensors). This multiplicative noise in image columns comes from irregularities of the
-    entrance slit and CCD elements in the across-track direction.
+    The algorithm implemented by the Noise Reduction Tool is described in detail by
+    <a href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-47-28-F46">G&oacute;mez-Chova et al. (2008)</a>.
+    In brief, the following steps are carried out:
 </p>
 
-<h5>Description</h5>
+
+<h5>Drop-out Correction</h5>
 
 <p>
-    In addition to typical random noise, CHRIS hyperspectral images are affected by non-periodic partially deterministic
-    disturbance patterns coming from the image formation process. The objective of this task is to correct or reduce
-    these noise signals before any further processing.
-    One of the errors affecting CHRIS images is the fact that transmission of channel 2 randomly produces wrong odd
-    pixels in image rows (drop-outs). These errors must be identified (masked and unmasked drop-outs) and corrected by
-    making use of both spatial and spectral information of the wrong pixel and its neighbours.
-    Another well-known problem of CHRIS images is a spatial coherent noise known as vertical stripping (usually found in
-    images acquired by push-broom sensors). This multiplicative noise in image columns comes from irregularities of the
-    entrance slit and CCD elements in the across-track direction. Although the whole system was fully characterized
-    after assembly, to obtain the gain correction factors that would produce an even image, the vertical pattern due to
-    the slit is heavily dependant on the sensor temperature and must be modelled and corrected.
+    In CHRIS images, drop-outs can be seen as missing pixels with anomalous values (usually zero or negative values).
+    These invalid values are detected and replaced by by a weighted average of the values of the neighboring pixels.
+    In order to avoid the poor performance of spatial filters (local average) in border or inhomogeneous areas,
+    the contribution of each pixel of a given neighborhood of size 3x3, is weighted by its similarity to the corrected pixel.
+    In particular, this similarity weight is the inverse of the Euclidean distance between the spectral signature of the pixels,
+    which is calculated locally using the spectral bands closer to the band presenting the drop-out.
+    It is worth noting that the values of bands with errors are not considered during this process.
 </p>
-
-<h5>Solution</h5>
 
 <p>
-    In CHRIS images, drop-outs can be seen as missing pixels with zero or negative values. The processing must replace
-    any invalid point using the average of the values of the valid neighbours. However, in order to avoid the poor
-    performance of spatial filters in border or inhomogeneous areas, the contribution of each neighbouring pixel is
-    weighted by its spectral distance to the corrected pixel. During this process, the values of bands with errors
-    (indicated by the CHRIS HDF image quality mask) are not included in the computation of the spectral distance
-    (Euclidean distance).
+    The result of this process is similar to a spatial interpolation but taking into account the spectral similarity with neighbors.
+    Although it is a cosmetic correction, it is needed since later processing stages are drastically affected by these anomalous pixel values.
 </p>
+
+
+<h5>Vertical Striping Correction</h5>
+
+
+<p>
+    The objective of vertical striping correction methods is to estimate the correction factors of each spectral band to correct
+    all the lines of this band. The main assumption consists in considering that both slit and CCD contributions change from one
+    pixel to another (high spatial frequency) in the across-track direction but are constant in the along-track direction,
+    i.e. during the image formation; while surface contribution presents smoother profiles (lower spatial frequencies) in the across-track dimension.
+    Several algorithms already exist to reduce vertical striping, but most of them assume that the imaged surface does
+    not contain structures with spatial frequencies of the same order than noise, which is not always the case.
+    The proposed method introduces a way to exclude the contribution of the spatial high frequencies of the surface
+    from the process of noise removal that is based on the information contained in the spectral domain.
+</p>
+
+<p>
+    Standard vertical striping reduction approaches take advantage of the constant noise factors in the image columns.
+    Basically, each image's column is averaged resulting in an averaged line (along-track) and then the noise profile is estimated
+    in the across-track direction for each band.
+    By averaging image lines (integrated line profile) the surface contribution is smoothed, the additive random noise is cancelled,
+    and the vertical striping profile remains constant. Consequently, the surface contribution presents lower spatial frequencies in the integrated line
+    profile and can be easily separated from the vertical striping (high frequencies) applying a filter with a suited cut-off frequency.
+</p>
+
+
+<p>
+    One of the main drawbacks of these methods is the fact that they do not take into account the possible high frequency
+    components of the surface explicitly. In images presenting structures or patterns in the vertical direction,
+    the averaged profile may present high frequency contributions due to the surface. This will be interpreted as
+    vertical striping, and some columns will be corrected with wrong values, worsening the final image.
+    The proposed correction method is also based on the hypothesis that the vertical disturbance presents higher
+    spatial frequencies than the surface radiance. However, it models the noise pattern by suppressing the surface
+    contribution in the across-track in two different ways: first, avoiding the high frequency changes due to surface edges,
+    and then subtracting the low frequency profile.
+    In addition, thanks to the sequential acquisition of CHRIS of the same scene from five different angles,
+    the robustness of the proposed algorithm can also be improved using together all the multiangular images of one acquisition.
+    When processing together a higher number of lines, the surface contribution is smoother and the estimation of the vertical striping is more accurate.
+</p>
+
+
+<h5>Summary of the Complete Processing Chain</h5>
+
+<p>
+    The optimal sequence of algorithms to be applied in order to correct a given image is the following:
+</p>
+
 <ul>
-    <li>At the present moment, the drop-out correction algorithm is well established and it is ready for implementation
-        in the corresponding BEAM java module.
+    <li> Drop-outs are detected and corrected.
     </li>
-    <li>The inputs required by the drop-out correction algorithm are the CHRIS raw image, spectral wavelengths, and
-        quality mask imported from the HDF data file.
+    <li>  A rough correction of the vertical striping due to the entrance slit is performed.
+    For a given CHRIS image, the estimation of the slit vertical striping is obtained
+    from a previous characterization of the vertical striping pattern stored in a look-up-table (LUT),
+    which includes the dependence on the platform temperature at the given CHRIS acquisition
     </li>
-    <li>The final implementation of the algorithm can be simplified in order to reduce the computational burden (at the
-        expense of accuracy in the correction) depending on the quickness requirements.
+    <li>  After the preliminary correction of the vertical striping due to the entrance slit,
+    the robust vertical striping correction method is used to estimate directly from the image (or multiangular image set)
+    the remaining vertical striping for each band.
+    </li>
+    <li>  Finally, obtained vertical striping coefficients are used to correct the image column values.
     </li>
 </ul>
-<p>
-    Standard vertical stripping reduction approaches take advantage of the constant noise factors in the image columns.
-    Basically, the image is averaged in lines (along-track) and then the noise profile is estimated in the across-track
-    direction for each band. By averaging image lines (integrated line profile) the surface contribution is smoothed;
-    the additive random noise is cancelled; and the vertical stripping profile remains constant. In consequence, the
-    surface contribution presents lower spatial frequencies in the across-track direction and can be easily separated
-    from the vertical stripping (high frequencies) applying a filter with a suited cut-off frequency. However, this
-    processing does not work well on all images. These methods do not take into account the possible high frequency
-    components of the surface (high contrast linear features). In images presenting linear structures or patterns
-    (usually man-made), which happen to be aligned with the along-track direction of the satellite, the averaged profile
-    can present high frequencies due to the surface that will be interpreted as vertical stripping, thus some columns
-    will be corrected with wrong values worsening the final image. The proposed correction method is also based on the
-    hypothesis that the vertical disturbance presents higher spatial frequencies than the surface radiance. However, it
-    models the noise pattern by suppressing the surface contribution in the across-track in two different ways: first,
-    avoiding the high frequency changes due to surface, and then subtracting the low frequency profile.
-</p>
-<ul>
-    <li>At the present moment, a prototype of the vertical stripping correction algorithm is available in Matlab
-        programming language. However, further developments are being implemented in order to simplify the procedure and
-        to include a model of the slit effect dependence on the sensor temperature, which should improve the results of
-        the vertical stripping correction algorithm.
-    </li>
-    <li>The inputs required by the vertical stripping correction algorithm are the CHRIS image, spectral wavelengths,
-        quality mask imported from the HDF data file, image acquisition parameters (acquisition mode, sensor
-        temperature) extracted from the header information. Additionally, a LUT should contain a model of the vertical
-        stripping produced by the sensor entrance slit.
-    </li>
-    <li>The vertical stripping correction can be improved by processing together the five multi-angular images from an
-        acquisition set.
-    </li>
-</ul>
+
+
+<p class="inote">
+     L. G&oacute;mez-Chova, L. Alonso, L. Guanter, G. Camps-Valls, J. Calpe, and J. Moreno, "Correction of systematic spatial noise in
+     push-broom hyperspectral sensors: application to CHRIS/PROBA images," Appl. Opt. <strong>47</strong>, F46-F60 (2008)</p>
+
 
 <h4>User Interface</h4>
 
 <p>
     The Noise Reduction tool can be invoked from VISAT <b>Tools</b> menu by selecting
-    the <b>Noise Reduction</b> command in the <b>CHRIS/PROBA Tools</b> submenu.
+    the <b>Noise Reduction...</b> command in the <b>CHRIS/PROBA Tools</b> submenu.
 </p>
 
 <h5>IO Parameters Tab</h5>
@@ -119,7 +163,7 @@
 <p>
     The table is initially filled with all products found belonging to the same acquisition set as the currently
     selected in VISAT. It is searched for those products in the same directory where the selected one resides.
-    If now CHRIS product is initially selected the table will be empty.<br>
+    If no CHRIS product is initially selected the table will be empty.<br>
     The user can add/remove products belonging to one acquisition set.
 </p>
 
@@ -182,19 +226,21 @@
 
 <p class="i1">
     <b>Apply Slit Correction:</b>
-    Whether or not to apply slit correction.
+    Whether or not to apply slit correction (slit contribution was modeled by
+    <a href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-47-28-F46">G&oacute;mez-Chova et al. (2008)</a>,
+    and this model can be used to perform a first correction).
 </p>
 
 <p class="i1">
     <b>Smoothing Order:</b>
-    The number of pixels used for smoothing.
+    The number of pixels used for smoothing when filtering the integrated line profile of the surface.
 </p>
 
 <h6>Dropout Correction Group</h6>
 
 <p class="i1">
     <b>Number of Neighbor Bands:</b>
-    Specifies the number of neighbor bands considered for the dropout correction.
+    Specifies the number of neighbor bands considered to compute the spectral distance used in the dropout correction.
 </p>
 
 <p class="i1">

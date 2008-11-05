@@ -19,9 +19,9 @@
 <h3>CHRIS/PROBA Cloud Screening</h3>
 
 <p>
-    The Cloud Screening Tools is used to mask cloud and cloudy pixels in CHRIS images.
-    The cloud masking algorithm described below provides cloud probability and abundances for
-    each pixel instead of a single flag.
+    The Cloud Screening Tools is used to mask cloudy pixels in CHRIS images.
+    The cloud masking algorithm described below helps the user to find cloudy regions in the image and provides cloud probability
+    and abundances for each pixel instead of a single flag.
 </p>
 
 <h4>Cloud Screening Algorithm</h4>
@@ -30,21 +30,20 @@
     <b>The cloud screening algorithm consists of the following steps:</b>
 </p>
 <ol>
-    <li><b>Image Pre-Processing:</b> TOA reflectance is estimated from the CHRIS products to remove in practice the
+    <li><b>TOA Reflectance Computation:</b> <a href="../reflectancecomputation/ReflectanceComputationTool.html">Top-of-Atmosphere reflectance</a> is estimated from the CHRIS products to remove in practice the
         dependence on particular illumination conditions (day of the year and angular configuration).
     </li>
     <li><b>Feature extraction:</b> physically-inspired features are extracted to increase separability of clouds and
-        surface taking into account that the measured spectral signature depends on the illumination (solar and
-        observation conditions: TOA reflectance is already estimated), the atmosphere (cloud height: oxygen and water
-        vapour atmospheric absorptions are used to estimate the optical path), and the surface (cloud reflectance: its
-        spectral signature is white and bright).
+        surface taking into account that the measured spectral signature depends on the illumination (TOA reflectance is already estimated),
+        the atmosphere (oxygen and water vapor atmospheric absorptions are used to estimate the optical path related to the cloud height),
+        and the surface (spectral whiteness and brightness helps to characterize the cloud's spectral behavior).
     </li>
-    <li><b>Image clustering:</b> an unsupervised Expectation-Maximization (EM) clustering algorithm is performed on the
+    <li><b>Image clustering:</b> an unsupervised <a href="../clusteranalysis/EM.html">Expectation-Maximization</a> (EM) <a href="../clusteranalysis/ClusterAnalysis.html">clustering algorithm</a> is performed on the
         extracted features in order to separate clouds from the ground-cover while obtaining posterior probabilities of
         each pixel to each cluster.
     </li>
-    <li><b>Cluster labeling:</b> resulting clusters are subsequently labeled into geo-physical classes according to
-        their spectral signatures. Once all clusters corresponding to clouds have been identified, it is straightforward
+    <li><b>Cluster labeling:</b> resulting clusters are subsequently labeled by the user.
+        Once all clusters corresponding to clouds have been identified, it is straightforward
         to merge all the clusters belonging to a cloud type (cloud-clusters). In the clustering of the extracted
         features, the EM algorithm provides a probabilistic membership for each cluster, thus the probability of being
         cloud is computed as the sum of the posteriors of the cloud-clusters.
@@ -64,12 +63,12 @@
 
 <p>
     The Cloud Screening tool can be invoked from VISAT <b>Tools</b> menu by selecting
-    the <b>Perform Cloud Screening...</b> command in the <b>CHRIS/PROBA Tools</b> submenu. It performs the cloud screening on
+    the <b>Cloud Screening...</b> command in the <b>CHRIS/PROBA Tools</b> submenu. It performs the cloud screening on
     the currently selected product, if applicable.
 </p>
 
 <p>
-    Selecting the <b>Perform Cloud Screening...</b> command brings up a the following dialog :
+    Selecting the <b>Cloud Screening...</b> command brings up the following dialog :
 </p>
 
 <p align="center">
@@ -119,18 +118,12 @@
     Specifies whether or not to use atmospheric oxygen feature for clustering.
 </p>
 
-<p>
-    While the progress dialog is shown the first three steps (Image Pre-Processing, Feature extraction, Image
-    clustering) of the algorithm are performed. This might take some time. Depending on the size of the scene and on
-    the performance of your system.
-</p>
-
 <p align="center">
     <img src="images/ClusterAnalysisProgress.jpg" alt="Cluster Analysis Progress Dialog"/>
 </p>
 
 <p>
-    After clicking the <b>Run</b> button the progress dialog is shown and the first three steps (Image Pre-Processing, Feature extraction, Image
+    While the progress dialog is shown the first three steps (TOA Reflectance Computation, Feature extraction, Image
     clustering) of the algorithm are performed. This might take some time. Depending on the size of the scene and on
     the performance of your system.
 </p>
@@ -153,9 +146,9 @@
 <p>
     <b>Manual Cloud Labeling</b><br/>
     Mark the classes as cloud which you can identify to be a cloud class.<br/>
-    If one class contains cloud and surface samples you can reject them. Thereby the concerned samples will be
+    If one class contains cloud and surface samples you can reject them (mixed clusters are rejected). Thereby the concerned samples will be
     re-distributed to the classes with the second highest probability.<br/>
-    You can also enable the computation of the probabilistic cloud mask. This will give a better separation between
+    You can also enable the computation of the probabilistic cloud mask by means of spectral unmixing. This will give a better separation between
     real cloud pixels and those which were wrongly classified as cloud by the clustering.<br/>
     After you're satisfied with your labeling settings you can click on the <b>Run</b> button.
     The resulting mask is added to the source product as band named <b>cloud_product</b>.
@@ -189,6 +182,37 @@
         </tr>
     </table>
 </div>
+
+
+<h4>CHRIS Acquisition Modes</h4>
+
+<p>
+    One of the main advantages of CHRIS instrument is the high configurability of its operation mode.
+    In fact, the number of bands and their nominal wavelength allocations changes to a great extent from one mode to another.
+    However, this advantage is a problem for the detection of clouds since the method has to take into account the number and
+    configuration of the spectral bands for each CHRIS acquisition mode.
+</p>
+
+<p>
+    The cloud screening algorithm has been designed for CHRIS Modes with full spectral information (Modes 1 and 5).
+    For example, the oxygen and water vapor atmospheric
+    absorptions or the ice/snow absorption are only present in the spectral region registered by Modes 1 and 5.
+    In addition, in the case of the brightness and whiteness features, the number of spectral bands available to compute them
+    is lower for modes 2, 3, and 4.
+    Therefore the robustness and the discrimination power of the extracted features will be poorer for these modes.
+    In consequence, the proposed algorithm might present a poor performance for Modes 2-3-4 images in critical cloud screening situations,
+    such as over bright surfaces (ice, snow, sand, etc) and around cloud borders or thin semitransparent clouds.
+</p>
+
+<p class="inote"><b class="note">Note:</b> In these cases, the default options of the <b>Compute Cloud Mask</b> command in the
+    <b>CHRIS/PROBA Tools</b> submenu could be inappropriate. If resulting clusters are not satisfactory, the user should run again the
+    steps of the cloud screening algorithm with the following options:<br/>
+    - To select the most appropriate extracted features as source bands in the <a href="../clusteranalysis/EM.html">cluster analysis</a>.<br/>
+    - To change the number of clusters in the <a href="../clusteranalysis/EM.html">cluster analysis</a>.
+</p>
+
+
+
 <hr>
 </body>
 </html>

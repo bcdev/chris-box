@@ -28,7 +28,8 @@
 <div align="center"><img src="images/ToaReflectanceFormula.jpg" alt="Toa Reflectance Formula"/></div>
 
 <p> where L(x, y, &lambda;<sub>i</sub>) is the provided at-sensor upward radiance at the image location (x, y), I(&lambda;<sub>i</sub>)
-    is the extraterrestrial instantaneous solar irradiance, and &theta;(x, y) is the angle between the illumination
+    is the
+    extraterrestrial instantaneous solar irradiance, and &theta;(x, y) is the angle between the illumination
     direction and the vector perpendicular to the surface.
     In the proposed algorithm, &theta;(x, y) is approximated by the Solar Zenith Angle provided in the CHRIS attributes
     since one can assume flat landscape and constant illumination angle for the area observed in a CHRIS image.
@@ -37,7 +38,7 @@
 </p>
 
 <p class="inote">
-    Thuillier, G., Hers´e, M., Labs, D., Foujols, T., Peetermans, W., Gillotay, D., Simon, P. C., and
+    Thuillier, G., Hers&eacute;, M., Labs, D., Foujols, T., Peetermans, W., Gillotay, D., Simon, P. C., and
     Mandel, H. (2003). The solar spectral irradiance from 200 to 2400 nm as measured by the
     SOLSPEC spectrometer from the ATLAS and EURECA missions. Solar Physics, 214:1–22.
 </p>
@@ -57,7 +58,7 @@
 <div align="center"><img src="images/ThuillierDoyCorrection.jpg" alt="Thuillier Julian day of year correction"/></div>
 
 <p>
-    where the day of year can be easily obtained from the Image Date metadata of the CHRIS flle. <br>
+    where the day of year can be easily obtained from the Image Date metadata of the CHRIS file. <br>
     Since the reference extraterrestrial solar irradiance presents a different spectral sampling, it is
     resampled to the CHRIS spectral channels. A specific CHRIS band, i, consists of the addition of
     one or more CCD detector pixel elements depending on the band width. Therefore, the spectral
@@ -83,15 +84,15 @@
                          alt="Spectral Response function for a CHRIS band"/></div>
 
 <p>
-    where both the mid-wavelength (WlMid) and the band width (BWidth) values for each channel are included in the CHRIS
+    where both the mid-wavelength and the band width values for each channel are included in the CHRIS
     file.
 </p>
 
 <h4>User Interface</h4>
 
 <p>
-    The Reflectances Computation tool can be invoked from VISAT <b>Tools</b> menu by selecting
-    the <b>Compute TOA Reflectances</b> command in the <b>CHRIS/PROBA Tools</b> submenu.
+    The TOA Reflectance Computation tool can be invoked from VISAT <b>Tools</b> menu by selecting
+    the <b>TOA Reflectance Computation...</b> command in the <b>CHRIS/PROBA Tools</b> submenu.
 </p>
 
 <h5>IO Parameters Tab</h5>
@@ -137,7 +138,7 @@
 
 <p class="i1">
     <b>Copy radiance bands:</b>
-    Here the user whether the radiance bands shall be copied to the output product or not. 
+    Here the user selects whether the radiance bands shall be copied to the output product or not.
 </p>
 
 
