@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-aod-retrieval</artifactId>
     <name>CHRIS/PROBA Aerosol Optical Depth Retrieval</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <description>CHRIS/PROBA Aerosol Optical Depth Retrieval Tool</description>
 
     <dependencies>
