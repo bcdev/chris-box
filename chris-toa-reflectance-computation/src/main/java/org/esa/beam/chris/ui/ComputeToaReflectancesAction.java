@@ -3,9 +3,13 @@ package org.esa.beam.chris.ui;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
+import org.esa.beam.framework.ui.AppContext;
+import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Action for computing TOA reflectances.
@@ -14,19 +18,16 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
  * @version $Revision$ $Date$
  */
 public class ComputeToaReflectancesAction extends AbstractVisatAction {
-    private static final String DIALOG_TITLE = "CHRIS/PROBA TOA Reflectance Computation";
-    private static final String DIALOG_HELP_ID = "chrisToaReflectanceComputationTool";
+    private final AtomicReference<ModelessDialog> dialog;
+
+    public ComputeToaReflectancesAction() {
+        dialog = new AtomicReference<ModelessDialog>();
+    }
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final DefaultSingleTargetProductDialog dialog =
-                new DefaultSingleTargetProductDialog("chris.ComputeToaReflectances",
-                                                     getAppContext(),
-                                                     DIALOG_TITLE,
-                                                     DIALOG_HELP_ID);
-        dialog.getJDialog().setName("chrisToaReflectanceComputationDialog");
-        dialog.setTargetProductNameSuffix("_TOA_REFL");
-        dialog.show();
+        dialog.compareAndSet(null, createDialog(getAppContext()));
+        dialog.get().show();
     }
 
     @Override
@@ -37,5 +38,17 @@ public class ComputeToaReflectancesAction extends AbstractVisatAction {
                         OpUtils.findBands(selectedProduct, "radiance").length != 0;
 
         setEnabled(enabled);
+    }
+
+    private static ModelessDialog createDialog(AppContext appContext) {
+        final DefaultSingleTargetProductDialog dialog =
+                new DefaultSingleTargetProductDialog("chris.ComputeToaReflectances",
+                                                     appContext,
+                                                     "CHRIS/PROBA TOA Reflectance Computation",
+                                                     "chrisToaReflectanceComputationTool");
+        dialog.getJDialog().setName("chrisToaReflectanceComputationDialog");
+        dialog.setTargetProductNameSuffix("_TOA_REFL");
+
+        return dialog;
     }
 }

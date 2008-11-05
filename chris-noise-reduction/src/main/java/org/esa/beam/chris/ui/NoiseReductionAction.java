@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Noise reduction action.
+ * Action for invoking the CHRIS/PROBA noise reduction.
  *
  * @author Marco Peters
  * @author Ralf Quast

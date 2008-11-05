@@ -1,7 +1,6 @@
 package org.esa.beam.chris.ui;
 
 
-import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
@@ -10,7 +9,7 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Action for screening clouds.
+ * Action for invoking the CHIRS/PROBA cloud screening dialog.
  *
  * @author Marco Peters
  * @author Ralf Quast
@@ -19,8 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since BEAM 4.2
  */
 public class CloudScreeningAction extends AbstractVisatAction {
-    // todo - help id
-    public static final String HELP_ID = "";
+    static final String HELP_ID = "chrisCloudScreeningTools";
 
     private final AtomicReference<ModelessDialog> dialog;
 
@@ -30,7 +28,6 @@ public class CloudScreeningAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent event) {
-        // todo - helpId
         dialog.compareAndSet(null, new ScreeningDialog(getAppContext()));
         dialog.get().show();
     }
@@ -38,12 +35,7 @@ public class CloudScreeningAction extends AbstractVisatAction {
     @Override
     public void updateState() {
         final Product selectedProduct = getAppContext().getSelectedProduct();
-        final boolean enabled = selectedProduct == null || isValid(selectedProduct);
-        setEnabled(enabled);
+        setEnabled(selectedProduct == null || new CloudScreeningProductFilter().accept(selectedProduct));
     }
 
-    private static boolean isValid(Product product) {
-        return product.getProductType().matches("CHRIS_M.*_NR") &&
-                OpUtils.findBands(product, "radiance").length >= 18;
-    }
 }

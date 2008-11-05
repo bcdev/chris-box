@@ -75,7 +75,7 @@ class LabelingDialog extends ModelessDialog {
             public void actionPerformed(ActionEvent e) {
                 if (form.getCheckBox().isSelected()) {
                     VisatApp.getApp().showInfoDialog("CHRIS/PROBA Cloud Screening",
-                                                     "Calculating the probabilistic cloud mask might be extremely time consuming!",
+                                                     "Calculating the probabilistic cloud mask can be extremely time consuming!",
                                                      "chrisbox.postLabling.showWarning");
                 }
             }

@@ -42,13 +42,15 @@
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
             <text>CHRIS/PROBA Tools</text>
+            <separatorBefore>true</separatorBefore>
+            <separatorAfter>true</separatorAfter>
             <mnemonic/>
         </action>
         <action>
             <id>chrisNoiseReduction</id>
             <class>org.esa.beam.chris.ui.NoiseReductionAction</class>
             <text>Noise Reduction...</text>
-            <shortDescr>Start the CHRIS/PROBA Noise Reduction Tool</shortDescr>
+            <shortDescr>Performs the noise reduction for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisNoiseReductionTool</helpID>

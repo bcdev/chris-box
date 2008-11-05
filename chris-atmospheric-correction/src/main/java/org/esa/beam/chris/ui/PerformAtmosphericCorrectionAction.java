@@ -19,39 +19,48 @@ import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
+import org.esa.beam.framework.ui.AppContext;
+import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
- * todo - API doc
+ * Dialog for invoking the CHRIS/PROBA atmospheric correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
 public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
-    private static final String DIALOG_TITLE = "CHRIS/PROBA Atmospheric Correction";
-    private static final String DIALOG_HELP_ID = "chrisAtmosphericCorrectionTool";
+    private final AtomicReference<ModelessDialog> dialog;
+
+    public PerformAtmosphericCorrectionAction() {
+        dialog = new AtomicReference<ModelessDialog>();
+    }
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
-        final DefaultSingleTargetProductDialog dialog =
-                new DefaultSingleTargetProductDialog(OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
-                                                     getAppContext(),
-                                                     DIALOG_TITLE,
-                                                     DIALOG_HELP_ID);
-        dialog.getJDialog().setName("chrisAtmosphericCorrectionDialog");
-        dialog.setTargetProductNameSuffix("_AC");
-        dialog.show();
+        dialog.compareAndSet(null, createDialog(getAppContext()));
+        dialog.get().show();
     }
 
     @Override
     public void updateState() {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
-        final boolean enabled = selectedProduct == null ||
-                selectedProduct.getProductType().startsWith("CHRIS_M") &&
-                        OpUtils.findBands(selectedProduct, "radiance").length >= 18;
+        setEnabled(selectedProduct == null || new AtmosphericCorrectionProductFilter().accept(selectedProduct));
+    }
 
-        setEnabled(enabled);
+    private static ModelessDialog createDialog(AppContext appContext) {
+        final DefaultSingleTargetProductDialog dialog =
+                new DefaultSingleTargetProductDialog(OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
+                                                     appContext,
+                                                     "CHRIS/PROBA Atmospheric Correction",
+                                                     "chrisAtmosphericCorrectionTool");
+        dialog.getJDialog().setName("chrisAtmosphericCorrectionDialog");
+        dialog.setTargetProductNameSuffix("_AC");
+
+        return dialog;
     }
 }

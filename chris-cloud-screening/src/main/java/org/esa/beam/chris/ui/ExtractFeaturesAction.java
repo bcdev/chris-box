@@ -35,7 +35,7 @@ public class ExtractFeaturesAction extends AbstractVisatAction {
         final Product selectedProduct = VisatApp.getApp().getSelectedProduct();
         final boolean enabled = selectedProduct == null ||
                 selectedProduct.getProductType().startsWith("CHRIS_M") &&
-                        OpUtils.findBands(selectedProduct, "toa_refl").length > 17;
+                        OpUtils.findBands(selectedProduct, "toa_refl").length >= 18;
 
         setEnabled(enabled);
     }

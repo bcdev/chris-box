@@ -41,17 +41,20 @@
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
             <text>CHRIS/PROBA Tools</text>
+            <separatorBefore>true</separatorBefore>
+            <separatorAfter>true</separatorAfter>
             <mnemonic/>
         </action>
         <action>
             <id>chrisComputeToaReflectances</id>
             <class>org.esa.beam.chris.ui.ComputeToaReflectancesAction</class>
-            <text>Compute TOA Reflectances...</text>
-            <shortDescr>Compute TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
+            <text>TOA Reflectance Computation...</text>
+            <shortDescr>Computes TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisToaReflectanceComputationTool</helpID>
-            <placeAfter>chrisNoiseReduction</placeAfter>
+            <placeAfter>chrisAtmosphericCorrection</placeAfter>
+            <separatorBefore>true</separatorBefore>
         </action>
     </extension>
 

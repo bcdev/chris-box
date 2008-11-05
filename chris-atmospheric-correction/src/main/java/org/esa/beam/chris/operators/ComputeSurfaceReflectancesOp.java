@@ -71,7 +71,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
     private static final double WATER_VAPOUR_SCALING_FACTOR = 2.0E-4;
 
-    @SourceProduct(alias = "source", type = "CHRIS_M.*")
+    @SourceProduct(alias = "source", type = "CHRIS_M[12345].*_NR")
     private Product sourceProduct;
     @TargetProduct
     private Product targetProduct;
@@ -144,8 +144,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     "unsupported CHRIS mode: {0} = {1}", ChrisConstants.ATTR_NAME_CHRIS_MODE, mode));
         }
         // get annotations
-        vaa = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
-        vza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
+        vaa = 0.0; //OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_AZIMUTH_ANGLE);
+        vza = 0.0; //OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_OBSERVATION_ZENITH_ANGLE);
         saa = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_AZIMUTH_ANGLE);
         sza = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_SOLAR_ZENITH_ANGLE);
         alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT) / 1000.0;
@@ -154,6 +154,10 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         // get source bands
         toaBands = OpUtils.findBands(sourceProduct, "radiance");
         toaMaskBands = OpUtils.findBands(sourceProduct, "mask");
+
+        if (toaBands.length < 18 || toaBands.length != toaMaskBands.length) {
+            throw new OperatorException("Cannot find source bands.");
+        }
         cloudProductBand = sourceProduct.getBand("cloud_product");
 
         targetProduct = createTargetProduct();
@@ -1175,7 +1179,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                     }
                     pm.worked(1);
                 }
-
             } finally {
                 pm.done();
             }

@@ -2,9 +2,6 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
-import org.esa.beam.chris.operators.InclusiveBandFilter;
-import org.esa.beam.chris.operators.InclusiveMultiBandFilter;
-import org.esa.beam.chris.operators.StrictlyInclusiveBandFilter;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
@@ -26,7 +23,6 @@ import java.io.IOException;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -73,10 +69,14 @@ public class ExtractFeaturesOp extends Operator {
 
     @Override
     public void initialize() throws OperatorException {
-        final Band[] reflectanceBands = getReflectanceBands(sourceProduct.getBands());
+        final Band[] reflectanceBands = OpUtils.findBands(sourceProduct, "toa_refl");
+
+        if (reflectanceBands.length == 0) {
+            throw new OperatorException("Cannot not find source bands.");
+        }
         categorizeBands(reflectanceBands);
 
-        canComputeAtmosphericFeatures = sourceProduct.getProductType().matches("CHRIS_M[15]_REFL");
+        canComputeAtmosphericFeatures = sourceProduct.getProductType().matches("CHRIS_M[15].*");
 
         if (canComputeAtmosphericFeatures) {
             interpolatorO2 = new BandInterpolator(reflectanceBands,
@@ -146,20 +146,7 @@ public class ExtractFeaturesOp extends Operator {
         }
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-        targetProduct.setPreferredTileSize(sourceProduct.getSceneRasterWidth(), sourceProduct.getSceneRasterHeight());
-    }
-
-    private static Band[] getReflectanceBands(Band[] bands) {
-        final List<Band> reflectanceBandList = new ArrayList<Band>(bands.length);
-        for (final Band band : bands) {
-            if (band.getName().startsWith("toa_refl")) {
-                reflectanceBandList.add(band);
-            }
-        }
-        final Band[] reflectanceBands = reflectanceBandList.toArray(new Band[reflectanceBandList.size()]);
-        Arrays.sort(reflectanceBands, new BandComparator());
-
-        return reflectanceBands;
+        targetProduct.setPreferredTileSize(32, 32);
     }
 
     @Override

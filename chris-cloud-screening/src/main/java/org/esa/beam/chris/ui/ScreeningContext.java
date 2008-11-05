@@ -207,6 +207,7 @@ class ScreeningContext implements LabelingContext {
         final ImageInfo imageInfo = getClassBand().getImageInfo();
         imageInfo.getColorPaletteDef().getPointAt(index).setColor(color);
         classView.getBaseImageLayer().regenerate();
+        classView.getLayerCanvas().repaint();
     }
 
     @Override
@@ -218,6 +219,7 @@ class ScreeningContext implements LabelingContext {
                                                                   indexFilter);
         getClassBand().setSourceImage(classImage);
         classView.getBaseImageLayer().regenerate();
+        classView.getLayerCanvas().repaint();
     }
 
     @Override

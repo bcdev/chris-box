@@ -49,30 +49,31 @@
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
             <text>CHRIS/PROBA Tools</text>
+            <separatorBefore>true</separatorBefore>
+            <separatorAfter>true</separatorAfter>
             <mnemonic/>
+        </action>
+        <action>
+            <id>chrisCloudScreening</id>
+            <parent>chris</parent>
+            <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
+            <text>Cloud Screening...</text>
+            <mnemonic/>
+            <shortDescr>Calculates the cloud mask for the selected CHRIS/PROBA product</shortDescr>
+            <helpId>chrisCloudScreeningTools</helpId>
+            <placeAfter>chrisNoiseReduction</placeAfter>
         </action>
         <action>
             <id>chrisExtractFeatures</id>
             <class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
-            <text>Extract Features</text>
+            <text>Feature Extraction...</text>
             <shortDescr>
-                Extract features from the selected CHRIS/PROBA product
-                needed for cloud screening
+                Extracts features from the selected CHRIS/PROBA product which are used for cloud screening
             </shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisCloudScreeningTools</helpID>
-            <placeAfter>chrisComputeReflectances</placeAfter>
-        </action>
-        <action>
-            <id>chrisCloudMask</id>
-            <parent>chris</parent>
-            <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
-            <text>Perform Cloud Screening...</text>
-            <mnemonic>M</mnemonic>
-            <accelerator>ctrl alt M</accelerator>
-            <shortDescr>Calculates a probabilistic cloud mask.</shortDescr>
-            <helpId>chrisCloudScreeningTools</helpId>
+            <placeAfter>chrisComputeToaReflectances</placeAfter>
         </action>
     </extension>
 

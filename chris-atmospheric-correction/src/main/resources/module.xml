@@ -44,17 +44,19 @@
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
             <text>CHRIS/PROBA Tools</text>
+            <separatorBefore>true</separatorBefore>
+            <separatorAfter>true</separatorAfter>
             <mnemonic/>
         </action>
         <action>
             <id>chrisAtmosphericCorrection</id>
             <class>org.esa.beam.chris.ui.PerformAtmosphericCorrectionAction</class>
-            <text>Perform Atmospheric Correction...</text>
+            <text>Atmospheric Correction...</text>
             <shortDescr>Calculates surface reflectances for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisAtmosphericCorrectionTool</helpID>
-            <placeAfter>chrisNoiseReduction</placeAfter>
+            <placeAfter>chrisCloudScreening</placeAfter>
         </action>
     </extension>
 
