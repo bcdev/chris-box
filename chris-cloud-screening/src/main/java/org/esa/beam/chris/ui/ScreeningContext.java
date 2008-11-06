@@ -33,6 +33,7 @@ import org.esa.beam.jai.ImageManager;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 import org.esa.beam.util.PropertyMap;
+import org.esa.beam.visat.VisatApp;
 
 import javax.media.jai.*;
 import javax.media.jai.operator.HistogramDescriptor;
@@ -381,15 +382,20 @@ class ScreeningContext implements LabelingContext {
         parameterMap.put("sourceBandNames", reflectanceBandNames);
         parameterMap.put("endmembers", endmembers);
         parameterMap.put("unmixingModelName", "Fully Constrained LSU");
+        // todo - for investigation only, remove for next release (rq - 6.11.2008)
+        parameterMap.put("computeErrorBands", true);
 
+        final Dimension tileSize = new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H);
         final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
-        renderingHints.put(GPF.KEY_TILE_SIZE,
-                           new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H));
+        renderingHints.put(GPF.KEY_TILE_SIZE, tileSize);
 
         final Product product = GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
                                                   parameterMap,
                                                   reflectanceProduct,
                                                   renderingHints);
+        // todo - for investigation only, remove for next release (rq - 6.11.2008)
+        product.setName("ABUNDANCES");
+        VisatApp.getApp().getProductManager().addProduct(product);
 
         return product.getBand("cloud_abundance").getSourceImage();
     }
