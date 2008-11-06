@@ -43,12 +43,12 @@
         <action>
             <id>chrisGeometricCorrection</id>
             <class>org.esa.beam.chris.ui.PerformGeometricCorrectionAction</class>
-            <text>Perform Geometric Correction...</text>
+            <text>Geometric Correction...</text>
             <shortDescr>Perfoms the geometric correction for the selected CHRIS/PROBA product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisGeometricCorrectionTool</helpID>
-            <placeAfter>chrisNoiseReduction</placeAfter>
+            <placeAfter>chrisAtmosphericCorrection</placeAfter>
         </action>
     </extension>
 

@@ -59,7 +59,7 @@
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisToaReflectanceComputationTool</helpID>
-            <placeAfter>chrisAtmosphericCorrection</placeAfter>
+            <placeAfter>chrisGeometricCorrection</placeAfter>
             <separatorBefore>true</separatorBefore>
         </action>
     </extension>
