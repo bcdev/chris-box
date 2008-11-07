@@ -382,8 +382,6 @@ class ScreeningContext implements LabelingContext {
         parameterMap.put("sourceBandNames", reflectanceBandNames);
         parameterMap.put("endmembers", endmembers);
         parameterMap.put("unmixingModelName", "Fully Constrained LSU");
-        // todo - for investigation only, remove for next release (rq - 6.11.2008)
-        parameterMap.put("computeErrorBands", true);
 
         final Dimension tileSize = new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H);
         final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
@@ -393,9 +391,6 @@ class ScreeningContext implements LabelingContext {
                                                   parameterMap,
                                                   reflectanceProduct,
                                                   renderingHints);
-        // todo - for investigation only, remove for next release (rq - 6.11.2008)
-        product.setName("ABUNDANCES");
-        VisatApp.getApp().getProductManager().addProduct(product);
 
         return product.getBand("cloud_abundance").getSourceImage();
     }

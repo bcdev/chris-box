@@ -45,6 +45,7 @@
         <dependency>
             <groupId>org.esa.beam.chris</groupId>
             <artifactId>chris-util</artifactId>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 
