@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-util</symbolicName>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <name>CHRIS/Proba Utilities</name>
     <description>CHRIS/Proba Utilities</description>
 
@@ -13,7 +13,7 @@
 
     <changelog>
         <![CDATA[
-        Changes in Version 1.1<br/>
+        Changes in Version 1.0.1<br/>
         [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
         ]]>
     </changelog>

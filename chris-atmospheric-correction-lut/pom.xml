@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.1-SNAPSHOT</version>
+        <version>1.0.1</version>
     </parent>
 
     <packaging>jar</packaging>
@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-atmospheric-correction-lut</artifactId>
     <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table</name>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table</description>
 
     <dependencies>

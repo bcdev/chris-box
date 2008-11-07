@@ -221,21 +221,23 @@ public class Clusterer {
                 }
             } else {
                 for (int k = 0; k < clusterCount; ++k) {
-                    final double temp = posteriors[k] + sums[k];
+                    if (posteriors[k] > 0.0) {
+                        final double temp = posteriors[k] + sums[k];
 
-                    for (int l = 0; l < sampleCount; ++l) {
-                        final double dist = samples[l] - means[k][l];
+                        for (int l = 0; l < sampleCount; ++l) {
+                            final double dist = samples[l] - means[k][l];
 
-                        covariances[k][l][l] += sums[k] * posteriors[k] * dist * dist / temp;
-                        if (updateCovariances) {
-                            for (int m = l + 1; m < sampleCount; ++m) {
-                                covariances[k][l][m] += sums[k] * posteriors[k] * dist * (samples[m] - means[k][m]) / temp;
+                            covariances[k][l][l] += sums[k] * posteriors[k] * dist * dist / temp;
+                            if (updateCovariances) {
+                                for (int m = l + 1; m < sampleCount; ++m) {
+                                    covariances[k][l][m] += sums[k] * posteriors[k] * dist * (samples[m] - means[k][m]) / temp;
+                                }
                             }
+                            means[k][l] += posteriors[k] * dist / temp;
                         }
-                        means[k][l] += posteriors[k] * dist / temp;
-                    }
 
-                    sums[k] = temp;
+                        sums[k] = temp;
+                    }
                 }
             }
         }
