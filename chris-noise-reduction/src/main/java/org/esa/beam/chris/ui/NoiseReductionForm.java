@@ -74,33 +74,41 @@ class NoiseReductionForm extends JPanel {
                 });
         column2.setCellEditor(
                 new TableCellEditor() {
+                    @Override
                     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected,
                                                                  int row, int column) {
                         return null;
                     }
 
+                    @Override
                     public Object getCellEditorValue() {
                         return null;
                     }
 
+                    @Override
                     public boolean isCellEditable(EventObject e) {
                         return false;
                     }
 
+                    @Override
                     public boolean shouldSelectCell(EventObject e) {
                         return false;
                     }
 
+                    @Override
                     public boolean stopCellEditing() {
                         return false;
                     }
 
+                    @Override
                     public void cancelCellEditing() {
                     }
 
+                    @Override
                     public void addCellEditorListener(CellEditorListener l) {
                     }
 
+                    @Override
                     public void removeCellEditorListener(CellEditorListener l) {
                     }
                 }

@@ -1,7 +1,7 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.dataio.chris.ChrisProductReaderPlugIn;
+import org.esa.beam.dataio.dimap.DimapFileFilter;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
@@ -60,6 +60,7 @@ class NoiseReductionPresenter {
         productTableSelectionModel = new DefaultListSelectionModel();
         productTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         productTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 updateMetadata();
             }
@@ -259,24 +260,28 @@ class NoiseReductionPresenter {
 
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (presenter.getDestripingFactorsSourceProducts().length == 5) {
                 JOptionPane.showMessageDialog((Component) e.getSource(), "You cannot select more than five products.");
                 return;
             }
-            BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
-                                                           ChrisConstants.DEFAULT_FILE_EXTENSION,
-                                                           new ChrisProductReaderPlugIn().getDescription(null));
-            BeamFileChooser fileChooser = new BeamFileChooser();
+            final String[] extensions = {ChrisConstants.DEFAULT_FILE_EXTENSION};
+            final String description = ChrisConstants.READER_DESCRIPTION;
+            final BeamFileFilter hdfFileFilter =
+                    new BeamFileFilter(ChrisConstants.FORMAT_NAME, extensions, description);
+            final BeamFileChooser fileChooser = new BeamFileChooser();
             String chrisImportDir = VisatApp.getApp().getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
                                                                                          SystemUtils.getUserHomeDir().getPath());
             String lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
             fileChooser.setMultiSelectionEnabled(true);
-            fileChooser.setFileFilter(fileFilter);
+            fileChooser.addChoosableFileFilter(hdfFileFilter);
+            fileChooser.addChoosableFileFilter(new DimapFileFilter());
+            fileChooser.setFileFilter(hdfFileFilter);
             fileChooser.setCurrentDirectory(new File(lastDir));
 
             if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(null)) {
-                File[] selectedFiles = fileChooser.getSelectedFiles();
+                final File[] selectedFiles = fileChooser.getSelectedFiles();
                 for (File file : selectedFiles) {
                     Product product = null;
                     try {

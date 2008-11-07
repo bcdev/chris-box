@@ -110,17 +110,16 @@ public class ComputeDestripingFactorsOp extends Operator {
                 sourceMskBands[i][j] = sourceProducts[j].getBand(maskBandName);
 
                 if (sourceRciBands[i][j] == null) {
-                    throw new OperatorException(MessageFormat.format("could not find band {0}", rciBandName));
+                    throw new OperatorException(MessageFormat.format("Could not find band {0}.", rciBandName));
                 }
                 if (sourceMskBands[i][j] == null) {
-                    throw new OperatorException(MessageFormat.format("could not find band {0}", maskBandName));
+                    throw new OperatorException(MessageFormat.format("Could not find band {0}.", maskBandName));
                 }
             }
         }
 
         // set up target product and bands
-        targetProduct = new Product("CHRIS_VSC", "CHRIS_VSC",
-                                    sourceProducts[0].getSceneRasterWidth(), 1);
+        targetProduct = new Product("CHRIS_VSC", "CHRIS_VSC", sourceProducts[0].getSceneRasterWidth(), 1);
         targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 1);
 
         targetBands = new Band[spectralBandCount];
@@ -170,10 +169,10 @@ public class ComputeDestripingFactorsOp extends Operator {
         try {
             synchronized (this) {
                 if (edgeMask == null) {
-                    pm.beginTask("computing correction factors...", 100);
+                    pm.beginTask("Computing correction factors...", 100);
                     edgeMask = createEdgeMask(SubProgressMonitor.create(pm, 90));
                 } else {
-                    pm.beginTask("computing correction factors...", 10);
+                    pm.beginTask("Computing correction factors...", 10);
                 }
             }
             for (int i = 0; i < targetBands.length; ++i) {
@@ -209,7 +208,7 @@ public class ComputeDestripingFactorsOp extends Operator {
      */
     private void computeCorrectionFactors(int bandIndex, Tile targetTile, ProgressMonitor pm)
             throws OperatorException {
-        pm.beginTask("computing correction factors", panorama.height + 5);
+        pm.beginTask("Computing correction factors...", panorama.height + 5);
         try {
             // 1. Accumulate the across-track spatial derivative profile
             final double[] p = new double[panorama.width];
@@ -334,7 +333,7 @@ public class ComputeDestripingFactorsOp extends Operator {
      * @throws OperatorException if an error occurred.
      */
     private boolean[][] createEdgeMask(ProgressMonitor pm) throws OperatorException {
-        pm.beginTask("creating edge mask", spectralBandCount + panorama.width + 2);
+        pm.beginTask("Creating edge mask...", spectralBandCount + panorama.width + 2);
         try {
 
             final double[][] sad = new double[panorama.width][panorama.height];
@@ -449,7 +448,7 @@ public class ComputeDestripingFactorsOp extends Operator {
             return thresholdMap.get(mode);
         } else {
             throw new OperatorException(MessageFormat.format(
-                    "could not get edge detection threshold because CHRIS Mode ''{0}'' is not known", mode));
+                    "Cannot get edge detection threshold because CHRIS Mode ''{0}'' is not known.", mode));
         }
     }
 
@@ -458,7 +457,7 @@ public class ComputeDestripingFactorsOp extends Operator {
             OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
         } catch (OperatorException e) {
             throw new OperatorException(MessageFormat.format(
-                    "product ''{0}'' is not a CHRIS product", product.getName()), e);
+                    "Product ''{0}'' is not a CHRIS/Proba product.", product.getName()), e);
         }
         // todo - add further validation criteria
     }
@@ -478,7 +477,7 @@ public class ComputeDestripingFactorsOp extends Operator {
 
             return new double[][]{abscissas, ordinates};
         } catch (Exception e) {
-            throw new OperatorException("could not read reference slit-VS profile", e);
+            throw new OperatorException("Cannot read reference slit-VS profile.", e);
         } finally {
             try {
                 iis.close();
@@ -511,7 +510,7 @@ public class ComputeDestripingFactorsOp extends Operator {
 
             for (Product product : products) {
                 if (width != product.getSceneRasterWidth()) {
-                    throw new OperatorException("input products have inconsistent raster widths");
+                    throw new OperatorException("Input products do have inconsistent raster widths");
                 }
                 height += product.getSceneRasterHeight();
             }
