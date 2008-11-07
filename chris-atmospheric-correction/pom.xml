@@ -13,9 +13,9 @@
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-atmospheric-correction</artifactId>
-    <name>CHRIS/PROBA Atmospheric Correction Tool</name>
+    <name>CHRIS/Proba Atmospheric Correction Tool</name>
     <version>1.0</version>
-    <description>CHRIS/PROBA Atmospheric Correction Tool</description>
+    <description>CHRIS/Proba Atmospheric Correction Tool</description>
 
     <dependencies>
         <dependency>

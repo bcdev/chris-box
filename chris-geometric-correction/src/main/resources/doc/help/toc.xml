@@ -4,7 +4,7 @@
 
 <toc version="2.0" categoryclosedimage="folder" categoryopenimage="folder" topicimage="doc">
 
-    <tocitem text="CHRIS/PROBA Tools">
-        <tocitem text="CHRIS/PROBA Geometric Correction Tool" target="chrisGeometricCorrectionTool"/>
+    <tocitem text="CHRIS/Proba Tools">
+        <tocitem text="CHRIS/Proba Geometric Correction Tool" target="chrisGeometricCorrectionTool"/>
     </tocitem>
 </toc>

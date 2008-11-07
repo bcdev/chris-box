@@ -13,9 +13,9 @@
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-cloud-screening</artifactId>
-    <name>CHRIS/PROBA Cloud Screening Tools</name>
+    <name>CHRIS/Proba Cloud Screening Tools</name>
     <version>1.1-SNAPSHOT</version>
-    <description>CHRIS/PROBA Cloud Screening Tools</description>
+    <description>CHRIS/Proba Cloud Screening Tools</description>
 
     <dependencies>
         <dependency>

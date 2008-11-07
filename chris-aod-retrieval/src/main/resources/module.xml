@@ -2,8 +2,8 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-aod-retrieval</symbolicName>
     <version>1.0</version>
-    <name>CHRIS/PROBA Aerosol Optical Depth Retrieval</name>
-    <description>CHRIS/PROBA Aerosol Optical Depth Retrieval Tool</description>
+    <name>CHRIS/Proba Aerosol Optical Depth Retrieval</name>
+    <description>CHRIS/Proba Aerosol Optical Depth Retrieval Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -37,14 +37,14 @@
         <action>
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
-            <text>CHRIS/PROBA Tools</text>
+            <text>CHRIS/Proba Tools</text>
             <mnemonic/>
         </action>
         <action>
             <id>chrisAOD</id>
             <class>org.esa.beam.chris.ui.PerformAodRetrieval</class>
             <text>Perform AOD Calculation...</text>
-            <shortDescr>Retrieves the Aerosol Optical Depth for the selected CHRIS/PROBA product</shortDescr>
+            <shortDescr>Retrieves the Aerosol Optical Depth for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisAodRetrievalTool</helpID>

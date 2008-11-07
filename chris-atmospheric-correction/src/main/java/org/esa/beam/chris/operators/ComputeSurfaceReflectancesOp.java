@@ -58,7 +58,7 @@ import java.util.List;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2008 by Brockmann Consult",
-                  description = "Computes surface reflectances from a CHRIS/PROBA RCI with cloud product.")
+                  description = "Computes surface reflectances from a CHRIS/Proba RCI with cloud product.")
 public class ComputeSurfaceReflectancesOp extends Operator {
     // the number of dark pixels
     private static final int DARK_PIXEL_COUNT = 100;

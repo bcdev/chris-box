@@ -2,11 +2,11 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-cloud-screening</symbolicName>
     <version>1.1-SNAPSHOT</version>
-    <name>CHRIS/PROBA Cloud Screening Tools</name>
+    <name>CHRIS/Proba Cloud Screening Tools</name>
 
     <description>
         <![CDATA[
-        This module provides two tools for CHRIS/PROBA products:
+        This module provides two tools for CHRIS/Proba products:
         <ol>
           <li>The Cloud Screening Tool is used to mask
           cloud and cloudy pixels in CHRIS images.</li>
@@ -59,7 +59,7 @@
         <action>
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
-            <text>CHRIS/PROBA Tools</text>
+            <text>CHRIS/Proba Tools</text>
             <separatorBefore>true</separatorBefore>
             <separatorAfter>true</separatorAfter>
             <mnemonic/>
@@ -70,7 +70,7 @@
             <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
             <text>Cloud Screening...</text>
             <mnemonic/>
-            <shortDescr>Calculates the cloud mask for the selected CHRIS/PROBA product</shortDescr>
+            <shortDescr>Calculates the cloud mask for the selected CHRIS/Proba product</shortDescr>
             <helpId>chrisCloudScreeningTools</helpId>
             <placeAfter>chrisNoiseReduction</placeAfter>
         </action>
@@ -79,7 +79,7 @@
             <class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
             <text>Feature Extraction...</text>
             <shortDescr>
-                Extracts features from the selected CHRIS/PROBA product which are used for cloud screening
+                Extracts features from the selected CHRIS/Proba product which are used for cloud screening
             </shortDescr>
             <mnemonic/>
             <parent>chris</parent>

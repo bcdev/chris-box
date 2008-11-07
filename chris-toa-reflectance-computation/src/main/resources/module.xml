@@ -2,7 +2,7 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-toa-reflectance-computation</symbolicName>
     <version>1.0</version>
-    <name>CHRIS/PROBA TOA Reflectance Computation Tool</name>
+    <name>CHRIS/Proba TOA Reflectance Computation Tool</name>
 
     <description>
         <![CDATA[
@@ -46,7 +46,7 @@
         <action>
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
-            <text>CHRIS/PROBA Tools</text>
+            <text>CHRIS/Proba Tools</text>
             <separatorBefore>true</separatorBefore>
             <separatorAfter>true</separatorAfter>
             <mnemonic/>
@@ -55,7 +55,7 @@
             <id>chrisComputeToaReflectances</id>
             <class>org.esa.beam.chris.ui.ComputeToaReflectancesAction</class>
             <text>TOA Reflectance Computation...</text>
-            <shortDescr>Computes TOA reflectances for the selected CHRIS/PROBA product</shortDescr>
+            <shortDescr>Computes TOA reflectances for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisToaReflectanceComputationTool</helpID>
@@ -73,43 +73,43 @@
 
     <extension point="beam-core:rgbProfiles">
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 0</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 0</name>
             <red>toa_refl_3</red>
             <green>toa_refl_2</green>
             <blue>toa_refl_1</blue>
         </rgbProfile>
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 1</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 1</name>
             <red>toa_refl_23</red>
             <green>toa_refl_13</green>
             <blue>toa_refl_3</blue>
         </rgbProfile>
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 2</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 2</name>
             <red>toa_refl_10</red>
             <green>toa_refl_6</green>
             <blue>toa_refl_2</blue>
         </rgbProfile>
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 3</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 3</name>
             <red>toa_refl_7</red>
             <green>toa_refl_4</green>
             <blue>toa_refl_1</blue>
         </rgbProfile>
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 3A</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 3A</name>
             <red>toa_refl_8</red>
             <green>toa_refl_5</green>
             <blue>toa_refl_2</blue>
         </rgbProfile>
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 4</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 4</name>
             <red>toa_refl_4</red>
             <green>toa_refl_2</green>
             <blue>toa_refl_1</blue>
         </rgbProfile>
         <rgbProfile>
-            <name>CHRIS/PROBA TOA Reflectances - Mode 5</name>
+            <name>CHRIS/Proba TOA Reflectances - Mode 5</name>
             <red>toa_refl_7</red>
             <green>toa_refl_4</green>
             <blue>toa_refl_1</blue>

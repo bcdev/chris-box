@@ -14,9 +14,9 @@
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-bootstrap</artifactId>
-    <name>CHRIS/PROBA Bootstrap Classpath</name>
+    <name>CHRIS/Proba Bootstrap Classpath</name>
     <version>1.0</version>
-    <description>Provides the bootstrap classpath for all CHRIS/PROBA modules</description>
+    <description>Provides the bootstrap classpath for all CHRIS/Proba modules</description>
 
     <dependencies>
         <dependency>

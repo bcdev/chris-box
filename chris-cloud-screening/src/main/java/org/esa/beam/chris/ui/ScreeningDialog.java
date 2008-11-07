@@ -36,7 +36,7 @@ class ScreeningDialog extends ModelessDialog {
     private final ScreeningForm form;
 
     ScreeningDialog(AppContext appContext) {
-        super(appContext.getApplicationWindow(), "CHRIS/PROBA Cloud Screening", ID_APPLY_CLOSE_HELP,
+        super(appContext.getApplicationWindow(), "CHRIS/Proba Cloud Screening", ID_APPLY_CLOSE_HELP,
               CloudScreeningAction.HELP_ID);
 
         this.appContext = appContext;

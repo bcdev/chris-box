@@ -2,8 +2,8 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-util</symbolicName>
     <version>1.0</version>
-    <name>CHRIS/PROBA Utilities</name>
-    <description>CHRIS/PROBA Utilities</description>
+    <name>CHRIS/Proba Utilities</name>
+    <description>CHRIS/Proba Utilities</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>

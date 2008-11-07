@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Action for invoking the CHRIS/PROBA noise reduction.
+ * Action for invoking the CHRIS/Proba noise reduction.
  *
  * @author Marco Peters
  * @author Ralf Quast
@@ -46,7 +46,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
     static final String SOURCE_NAME_PATTERN = "${sourceName}";
     
-    private static final String DIALOG_TITLE = "CHRIS/PROBA Noise Reduction";
+    private static final String DIALOG_TITLE = "CHRIS/Proba Noise Reduction";
     private static final String SOURCE_NAME_REGEX = "\\$\\{sourceName\\}";
 
     @Override

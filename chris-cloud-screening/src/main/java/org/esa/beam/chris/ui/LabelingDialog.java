@@ -61,7 +61,7 @@ class LabelingDialog extends ModelessDialog {
 
     LabelingDialog(final AppContext appContext, final ScreeningContext screeningContext) {
         super(appContext.getApplicationWindow(),
-              MessageFormat.format("CHRIS/PROBA Cloud Labeling - {0}", screeningContext.getRadianceProduct().getName()),
+              MessageFormat.format("CHRIS/Proba Cloud Labeling - {0}", screeningContext.getRadianceProduct().getName()),
               ID_APPLY_CLOSE_HELP, CloudScreeningAction.HELP_ID);
 
         this.appContext = appContext;
@@ -74,7 +74,7 @@ class LabelingDialog extends ModelessDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (form.getCheckBox().isSelected()) {
-                    VisatApp.getApp().showInfoDialog("CHRIS/PROBA Cloud Screening",
+                    VisatApp.getApp().showInfoDialog("CHRIS/Proba Cloud Screening",
                                                      "Calculating the probabilistic cloud mask can be extremely time consuming!",
                                                      "chrisbox.postLabling.showWarning");
                 }

@@ -2,8 +2,8 @@
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-geometric-correction</symbolicName>
     <version>1.0-SNAPSHOT</version>
-    <name>CHRIS/PROBA Geometric Correction Tool</name>
-    <description>CHRIS/PROBA Geometric Correction Tool</description>
+    <name>CHRIS/Proba Geometric Correction Tool</name>
+    <description>CHRIS/Proba Geometric Correction Tool</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -37,14 +37,14 @@
         <action>
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
-            <text>CHRIS/PROBA Tools</text>
+            <text>CHRIS/Proba Tools</text>
             <mnemonic/>
         </action>
         <action>
             <id>chrisGeometricCorrection</id>
             <class>org.esa.beam.chris.ui.PerformGeometricCorrectionAction</class>
             <text>Geometric Correction...</text>
-            <shortDescr>Perfoms the geometric correction for the selected CHRIS/PROBA product</shortDescr>
+            <shortDescr>Perfoms the geometric correction for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisGeometricCorrectionTool</helpID>

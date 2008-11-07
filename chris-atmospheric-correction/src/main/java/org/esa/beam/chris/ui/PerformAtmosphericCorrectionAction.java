@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 
 /**
- * Dialog for invoking the CHRIS/PROBA atmospheric correction.
+ * Dialog for invoking the CHRIS/Proba atmospheric correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -59,7 +59,7 @@ public class PerformAtmosphericCorrectionAction extends AbstractVisatAction {
         final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog(OperatorSpi.getOperatorAlias(ComputeSurfaceReflectancesOp.class),
                                                      appContext,
-                                                     "CHRIS/PROBA Atmospheric Correction",
+                                                     "CHRIS/Proba Atmospheric Correction",
                                                      "chrisAtmosphericCorrectionTool");
         dialog.getJDialog().setName("chrisAtmosphericCorrectionDialog");
         dialog.setTargetProductNameSuffix("_AC");

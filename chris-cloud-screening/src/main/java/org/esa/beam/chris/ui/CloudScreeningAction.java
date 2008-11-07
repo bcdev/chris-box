@@ -9,7 +9,7 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Action for invoking the CHIRS/PROBA cloud screening dialog.
+ * Action for invoking the CHIRS/Proba cloud screening dialog.
  *
  * @author Marco Peters
  * @author Ralf Quast

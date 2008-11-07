@@ -13,9 +13,9 @@
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-toa-reflectance-computation</artifactId>
-    <name>CHRIS/PROBA TOA Reflectance Computation Tool</name>
+    <name>CHRIS/Proba TOA Reflectance Computation Tool</name>
     <version>1.0</version>
-    <description>CHRIS/PROBA TOA Reflectance Computation Tool</description>
+    <description>CHRIS/Proba TOA Reflectance Computation Tool</description>
 
     <dependencies>
         <dependency>
