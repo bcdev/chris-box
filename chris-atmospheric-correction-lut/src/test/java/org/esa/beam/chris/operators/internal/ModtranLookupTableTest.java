@@ -15,17 +15,13 @@
 package org.esa.beam.chris.operators.internal;
 
 import junit.framework.TestCase;
-import junit.framework.TestResult;
-import org.esa.beam.util.math.IntervalPartition;
 
 import java.io.IOException;
 
 /**
  * Tests for class {@link ModtranLookupTable}.
  * <p/>
- * Note that the {@link TestCase#run()} method  is overridden in order to
- * deactivate the tests defined in this class. Running the tests requires
- * about 140 MB of heap space.
+ * Note that running all tests requires about 140 MB of heap space.
  *
  * @author Ralf Quast
  * @version $Revision: 2864 $ $Date: 2008-08-06 11:34:55 +0200 (Mi, 06 Aug 2008) $
@@ -37,20 +33,21 @@ public class ModtranLookupTableTest extends TestCase {
     private ModtranLookupTable modtranLookupTable;
 
     @Override
-    public void run(TestResult result) {
-//        super.run(result);  // uncomment this line in order to run the tests
+    protected void setUp() throws IOException {
+//        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
     }
 
-    @Override
-    protected void setUp() throws IOException {
-        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
+    public void testLookupTablePresencey() {
+        assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
     }
 
     public void testLookupTableIntegrity() {
-        checkLookupTableA();
-        checkLookupTableB();
-        checkModtranLookupTable();
-        checkWaterVapourDimension();
+        if (modtranLookupTable != null) {
+            checkLookupTableA();
+            checkLookupTableB();
+            checkModtranLookupTable();
+            checkWaterVapourDimension();
+        }
     }
 
     private void checkLookupTableA() {
