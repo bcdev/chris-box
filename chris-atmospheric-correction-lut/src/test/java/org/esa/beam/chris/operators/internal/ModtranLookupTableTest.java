@@ -34,7 +34,8 @@ public class ModtranLookupTableTest extends TestCase {
 
     @Override
     protected void setUp() throws IOException {
-//        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
+        // uncomment the next line if integrity test should be skipped
+        // modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
     }
 
     public void testLookupTablePresencey() {
