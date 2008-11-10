@@ -38,7 +38,7 @@ public class ModtranLookupTableTest extends TestCase {
         // modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
     }
 
-    public void testLookupTablePresencey() {
+    public void testLookupTablePresence() {
         assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
     }
 
