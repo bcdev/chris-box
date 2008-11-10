@@ -383,8 +383,8 @@ class ScreeningContext implements LabelingContext {
         parameterMap.put("endmembers", endmembers);
         parameterMap.put("unmixingModelName", "Fully Constrained LSU");
 
-        final Dimension tileSize = new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H);
         final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
+        final Dimension tileSize = new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H);
         renderingHints.put(GPF.KEY_TILE_SIZE, tileSize);
 
         final Product product = GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
