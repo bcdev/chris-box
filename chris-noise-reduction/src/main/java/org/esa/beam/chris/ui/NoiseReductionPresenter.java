@@ -315,6 +315,7 @@ class NoiseReductionPresenter {
             this.presenter = presenter;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             presenter.removeSelectedProduct();
         }
@@ -330,11 +331,12 @@ class NoiseReductionPresenter {
             this.presenter = presenter;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             ModalDialog dialog = new ModalDialog(null,
                                                  "Advanced Settings",
                                                  ModalDialog.ID_OK_CANCEL_HELP,
-                                                 "chrisNoiseReductionAdvancedSettings");
+                                                 "chrisNoiseReductionTool");
             AdvancedSettingsPresenter settingsPresenter = presenter.getAdvancedSettingsPresenter();
             AdvancedSettingsPresenter workingCopy = settingsPresenter.createCopy();
             dialog.setContent(new AdvancedSettingsPanel(workingCopy));
