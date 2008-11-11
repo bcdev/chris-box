@@ -146,19 +146,6 @@ class NoiseReductionPresenter {
         return productList.toArray(new Product[productList.size()]);
     }
 
-    public Product[] getUncheckedProducts() {
-        final DefaultTableModel tableModel = getProductTableModel();
-        final List<Product> productList = new ArrayList<Product>();
-
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            if (!(Boolean) tableModel.getValueAt(i, 0)) {
-                productList.add((Product) tableModel.getValueAt(i, 1));
-            }
-        }
-
-        return productList.toArray(new Product[productList.size()]);
-    }
-
     void setCheckedState(Product product, boolean checked) {
         for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
             Product current = (Product) getProductTableModel().getValueAt(i, 1);
@@ -220,6 +207,10 @@ class NoiseReductionPresenter {
     void removeSelectedProduct() {
         if (productTableModel.getRowCount() > 0) {
             int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
+            final Product product = (Product) getProductTableModel().getValueAt(selectionIndex, 1);
+            if (!VisatApp.getApp().getProductManager().contains(product)) {
+                product.dispose();
+            }
 
             productTableModel.removeRow(selectionIndex);
             updateSelection(selectionIndex);
@@ -282,7 +273,7 @@ class NoiseReductionPresenter {
 
             if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(null)) {
                 final File[] selectedFiles = fileChooser.getSelectedFiles();
-                for (File file : selectedFiles) {
+                for (final File file : selectedFiles) {
                     Product product = null;
                     try {
                         product = ProductIO.readProduct(file, null);
@@ -293,6 +284,9 @@ class NoiseReductionPresenter {
                         try {
                             presenter.addProduct(product);
                         } catch (NoiseReductionValidationException e1) {
+                            if (!containsProduct(presenter.getDestripingFactorsSourceProducts(), product)) {
+                                product.dispose();
+                            }
                             JOptionPane.showMessageDialog((Component) e.getSource(),
                                                           "Cannot add product.\n" + e1.getMessage());
                         }

@@ -112,6 +112,12 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
         if (dialog.show() == ModalDialog.ID_OK) {
             performNoiseReduction(presenter, targetProductSelectorModel);
+        } else {
+            for (final Product product : presenter.getDestripingFactorsSourceProducts()) {
+                if (!getAppContext().getProductManager().contains(product)) {
+                    product.dispose();
+                }
+            }
         }
     }
 

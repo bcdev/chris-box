@@ -18,6 +18,7 @@
     <changelog>
         <![CDATA[
         Changes in Version 1.1.1<br/>
+        [CBOX-64] Cannot add products to acquisition set<br/>
         [CBOX-59] CHRIS products stored in DIMAP cannot be added<br/>
         [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
 
