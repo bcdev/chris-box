@@ -6,11 +6,11 @@ import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.util.SystemUtils;
 import org.esa.beam.util.io.BeamFileChooser;
 import org.esa.beam.util.io.BeamFileFilter;
-import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -35,19 +35,20 @@ import java.util.Vector;
  */
 class NoiseReductionPresenter {
 
-    private DefaultTableModel productTableModel;
-    private ListSelectionModel productTableSelectionModel;
+    private final AppContext appContext;
+    private final DefaultTableModel productTableModel;
+    private final ListSelectionModel productTableSelectionModel;
 
-    private DefaultTableModel metadataTableModel;
+    private final DefaultTableModel metadataTableModel;
+    private final Action addProductAction;
+    private final Action removeProductAction;
 
-    private Action addProductAction;
-    private Action removeProductAction;
-    private Action settingsAction;
-
+    private final Action settingsAction;
     private AdvancedSettingsPresenter advancedSettingsPresenter;
 
-    public NoiseReductionPresenter(Product[] products,
+    public NoiseReductionPresenter(AppContext appContext, Product[] products,
                                    AdvancedSettingsPresenter advancedSettingsPresenter) {
+        this.appContext = appContext;
         Object[][] productData = new Object[products.length][2];
         if (products.length > 0) {
             for (int i = 0; i < productData.length; i++) {
@@ -208,7 +209,7 @@ class NoiseReductionPresenter {
         if (productTableModel.getRowCount() > 0) {
             int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
             final Product product = (Product) getProductTableModel().getValueAt(selectionIndex, 1);
-            if (!VisatApp.getApp().getProductManager().contains(product)) {
+            if (!appContext.getProductManager().contains(product)) {
                 product.dispose();
             }
 
@@ -262,9 +263,10 @@ class NoiseReductionPresenter {
             final BeamFileFilter hdfFileFilter =
                     new BeamFileFilter(ChrisConstants.FORMAT_NAME, extensions, description);
             final BeamFileChooser fileChooser = new BeamFileChooser();
-            String chrisImportDir = VisatApp.getApp().getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
-                                                                                         SystemUtils.getUserHomeDir().getPath());
-            String lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
+            final AppContext appContext = presenter.appContext;
+            String chrisImportDir = appContext.getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
+                                                                                  SystemUtils.getUserHomeDir().getPath());
+            String lastDir = appContext.getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
             fileChooser.setMultiSelectionEnabled(true);
             fileChooser.addChoosableFileFilter(hdfFileFilter);
             fileChooser.addChoosableFileFilter(new DimapFileFilter());
@@ -292,8 +294,8 @@ class NoiseReductionPresenter {
                         }
                     }
                 }
-                VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR_KEY,
-                                                                     fileChooser.getCurrentDirectory().getPath());
+                appContext.getPreferences().setPropertyString(LAST_OPEN_DIR_KEY,
+                                                              fileChooser.getCurrentDirectory().getPath());
             }
 
         }

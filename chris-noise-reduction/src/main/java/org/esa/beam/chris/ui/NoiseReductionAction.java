@@ -53,7 +53,8 @@ public class NoiseReductionAction extends AbstractVisatAction {
     public void actionPerformed(CommandEvent commandEvent) {
         final Product[] acquisitionSet = new AcquisitionSetProvider().getAcquisitionSet(getAppContext());
 
-        final NoiseReductionPresenter presenter = new NoiseReductionPresenter(acquisitionSet,
+        final NoiseReductionPresenter presenter = new NoiseReductionPresenter(getAppContext(), 
+                                                                              acquisitionSet,
                                                                               new AdvancedSettingsPresenter());
         final NoiseReductionForm noiseReductionForm = new NoiseReductionForm(presenter);
         noiseReductionForm.getTargetProductSelector().getOpenInAppCheckBox().setText(
