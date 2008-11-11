@@ -3,7 +3,7 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.chris.operators.internal.RtcTable;
 
 /**
- * todo - API doc
+ * Creates a {@link Calculator}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

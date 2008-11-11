@@ -45,7 +45,7 @@ import java.util.ArrayList;
  * Extracts endmembers for calculating cloud abundances.
  *
  * @author Ralf Quast
- * @version $Revision: 3388 $ $Date: 2008-10-24 18:34:36 +0200 (Fr, 24 Okt 2008) $
+ * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ExtractEndmembers",
                   version = "1.0",

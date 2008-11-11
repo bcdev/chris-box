@@ -25,7 +25,7 @@ import java.awt.*;
 import java.text.NumberFormat;
 
 /**
- * todo - add API doc
+ * Cloud labeling form.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -71,11 +71,11 @@ class LabelingForm extends JPanel {
     }
 
     void prepareHide() {
-        // todo - implement
+        // nothing to do
     }
 
     void prepareShow() {
-        // todo - implement
+        // nothing to do
     }
 
     JTable getTable() {

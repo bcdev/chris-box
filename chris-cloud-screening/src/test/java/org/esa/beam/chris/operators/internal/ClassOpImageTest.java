@@ -27,13 +27,13 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 
 /**
- * todo - add API doc
+ * Tests for class {@link ClassOpImage}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-public class ClusterMapOpImageTest extends TestCase {
+public class ClassOpImageTest extends TestCase {
 
     private static final IndexFilter NO_FILTERING = new IndexFilter() {
         @Override

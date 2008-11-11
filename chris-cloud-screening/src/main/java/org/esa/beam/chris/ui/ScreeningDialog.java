@@ -23,7 +23,7 @@ import javax.swing.*;
 import java.util.concurrent.ExecutionException;
 
 /**
- * todo - add API doc
+ * Cloud screening dialog.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * todo - API doc
+ * Action for invoking the geometric correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

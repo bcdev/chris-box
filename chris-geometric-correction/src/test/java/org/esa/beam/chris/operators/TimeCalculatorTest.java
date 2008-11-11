@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import java.io.InputStream;
 
 /**
- * todo - add API doc
+ * Tests.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

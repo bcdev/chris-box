@@ -265,7 +265,7 @@ class ScreeningContext implements LabelingContext {
     }
 
     int getClassIndex(int x, int y, int currentLevel) {
-        // todo - review
+        // todo - review with team
         final AffineTransform i2m = classView.getBaseImageLayer().getImageToModelTransform(currentLevel);
         final AffineTransform m2i = classView.getBaseImageLayer().getModelToImageTransform();
 

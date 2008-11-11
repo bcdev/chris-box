@@ -14,17 +14,10 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.core.ProgressMonitor;
-import org.esa.beam.cluster.EMCluster;
-import org.esa.beam.cluster.ProbabilityCalculator;
-import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.ui.product.ProductSceneView;
-
 import java.awt.*;
-import java.awt.image.RenderedImage;
 
 /**
- * todo - add API doc
+ * Cloud labeling context.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

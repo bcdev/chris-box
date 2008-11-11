@@ -30,7 +30,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 
 /**
- * todo - add API doc
+ * Operator for creating a classification product.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

@@ -1,7 +1,7 @@
 package org.esa.beam.chris.operators;
 
 /**
- * todo - API doc
+ * Calculates BOA reflectances from TOA radiances.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

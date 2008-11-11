@@ -27,7 +27,7 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * todo - add API doc
+ * Cloud screening form.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

@@ -341,7 +341,6 @@ public class ExtractFeaturesOp extends Operator {
         return sum / tiles.length;
     }
 
-    // todo - move or make an averager class
     private static double getAverageValue(double[][] table, double wavelength, double width) {
         final double[] x = table[0];
         final double[] y = table[1];
