@@ -45,7 +45,7 @@ import java.util.Map;
 public class NoiseReductionAction extends AbstractVisatAction {
 
     static final String SOURCE_NAME_PATTERN = "${sourceName}";
-    
+
     private static final String DIALOG_TITLE = "CHRIS/Proba Noise Reduction";
     private static final String SOURCE_NAME_REGEX = "\\$\\{sourceName\\}";
 
@@ -56,15 +56,18 @@ public class NoiseReductionAction extends AbstractVisatAction {
         final NoiseReductionPresenter presenter = new NoiseReductionPresenter(acquisitionSet,
                                                                               new AdvancedSettingsPresenter());
         final NoiseReductionForm noiseReductionForm = new NoiseReductionForm(presenter);
-        noiseReductionForm.getTargetProductSelector().getOpenInAppCheckBox().setText("Open in " + getAppContext().getApplicationName());
-        
+        noiseReductionForm.getTargetProductSelector().getOpenInAppCheckBox().setText(
+                "Open in " + getAppContext().getApplicationName());
+
         final TargetProductSelectorModel targetProductSelectorModel = noiseReductionForm.getTargetProductSelectorModel();
         final ModalDialog dialog =
-                new ModalDialog(VisatApp.getApp().getMainFrame(), DIALOG_TITLE, ModalDialog.ID_OK_CANCEL_HELP, "chrisNoiseReductionTool") {
+                new ModalDialog(VisatApp.getApp().getMainFrame(), DIALOG_TITLE, ModalDialog.ID_OK_CANCEL_HELP,
+                                "chrisNoiseReductionTool") {
                     @Override
                     protected boolean verifyUserInput() {
                         if (!targetProductSelectorModel.getProductName().contains(SOURCE_NAME_PATTERN)) {
-                            showErrorDialog("Target product name must use the '" + SOURCE_NAME_PATTERN + "' expression.");
+                            showErrorDialog(
+                                    "Target product name must use the '" + SOURCE_NAME_PATTERN + "' expression.");
                             return false;
                         }
 
@@ -76,13 +79,15 @@ public class NoiseReductionAction extends AbstractVisatAction {
                         final File[] targetProductFiles = new File[sourceProducts.length];
                         List<String> existingFilePathList = new ArrayList<String>(7);
                         for (int i = 0; i < sourceProducts.length; ++i) {
-                            targetProductFiles[i] = createResolvedTargetFile(targetProductSelectorModel.getProductFile(), sourceProducts[i].getName());
+                            targetProductFiles[i] = createResolvedTargetFile(
+                                    targetProductSelectorModel.getProductFile(), sourceProducts[i].getName());
                             if (targetProductFiles[i].exists()) {
                                 existingFilePathList.add(targetProductFiles[i].getAbsolutePath());
                             }
                         }
                         if (!existingFilePathList.isEmpty()) {
-                            String fileList = StringUtils.arrayToString(existingFilePathList.toArray(new String[existingFilePathList.size()]), "\n");
+                            String fileList = StringUtils.arrayToString(
+                                    existingFilePathList.toArray(new String[existingFilePathList.size()]), "\n");
                             String message = "The specified output file(s)\n{0}\nalready exists.\n\n" +
                                     "Do you want to overwrite the existing file(s)?";
                             String formatedMessage = MessageFormat.format(message, fileList);
@@ -108,6 +113,12 @@ public class NoiseReductionAction extends AbstractVisatAction {
         if (dialog.show() == ModalDialog.ID_OK) {
             performNoiseReduction(presenter, targetProductSelectorModel);
         }
+    }
+
+    @Override
+    public void updateState() {
+        final Product selectedProduct = getAppContext().getSelectedProduct();
+        setEnabled(selectedProduct == null || new SourceProductFilter().accept(selectedProduct));
     }
 
     private void performNoiseReduction(NoiseReductionPresenter presenter,
@@ -143,6 +154,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
 
         return new File(unresolvedTargetFile.getParentFile(), resolvedFileName);
     }
+
 
     private File createDestripingFactorsTargetFile(File targetFile) {
         final String basename = FileUtils.getFilenameWithoutExtension(targetFile);

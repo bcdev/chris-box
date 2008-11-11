@@ -90,9 +90,6 @@ class ScreeningForm extends JPanel {
 
     void prepareShow() {
         sourceProductSelector.initProducts();
-        if (sourceProductSelector.getProductCount() > 0) {
-            sourceProductSelector.setSelectedIndex(0);
-        }
     }
 
     SourceProductSelector getSourceProductSelector() {

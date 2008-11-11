@@ -3,6 +3,7 @@ package org.esa.beam.chris.ui;
 
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.ModelessDialog;
+import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
@@ -28,7 +29,7 @@ public class CloudScreeningAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent event) {
-        dialog.compareAndSet(null, new ScreeningDialog(getAppContext()));
+        dialog.compareAndSet(null, createDialog(getAppContext()));
         dialog.get().show();
     }
 
@@ -36,6 +37,13 @@ public class CloudScreeningAction extends AbstractVisatAction {
     public void updateState() {
         final Product selectedProduct = getAppContext().getSelectedProduct();
         setEnabled(selectedProduct == null || new CloudScreeningProductFilter().accept(selectedProduct));
+    }
+
+    private static ModelessDialog createDialog(AppContext appContext) {
+        final ModelessDialog dialog = new ScreeningDialog(appContext);
+        dialog.getJDialog().setName("chrisCloudScreeningDialog");
+
+        return dialog;
     }
 
 }
