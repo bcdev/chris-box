@@ -1,16 +1,16 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.dataio.chris.ChrisProductReaderPlugIn;
+import org.esa.beam.dataio.dimap.DimapFileFilter;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModalDialog;
 import org.esa.beam.util.SystemUtils;
 import org.esa.beam.util.io.BeamFileChooser;
 import org.esa.beam.util.io.BeamFileFilter;
-import org.esa.beam.visat.VisatApp;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -35,19 +35,20 @@ import java.util.Vector;
  */
 class NoiseReductionPresenter {
 
-    private DefaultTableModel productTableModel;
-    private ListSelectionModel productTableSelectionModel;
+    private final AppContext appContext;
+    private final DefaultTableModel productTableModel;
+    private final ListSelectionModel productTableSelectionModel;
 
-    private DefaultTableModel metadataTableModel;
+    private final DefaultTableModel metadataTableModel;
+    private final Action addProductAction;
+    private final Action removeProductAction;
 
-    private Action addProductAction;
-    private Action removeProductAction;
-    private Action settingsAction;
-
+    private final Action settingsAction;
     private AdvancedSettingsPresenter advancedSettingsPresenter;
 
-    public NoiseReductionPresenter(Product[] products,
+    public NoiseReductionPresenter(AppContext appContext, Product[] products,
                                    AdvancedSettingsPresenter advancedSettingsPresenter) {
+        this.appContext = appContext;
         Object[][] productData = new Object[products.length][2];
         if (products.length > 0) {
             for (int i = 0; i < productData.length; i++) {
@@ -60,6 +61,7 @@ class NoiseReductionPresenter {
         productTableSelectionModel = new DefaultListSelectionModel();
         productTableSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         productTableSelectionModel.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 updateMetadata();
             }
@@ -145,19 +147,6 @@ class NoiseReductionPresenter {
         return productList.toArray(new Product[productList.size()]);
     }
 
-    public Product[] getUncheckedProducts() {
-        final DefaultTableModel tableModel = getProductTableModel();
-        final List<Product> productList = new ArrayList<Product>();
-
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            if (!(Boolean) tableModel.getValueAt(i, 0)) {
-                productList.add((Product) tableModel.getValueAt(i, 1));
-            }
-        }
-
-        return productList.toArray(new Product[productList.size()]);
-    }
-
     void setCheckedState(Product product, boolean checked) {
         for (int i = 0; i < getProductTableModel().getRowCount(); i++) {
             Product current = (Product) getProductTableModel().getValueAt(i, 1);
@@ -219,6 +208,10 @@ class NoiseReductionPresenter {
     void removeSelectedProduct() {
         if (productTableModel.getRowCount() > 0) {
             int selectionIndex = getProductTableSelectionModel().getLeadSelectionIndex();
+            final Product product = (Product) getProductTableModel().getValueAt(selectionIndex, 1);
+            if (!appContext.getProductManager().contains(product)) {
+                product.dispose();
+            }
 
             productTableModel.removeRow(selectionIndex);
             updateSelection(selectionIndex);
@@ -259,25 +252,30 @@ class NoiseReductionPresenter {
 
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (presenter.getDestripingFactorsSourceProducts().length == 5) {
                 JOptionPane.showMessageDialog((Component) e.getSource(), "You cannot select more than five products.");
                 return;
             }
-            BeamFileFilter fileFilter = new BeamFileFilter(ChrisConstants.FORMAT_NAME,
-                                                           ChrisConstants.DEFAULT_FILE_EXTENSION,
-                                                           new ChrisProductReaderPlugIn().getDescription(null));
-            BeamFileChooser fileChooser = new BeamFileChooser();
-            String chrisImportDir = VisatApp.getApp().getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
-                                                                                         SystemUtils.getUserHomeDir().getPath());
-            String lastDir = VisatApp.getApp().getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
+            final String[] extensions = {ChrisConstants.DEFAULT_FILE_EXTENSION};
+            final String description = ChrisConstants.READER_DESCRIPTION;
+            final BeamFileFilter hdfFileFilter =
+                    new BeamFileFilter(ChrisConstants.FORMAT_NAME, extensions, description);
+            final BeamFileChooser fileChooser = new BeamFileChooser();
+            final AppContext appContext = presenter.appContext;
+            String chrisImportDir = appContext.getPreferences().getPropertyString(CHRIS_IMPORT_DIR_KEY,
+                                                                                  SystemUtils.getUserHomeDir().getPath());
+            String lastDir = appContext.getPreferences().getPropertyString(LAST_OPEN_DIR_KEY, chrisImportDir);
             fileChooser.setMultiSelectionEnabled(true);
-            fileChooser.setFileFilter(fileFilter);
+            fileChooser.addChoosableFileFilter(hdfFileFilter);
+            fileChooser.addChoosableFileFilter(new DimapFileFilter());
+            fileChooser.setFileFilter(hdfFileFilter);
             fileChooser.setCurrentDirectory(new File(lastDir));
 
             if (BeamFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(null)) {
-                File[] selectedFiles = fileChooser.getSelectedFiles();
-                for (File file : selectedFiles) {
+                final File[] selectedFiles = fileChooser.getSelectedFiles();
+                for (final File file : selectedFiles) {
                     Product product = null;
                     try {
                         product = ProductIO.readProduct(file, null);
@@ -288,13 +286,16 @@ class NoiseReductionPresenter {
                         try {
                             presenter.addProduct(product);
                         } catch (NoiseReductionValidationException e1) {
+                            if (!containsProduct(presenter.getDestripingFactorsSourceProducts(), product)) {
+                                product.dispose();
+                            }
                             JOptionPane.showMessageDialog((Component) e.getSource(),
                                                           "Cannot add product.\n" + e1.getMessage());
                         }
                     }
                 }
-                VisatApp.getApp().getPreferences().setPropertyString(LAST_OPEN_DIR_KEY,
-                                                                     fileChooser.getCurrentDirectory().getPath());
+                appContext.getPreferences().setPropertyString(LAST_OPEN_DIR_KEY,
+                                                              fileChooser.getCurrentDirectory().getPath());
             }
 
         }
@@ -310,6 +311,7 @@ class NoiseReductionPresenter {
             this.presenter = presenter;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             presenter.removeSelectedProduct();
         }
@@ -325,11 +327,12 @@ class NoiseReductionPresenter {
             this.presenter = presenter;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             ModalDialog dialog = new ModalDialog(null,
                                                  "Advanced Settings",
                                                  ModalDialog.ID_OK_CANCEL_HELP,
-                                                 "chrisNoiseReductionAdvancedSettings");
+                                                 "chrisNoiseReductionTool");
             AdvancedSettingsPresenter settingsPresenter = presenter.getAdvancedSettingsPresenter();
             AdvancedSettingsPresenter workingCopy = settingsPresenter.createCopy();
             dialog.setContent(new AdvancedSettingsPanel(workingCopy));

@@ -6,16 +6,16 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <packaging>jar</packaging>
 
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-toa-reflectance-computation</artifactId>
-    <name>CHRIS/PROBA TOA Reflectance Computation Tool</name>
-    <version>1.0</version>
-    <description>CHRIS/PROBA TOA Reflectance Computation Tool</description>
+    <name>CHRIS/Proba TOA Reflectance Computation Tool</name>
+    <version>1.0.1</version>
+    <description>CHRIS/Proba TOA Reflectance Computation Tool</description>
 
     <dependencies>
         <dependency>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.esa.beam.chris</groupId>
             <artifactId>chris-util</artifactId>
-            <version>1.0</version>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 

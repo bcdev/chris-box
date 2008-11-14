@@ -18,12 +18,12 @@ import org.esa.beam.chris.operators.internal.PixelAccessor;
 import org.esa.beam.framework.gpf.Tile;
 
 /**
- * todo - add API doc
-*
-* @author Ralf Quast
-* @version $Revision$ $Date$
-* @since BEAM 4.2
-*/
+ * Class for accessing individual pixels in a tile stack.
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ * @since BEAM 4.2
+ */
 class TilePixelAccessor implements PixelAccessor {
     private final Tile[] tiles;
 

@@ -1,8 +1,8 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-noise-reduction</symbolicName>
-    <version>1.1</version>
-    <name>CHRIS/PROBA Noise Reduction Tool</name>
+    <version>1.1.1</version>
+    <name>CHRIS/Proba Noise Reduction Tool</name>
 
     <description>
         The Noise Reduction Tool is used to remove the vertical striping in CHRIS images
@@ -17,6 +17,11 @@
 
     <changelog>
         <![CDATA[
+        Changes in Version 1.1.1<br/>
+        [CBOX-64] Cannot add products to acquisition set<br/>
+        [CBOX-59] CHRIS products stored in DIMAP cannot be added<br/>
+        [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
+
         Changes in Version 1.1<br/>
         [CBOX-46] Explain ${sourceName} syntax in dialog<br/>
         [CBOX-45] Support of Mode 30<br/>
@@ -45,7 +50,7 @@
         <action>
             <id>chris</id>
             <class>org.esa.beam.visat.actions.ActionGroup</class>
-            <text>CHRIS/PROBA Tools</text>
+            <text>CHRIS/Proba Tools</text>
             <separatorBefore>true</separatorBefore>
             <separatorAfter>true</separatorAfter>
             <mnemonic/>
@@ -54,7 +59,7 @@
             <id>chrisNoiseReduction</id>
             <class>org.esa.beam.chris.ui.NoiseReductionAction</class>
             <text>Noise Reduction...</text>
-            <shortDescr>Performs the noise reduction for the selected CHRIS/PROBA product</shortDescr>
+            <shortDescr>Performs the noise reduction for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpID>chrisNoiseReductionTool</helpID>

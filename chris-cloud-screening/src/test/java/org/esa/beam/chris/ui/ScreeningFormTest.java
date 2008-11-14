@@ -46,7 +46,7 @@ public class ScreeningFormTest extends TestCase {
         assertTrue(form.isWvCheckBoxSelected());
         assertTrue(form.isO2CheckBoxSelected());
 
-        // for mode 2 atomospheric features are not available
+        // for mode 2 atmospheric features are not available
         form.setSourceProduct(new Product("b", "CHRIS_M2_NR", 1, 1));
         assertFalse(form.isWvCheckBoxEnabled());
         assertFalse(form.isO2CheckBoxEnabled());
@@ -84,10 +84,11 @@ public class ScreeningFormTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        final DefaultAppContext appContext = new DefaultAppContext("test");
         final ScreeningFormModel formModel = new ScreeningFormModel();
         formModel.getParameterValueContainer().setValue("useWv", true);
         formModel.getParameterValueContainer().setValue("useO2", true);
-        form = new ScreeningForm(new DefaultAppContext("test"), formModel);
+        form = new ScreeningForm(appContext, formModel);
 
         form.getSourceProductSelector().setProductFilter(new ProductFilter() {
             @Override

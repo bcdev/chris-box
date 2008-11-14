@@ -14,10 +14,8 @@
  */
 package org.esa.beam.chris.util.math.internal;
 
-import java.util.Arrays;
-
 /**
- * todo - add API doc
+ * Performs a linear regression fit.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

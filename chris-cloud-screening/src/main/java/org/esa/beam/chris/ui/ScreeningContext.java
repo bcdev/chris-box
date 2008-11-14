@@ -33,6 +33,7 @@ import org.esa.beam.jai.ImageManager;
 import org.esa.beam.unmixing.Endmember;
 import org.esa.beam.unmixing.SpectralUnmixingOp;
 import org.esa.beam.util.PropertyMap;
+import org.esa.beam.visat.VisatApp;
 
 import javax.media.jai.*;
 import javax.media.jai.operator.HistogramDescriptor;
@@ -264,7 +265,7 @@ class ScreeningContext implements LabelingContext {
     }
 
     int getClassIndex(int x, int y, int currentLevel) {
-        // todo - review
+        // todo - review with team
         final AffineTransform i2m = classView.getBaseImageLayer().getImageToModelTransform(currentLevel);
         final AffineTransform m2i = classView.getBaseImageLayer().getModelToImageTransform();
 
@@ -383,8 +384,8 @@ class ScreeningContext implements LabelingContext {
         parameterMap.put("unmixingModelName", "Fully Constrained LSU");
 
         final RenderingHints renderingHints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
-        renderingHints.put(GPF.KEY_TILE_SIZE,
-                           new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H));
+        final Dimension tileSize = new Dimension(CloudProbabilityOpImage.TILE_W, CloudProbabilityOpImage.TILE_H);
+        renderingHints.put(GPF.KEY_TILE_SIZE, tileSize);
 
         final Product product = GPF.createProduct(OperatorSpi.getOperatorAlias(SpectralUnmixingOp.class),
                                                   parameterMap,

@@ -34,9 +34,9 @@ import java.text.MessageFormat;
  */
 public class ModtranLookupTableReader {
 
-    private static final String LUT_FILE_NAME = "chrisbox-ac-lut-formatted-1nm.img";
+    static final String LUT_FILE_NAME = "chrisbox-ac-lut-formatted-1nm.img";
     // unit conversion constant
-    private static final double DEKA_KILO = 1.0E4;
+    static final double DEKA_KILO = 1.0E4;
 
     @SuppressWarnings({"ConstantConditions"})
     public ModtranLookupTable readModtranLookupTable() throws IOException {

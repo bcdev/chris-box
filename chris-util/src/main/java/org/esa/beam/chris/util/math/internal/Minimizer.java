@@ -1,7 +1,7 @@
 package org.esa.beam.chris.util.math.internal;
 
 /**
- * todo - add API doc
+ * Minimizer interface.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

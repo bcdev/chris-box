@@ -1,7 +1,7 @@
 package org.esa.beam.chris.operators.internal;
 
 /**
- * todo - API doc
+ * Table storing radiative transfer calculations.
  *
  * @author Ralf Quast
  * @version $Revision: 2703 $ $Date: 2008-07-15 11:42:48 +0200 (Di, 15 Jul 2008) $

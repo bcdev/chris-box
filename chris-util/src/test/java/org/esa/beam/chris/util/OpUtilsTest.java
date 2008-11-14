@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.Scanner;
 
 /**
- * todo - add API doc
+ * Tests for class {@link OpUtils}.
  *
  * @author Marco Peters
  * @version $Revision$ $Date$

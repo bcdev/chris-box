@@ -44,7 +44,7 @@ public class ExtractFeaturesAction extends AbstractVisatAction {
         final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ExtractFeatures",
                                                      appContext,
-                                                     "CHRIS/PROBA Feature Extraction",
+                                                     "CHRIS/Proba Feature Extraction",
                                                      "chrisExtractFeaturesTools");
         dialog.setTargetProductNameSuffix("_FEAT");
         return dialog;

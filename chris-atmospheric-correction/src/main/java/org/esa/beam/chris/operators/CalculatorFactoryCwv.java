@@ -4,7 +4,7 @@ import org.esa.beam.chris.operators.internal.ModtranLookupTable;
 import org.esa.beam.chris.operators.internal.RtcTable;
 
 /**
- * todo - API doc
+ * Creates a {@link Calculator}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -21,9 +21,9 @@ class CalculatorFactoryCwv {
 
     private final double toaScaling;
 
-    public CalculatorFactoryCwv(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza,
-                                double sza, double ada, double alt, double aot, double[] corrections,
-                                double toaScaling) {
+    CalculatorFactoryCwv(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza,
+                         double sza, double ada, double alt, double aot, double[] corrections,
+                         double toaScaling) {
         cwv = modtranLookupTable.getDimension(ModtranLookupTable.CWV);
 
         lpw = new double[cwv.length][];
@@ -48,17 +48,17 @@ class CalculatorFactoryCwv {
         this.toaScaling = toaScaling;
     }
 
-    public Calculator createCalculator(double cwv) {
+    Calculator createCalculator(double cwv) {
         final FI fracIndex = toFracIndex(cwv);
 
         return createCalculator(fracIndex.i, fracIndex.f);
     }
 
-    public final double getMinCwv() {
+    final double getMinCwv() {
         return cwv[0];
     }
 
-    public final double getMaxCwv() {
+    final double getMaxCwv() {
         return cwv[cwv.length - 1];
     }
 

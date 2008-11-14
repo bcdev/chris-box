@@ -44,7 +44,7 @@ public class ComputeToaReflectancesAction extends AbstractVisatAction {
         final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog("chris.ComputeToaReflectances",
                                                      appContext,
-                                                     "CHRIS/PROBA TOA Reflectance Computation",
+                                                     "CHRIS/Proba TOA Reflectance Computation",
                                                      "chrisToaReflectanceComputationTool");
         dialog.getJDialog().setName("chrisToaReflectanceComputationDialog");
         dialog.setTargetProductNameSuffix("_TOA_REFL");

@@ -34,7 +34,7 @@ import java.util.Map;
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Computes TOA reflectances from a CHRIS/PROBA RCI.")
+                  description = "Computes TOA reflectances from a CHRIS/Proba RCI.")
 public class ComputeToaReflectancesOp extends Operator {
 
     private static final String TOA_REFL = "toa_refl";

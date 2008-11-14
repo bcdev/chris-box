@@ -20,7 +20,7 @@ import org.esa.beam.framework.datamodel.ProductFilter;
 import org.esa.beam.framework.datamodel.Band;
 
 /**
- * Filters CHRIS/PROBA products suitable for cloud screening.
+ * Filters CHRIS/Proba products suitable for cloud screening.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$

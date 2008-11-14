@@ -35,6 +35,7 @@ class AcquisitionSetProvider {
     public Product[] getAcquisitionSet(AppContext appContext) {
         final SortedSet<Product> acquisitionSet = new TreeSet<Product>(
                 new Comparator<Product>() {
+                    @Override
                     public final int compare(Product p, Product q) {
                         return p.getName().compareTo(q.getName());
                     }

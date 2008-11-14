@@ -4,8 +4,8 @@
 
 <toc version="2.0" categoryclosedimage="folder" categoryopenimage="folder" topicimage="doc">
 
-    <tocitem text="CHRIS/PROBA Tools">
-        <tocitem text="CHRIS/PROBA Cloud Screening Tools" target="chrisCloudScreeningTools"/>
-        <tocitem text="CHRIS/PROBA Extract Features Tool" target="chrisExtractFeaturesTools"/>
+    <tocitem text="CHRIS/Proba Tools">
+        <tocitem text="CHRIS/Proba Cloud Screening Tools" target="chrisCloudScreeningTools"/>
+        <tocitem text="CHRIS/Proba Extract Features Tool" target="chrisExtractFeaturesTools"/>
     </tocitem>
 </toc>

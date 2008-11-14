@@ -27,7 +27,7 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * todo - add API doc
+ * Cloud screening form.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -90,9 +90,6 @@ class ScreeningForm extends JPanel {
 
     void prepareShow() {
         sourceProductSelector.initProducts();
-        if (sourceProductSelector.getProductCount() > 0) {
-            sourceProductSelector.setSelectedIndex(0);
-        }
     }
 
     SourceProductSelector getSourceProductSelector() {

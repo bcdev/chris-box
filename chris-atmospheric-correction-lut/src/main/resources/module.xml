@@ -1,9 +1,9 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-atmospheric-correction-lut</symbolicName>
-    <version>1.0</version>
-    <name>CHRIS/PROBA Atmospheric Correction Tool Lookup Table</name>
-    <description>CHRIS/PROBA Atmospheric Correction Tool Lookup Table</description>
+    <version>1.0.1</version>
+    <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table</name>
+    <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
@@ -12,12 +12,10 @@
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
     <changelog>
-        <!--
         <![CDATA[
-        <p>Initial Release 1.0
-        </p>
+        Changes in Version 1.0.1<br/>
+        [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
         ]]>
-        -->
     </changelog>
 
     <dependency>

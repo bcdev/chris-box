@@ -18,7 +18,7 @@ import org.esa.beam.chris.operators.internal.ModtranLookupTable;
 import org.esa.beam.chris.operators.internal.RtcTable;
 
 /**
- * todo - add API doc
+ * Creates an {@link RtcTable}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -28,8 +28,8 @@ class RtcTableFactoryAot {
     private final double[] aot;
     private final double[][] lpw;
 
-    public RtcTableFactoryAot(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza,
-                              double sza, double ada, double alt, double cwv) {
+    RtcTableFactoryAot(ModtranLookupTable modtranLookupTable, Resampler resampler, double vza,
+                       double sza, double ada, double alt, double cwv) {
         aot = modtranLookupTable.getDimension(ModtranLookupTable.AOT);
 
         lpw = new double[aot.length][];
@@ -41,17 +41,17 @@ class RtcTableFactoryAot {
         }
     }
 
-    public RtcTable createRtcTable(double aot) {
+    RtcTable createRtcTable(double aot) {
         final FI fracIndex = toFracIndex(aot);
 
         return createRtcTable(fracIndex.i, fracIndex.f);
     }
 
-    public final double getMinAot() {
+    final double getMinAot() {
         return aot[0];
     }
 
-    public final double getMaxAot() {
+    final double getMaxAot() {
         return aot[aot.length - 1];
     }
 

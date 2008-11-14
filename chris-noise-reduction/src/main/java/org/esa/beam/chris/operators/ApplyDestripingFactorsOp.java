@@ -38,14 +38,14 @@ import java.text.MessageFormat;
  * the {@link ComputeDestripingFactorsOp}.
  *
  * @author Ralf Quast
- * @author Marco Zühlke
+ * @author Marco ZÃ¼hlke
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ApplyDestripingFactors",
                   version = "1.0",
                   authors = "Ralf Quast",
                   copyright = "(c) 2007 by Brockmann Consult",
-                  description = "Applies a precomputed set of destriping factors to a CHRIS/PROBA RCI.")
+                  description = "Applies a precomputed set of destriping factors to a CHRIS/Proba RCI.")
 public class ApplyDestripingFactorsOp extends Operator {
 
     @SourceProduct(alias = "input")

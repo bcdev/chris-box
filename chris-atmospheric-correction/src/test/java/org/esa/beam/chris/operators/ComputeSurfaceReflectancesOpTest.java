@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.Scanner;
 
 /**
- * todo - add API doc
+ * Tests for class {@link ComputeSurfaceReflectancesOp}.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -56,6 +56,7 @@ public class ComputeSurfaceReflectancesOpTest extends TestCase {
         assertEquals(rowCount, y.size());
         assertEquals(rowCount, z.size());
 
+// code for writing the img file
 //        final FileImageOutputStream ios = new FileImageOutputStream(new File("endmembers.img"));
 //        ios.writeInt(rowCount);
 //        for (final Double value : x) {
