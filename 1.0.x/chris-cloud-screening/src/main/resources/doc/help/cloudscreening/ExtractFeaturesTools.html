@@ -1,0 +1,117 @@
+<html>
+<head>
+    <title>CHRIS/Proba Extract Features Tool</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+
+<body>
+
+<table class="header">
+    <tr class="header">
+        <td class="header">&nbsp;
+            CHRIS/Proba Extract Features
+        </td>
+        <td class="header" align="right"><a href="../../index.html"><img src="../images/BeamHeader.jpg" border=0></a>
+        </td>
+    </tr>
+</table>
+
+<h3>CHRIS/Proba Extract Features</h3>
+
+<p>
+    The Extract Features Tool is used to extract surface and atmospheric features from CHRIS images.
+    Before you can perform the <b>Feature Extraction</b> on the CHRIS product, you have to apply the
+    <b>TOA Reflectance Computation</b> first.
+</p>
+
+<h4>Extract Features Algorithm</h4>
+
+<p>
+    The measured spectral signature depends on the illumination, the atmosphere, and the sur-
+    face. The figure below shows CHRIS Mode 1 band locations compared with the spectral curve of healthy
+    vegetation, bare soil, and the atmospheric transmittance. The spectral bands free from atmo-
+    spheric absorptions contain information about the surface reflectance, while others are mainly
+    affected by the atmosphere.
+</p>
+
+<p>
+    At this step, rather than working with the spectral bands only, physically-inspired features
+    are extracted in order to increase the separability of clouds and surface covers. These features are
+    extracted independently from the bands that are free from strong gaseous absorptions,
+    &lambda;<sub>i</sub> &sub; B<sub>S</sub>, and from the bands affected by the atmosphere,
+    &lambda;<sub>i</sub> &sub; B<sub>A</sub>. A detailed analysis of the extracted features can be found in the ATBD.
+</p>
+
+<p align="center">
+    <img src="images/ChrisSpectralSignatures.jpg"/>
+</p>
+<h4>User Interface</h4>
+
+<p>
+    The Extract Features tool can be invoked from VISAT <b>Tools</b> menu by selecting
+    the <b>Extract Features</b> command in the <b>CHRIS/Proba Tools</b> submenu.
+</p>
+
+<p>
+    Selecting the <b>Extract Features</b> command brings up following dialog :
+</p>
+
+<p align="center">
+    <img src="images/ExtractFeaturesDialog.jpg" alt="Extract Features Dialog"/>
+</p>
+
+<h5>IO Parameters Tab</h5>
+
+<h6>Source Product Group</h6>
+
+<p class="i1">
+    <b>Name:</b>
+    Here the user specifies the source product. The combo box presents
+    a list of all products open in VISAT. The user may select one of these
+    or, by clicking on the button next to the combo box, choose a product
+    from the file system.
+</p>
+
+<h6>Target Product Group</h6>
+
+<p class="i1">
+    <b>Name:</b>
+    Used to specify the name of the target product.
+</p>
+
+<p class="i1">
+    <b>Save as:</b>
+    Used to specify whether the target product should be saved to the file system. The
+    combo box presents a list of file formats, currently BEAM-DIMAP, GeoTIFF, and HDF5.
+    The text field allows to specify a target directory.
+</p>
+
+<p class="i1">
+    <b>Open in VISAT:</b>
+    Used to specify whether the target product should be opened in VISAT. When the
+    the target product is not saved, it is opened in VISAT automatically.
+</p>
+
+<h5>Dialog Buttons</h5>
+
+<p class="i1">
+    <b>Run</b>
+    Creates the target product. The processing is actually deferred until the target band data are accessed,
+    either by writing the product to the file system or by viewing the band data. When the <b>Save as</b> option is
+    checked, the processing is triggered automatically.
+</p>
+
+<p class="i1">
+    <b>Close</b>
+    Closes the dialog.
+</p>
+
+<p class="i1">
+    <b>Help</b>
+    Displays this page in VISAT Help.
+</p>
+
+
+<hr>
+</body>
+</html>

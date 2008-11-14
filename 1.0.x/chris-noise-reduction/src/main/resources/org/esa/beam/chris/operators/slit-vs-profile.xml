@@ -1,0 +1,13 @@
+<table>
+    <name>Slit Vertical Striping Profile</name>
+    <dimension>
+        <index>1</index>
+        <variable>pixel position</variable>
+        <unit>dl</unit>
+    </dimension>
+    <dimension>
+        <index>2</index>
+        <variable>noise factor</variable>
+        <unit>dl</unit>
+    </dimension>
+</table>

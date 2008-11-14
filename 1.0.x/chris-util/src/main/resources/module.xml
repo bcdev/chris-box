@@ -1,0 +1,33 @@
+<module>
+    <manifestVersion>1.0.0</manifestVersion>
+    <symbolicName>chris-util</symbolicName>
+    <version>1.0.1</version>
+    <name>CHRIS/Proba Utilities</name>
+    <description>CHRIS/Proba Utilities</description>
+
+    <vendor>Brockmann Consult GmbH</vendor>
+    <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
+    <copyright>(C) 2008 by Brockmann Consult GmbH</copyright>
+    <url>http://envisat.esa.int/beam</url>
+    <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
+
+    <changelog>
+        <![CDATA[
+        Changes in Version 1.0.1<br/>
+        [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
+        ]]>
+    </changelog>
+
+    <dependency>
+        <module>beam-core</module>
+    </dependency>
+    <dependency>
+        <module>beam-chris-reader</module>
+    </dependency>
+    <dependency>
+        <module>beam-gpf</module>
+    </dependency>
+
+    <categories>Application,Processor,CHRIS</categories>
+
+</module>

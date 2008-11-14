@@ -1,0 +1,1666 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Dimap_Document name="CHRIS_HR_050623_560E_41_NR.dim">
+    <Metadata_Id>
+        <METADATA_FORMAT version="2.3.0">DIMAP</METADATA_FORMAT>
+        <METADATA_PROFILE>BEAM-DATAMODEL-V1</METADATA_PROFILE>
+    </Metadata_Id>
+    <Dataset_Id>
+        <DATASET_SERIES>BEAM-PRODUCT</DATASET_SERIES>
+        <DATASET_NAME>CHRIS_HR_050623_560E_41_NR</DATASET_NAME>
+    </Dataset_Id>
+    <Production>
+        <DATASET_PRODUCER_NAME />
+        <PRODUCT_TYPE>CHRIS_M2_NR</PRODUCT_TYPE>
+        <PRODUCT_SCENE_RASTER_START_TIME>23-JUN-2005 00:24:26.000000</PRODUCT_SCENE_RASTER_START_TIME>
+        <PRODUCT_SCENE_RASTER_STOP_TIME>23-JUN-2005 00:24:26.000000</PRODUCT_SCENE_RASTER_STOP_TIME>
+    </Production>
+    <Flag_Coding name="CHRIS">
+        <Flag>
+            <Flag_Name>dropout</Flag_Name>
+            <Flag_Index>1</Flag_Index>
+            <Flag_description>Dropout pixel</Flag_description>
+        </Flag>
+        <Flag>
+            <Flag_Name>saturated</Flag_Name>
+            <Flag_Index>2</Flag_Index>
+            <Flag_description>Saturated pixel</Flag_description>
+        </Flag>
+        <Flag>
+            <Flag_Name>dropout_corrected</Flag_Name>
+            <Flag_Index>256</Flag_Index>
+            <Flag_description>Corrected dropout pixel</Flag_description>
+        </Flag>
+    </Flag_Coding>
+    <Raster_Dimensions>
+        <NCOLS>384</NCOLS>
+        <NROWS>64</NROWS>
+        <NBANDS>36</NBANDS>
+    </Raster_Dimensions>
+    <Data_Access>
+        <DATA_FILE_FORMAT>ENVI</DATA_FILE_FORMAT>
+        <DATA_FILE_FORMAT_DESC>ENVI File Format</DATA_FILE_FORMAT_DESC>
+        <DATA_FILE_ORGANISATION>BAND_SEPARATE</DATA_FILE_ORGANISATION>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_1.hdr" />
+            <BAND_INDEX>0</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_2.hdr" />
+            <BAND_INDEX>1</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_3.hdr" />
+            <BAND_INDEX>2</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_4.hdr" />
+            <BAND_INDEX>3</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_5.hdr" />
+            <BAND_INDEX>4</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_6.hdr" />
+            <BAND_INDEX>5</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_7.hdr" />
+            <BAND_INDEX>6</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_8.hdr" />
+            <BAND_INDEX>7</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_9.hdr" />
+            <BAND_INDEX>8</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_10.hdr" />
+            <BAND_INDEX>9</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_11.hdr" />
+            <BAND_INDEX>10</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_12.hdr" />
+            <BAND_INDEX>11</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_13.hdr" />
+            <BAND_INDEX>12</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_14.hdr" />
+            <BAND_INDEX>13</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_15.hdr" />
+            <BAND_INDEX>14</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_16.hdr" />
+            <BAND_INDEX>15</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_17.hdr" />
+            <BAND_INDEX>16</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/radiance_18.hdr" />
+            <BAND_INDEX>17</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_1.hdr" />
+            <BAND_INDEX>18</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_2.hdr" />
+            <BAND_INDEX>19</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_3.hdr" />
+            <BAND_INDEX>20</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_4.hdr" />
+            <BAND_INDEX>21</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_5.hdr" />
+            <BAND_INDEX>22</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_6.hdr" />
+            <BAND_INDEX>23</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_7.hdr" />
+            <BAND_INDEX>24</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_8.hdr" />
+            <BAND_INDEX>25</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_9.hdr" />
+            <BAND_INDEX>26</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_10.hdr" />
+            <BAND_INDEX>27</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_11.hdr" />
+            <BAND_INDEX>28</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_12.hdr" />
+            <BAND_INDEX>29</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_13.hdr" />
+            <BAND_INDEX>30</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_14.hdr" />
+            <BAND_INDEX>31</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_15.hdr" />
+            <BAND_INDEX>32</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_16.hdr" />
+            <BAND_INDEX>33</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_17.hdr" />
+            <BAND_INDEX>34</BAND_INDEX>
+        </Data_File>
+        <Data_File>
+            <DATA_FILE_PATH href="CHRIS_HR_050623_560E_41_NR.data/mask_18.hdr" />
+            <BAND_INDEX>35</BAND_INDEX>
+        </Data_File>
+    </Data_Access>
+    <Image_Display>
+        <Band_Statistics>
+            <BAND_INDEX>0</BAND_INDEX>
+            <STX_MIN>45063.0</STX_MIN>
+            <STX_MAX>214587.0</STX_MAX>
+            <HISTOGRAM>3,5,16,44,103,151,170,248,262,286,350,333,276,252,250,159,145,136,133,117,115,101,84,69,46,55,56,55,47,66,68,77,81,84,82,76,76,79,74,84,75,79,77,76,70,87,62,44,61,66,41,53,69,59,59,74,61,48,53,56,51,59,66,70,71,56,64,61,63,60,59,66,61,64,61,61,62,53,56,61,61,57,57,48,51,48,52,47,56,52,70,49,55,66,46,42,58,73,50,44,59,54,65,58,56,46,51,54,46,38,57,45,43,59,46,56,54,62,53,58,53,57,46,52,43,47,46,59,56,58,44,49,59,57,44,50,41,41,31,35,38,47,39,36,41,51,43,30,31,27,30,31,43,22,35,43,27,33,46,42,37,43,40,44,31,23,34,35,37,44,37,31,42,36,38,30,31,41,32,35,35,35,28,20,41,29,31,35,31,31,41,29,38,32,36,29,39,28,29,28,29,28,28,29,31,30,26,24,29,39,38,20,28,27,27,29,29,39,37,33,35,36,25,33,28,27,38,29,35,30,40,25,42,28,42,28,31,23,25,36,25,45,31,19,31,23,21,26,34,32,25,23,34,30,27,34,33,30,40,32,33,31,37,31,27,24,36,36,32,25,45,28,30,45,45,53,43,39,55,45,47,54,59,56,45,55,67,60,68,63,62,70,60,50,81,64,61,72,61,66,55,80,72,70,58,62,75,78,85,77,61,63,93,69,83,82,97,78,83,76,80,72,80,80,91,84,84,75,88,72,59,81,63,78,71,76,70,57,40,51,75,61,66,65,68,74,59,68,70,63,68,77,73,66,81,99,55,52,72,69,76,62,69,65,56,62,67,67,92,72,95,77,72,60,69,59,71,72,70,88,44,62,67,68,53,46,60,61,61,50,55,53,45,40,52,51,48,38,36,35,38,34,32,23,36,42,30,25,30,30,21,22,28,15,13,17,22,17,17,12,26,14,16,17,12,15,10,19,10,21,13,16,10,16,15,15,13,6,8,12,15,8,11,14,11,9,7,9,10,10,9,12,12,13,10,8,19,12,14,8,15,8,13,16,13,14,10,10,8,15,10,11,14,13,8,10,9,10,7,4,10,8,6,5,8,8,10,3,6,7,2,9,3,8,11,9,7,0,5,8,6,6,4,2,1,2,1,2,0,2,1,1</HISTOGRAM>
+            <NUM_COLORS>256</NUM_COLORS>
+            <Color_Palette_Point>
+                <SAMPLE>46718.5078125</SAMPLE>
+                <COLOR red="0" green="0" blue="0" alpha="255" />
+            </Color_Palette_Point>
+            <Color_Palette_Point>
+                <SAMPLE>114428.77734375</SAMPLE>
+                <COLOR red="128" green="128" blue="128" alpha="255" />
+            </Color_Palette_Point>
+            <Color_Palette_Point>
+                <SAMPLE>182139.046875</SAMPLE>
+                <COLOR red="255" green="255" blue="255" alpha="255" />
+            </Color_Palette_Point>
+            <GAMMA>1.0</GAMMA>
+        </Band_Statistics>
+        <ROI_Definition>
+            <EXPRESSION>mask_1 == 0 || mask_1 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>0</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_2 == 0 || mask_2 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>1</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_3 == 0 || mask_3 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>2</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_4 == 0 || mask_4 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>3</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_5 == 0 || mask_5 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>4</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_6 == 0 || mask_6 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>5</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_7 == 0 || mask_7 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>6</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_8 == 0 || mask_8 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>7</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_9 == 0 || mask_9 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>8</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_10 == 0 || mask_10 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>9</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_11 == 0 || mask_11 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>10</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_12 == 0 || mask_12 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>11</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_13 == 0 || mask_13 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>12</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_14 == 0 || mask_14 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>13</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_15 == 0 || mask_15 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>14</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_16 == 0 || mask_16 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>15</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_17 == 0 || mask_17 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>16</BAND_INDEX>
+        </ROI_Definition>
+        <ROI_Definition>
+            <EXPRESSION>mask_18 == 0 || mask_18 == 256</EXPRESSION>
+            <VALUE_RANGE_MAX>1.0</VALUE_RANGE_MAX>
+            <VALUE_RANGE_MIN>0.0</VALUE_RANGE_MIN>
+            <BITMASK_ENABLED>false</BITMASK_ENABLED>
+            <INVERTED>false</INVERTED>
+            <OR_COMBINED>false</OR_COMBINED>
+            <SHAPE_ENABLED>false</SHAPE_ENABLED>
+            <VALUE_RANGE_ENABLED>false</VALUE_RANGE_ENABLED>
+            <PIN_USE_ENABLED>false</PIN_USE_ENABLED>
+            <BAND_INDEX>17</BAND_INDEX>
+        </ROI_Definition>
+    </Image_Display>
+    <Bitmask_Definitions>
+        <Bitmask_Definition name="spectrum_dropout">
+            <DESCRIPTION value="Spectrum contains a dropout pixel" />
+            <EXPRESSION value="mask_1.dropout || mask_2.dropout || mask_3.dropout || mask_4.dropout || mask_5.dropout || mask_6.dropout || mask_7.dropout || mask_8.dropout || mask_9.dropout || mask_10.dropout || mask_11.dropout || mask_12.dropout || mask_13.dropout || mask_14.dropout || mask_15.dropout || mask_16.dropout || mask_17.dropout || mask_18.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="spectrum_saturated">
+            <DESCRIPTION value="Spectrum contains a saturated pixel" />
+            <EXPRESSION value="mask_1.saturated || mask_2.saturated || mask_3.saturated || mask_4.saturated || mask_5.saturated || mask_6.saturated || mask_7.saturated || mask_8.saturated || mask_9.saturated || mask_10.saturated || mask_11.saturated || mask_12.saturated || mask_13.saturated || mask_14.saturated || mask_15.saturated || mask_16.saturated || mask_17.saturated || mask_18.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="spectrum_dropout_corrected">
+            <DESCRIPTION value="Spectrum contains a corrected dropout pixel" />
+            <EXPRESSION value="mask_1.dropout_corrected || mask_2.dropout_corrected || mask_3.dropout_corrected || mask_4.dropout_corrected || mask_5.dropout_corrected || mask_6.dropout_corrected || mask_7.dropout_corrected || mask_8.dropout_corrected || mask_9.dropout_corrected || mask_10.dropout_corrected || mask_11.dropout_corrected || mask_12.dropout_corrected || mask_13.dropout_corrected || mask_14.dropout_corrected || mask_15.dropout_corrected || mask_16.dropout_corrected || mask_17.dropout_corrected || mask_18.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_1_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_1.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_1_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_1.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_1_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_1.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_2_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_2.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_2_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_2.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_2_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_2.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_3_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_3.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_3_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_3.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_3_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_3.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_4_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_4.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_4_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_4.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_4_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_4.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_5_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_5.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_5_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_5.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_5_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_5.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_6_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_6.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_6_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_6.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_6_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_6.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_7_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_7.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_7_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_7.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_7_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_7.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_8_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_8.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_8_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_8.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_8_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_8.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_9_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_9.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_9_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_9.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_9_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_9.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_10_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_10.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_10_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_10.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_10_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_10.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_11_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_11.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_11_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_11.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_11_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_11.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_12_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_12.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_12_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_12.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_12_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_12.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_13_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_13.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_13_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_13.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_13_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_13.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_14_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_14.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_14_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_14.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_14_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_14.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_15_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_15.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_15_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_15.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_15_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_15.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_16_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_16.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_16_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_16.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_16_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_16.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_17_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_17.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_17_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_17.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_17_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_17.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_18_dropout">
+            <DESCRIPTION value="Dropout pixel" />
+            <EXPRESSION value="mask_18.dropout" />
+            <COLOR red="255" green="0" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_18_saturated">
+            <DESCRIPTION value="Saturated pixel" />
+            <EXPRESSION value="mask_18.saturated" />
+            <COLOR red="255" green="200" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+        <Bitmask_Definition name="radiance_18_dropout_corrected">
+            <DESCRIPTION value="Corrected dropout pixel" />
+            <EXPRESSION value="mask_18.dropout_corrected" />
+            <COLOR red="0" green="255" blue="0" alpha="255" />
+            <TRANSPARENCY value="0.5" />
+        </Bitmask_Definition>
+    </Bitmask_Definitions>
+    <Image_Interpretation>
+        <Spectral_Band_Info>
+            <BAND_INDEX>0</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 1</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_1</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>0</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>410.5</BAND_WAVELEN>
+            <BANDWIDTH>10.9</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_1 == 0 || mask_1 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>1</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 2</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_2</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>1</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>442.3</BAND_WAVELEN>
+            <BANDWIDTH>10.5</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_2 == 0 || mask_2 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>2</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 3</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_3</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>2</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>490.2</BAND_WAVELEN>
+            <BANDWIDTH>11.6</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_3 == 0 || mask_3 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>3</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 4</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_4</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>3</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>509.6</BAND_WAVELEN>
+            <BANDWIDTH>12.8</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_4 == 0 || mask_4 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>4</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 5</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_5</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>4</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>530.0</BAND_WAVELEN>
+            <BANDWIDTH>11.5</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_5 == 0 || mask_5 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>5</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 6</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_6</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>5</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>561.2</BAND_WAVELEN>
+            <BANDWIDTH>13.6</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_6 == 0 || mask_6 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>6</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 7</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_7</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>6</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>573.4</BAND_WAVELEN>
+            <BANDWIDTH>10.9</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_7 == 0 || mask_7 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>7</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 8</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_8</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>7</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>590.5</BAND_WAVELEN>
+            <BANDWIDTH>15.7</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_8 == 0 || mask_8 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>8</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 9</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_9</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>8</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>622.1</BAND_WAVELEN>
+            <BANDWIDTH>13.5</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_9 == 0 || mask_9 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>9</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 10</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_10</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>9</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>650.8</BAND_WAVELEN>
+            <BANDWIDTH>15.1</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_10 == 0 || mask_10 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>10</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 11</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_11</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>10</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>669.0</BAND_WAVELEN>
+            <BANDWIDTH>10.8</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_11 == 0 || mask_11 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>11</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 12</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_12</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>11</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>680.0</BAND_WAVELEN>
+            <BANDWIDTH>11.2</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_12 == 0 || mask_12 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>12</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 13</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_13</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>12</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>688.5</BAND_WAVELEN>
+            <BANDWIDTH>5.8</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_13 == 0 || mask_13 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>13</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 14</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_14</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>13</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>706.3</BAND_WAVELEN>
+            <BANDWIDTH>18.3</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_14 == 0 || mask_14 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>14</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 15</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_15</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>14</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>755.4</BAND_WAVELEN>
+            <BANDWIDTH>14.1</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_15 == 0 || mask_15 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>15</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 16</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_16</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>15</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>780.8</BAND_WAVELEN>
+            <BANDWIDTH>22.5</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_16 == 0 || mask_16 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>16</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 17</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_17</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>16</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>872.0</BAND_WAVELEN>
+            <BANDWIDTH>27.3</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_17 == 0 || mask_17 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>17</BAND_INDEX>
+            <BAND_DESCRIPTION>Radiance for spectral band 18</BAND_DESCRIPTION>
+            <BAND_NAME>radiance_18</BAND_NAME>
+            <DATA_TYPE>int32</DATA_TYPE>
+            <PHYSICAL_UNIT>microWatts/nm/m^2/str</PHYSICAL_UNIT>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>17</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>1018.9</BAND_WAVELEN>
+            <BANDWIDTH>43.8</BANDWIDTH>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+            <VALID_MASK_TERM>mask_18 == 0 || mask_18 == 256</VALID_MASK_TERM>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>18</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 1</BAND_DESCRIPTION>
+            <BAND_NAME>mask_1</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>0</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>410.5</BAND_WAVELEN>
+            <BANDWIDTH>10.9</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>19</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 2</BAND_DESCRIPTION>
+            <BAND_NAME>mask_2</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>1</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>442.3</BAND_WAVELEN>
+            <BANDWIDTH>10.5</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>20</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 3</BAND_DESCRIPTION>
+            <BAND_NAME>mask_3</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>2</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>490.2</BAND_WAVELEN>
+            <BANDWIDTH>11.6</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>21</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 4</BAND_DESCRIPTION>
+            <BAND_NAME>mask_4</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>3</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>509.6</BAND_WAVELEN>
+            <BANDWIDTH>12.8</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>22</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 5</BAND_DESCRIPTION>
+            <BAND_NAME>mask_5</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>4</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>530.0</BAND_WAVELEN>
+            <BANDWIDTH>11.5</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>23</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 6</BAND_DESCRIPTION>
+            <BAND_NAME>mask_6</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>5</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>561.2</BAND_WAVELEN>
+            <BANDWIDTH>13.6</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>24</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 7</BAND_DESCRIPTION>
+            <BAND_NAME>mask_7</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>6</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>573.4</BAND_WAVELEN>
+            <BANDWIDTH>10.9</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>25</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 8</BAND_DESCRIPTION>
+            <BAND_NAME>mask_8</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>7</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>590.5</BAND_WAVELEN>
+            <BANDWIDTH>15.7</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>26</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 9</BAND_DESCRIPTION>
+            <BAND_NAME>mask_9</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>8</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>622.1</BAND_WAVELEN>
+            <BANDWIDTH>13.5</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>27</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 10</BAND_DESCRIPTION>
+            <BAND_NAME>mask_10</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>9</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>650.8</BAND_WAVELEN>
+            <BANDWIDTH>15.1</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>28</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 11</BAND_DESCRIPTION>
+            <BAND_NAME>mask_11</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>10</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>669.0</BAND_WAVELEN>
+            <BANDWIDTH>10.8</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>29</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 12</BAND_DESCRIPTION>
+            <BAND_NAME>mask_12</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>11</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>680.0</BAND_WAVELEN>
+            <BANDWIDTH>11.2</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>30</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 13</BAND_DESCRIPTION>
+            <BAND_NAME>mask_13</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>12</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>688.5</BAND_WAVELEN>
+            <BANDWIDTH>5.8</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>31</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 14</BAND_DESCRIPTION>
+            <BAND_NAME>mask_14</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>13</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>706.3</BAND_WAVELEN>
+            <BANDWIDTH>18.3</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>32</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 15</BAND_DESCRIPTION>
+            <BAND_NAME>mask_15</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>14</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>755.4</BAND_WAVELEN>
+            <BANDWIDTH>14.1</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>33</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 16</BAND_DESCRIPTION>
+            <BAND_NAME>mask_16</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>15</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>780.8</BAND_WAVELEN>
+            <BANDWIDTH>22.5</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>34</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 17</BAND_DESCRIPTION>
+            <BAND_NAME>mask_17</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>16</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>872.0</BAND_WAVELEN>
+            <BANDWIDTH>27.3</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+        <Spectral_Band_Info>
+            <BAND_INDEX>35</BAND_INDEX>
+            <BAND_DESCRIPTION>Quality mask for spectral band 18</BAND_DESCRIPTION>
+            <BAND_NAME>mask_18</BAND_NAME>
+            <DATA_TYPE>int16</DATA_TYPE>
+            <SOLAR_FLUX>0.0</SOLAR_FLUX>
+            <SPECTRAL_BAND_INDEX>17</SPECTRAL_BAND_INDEX>
+            <BAND_WAVELEN>1018.9</BAND_WAVELEN>
+            <BANDWIDTH>43.8</BANDWIDTH>
+            <FLAG_CODING_NAME>CHRIS</FLAG_CODING_NAME>
+            <SCALING_FACTOR>1.0</SCALING_FACTOR>
+            <SCALING_OFFSET>0.0</SCALING_OFFSET>
+            <LOG10_SCALED>false</LOG10_SCALED>
+            <NO_DATA_VALUE_USED>false</NO_DATA_VALUE_USED>
+            <NO_DATA_VALUE>0.0</NO_DATA_VALUE>
+        </Spectral_Band_Info>
+    </Image_Interpretation>
+    <Dataset_Sources>
+        <MDElem name="metadata">
+            <MDElem name="MPH">
+                <MDATTR name="CHRIS Mode" type="ascii">2</MDATTR>
+                <MDATTR name="CHRIS Temperature" type="ascii">002.67</MDATTR>
+                <MDATTR name="Calculated Image Centre Time" type="ascii">00:24:26</MDATTR>
+                <MDATTR name="Calibration Data Units" type="ascii">microWatts/nm/m^2/str</MDATTR>
+                <MDATTR name="Dark File Creation Time" type="ascii">2002-13-19 15:38</MDATTR>
+                <MDATTR name="Data Rights" type="ascii">Sira Technology Ltd is the owner of all data directly resulting from in-flight operation of the CHRIS instrument flown on-board the ESA PROBA spacecraft.  All publications on the CHRIS instrument or data obtained from the CHRIS development and/or operation shall make explicit reference to Sira Technology Ltd the CHRIS instrument and the ESA PROBA mission.</MDATTR>
+                <MDATTR name="Fly-by Time" type="ascii">00:24</MDATTR>
+                <MDATTR name="Fly-by Zenith Angle" type="ascii">0</MDATTR>
+                <MDATTR name="Image Date" type="ascii">2005-06-23</MDATTR>
+                <MDATTR name="Image Number" type="ascii">1 of 5</MDATTR>
+                <MDATTR name="Image Tag" type="ascii">560E</MDATTR>
+                <MDATTR name="Minimum Zenith Angle" type="ascii">-01</MDATTR>
+                <MDATTR name="Number of Bands" type="ascii">018</MDATTR>
+                <MDATTR name="Number of Ground Lines" type="ascii">748</MDATTR>
+                <MDATTR name="Number of Samples" type="ascii">744</MDATTR>
+                <MDATTR name="Observation Azimuth Angle" type="ascii">22.25</MDATTR>
+                <MDATTR name="Observation Zenith Angle" type="ascii">1.0</MDATTR>
+                <MDATTR name="Platform Altitude" type="ascii">0580</MDATTR>
+                <MDATTR name="Processing Version" type="ascii">4.1</MDATTR>
+                <MDATTR name="Response File Creation Time" type="ascii">2004-13-18 10:56</MDATTR>
+                <MDATTR name="Sensor Type" type="ascii">CHRIS</MDATTR>
+                <MDATTR name="Solar Zenith Angle" type="ascii">052.00</MDATTR>
+                <MDATTR name="Solar Azimuth Angle" type="ascii">26.55</MDATTR>
+                <MDATTR name="Target Altitude" type="ascii">00000</MDATTR>
+                <MDATTR name="Target Latitude" type="ascii">-23.4511</MDATTR>
+                <MDATTR name="Target Longitude" type="ascii">151.9386</MDATTR>
+                <MDATTR name="Target Name" type="ascii">Heron-Island</MDATTR>
+                <MDATTR name="Noise Reduction" type="ascii">Computed from 55°, -36°, -55°, 36°, 0°</MDATTR>
+            </MDElem>
+            <MDElem name="Band Information">
+                <MDElem name="radiance_1">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">404.9</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">415.9</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">410.5</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">10.9</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">63</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">71</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_2">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">437.2</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">447.7</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">442.3</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">10.5</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">87</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">92</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_3">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">484.4</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">496.0</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">490.2</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">11.6</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">111</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">115</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_4">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">503.3</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">516.1</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">509.6</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">12.8</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">119</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">123</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_5">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">524.3</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">535.8</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">530.0</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">11.5</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">127</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">130</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_6">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">554.5</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">568.1</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">561.2</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">13.6</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">137</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">140</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_7">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">568.1</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">579.0</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">573.4</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">10.9</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">141</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">143</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_8">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">582.7</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">598.5</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">590.5</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">15.7</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">145</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">148</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_9">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">615.4</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">628.9</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">622.1</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">13.5</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">153</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">155</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_10">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">643.3</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">658.4</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">650.8</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">15.1</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">159</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">161</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_11">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">663.7</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">674.4</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">669.0</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">10.8</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">163</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">164</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_12">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">674.4</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">685.7</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">680.0</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">11.2</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">165</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">166</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_13">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">685.7</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">691.4</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">688.5</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">5.8</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">167</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">167</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_14">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">697.3</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">715.6</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">706.3</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">18.3</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">169</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">171</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_15">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">748.4</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">762.5</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">755.4</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">14.1</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">177</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">178</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_16">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">769.7</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">792.2</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">780.8</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">22.5</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">180</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">182</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_17">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">858.5</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">885.8</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">872.0</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">27.3</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">191</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">193</MDATTR>
+                </MDElem>
+                <MDElem name="radiance_18">
+                    <MDATTR name="Cut-on Wavelength" desc="Cut-on wavelength" unit="nm" type="float32" mode="rw">997.0</MDATTR>
+                    <MDATTR name="Cut-off Wavelength" desc="Cut-off wavelength" unit="nm" type="float32" mode="rw">1040.9</MDATTR>
+                    <MDATTR name="Central Wavelength" desc="Central wavelength" unit="nm" type="float32" mode="rw">1018.9</MDATTR>
+                    <MDATTR name="Bandwidth" desc="Cut-off minus cut-on wavelength" unit="nm" type="float32" mode="rw">43.8</MDATTR>
+                    <MDATTR name="Gain Setting" desc="CHRIS analogue electronics gain setting" type="int32" mode="rw">3</MDATTR>
+                    <MDATTR name="Gain Value" desc="Relative analogue gain" type="float32" mode="rw">8.583</MDATTR>
+                    <MDATTR name="Low Row" desc="CCD row number for the cut-on wavelength" type="int32" mode="rw">205</MDATTR>
+                    <MDATTR name="High Row" desc="CCD row number for the cut-off wavelength" type="int32" mode="rw">208</MDATTR>
+                </MDElem>
+            </MDElem>
+            <MDElem name="Processing_Graph">
+                <MDElem name="node">
+                    <MDATTR name="id" type="ascii" mode="rw">chris.ApplyDestripingFactors$11A002A0367</MDATTR>
+                    <MDATTR name="operator" type="ascii" mode="rw">chris.ApplyDestripingFactors</MDATTR>
+                    <MDElem name="sources">
+                        <MDATTR name="sourceProduct" type="ascii" mode="rw">file:/C:/Dokumente%20und%20Einstellungen/Ralf/Desktop/CHRIS-PM3/testdata/DATA_20050623/CHRIS_HR_050623_560E_41.hdf</MDATTR>
+                        <MDATTR name="factorProduct" type="ascii" mode="rw">file:/C:/Dokumente%20und%20Einstellungen/Ralf/Desktop/nr/CHRIS_HR_050623_560E_41_NR_VSC.dim</MDATTR>
+                    </MDElem>
+                    <MDElem name="parameters" />
+                </MDElem>
+                <MDElem name="node">
+                    <MDATTR name="id" type="ascii" mode="rw">chris.CorrectDropouts$11A002A0367</MDATTR>
+                    <MDATTR name="operator" type="ascii" mode="rw">chris.CorrectDropouts</MDATTR>
+                    <MDElem name="sources">
+                        <MDATTR name="sourceProduct" type="ascii" mode="rw">chris.ApplyDestripingFactors$11A002A0367</MDATTR>
+                    </MDElem>
+                    <MDElem name="parameters">
+                        <MDATTR name="neighborhoodType" type="ascii">4-Connected</MDATTR>
+                        <MDATTR name="neighborBandCount" type="ascii">5</MDATTR>
+                    </MDElem>
+                </MDElem>
+                <MDElem name="node">
+                    <MDATTR name="id" type="ascii" mode="rw">Write$11A002A0377</MDATTR>
+                    <MDATTR name="operator" type="ascii" mode="rw">Write</MDATTR>
+                    <MDElem name="sources">
+                        <MDATTR name="sourceProduct" type="ascii" mode="rw">chris.CorrectDropouts$11A002A0367</MDATTR>
+                    </MDElem>
+                    <MDElem name="parameters">
+                        <MDATTR name="formatName" type="ascii">BEAM-DIMAP</MDATTR>
+                        <MDATTR name="deleteOutputOnFailure" type="ascii">true</MDATTR>
+                        <MDATTR name="file" type="ascii">C:\Dokumente und Einstellungen\Ralf\Desktop\nr\CHRIS_HR_050623_560E_41_NR.dim</MDATTR>
+                    </MDElem>
+                </MDElem>
+            </MDElem>
+            <MDElem name="history">
+                <MDElem name="SubsetInfo">
+                    <MDATTR name="SourceProduct.name" type="ascii">CHRIS_HR_050623_560E_41_NR</MDATTR>
+                    <MDATTR name="SubSampling.x" type="int32" mode="rw">1</MDATTR>
+                    <MDATTR name="SubSampling.y" type="int32" mode="rw">1</MDATTR>
+                    <MDATTR name="SubRegion.x" type="int32" mode="rw">360</MDATTR>
+                    <MDATTR name="SubRegion.y" type="int32" mode="rw">110</MDATTR>
+                    <MDATTR name="SubRegion.width" type="int32" mode="rw">384</MDATTR>
+                    <MDATTR name="SubRegion.height" type="int32" mode="rw">64</MDATTR>
+                    <MDATTR name="ProductNodeName.1" type="ascii">radiance_1</MDATTR>
+                    <MDATTR name="ProductNodeName.2" type="ascii">radiance_2</MDATTR>
+                    <MDATTR name="ProductNodeName.3" type="ascii">radiance_3</MDATTR>
+                    <MDATTR name="ProductNodeName.4" type="ascii">radiance_4</MDATTR>
+                    <MDATTR name="ProductNodeName.5" type="ascii">radiance_5</MDATTR>
+                    <MDATTR name="ProductNodeName.6" type="ascii">radiance_6</MDATTR>
+                    <MDATTR name="ProductNodeName.7" type="ascii">radiance_7</MDATTR>
+                    <MDATTR name="ProductNodeName.8" type="ascii">radiance_8</MDATTR>
+                    <MDATTR name="ProductNodeName.9" type="ascii">radiance_9</MDATTR>
+                    <MDATTR name="ProductNodeName.10" type="ascii">radiance_10</MDATTR>
+                    <MDATTR name="ProductNodeName.11" type="ascii">radiance_11</MDATTR>
+                    <MDATTR name="ProductNodeName.12" type="ascii">radiance_12</MDATTR>
+                    <MDATTR name="ProductNodeName.13" type="ascii">radiance_13</MDATTR>
+                    <MDATTR name="ProductNodeName.14" type="ascii">radiance_14</MDATTR>
+                    <MDATTR name="ProductNodeName.15" type="ascii">radiance_15</MDATTR>
+                    <MDATTR name="ProductNodeName.16" type="ascii">radiance_16</MDATTR>
+                    <MDATTR name="ProductNodeName.17" type="ascii">radiance_17</MDATTR>
+                    <MDATTR name="ProductNodeName.18" type="ascii">radiance_18</MDATTR>
+                    <MDATTR name="ProductNodeName.19" type="ascii">mask_1</MDATTR>
+                    <MDATTR name="ProductNodeName.20" type="ascii">mask_2</MDATTR>
+                    <MDATTR name="ProductNodeName.21" type="ascii">mask_3</MDATTR>
+                    <MDATTR name="ProductNodeName.22" type="ascii">mask_4</MDATTR>
+                    <MDATTR name="ProductNodeName.23" type="ascii">mask_5</MDATTR>
+                    <MDATTR name="ProductNodeName.24" type="ascii">mask_6</MDATTR>
+                    <MDATTR name="ProductNodeName.25" type="ascii">mask_7</MDATTR>
+                    <MDATTR name="ProductNodeName.26" type="ascii">mask_8</MDATTR>
+                    <MDATTR name="ProductNodeName.27" type="ascii">mask_9</MDATTR>
+                    <MDATTR name="ProductNodeName.28" type="ascii">mask_10</MDATTR>
+                    <MDATTR name="ProductNodeName.29" type="ascii">mask_11</MDATTR>
+                    <MDATTR name="ProductNodeName.30" type="ascii">mask_12</MDATTR>
+                    <MDATTR name="ProductNodeName.31" type="ascii">mask_13</MDATTR>
+                    <MDATTR name="ProductNodeName.32" type="ascii">mask_14</MDATTR>
+                    <MDATTR name="ProductNodeName.33" type="ascii">mask_15</MDATTR>
+                    <MDATTR name="ProductNodeName.34" type="ascii">mask_16</MDATTR>
+                    <MDATTR name="ProductNodeName.35" type="ascii">mask_17</MDATTR>
+                    <MDATTR name="ProductNodeName.36" type="ascii">mask_18</MDATTR>
+                    <MDATTR name="ProductNodeName.37" type="ascii">MPH</MDATTR>
+                    <MDATTR name="ProductNodeName.38" type="ascii">Band Information</MDATTR>
+                    <MDATTR name="ProductNodeName.39" type="ascii">Processing_Graph</MDATTR>
+                </MDElem>
+            </MDElem>
+        </MDElem>
+    </Dataset_Sources>
+</Dimap_Document>

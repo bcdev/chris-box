@@ -1,0 +1,13 @@
+<table>
+    <name>Vertical atmospheric transmittance</name>
+    <dimension>
+        <index>1</index>
+        <variable>wavelength</variable>
+        <unit>nm</unit>
+    </dimension>
+    <dimension>
+        <index>2</index>
+        <variable>vertical atmospheric transmittance</variable>
+        <unit>dl</unit>
+    </dimension>
+</table>

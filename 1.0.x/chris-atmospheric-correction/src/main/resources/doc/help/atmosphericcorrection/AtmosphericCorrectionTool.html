@@ -1,0 +1,233 @@
+<html>
+<head>
+    <title>CHRIS/Proba Atmospheric Correction Tool</title>
+    <link rel="stylesheet" href="../../style.css">
+</head>
+
+<body>
+
+<table class="header">
+    <tr class="header">
+        <td class="header">&nbsp;
+            CHRIS/Proba Atmospheric Correction
+        </td>
+        <td class="header" align="right"><a href="../../index.html"><img src="../images/BeamHeader.jpg" border=0></a>
+        </td>
+    </tr>
+</table>
+
+<h3>CHRIS/Proba Atmospheric Correction</h3>
+
+<h5>Introduction</h5>
+
+<p>
+    The atmospheric correction, i.e. the conversion from top-of-atmosphere (TOA) radiance to
+    reflectance images, is normally necessary for the reliable exploitation of remote sensing information.
+    The CHRIS Atmospheric Correction Tool converts
+    from TOA radiance to surface reflectance images in an automated manner.
+    The different steps to be performed along the atmospheric correction process depend on the
+    CHRIS acquisition mode. The columnar water vapor (CWV) is only derived for CHRIS acquisition modes 1, 3 and 5, as no
+    sufficient sampling of water vapor absorption
+    features is provided by modes 2 and 4. On the other hand, spectral calibration and an optional
+    spectral polishing are only performed on modes 1 and 5, which are the ones resolving most of
+    the atmospheric absorption bands in the 400-1000 nm spectral range. The algorithm is implemented
+    so that it must be applied after noise removal and cloud screening. The interface between
+    atmospheric and geometric correction modules is not established at this stage of this project,
+    so elevation and topographic effects calculated from a geolocated digital elevation model are
+    not considered in current version of the Atmospheric Correction Tool.
+</p>
+
+<p>
+    Note that the retrieval of aerosol optical thickness is part of the processing.
+</p>
+
+<h3>Algorithm</h3>
+
+<h5>Overview</h5>
+
+<p>
+    The algorithm implemented by the Atmospheric Correction Tool is described in detail by <a
+        href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-45-10-2360">Guanter et al. (2006)</a>. In brief, the
+    following steps are carried out:
+</p>
+<ol>
+    <li>
+        Smile correction for CHRIS acquisition modes 1 and 5.
+    </li>
+    <li>
+        Calculation of surface reflectances by inverting the Lambertian equation. Simultaneous retrieval of
+        columnar water vapour and surface reflectances for CHRIS acquisition modes 1 and 5.
+    </li>
+    <li>
+        Adjacency correction.
+    </li>
+    <li>
+        Removal of systematic errors in surface reflectance (spectral polishing).
+    </li>
+</ol>
+
+<h5>Smile correction</h5>
+
+<p>
+    Please refer to <a
+        href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-45-10-2360">Guanter et al. (2006)</a>.
+</p>
+
+<h5>Calculation of surface reflectances</h5>
+
+<p>
+    Please refer to <a
+        href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-45-10-2360">Guanter et al. (2006)</a>.
+</p>
+
+<h5>Adjacency correction</h5>
+
+<p>
+    Please refer to <a
+        href="http://www.opticsinfobase.org/abstract.cfm?URI=ao-45-10-2360">Guanter et al. (2006)</a>.
+</p>
+
+<h5>Spectral polishing</h5>
+
+<p>
+    Systematic errors are happening in surface reflectance with the same
+    intensity and sign for all the targets. Out of absorption regions these errors are mostly due to
+    problems in the instrument gain coefficients (radiometric calibration), but inside atmospheric
+    absorptions they can also be associated to inaccurate radiative transfer simulations. The fact
+    that they are systematic allows the correlation with an error-free reference reflectance for the
+    correction. It is assumed that the errors are not caused by dark current effects, but result from
+    problems in the gain coefficients only.
+</p>
+
+<p>
+    The inversion of artificial endmembers is utilised to provide the reference reflectance.
+    Smooth spectra are calculated by the unmixing endmember abundances in spiky spectra. Up to 50
+    reference spectra are extracted from the reflectance images derived from the Lambertian equation. The
+    selection is made from a previous classification of the area
+    based on three Normalized Difference Vegetation Index (NDVI) categories: vegetation, bare soil
+    and mixtures. A recalibration coefficient for each CHRIS channel is calculated by correlating the
+    50 pairs of spectral reflectance from the spiky and smooth spectra. The reflectance
+    image is multiplied by these recalibration coefficients, yielding the final
+    reflectancess.
+</p>
+
+<p>
+    It must be remarked that the spectral polishing can lead to errors in reflectance for images
+    where the endmembers can not reproduce the actual reflectance levels. For this reason, the
+    recalibration process is carried out under user request only.
+</p>
+
+<h3>User Interface</h3>
+
+<p>
+    The atmospheric correction tool can be invoked from VISAT tool menu by selecting
+    the <b>Atmospheric Correction...</b> command in the <b>CHRIS-Box</b> submenu. In the command line it is
+    available by means of the Graph Processing Tool <code>gpt</code> which is located in the BEAM <code>bin</code>
+    directory. For further information type <code>gpt chris.ComputeSurfaceReflectances -h</code> at the command prompt.
+</p>
+
+<p>
+    Selecting the <b>Atmospheric Correction...</b> command from the VISAT tool menu pops up the
+    following dialog:
+</p>
+
+<p align="center">
+    <img src="images/ac-dialog.png" alt="Atmospheric Correction Dialog"/>
+</p>
+
+<h5>Source Product Group</h5>
+
+<p class="i1">
+    <b>Name:</b>
+    Here the user specifies the name of the source product. The combo box presents
+    a list of all products open in VISAT. The user may select one of these
+    or, by clicking on the button next to the combo box, choose a product
+    from the file system.
+</p>
+
+<h5>Target Product Group</h5>
+
+<p class="i1">
+    <b>Name:</b>
+    Used to specify the name of the target product.
+</p>
+
+<p class="i1">
+    <b>Save as:</b>
+    Used to specify whether the target product should be saved to the file system. The
+    combo box presents a list of file formats, currently BEAM-DIMAP, GeoTIFF, and HDF5.
+    The text field allows to specify a target directory.
+</p>
+
+<p class="i1">
+    <b>Open in VISAT:</b>
+    Used to specify whether the target product should be opened in VISAT. When the
+    the target product is not saved, it is opened in VISAT automatically.
+</p>
+
+<p align="center">
+    <img src="images/ac-parameters.png" alt="Atmospheric Correction Parameters"/>
+</p>
+
+<h5>Processing Parameters Panel</h5>
+
+<p class="i1">
+    <b>Aerosol optical thickness:</b>
+    Use this field to specify the value of the aerosol optical thickness (AOT) at 550 nm. The default value is 0.0,
+    which leads to an aerosol optical thickness being retrieved as part of the processing.
+</p>
+
+<p class="i1">
+    <b>Initial water vapour column:</b>
+    Use this field to specify the initial guess of the water vapour (WV) column (g cm-2) used for WV retrieval. The
+    default value is 1.0.
+</p>
+
+<p class="i1">
+    <b>Cloud product threshold:</b>
+    Use this field to specify the threshold used for deciding whether a pixel is cloudy or not. Pixels with cloud
+    product values exceeding the threshold are considered as cloudy. The default value is 0.05.
+</p>
+
+<p class="i1">
+    <b>Perform adjacency correction:</b>
+    Use this check box to specify whether the adjacency correction should be carried out or not. The adjacency
+    correction is switched off by default.
+</p>
+
+<p class="i1">
+    <b>Perform spectral polishing:</b>
+    Use this check box to specify whether the spectral polishing for CHRIS mode 1 and 5 acquisitions should be carried
+    out or not. The spectral polishing works very nicely in most cases, but, in rare cases, can be very bad. Spectral
+    polishing is switched off by default. This option has no effect for CHRIS acquisition modes 2, 3, and 4.
+</p>
+
+<p class="i1">
+    <b>Generate water vapour map:</b>
+    Use this check box to specify whether a map of the columnar water vapour retrieved should be added to the target
+    product. Switched off by default. This option has no effect for CHRIS acquisition modes 2 and 4.
+</p>
+
+<h5>Button Group</h5>
+
+<p class="i1">
+    <b>Run</b>
+    Creates the target product. The atmospheric correction is actually deferred until the target band data are accessed,
+    either by writing the product to the file system or by viewing the band data. When the <b>Save as</b> option is
+    checked, the atmospheric correction is triggered automatically.
+</p>
+
+<p class="i1">
+    <b>Close</b>
+    Closes the dialog.
+</p>
+
+<p class="i1">
+    <b>Help</b>
+    Displays this page in VISAT Help.
+</p>
+
+<hr>
+</body>
+</html>
+        

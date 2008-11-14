@@ -1,0 +1,97 @@
+<module>
+    <manifestVersion>1.0.0</manifestVersion>
+    <symbolicName>chris-cloud-screening</symbolicName>
+    <version>1.0.1</version>
+    <name>CHRIS/Proba Cloud Screening Tools</name>
+
+    <description>
+        <![CDATA[
+        This module provides two tools for CHRIS/Proba products:
+        <ol>
+          <li>The Cloud Screening Tool is used to mask
+          cloud and cloudy pixels in CHRIS images.</li>
+          <li>The Extract Features Tool which is used to extract surface and
+          atmospheric features from CHRIS images.</li>
+        </ol>
+        ]]>
+    </description>
+
+    <vendor>Brockmann Consult GmbH</vendor>
+    <contactAddress>
+        Max Planck Str.2, 21502 Geesthacht (Germany)
+    </contactAddress>
+    <copyright>(C) 2007 by Brockmann Consult GmbH</copyright>
+    <url>http://envisat.esa.int/beam</url>
+    <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
+
+    <changelog>
+        <![CDATA[
+        Changes in Version 1.0.1<br/>
+        [CBOX-63] Cluster analysis fails for some products<br/>
+        [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
+        ]]>
+    </changelog>
+
+    <dependency>
+        <module>beam-chris-reader</module>
+    </dependency>
+    <dependency>
+        <module>beam-cluster-analysis</module>
+    </dependency>
+    <dependency>
+        <module>beam-gpf</module>
+    </dependency>
+    <dependency>
+        <module>beam-unmix</module>
+    </dependency>
+    <dependency>
+        <module>beam-visat</module>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+        <module>chris-toa-reflectance-computation</module>
+    </dependency>
+
+    <categories>Application,Processor,CHRIS</categories>
+
+    <extension point="beam-ui:actions">
+        <action>
+            <id>chris</id>
+            <class>org.esa.beam.visat.actions.ActionGroup</class>
+            <text>CHRIS/Proba Tools</text>
+            <separatorBefore>true</separatorBefore>
+            <separatorAfter>true</separatorAfter>
+            <mnemonic/>
+        </action>
+        <action>
+            <id>chrisCloudScreening</id>
+            <parent>chris</parent>
+            <class>org.esa.beam.chris.ui.CloudScreeningAction</class>
+            <text>Cloud Screening...</text>
+            <mnemonic/>
+            <shortDescr>Calculates the cloud mask for the selected CHRIS/Proba product</shortDescr>
+            <helpId>chrisCloudScreeningTools</helpId>
+            <placeAfter>chrisNoiseReduction</placeAfter>
+        </action>
+        <action>
+            <id>chrisExtractFeatures</id>
+            <class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
+            <text>Feature Extraction...</text>
+            <shortDescr>
+                Extracts features from the selected CHRIS/Proba product which are used for cloud screening
+            </shortDescr>
+            <mnemonic/>
+            <parent>chris</parent>
+            <helpID>chrisCloudScreeningTools</helpID>
+            <placeAfter>chrisComputeToaReflectances</placeAfter>
+        </action>
+    </extension>
+
+    <extension point="beam-ui:helpSets">
+        <helpSet>
+            <parent>beam-help</parent>
+            <path>doc/help/cloudscreening.hs</path>
+        </helpSet>
+    </extension>
+
+</module>

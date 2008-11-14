@@ -1,0 +1,28 @@
+package org.esa.beam.chris.operators;
+
+import org.esa.beam.chris.util.BandFilter;
+import org.esa.beam.framework.datamodel.Band;
+
+/**
+ * New class.
+ *
+ * @author Ralf Quast
+ * @version $Revision$ $Date$
+ */
+class InclusiveBandFilter implements BandFilter {
+
+    private final double minWavelength;
+    private final double maxWavelength;
+
+    InclusiveBandFilter(double minWavelength, double maxWavelength) {
+        this.minWavelength = minWavelength;
+        this.maxWavelength = maxWavelength;
+    }
+
+    @Override
+    public boolean accept(Band band) {
+        final double wavelength = band.getSpectralWavelength();
+
+        return wavelength > minWavelength && wavelength < maxWavelength;
+    }
+}

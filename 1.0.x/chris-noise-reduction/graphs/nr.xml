@@ -1,0 +1,37 @@
+<graph>
+    <id>nr</id>
+
+    <node>
+        <id>factors</id>
+        <operator>org.esa.beam.chris.operators.ComputeDestripingFactorsOp$Spi</operator>
+        <sources>
+            <input>${input}</input>
+        </sources>
+        <parameters>
+            <smoothingOrder>27</smoothingOrder>
+            <slitCorrection>true</slitCorrection>
+        </parameters>
+    </node>
+
+    <node>
+        <id>destriping</id>
+        <operator>org.esa.beam.chris.operators.ApplyDestripingFactorsOp$Spi</operator>
+        <sources>
+            <input>${input}</input>
+            <factors>factors</factors>
+        </sources>
+    </node>
+
+    <node>
+        <id>dropout</id>
+        <operator>org.esa.beam.chris.operators.CorrectDropoutsOp$Spi</operator>
+        <sources>
+            <input>destriping</input>
+        </sources>
+        <parameters>
+            <neighborBandCount>5</neighborBandCount>
+            <neighborhoodType>N4</neighborhoodType>
+        </parameters>
+    </node>
+
+</graph>
