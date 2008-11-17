@@ -26,15 +26,15 @@ public class TimeCalculator {
      * Note that since 1972-JAN-01 the difference between TAI and UTC
      * is consisting of leap-seconds only.
      */
-    private final ConcurrentNavigableMap<Double, Double> lsMap;
+    private final ConcurrentNavigableMap<Double, Double> taiUtcMap;
     /**
      * The UT1-UTC table.
      */
-    private final ConcurrentNavigableMap<Double, Double> utMap;
+    private final ConcurrentNavigableMap<Double, Double> ut1UtcMap;
 
     private TimeCalculator() {
-        lsMap = new ConcurrentSkipListMap<Double, Double>();
-        utMap = new ConcurrentSkipListMap<Double, Double>();
+        taiUtcMap = new ConcurrentSkipListMap<Double, Double>();
+        ut1UtcMap = new ConcurrentSkipListMap<Double, Double>();
     }
 
     public static TimeCalculator getInstance() throws IOException {
@@ -77,15 +77,15 @@ public class TimeCalculator {
      *         when UT1 lags behind UTC.
      */
     public final double getUtcUt1(double mjd) {
-        if (mjd < utMap.firstKey()) {
+        if (mjd < ut1UtcMap.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("UT1-UTC for MJD before {0} is not available", utMap.firstKey()));
+                    MessageFormat.format("UT1-UTC for MJD before {0} is not available", ut1UtcMap.firstKey()));
         }
-        if (mjd > utMap.lastKey()) {
+        if (mjd > ut1UtcMap.lastKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("UT1-UTC for MJD after {0} is not available", utMap.lastKey()));
+                    MessageFormat.format("UT1-UTC for MJD after {0} is not available", ut1UtcMap.lastKey()));
         }
-        return utMap.floorEntry(mjd).getValue();
+        return ut1UtcMap.floorEntry(mjd).getValue();
     }
 
     /**
@@ -97,11 +97,11 @@ public class TimeCalculator {
      * @return the number of seconds TAI runs ahead of UTC.
      */
     public final double getUtcTai(double mjd) {
-        if (mjd < lsMap.firstKey()) {
+        if (mjd < taiUtcMap.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("TAI-UTC for MJD before {0} is not available", lsMap.firstKey()));
+                    MessageFormat.format("TAI-UTC for MJD before {0} is not available", taiUtcMap.firstKey()));
         }
-        return lsMap.floorEntry(mjd).getValue();
+        return taiUtcMap.floorEntry(mjd).getValue();
     }
 
     /**
@@ -116,25 +116,36 @@ public class TimeCalculator {
     }
 
     /**
-     * Updates the internal leap seconds table with newer leap seconds data read from an input stream.
+     * Updates the internal TAI-UTC table with newer data read from an input stream.
      *
      * @param is the input stream.
      *
-     * @throws IOException if an error occurred while reading the leap seconds data from the input stream.
+     * @throws IOException if an error occurred while reading the TAI-UTC data from the input stream.
      */
-    public void updateLeapSecondsTable(InputStream is) throws IOException {
-        readLsTable(is, lsMap);
+    public void updateTaiUtcTable(InputStream is) throws IOException {
+        readTaiUtcTable(is, taiUtcMap);
+    }
+
+    /**
+     * Updates the internal UT1-UTC table with newer data read from an input stream.
+     *
+     * @param is the input stream.
+     *
+     * @throws IOException if an error occurred while reading the UT1-UTC data from the input stream.
+     */
+    public void updateUt1UtcTable(InputStream is) throws IOException {
+        readUt1UtcTable(is, taiUtcMap);
     }
 
     private static TimeCalculator createInstance() throws IOException {
         final TimeCalculator calculator = new TimeCalculator();
-        readLsTable(TimeCalculator.class.getResourceAsStream("leapsec.dat"), calculator.lsMap);
-        readUtTable(TimeCalculator.class.getResourceAsStream("finals.data"), calculator.utMap);
+        readTaiUtcTable(TimeCalculator.class.getResourceAsStream("leapsec.dat"), calculator.taiUtcMap);
+        readUt1UtcTable(TimeCalculator.class.getResourceAsStream("finals.data"), calculator.ut1UtcMap);
 
         return calculator;
     }
 
-    private static void readLsTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readTaiUtcTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
@@ -167,7 +178,7 @@ public class TimeCalculator {
         }
     }
 
-    private static void readUtTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readUt1UtcTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
