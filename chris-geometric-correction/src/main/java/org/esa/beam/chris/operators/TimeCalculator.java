@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentMap;
@@ -27,25 +27,47 @@ public class TimeCalculator {
      * The epoch (millis) for the Modified Julian Date (MJD) which
      * corresponds to 1858-11-17 00:00.
      */
-    private static final long EPOCH_MILLIS = -3506716800000L;
+    private static final long EPOCH_MJD = -3506716800000L;
 
     private static final AtomicReference<TimeCalculator> instance = new AtomicReference<TimeCalculator>();
 
     /**
-     * The TAI-UTC table.
+     * Internal TAI-UTC table.
      * <p/>
-     * Note that since 1972-JAN-01 the difference between TAI and UTC
+     * Since 1972-JAN-01 the difference between TAI and UTC
      * consists of leap-seconds only.
      */
-    private final ConcurrentNavigableMap<Double, Double> tuTable;
+    private final ConcurrentNavigableMap<Double, Double> tai;
     /**
-     * The UT1-UTC table.
+     * Internal UT1-UTC table.
      */
-    private final ConcurrentNavigableMap<Double, Double> uuTable;
+    private final ConcurrentNavigableMap<Double, Double> ut1;
 
     private TimeCalculator() {
-        tuTable = new ConcurrentSkipListMap<Double, Double>();
-        uuTable = new ConcurrentSkipListMap<Double, Double>();
+        tai = new ConcurrentSkipListMap<Double, Double>();
+        ut1 = new ConcurrentSkipListMap<Double, Double>();
+    }
+
+    /**
+     * Returns the Modified Julian Date (MJD) corresponding to a date.
+     *
+     * @param date the date.
+     *
+     * @return the MJD corresponding to the date.
+     */
+    public static double toMJD(Date date) {
+        return (date.getTime() - EPOCH_MJD) / 86400000.0;
+    }
+
+    /**
+     * Returns the date corresponding to a Modified Julian Date (MJD).
+     *
+     * @param mjd the MJD.
+     *
+     * @return the date corresponding to the MJD.
+     */
+    static Date toDate(double mjd) {
+        return new Date(EPOCH_MJD + (long) (mjd * 86400000.0));
     }
 
     /**
@@ -74,8 +96,8 @@ public class TimeCalculator {
      *
      * @return the number of seconds GPS time runs ahead of UTC.
      */
-    public final double getDeltaGPS(double mjd) {
-        return getDeltaTAI(mjd) - 19.0;
+    public final double deltaGPS(double mjd) {
+        return deltaTAI(mjd) - 19.0;
     }
 
     /**
@@ -86,13 +108,13 @@ public class TimeCalculator {
      *
      * @return the number of seconds TAI runs ahead of UTC.
      */
-    public final double getDeltaTAI(double mjd) {
-        if (mjd < tuTable.firstKey()) {
+    public final double deltaTAI(double mjd) {
+        if (mjd < tai.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("TAI-UTC for MJD before {0} is not available", tuTable.firstKey()));
+                    MessageFormat.format("No TAI-UTC data available before {0}.", toDate(tai.firstKey())));
         }
 
-        return tuTable.floorEntry(mjd).getValue();
+        return tai.floorEntry(mjd).getValue();
     }
 
     /**
@@ -104,39 +126,17 @@ public class TimeCalculator {
      * @return the number of seconds UT1 runs ahead of UTC. When UT1 lags
      *         behind UTC the sign of the number returned is negative.
      */
-    public final double getDeltaUT1(double mjd) {
-        if (mjd < uuTable.firstKey()) {
+    public final double deltaUT1(double mjd) {
+        if (mjd < ut1.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("UT1-UTC for MJD before {0} is not available", uuTable.firstKey()));
+                    MessageFormat.format("No UT1-UTC data available before {0}.", toDate(ut1.firstKey())));
         }
-        if (mjd > uuTable.lastKey()) {
+        if (mjd > ut1.lastKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("UT1-UTC for MJD after {0} is not available", uuTable.lastKey()));
+                    MessageFormat.format("No UT1-UTC data available after {0}.", toDate(ut1.lastKey())));
         }
 
-        return uuTable.floorEntry(mjd).getValue();
-    }
-
-    /**
-     * Returns the Modified Julian Date (MJD) corresponding to a calendar.
-     *
-     * @param calendar the calendar.
-     *
-     * @return the MJD corresponding to the calendar.
-     */
-    public static double toMJD(Calendar calendar) {
-        return (calendar.getTimeInMillis() - EPOCH_MILLIS) / (double) (24 * 3600 * 1000);
-    }
-
-    /**
-     * Returns the Modified Julian Date (MJD) corresponding to a Julian Date (JD).
-     *
-     * @param jd the JD.
-     *
-     * @return the MJD corresponding to the JD.
-     */
-    static double toMJD(double jd) {
-        return jd - 2400000.5;
+        return ut1.floorEntry(mjd).getValue();
     }
 
     /**
@@ -146,8 +146,8 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred while reading the TAI-UTC data from the input stream.
      */
-    private void updateTuTable(InputStream is) throws IOException {
-        readTuTable(is, tuTable);
+    private void updateTAI(InputStream is) throws IOException {
+        readTAI(is, tai);
     }
 
     /**
@@ -157,8 +157,8 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred while reading the UT1-UTC data from the input stream.
      */
-    private void updateUuTable(InputStream is) throws IOException {
-        readUuTable(is, uuTable);
+    private void updateUT1(InputStream is) throws IOException {
+        readUT1(is, ut1);
     }
 
     /**
@@ -168,11 +168,11 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred.
      */
-    private void updateTuTable(String spec) throws IOException {
+    private void updateTAI(String spec) throws IOException {
         final URL url = new URL(spec);
         final URLConnection connection = new FtpURLConnection(url);
 
-        updateTuTable(connection.getInputStream());
+        updateTAI(connection.getInputStream());
     }
 
     /**
@@ -182,21 +182,21 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred.
      */
-    private void updateUuTable(String spec) throws IOException {
+    private void updateUT1(String spec) throws IOException {
         final URL url = new URL(spec);
         final URLConnection connection = new FtpURLConnection(url);
 
-        updateUuTable(connection.getInputStream());
+        updateUT1(connection.getInputStream());
     }
 
     private static TimeCalculator createInstance() throws IOException {
         final TimeCalculator timeCalculator = new TimeCalculator();
-        readTuTable(TimeCalculator.class.getResourceAsStream("leapsec.dat"), timeCalculator.tuTable);
-        readUuTable(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.uuTable);
+        readTAI(TimeCalculator.class.getResourceAsStream("leapsec.dat"), timeCalculator.tai);
+        readUT1(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.ut1);
 
         try {
-            timeCalculator.updateTuTable("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
-            timeCalculator.updateUuTable("ftp://maia.usno.navy.mil/ser7/finals.data");
+            timeCalculator.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
+            timeCalculator.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
         } catch (IOException ignored) {
             // todo - warning
         }
@@ -204,7 +204,7 @@ public class TimeCalculator {
         return timeCalculator;
     }
 
-    private static void readTuTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readTAI(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
@@ -227,17 +227,17 @@ public class TimeCalculator {
                     jd = Double.parseDouble(line.substring(datePos + 3, timePos));
                     ls = Double.parseDouble(line.substring(timePos + 8, stopPos));
                 } catch (NumberFormatException e) {
-                    throw new IOException("An error occurred while reading the TAI-UTC table.", e);
+                    throw new IOException("An error occurred while parsing the TAI-UTC data.", e);
                 }
 
-                map.putIfAbsent(toMJD(jd), ls);
+                map.putIfAbsent(jd - 2400000.5, ls);
             }
         } finally {
             scanner.close();
         }
     }
 
-    private static void readUuTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readUT1(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
@@ -259,7 +259,7 @@ public class TimeCalculator {
                     mjd = Double.parseDouble(mjdString);
                     utd = Double.parseDouble(utdString);
                 } catch (NumberFormatException e) {
-                    throw new IOException("An error occurred while reading the UT1-UTC table.", e);
+                    throw new IOException("An error occurred while parsing the UT1-UTC data.", e);
                 }
 
                 map.put(mjd, utd);
