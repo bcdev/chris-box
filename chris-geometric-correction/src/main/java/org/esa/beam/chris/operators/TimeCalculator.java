@@ -1,8 +1,13 @@
 package org.esa.beam.chris.operators;
 
+import sun.net.www.protocol.ftp.FtpURLConnection;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.MessageFormat;
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentMap;
@@ -18,40 +23,47 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since CHRIS-Box 1.1
  */
 public class TimeCalculator {
+    /**
+     * The epoch (millis) for the Modified Julian Date (MJD) which
+     * corresponds to 1858-11-17 00:00.
+     */
+    private static final long EPOCH_MILLIS = -3506716800000L;
+
     private static final AtomicReference<TimeCalculator> instance = new AtomicReference<TimeCalculator>();
 
     /**
      * The TAI-UTC table.
      * <p/>
      * Note that since 1972-JAN-01 the difference between TAI and UTC
-     * is consisting of leap-seconds only.
+     * consists of leap-seconds only.
      */
-    private final ConcurrentNavigableMap<Double, Double> taiUtcMap;
+    private final ConcurrentNavigableMap<Double, Double> tuTable;
     /**
      * The UT1-UTC table.
      */
-    private final ConcurrentNavigableMap<Double, Double> ut1UtcMap;
+    private final ConcurrentNavigableMap<Double, Double> uuTable;
 
     private TimeCalculator() {
-        taiUtcMap = new ConcurrentSkipListMap<Double, Double>();
-        ut1UtcMap = new ConcurrentSkipListMap<Double, Double>();
-    }
-
-    public static TimeCalculator getInstance() throws IOException {
-        instance.compareAndSet(null, createInstance());
-        return instance.get();
+        tuTable = new ConcurrentSkipListMap<Double, Double>();
+        uuTable = new ConcurrentSkipListMap<Double, Double>();
     }
 
     /**
-     * Returns the number of seconds GPS time runs ahead of UT1
-     * for a Modified Julian Date (MJD) of interest.
+     * Returns a reference to the single instance of this class.
+     * <p/>
+     * When this method is called for the first time, a new instance
+     * of this class is created.
      *
-     * @param mjd the MJD.
+     * @return a reference to the single instance of this class.
      *
-     * @return the number of seconds GPS time runs ahead of UT1.
+     * @throws IOException if an error occurred.
      */
-    public final double getUt1Gps(double mjd) {
-        return getUtcGps(mjd) - getUtcUt1(mjd);
+    public static TimeCalculator getInstance() throws IOException {
+        if (instance.get() == null) {
+            instance.compareAndSet(null, createInstance());
+        }
+
+        return instance.get();
     }
 
     /**
@@ -62,30 +74,8 @@ public class TimeCalculator {
      *
      * @return the number of seconds GPS time runs ahead of UTC.
      */
-    public final double getUtcGps(double mjd) {
-        return getUtcTai(mjd) - 19.0;
-    }
-
-    /**
-     * Returns the number of seconds UT1 runs ahead of UTC
-     * for a Modified Julian Date (MJD) of interest.
-     *
-     * @param mjd the MJD.
-     *
-     * @return the number of seconds UT1 runs ahead of UTC.
-     *         The sign of the number returned is negative,
-     *         when UT1 lags behind UTC.
-     */
-    public final double getUtcUt1(double mjd) {
-        if (mjd < ut1UtcMap.firstKey()) {
-            throw new IllegalArgumentException(
-                    MessageFormat.format("UT1-UTC for MJD before {0} is not available", ut1UtcMap.firstKey()));
-        }
-        if (mjd > ut1UtcMap.lastKey()) {
-            throw new IllegalArgumentException(
-                    MessageFormat.format("UT1-UTC for MJD after {0} is not available", ut1UtcMap.lastKey()));
-        }
-        return ut1UtcMap.floorEntry(mjd).getValue();
+    public final double getDeltaGPS(double mjd) {
+        return getDeltaTAI(mjd) - 19.0;
     }
 
     /**
@@ -96,20 +86,54 @@ public class TimeCalculator {
      *
      * @return the number of seconds TAI runs ahead of UTC.
      */
-    public final double getUtcTai(double mjd) {
-        if (mjd < taiUtcMap.firstKey()) {
+    public final double getDeltaTAI(double mjd) {
+        if (mjd < tuTable.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("TAI-UTC for MJD before {0} is not available", taiUtcMap.firstKey()));
+                    MessageFormat.format("TAI-UTC for MJD before {0} is not available", tuTable.firstKey()));
         }
-        return taiUtcMap.floorEntry(mjd).getValue();
+
+        return tuTable.floorEntry(mjd).getValue();
     }
 
     /**
-     * Converts a Julian Date (JD) into a Modified Julian Date (MJD).
+     * Returns the number of seconds UT1 runs ahead of UTC
+     * for a Modified Julian Date (MJD) of interest.
      *
-     * @param jd the Julian Date (JD).
+     * @param mjd the MJD.
      *
-     * @return the Modified Julian Date (MJD).
+     * @return the number of seconds UT1 runs ahead of UTC. When UT1 lags
+     *         behind UTC the sign of the number returned is negative.
+     */
+    public final double getDeltaUT1(double mjd) {
+        if (mjd < uuTable.firstKey()) {
+            throw new IllegalArgumentException(
+                    MessageFormat.format("UT1-UTC for MJD before {0} is not available", uuTable.firstKey()));
+        }
+        if (mjd > uuTable.lastKey()) {
+            throw new IllegalArgumentException(
+                    MessageFormat.format("UT1-UTC for MJD after {0} is not available", uuTable.lastKey()));
+        }
+
+        return uuTable.floorEntry(mjd).getValue();
+    }
+
+    /**
+     * Returns the Modified Julian Date (MJD) corresponding to a calendar.
+     *
+     * @param calendar the calendar.
+     *
+     * @return the MJD corresponding to the calendar.
+     */
+    public static double toMJD(Calendar calendar) {
+        return (calendar.getTimeInMillis() - EPOCH_MILLIS) / (double) (24 * 3600 * 1000);
+    }
+
+    /**
+     * Returns the Modified Julian Date (MJD) corresponding to a Julian Date (JD).
+     *
+     * @param jd the JD.
+     *
+     * @return the MJD corresponding to the JD.
      */
     static double toMJD(double jd) {
         return jd - 2400000.5;
@@ -122,8 +146,8 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred while reading the TAI-UTC data from the input stream.
      */
-    public void updateTaiUtcTable(InputStream is) throws IOException {
-        readTaiUtcTable(is, taiUtcMap);
+    private void updateTuTable(InputStream is) throws IOException {
+        readTuTable(is, tuTable);
     }
 
     /**
@@ -133,19 +157,54 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred while reading the UT1-UTC data from the input stream.
      */
-    public void updateUt1UtcTable(InputStream is) throws IOException {
-        readUt1UtcTable(is, taiUtcMap);
+    private void updateUuTable(InputStream is) throws IOException {
+        readUuTable(is, uuTable);
+    }
+
+    /**
+     * Updates the internal UT1-UTC table with newer data read from a URL.
+     *
+     * @param spec the string to parse a a URL.
+     *
+     * @throws IOException if an error occurred.
+     */
+    private void updateTuTable(String spec) throws IOException {
+        final URL url = new URL(spec);
+        final URLConnection connection = new FtpURLConnection(url);
+
+        updateTuTable(connection.getInputStream());
+    }
+
+    /**
+     * Updates the internal UT1-UTC table with newer data read from a URL.
+     *
+     * @param spec the string to parse a a URL.
+     *
+     * @throws IOException if an error occurred.
+     */
+    private void updateUuTable(String spec) throws IOException {
+        final URL url = new URL(spec);
+        final URLConnection connection = new FtpURLConnection(url);
+
+        updateUuTable(connection.getInputStream());
     }
 
     private static TimeCalculator createInstance() throws IOException {
-        final TimeCalculator calculator = new TimeCalculator();
-        readTaiUtcTable(TimeCalculator.class.getResourceAsStream("leapsec.dat"), calculator.taiUtcMap);
-        readUt1UtcTable(TimeCalculator.class.getResourceAsStream("finals.data"), calculator.ut1UtcMap);
+        final TimeCalculator timeCalculator = new TimeCalculator();
+        readTuTable(TimeCalculator.class.getResourceAsStream("leapsec.dat"), timeCalculator.tuTable);
+        readUuTable(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.uuTable);
 
-        return calculator;
+        try {
+            timeCalculator.updateTuTable("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
+            timeCalculator.updateUuTable("ftp://maia.usno.navy.mil/ser7/finals.data");
+        } catch (IOException ignored) {
+            // todo - warning
+        }
+
+        return timeCalculator;
     }
 
-    private static void readTaiUtcTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readTuTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
@@ -158,7 +217,7 @@ public class TimeCalculator {
                 final int stopPos = line.indexOf(" S ");
 
                 if (datePos == -1 || timePos == -1 || stopPos == -1) {
-                    continue; // next line
+                    continue; // try next line
                 }
 
                 final double jd;
@@ -178,7 +237,7 @@ public class TimeCalculator {
         }
     }
 
-    private static void readUt1UtcTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readUuTable(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
@@ -190,7 +249,7 @@ public class TimeCalculator {
                 final String utdString = line.substring(58, 68);
 
                 if (mjdString.trim().isEmpty() || utdString.trim().isEmpty()) {
-                    continue; // next line
+                    continue; // try next line
                 }
 
                 final double mjd;
