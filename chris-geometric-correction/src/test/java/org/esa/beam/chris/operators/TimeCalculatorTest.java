@@ -37,6 +37,16 @@ public class TimeCalculatorTest extends TestCase {
         assertSame(timeCalculator, TimeCalculator.getInstance());
     }
 
+    public void testToDate() {
+        final Date date = TimeCalculator.toDate(41317.0);
+        assertEquals(41317.0, TimeCalculator.toMJD(date), 0.0);
+    }
+
+    public void testToGST() {
+        final double gst = TimeCalculator.toGST(TimeCalculator.toMJD(new Date()));
+        System.out.println("gst = " + gst);
+    }
+
     public void testToMJD() {
         final GregorianCalendar epoch1858 = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         epoch1858.clear();
@@ -49,11 +59,6 @@ public class TimeCalculatorTest extends TestCase {
         epoch2000.set(2000, 0, 1, 0, 0, 0);
 
         assertEquals(51544.0, TimeCalculator.toMJD(epoch2000.getTime()), 0.0);
-    }
-
-    public void testToDate() {
-        final Date date = TimeCalculator.toDate(41317.0);
-        assertEquals(41317.0, TimeCalculator.toMJD(date), 0.0);
     }
 
     public void testDeltaGPS() {

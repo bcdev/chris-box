@@ -28,7 +28,6 @@ public class TimeCalculator {
      * corresponds to 1858-11-17 00:00.
      */
     private static final long EPOCH_MJD = -3506716800000L;
-
     private static final AtomicReference<TimeCalculator> instance = new AtomicReference<TimeCalculator>();
 
     /**
@@ -38,14 +37,18 @@ public class TimeCalculator {
      * consists of leap-seconds only.
      */
     private final ConcurrentNavigableMap<Double, Double> tai;
+
     /**
      * Internal UT1-UTC table.
      */
     private final ConcurrentNavigableMap<Double, Double> ut1;
 
+    private volatile double timeStamp;
+
     private TimeCalculator() {
         tai = new ConcurrentSkipListMap<Double, Double>();
         ut1 = new ConcurrentSkipListMap<Double, Double>();
+        timeStamp = toMJD(new Date());
     }
 
     /**
@@ -68,6 +71,24 @@ public class TimeCalculator {
      */
     static Date toDate(double mjd) {
         return new Date(EPOCH_MJD + (long) (mjd * 86400000.0));
+    }
+
+    static double toGST(double mjd) {
+        final double jdn = toJDN(mjd);
+        final double TU = (jdn - 2451545.0) / 36525.0;
+        final double gst0 = 24110.54841 + TU * (8640184.812866D + TU * (0.093104 - TU * 6.2 - 6.0));
+        final double dt = mjd - jdn;
+        final double gst = (gst0 + 1.00273790934 * dt) % 86400;
+
+        return (gst * Math.PI / 43200.0) % (2.0 * Math.PI);
+    }
+
+    public static double toJD(double mjd) {
+        return mjd + 2400000.5;
+    }
+
+    public static double toJDN(double mjd) {
+        return Math.floor(toJD(mjd));
     }
 
     /**
@@ -195,8 +216,10 @@ public class TimeCalculator {
         readUT1(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.ut1);
 
         try {
-            timeCalculator.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
-            timeCalculator.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
+            if (timeCalculator.timeStamp + 182.0 > timeCalculator.ut1.lastKey()) {
+                timeCalculator.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
+                timeCalculator.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
+            }
         } catch (IOException ignored) {
             // todo - warning
         }
