@@ -59,14 +59,15 @@ public class TimeCalculator {
      * @return the GST corresponding to the MJD given.
      */
     public static double toGST(double mjd) {
-        final double ds2r = 7.272205216643039903848712E-5;
-
-        // reference epoch (J2000)
-        final double mjd0 = 51544.5;
+        // radians per sidereal second
+        final double secRad = 7.272205216643039903848712E-5;
 
         // seconds per day, days per Julian century
         final double daySec = 86400.0;
         final double cenDay = 36525.0;
+
+        // reference epoch (J2000)
+        final double mjd0 = 51544.5;
 
         // coefficients of IAU 1982 GMST-UT1 model
         final double a = 24110.54841;
@@ -83,7 +84,7 @@ public class TimeCalculator {
         final double f = daySec * mjd2;
 
         final double twoPi = 2.0 * Math.PI;
-        final double gst = (ds2r * ((a + (b + (c - d * t) * t) * t) + f)) % twoPi;
+        final double gst = (secRad * ((a + (b + (c - d * t) * t) * t) + f)) % twoPi;
 
         if (gst < 0.0) {
             return gst + twoPi;
