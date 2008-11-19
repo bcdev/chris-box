@@ -43,8 +43,12 @@ public class TimeCalculatorTest extends TestCase {
     }
 
     public void testToGST() {
-        final double gst = TimeCalculator.toGST(TimeCalculator.toMJD(new Date()));
-        System.out.println("gst = " + gst);
+        final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        calendar.clear();
+        calendar.set(2008, 10, 19, 15, 0, 0);
+
+        final double gst = TimeCalculator.toGST(TimeCalculator.toMJD(calendar.getTime()));
+        assertEquals(4.9569015, gst, 1.0E-7);
     }
 
     public void testToMJD() {

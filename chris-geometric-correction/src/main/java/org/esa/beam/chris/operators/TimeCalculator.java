@@ -13,7 +13,6 @@ import java.util.Scanner;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Utility class for time conversion.
@@ -28,7 +27,8 @@ public class TimeCalculator {
      * corresponds to 1858-11-17 00:00.
      */
     private static final long EPOCH_MJD = -3506716800000L;
-    private static final AtomicReference<TimeCalculator> instance = new AtomicReference<TimeCalculator>();
+
+    private static volatile TimeCalculator uniqueInstance;
 
     /**
      * Internal TAI-UTC table.
@@ -49,6 +49,47 @@ public class TimeCalculator {
         tai = new ConcurrentSkipListMap<Double, Double>();
         ut1 = new ConcurrentSkipListMap<Double, Double>();
         timeStamp = toMJD(new Date());
+    }
+
+    /**
+     * Converts UT1 into Greenwich Mean Sidereal Time (GST, IAU 1982 model).
+     *
+     * @param mjd the UT1 expressed as Modified Julian Date (MJD).
+     *
+     * @return the GST corresponding to the MJD given.
+     */
+    public static double toGST(double mjd) {
+        final double ds2r = 7.272205216643039903848712E-5;
+
+        // reference epoch (J2000)
+        final double mjd0 = 51544.5;
+
+        // seconds per day, days per Julian century
+        final double daySec = 86400.0;
+        final double cenDay = 36525.0;
+
+        // coefficients of IAU 1982 GMST-UT1 model
+        final double a = 24110.54841;
+        final double b = 8640184.812866;
+        final double c = 0.093104;
+        final double d = 6.2E-6;
+
+        final double mjd1 = Math.floor(mjd);
+        final double mjd2 = mjd - mjd1;
+
+        // Julian centuries since epoch
+        final double t = (mjd2 + (mjd1 - mjd0)) / cenDay;
+        // fractional part of MJD(UT1) in seconds
+        final double f = daySec * mjd2;
+
+        final double twoPi = 2.0 * Math.PI;
+        final double gst = (ds2r * ((a + (b + (c - d * t) * t) * t) + f)) % twoPi;
+
+        if (gst < 0.0) {
+            return gst + twoPi;
+        }
+
+        return gst;
     }
 
     /**
@@ -73,24 +114,6 @@ public class TimeCalculator {
         return new Date(EPOCH_MJD + (long) (mjd * 86400000.0));
     }
 
-    static double toGST(double mjd) {
-        final double jdn = toJDN(mjd);
-        final double TU = (jdn - 2451545.0) / 36525.0;
-        final double gst0 = 24110.54841 + TU * (8640184.812866D + TU * (0.093104 - TU * 6.2 - 6.0));
-        final double dt = mjd - jdn;
-        final double gst = (gst0 + 1.00273790934 * dt) % 86400;
-
-        return (gst * Math.PI / 43200.0) % (2.0 * Math.PI);
-    }
-
-    public static double toJD(double mjd) {
-        return mjd + 2400000.5;
-    }
-
-    public static double toJDN(double mjd) {
-        return Math.floor(toJD(mjd));
-    }
-
     /**
      * Returns a reference to the single instance of this class.
      * <p/>
@@ -102,11 +125,14 @@ public class TimeCalculator {
      * @throws IOException if an error occurred.
      */
     public static TimeCalculator getInstance() throws IOException {
-        if (instance.get() == null) {
-            instance.compareAndSet(null, createInstance());
+        if (uniqueInstance == null) {
+            synchronized (TimeCalculator.class) {
+                if (uniqueInstance == null) {
+                    uniqueInstance = createInstance();
+                }
+            }
         }
-
-        return instance.get();
+        return uniqueInstance;
     }
 
     /**

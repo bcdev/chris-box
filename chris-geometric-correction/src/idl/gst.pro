@@ -52,18 +52,31 @@ TU = (jd - 2451545.0D) / 36525.D				; Reference Epoch: 2000-1-1 12:00:00
 GST0 = 24110.54841 + TU * (8640184.812866D + TU * (0.093104 - TU * 6.2D-6))	; [s]
 GST = (GST0 + 1.00273790934D * dt) MOD 86400			; GST in seconds
 
-IF KEYWORD_SET(rad) THEN begin
+;IF KEYWORD_SET(rad) THEN begin
 	GST0 = (GST0 * !dpi /43200.D) MOD (2.D * !dpi)
 	GST = (GST * !dpi / 43200.D) MOD (2.D * !dpi)
 	wE = wE * !dpi /43200.D
 	RETURN, {Tg:GST, Tg0:GST0, wE:wE, unit:'rad'}
-ENDIF ELSE begin
-	GST0 = (GST0 * 180.D / 43200.D) MOD 360.
-	GST = (GST * 180.D / 43200.D) MOD 360.
-	wE = wE * 180.D / 43200.D
-	RETURN, {Tg:GST, Tg0:GST0, wE:wE, unit:'deg'}
-ENDELSE
+;ENDIF ELSE begin
+;	GST0 = (GST0 * 180.D / 43200.D) MOD 360.
+;	GST = (GST * 180.D / 43200.D) MOD 360.
+;	wE = wE * 180.D / 43200.D
+;	RETURN, {Tg:GST, Tg0:GST0, wE:wE, unit:'deg'}
+;ENDELSE
 
 RETURN, !values.f_nan       ; it should never arrive to this point
 
 END
+
+
+PRO GST_TEST
+
+PRINT, GST(2454790.125D)
+PRINT, GST('2008-11-19 15:00:00')
+
+END
+
+; Output from GST_TEST
+;
+;{       4.9569015       1.0191589   7.2921159e-05 rad}
+;{       4.9569015       1.0191589   7.2921159e-05 rad}
