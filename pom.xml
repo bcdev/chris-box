@@ -78,17 +78,17 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-core</artifactId>
-                <version>4.5.1-SNAPSHOT</version>
+                <version>4.5.1</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-ui</artifactId>
-                <version>4.5.1-SNAPSHOT</version>
+                <version>4.5.1</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-visat</artifactId>
-                <version>4.5.1-SNAPSHOT</version>
+                <version>4.5.1</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
