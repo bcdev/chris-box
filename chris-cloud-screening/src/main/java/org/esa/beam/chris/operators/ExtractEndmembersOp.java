@@ -49,7 +49,7 @@ import java.util.ArrayList;
  */
 @OperatorMetadata(alias = "chris.ExtractEndmembers",
                   version = "1.0",
-                  authors = "Ralf Quast, Marco Zühlke",
+                  authors = "Ralf Quast, Marco ZÃ¼hlke",
                   copyright = "(c) 2008 Brockmann Consult",
                   description = "Finds endmembers for calculating cloud abundances.",
                   internal = true)
