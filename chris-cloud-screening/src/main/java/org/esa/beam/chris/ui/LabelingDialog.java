@@ -42,7 +42,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @author Marco Peters
  * @author Ralf Quast
- * @author Marco Zühlke
+ * @author Marco ZÃ¼hlke
  * @version $Revision$ $Date$
  */
 class LabelingDialog extends ModelessDialog {
