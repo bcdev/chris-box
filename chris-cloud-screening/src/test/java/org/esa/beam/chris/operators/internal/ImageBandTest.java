@@ -47,7 +47,7 @@ public class ImageBandTest extends TestCase {
         // 1. Set image
         imageBand.setSourceImage(image);
         // new image...
-        assertSame(image, imageBand.getSourceImage());
+        assertSame(image, imageBand.getSourceImage().getImage(0));
         // new data buffer
         final ProductData data = imageBand.getData();
         assertNotNull(data);

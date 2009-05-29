@@ -80,7 +80,6 @@ public class ClassOpImageTest extends TestCase {
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(samples));
-        band.setSourceImage(new BandOpImage(band));
 
         return band;
     }
