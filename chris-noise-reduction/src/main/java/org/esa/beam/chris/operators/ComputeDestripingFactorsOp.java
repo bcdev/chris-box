@@ -50,7 +50,7 @@ import java.util.Map;
  * due to the CCD elements.
  *
  * @author Ralf Quast
- * @author Marco Zühlke
+ * @author Marco ZÃ¼hlke
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ComputeDestripingFactors",
@@ -147,7 +147,7 @@ public class ComputeDestripingFactorsOp extends Operator {
                 sb.append(", ");
             }
             sb.append(OpUtils.getAnnotationString(sourceProducts[i], ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE));
-            sb.append("°");
+            sb.append("Â°");
         }
         OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION, sb.toString());
         final MetadataElement targetBandInfo = new MetadataElement(ChrisConstants.BAND_INFORMATION_NAME);
