@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0.2</version>
 
     <packaging>pom</packaging>
 
@@ -36,7 +36,9 @@
         <module>chris-atmospheric-correction</module>
         <module>chris-atmospheric-correction-lut</module>
         <module>chris-cloud-screening</module>
+        <!-- not yet available
         <module>chris-geometric-correction</module>
+		-->
         <module>chris-noise-reduction</module>
         <module>chris-toa-reflectance-computation</module>
 		<!-- not yet available

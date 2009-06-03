@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-cloud-screening</symbolicName>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.2</version>
     <name>CHRIS/Proba Cloud Screening Tools</name>
 
     <description>
@@ -27,7 +27,8 @@
     <changelog>
         <![CDATA[
         Changes in Version 1.0.2<br/>
-        [CBOX.XY] Change non-UTF8 characters        
+        [CBOX.69] Change non-UTF8 characters        
+        [CBOX-68] Make modules binary compatible to BEAM 4.6<br/><br/>
         Changes in Version 1.0.1<br/>
         [CBOX-63] Cluster analysis fails for some products<br/>
         [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
