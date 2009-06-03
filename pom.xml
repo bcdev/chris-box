@@ -220,39 +220,67 @@
         </dependencies>
     </dependencyManagement>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.esa.beam</groupId>
-            <artifactId>beam-bootstrap</artifactId>
-        </dependency>
-    </dependencies>
+
+    <!--
+       In version 2.1 of Maven the sourceEncoding property will be embedded in the
+       build tag. For now the convention is to that it as property.
+       TODO: Move the sourceEncoding property to the build tag if version 2.1 is released
+       -->
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <build>
+        <!-- Maven plugin configurations common to all BEAM modules -->
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>1.6</source>
+                        <target>1.6</target>
+                        <debug>true</debug>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-idea-plugin</artifactId>
+                    <configuration>
+                        <downloadSources>true</downloadSources>
+                        <downloadJavadocs>true</downloadJavadocs>
+                        <jdkName>1.6</jdkName>
+                        <jdkLevel>1.6</jdkLevel>
+                        <exclude>target</exclude>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+	           <plugin>
+    	           <groupId>com.bc.maven.plugins</groupId>
+	               <artifactId>maven-javahelp-plugin</artifactId>
+	               <version>1.0</version>
+	               <executions>
+	                   <execution>
+	                       <goals>
+	                           <goal>javahelp-indexer</goal>
+                            </goals>
+		              </execution>
+	               </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                    <debug>true</debug>
-                    <fork>false</fork>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-idea-plugin</artifactId>
-                <configuration>
-                    <downloadSources>true</downloadSources>
-                    <downloadJavadocs>true</downloadJavadocs>
-                    <jdkName>1.6</jdkName>
-                    <jdkLevel>1.6</jdkLevel>
-                    <exclude>target</exclude>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.2-beta-1</version>
@@ -262,18 +290,6 @@
                     </descriptors>
                     <finalName>chris-box</finalName>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
