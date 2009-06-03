@@ -38,7 +38,7 @@ import java.text.MessageFormat;
  * the {@link ComputeDestripingFactorsOp}.
  *
  * @author Ralf Quast
- * @author Marco ZÃ¼hlke
+ * @author Marco Zühlke
  * @version $Revision$ $Date$
  */
 @OperatorMetadata(alias = "chris.ApplyDestripingFactors",

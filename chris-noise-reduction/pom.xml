@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
     </parent>
 
     <packaging>jar</packaging>
@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-noise-reduction</artifactId>
     <name>CHRIS/Proba Noise Reduction</name>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <description>CHRIS/Proba Noise Reduction</description>
 
     <dependencies>

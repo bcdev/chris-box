@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <packaging>pom</packaging>
 
@@ -36,14 +36,8 @@
         <module>chris-atmospheric-correction</module>
         <module>chris-atmospheric-correction-lut</module>
         <module>chris-cloud-screening</module>
-        <!--
-        <module>chris-geometric-correction</module>
-        -->
         <module>chris-noise-reduction</module>
         <module>chris-toa-reflectance-computation</module>
-		<!-- not yet available
-        <module>chris-aod-retrieval</module>
-		-->
     </modules>
 
     <dependencyManagement>
@@ -54,25 +48,25 @@
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-launcher</artifactId>
-                <version>0.8</version>
+                <version>0.9</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-core</artifactId>
-                <version>0.8</version>
+                <version>0.9</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-binding</artifactId>
-                <version>0.8</version>
+                <version>0.9</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-ui</artifactId>
-                <version>0.8</version>
+                <version>0.9</version>
             </dependency>
 
             <!-- BEAM System Level Modules ############################################# -->
@@ -80,45 +74,45 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-core</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-ui</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-visat</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-bootstrap</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-gpf</artifactId>
-                <version>4.5</version>
+                <version>4.6</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-cluster-analysis</artifactId>
-                <version>1.1</version>
+                <version>1.1.1</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-unmix</artifactId>
-                <version>1.0</version>
+                <version>1.0.1</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.4.101</version>
+                <version>1.5</version>
             </dependency>
 
             <!-- JAI Libraries ############################################# -->
@@ -153,8 +147,8 @@
 
             <dependency>
                 <groupId>javax.help</groupId>
-                <artifactId>jhall</artifactId>
-                <version>2.0-02</version>
+                <artifactId>javahelp</artifactId>
+                <version>2.0.02</version>
             </dependency>
 
             <!-- JDOM Library ############################################# -->
@@ -246,7 +240,7 @@
                     <target>1.6</target>
                     <debug>true</debug>
                     <fork>false</fork>
-                    <encoding>ISO-8859-1</encoding>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
             <plugin>

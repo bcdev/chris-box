@@ -21,7 +21,6 @@ import org.esa.beam.cluster.ProbabilityCalculator;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.jai.BandOpImage;
 
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
@@ -80,12 +79,12 @@ public class ClassOpImageTest extends TestCase {
 
         band.setSynthetic(true);
         band.setRasterData(ProductData.createInstance(samples));
-        band.setSourceImage(new BandOpImage(band));
 
         return band;
     }
 
     private static class StandardMultinormalDistribution implements Distribution {
+
         private final double[] mean;
 
         public StandardMultinormalDistribution(double[] mean) {
