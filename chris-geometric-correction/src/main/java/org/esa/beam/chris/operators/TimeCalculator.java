@@ -161,7 +161,7 @@ public class TimeCalculator {
             throw new IllegalArgumentException(
                     MessageFormat.format("No TAI-UTC data available before {0}.", toDate(tai.firstKey())));
         }
-
+        // todo - interpolate? (rq-20090623)
         return tai.floorEntry(mjd).getValue();
     }
 
@@ -183,7 +183,7 @@ public class TimeCalculator {
             throw new IllegalArgumentException(
                     MessageFormat.format("No UT1-UTC data available after {0}.", toDate(ut1.lastKey())));
         }
-
+        // todo - interpolate? (rq-20090623)
         return ut1.floorEntry(mjd).getValue();
     }
 
