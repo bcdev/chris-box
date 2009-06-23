@@ -239,7 +239,6 @@ public class TimeCalculator {
 
     private static TimeCalculator createInstance() throws IOException {
         final TimeCalculator timeCalculator = new TimeCalculator();
-        // TODO - update auxiliary data (rq-20090529)
         readTAI(TimeCalculator.class.getResourceAsStream("leapsec.dat"), timeCalculator.tai);
         readUT1(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.ut1);
 

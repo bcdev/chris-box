@@ -103,16 +103,17 @@ public class TimeCalculatorTest extends TestCase {
 
         // 2008-NOV-13
         // TODO - update time auxiliary data
-        assertEquals(-0.5390396, timeCalculator.deltaUT1(54783.0), 0.0);
+        assertEquals(-0.5391982, timeCalculator.deltaUT1(54783.0), 0.0);
 
         // 2008-NOV-13
-        assertEquals(-0.5400264, timeCalculator.deltaUT1(54784.0), 0.0);
+        assertEquals(-0.5403142, timeCalculator.deltaUT1(54784.0), 0.0);
 
         // 2009-NOV-21
-        assertEquals(0.1716805, timeCalculator.deltaUT1(55156.0), 0.0);
+        assertEquals(0.1493375, timeCalculator.deltaUT1(55156.0), 0.0);
 
         try {
-            timeCalculator.deltaUT1(55157.0);
+            final double lastPrediction = 55373.0;
+            timeCalculator.deltaUT1(lastPrediction + 1.0);
             fail();
         } catch (IllegalArgumentException expected) {
         }
