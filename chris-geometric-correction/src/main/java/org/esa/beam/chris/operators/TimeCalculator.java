@@ -2,6 +2,8 @@ package org.esa.beam.chris.operators;
 
 import sun.net.www.protocol.ftp.FtpURLConnection;
 
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.FileCacheImageInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -22,6 +24,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @since CHRIS-Box 1.1
  */
 public class TimeCalculator {
+
+    private static final String PROPERTY_KEY_FETCH_NEWEST_TIME_DATA = "org.esa.beam.chris.fetchNewestTimeData";
+
     /**
      * The epoch (millis) for the Modified Julian Date (MJD) which
      * corresponds to 1858-11-17 00:00.
@@ -43,12 +48,9 @@ public class TimeCalculator {
      */
     private final ConcurrentNavigableMap<Double, Double> ut1;
 
-    private volatile double timeStamp;
-
     private TimeCalculator() {
         tai = new ConcurrentSkipListMap<Double, Double>();
         ut1 = new ConcurrentSkipListMap<Double, Double>();
-        timeStamp = toMJD(new Date());
     }
 
     /**
@@ -242,13 +244,13 @@ public class TimeCalculator {
         readTAI(TimeCalculator.class.getResourceAsStream("leapsec.dat"), timeCalculator.tai);
         readUT1(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.ut1);
 
-        try {
-            if (timeCalculator.timeStamp + 182.0 > timeCalculator.ut1.lastKey()) {
+        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_FETCH_NEWEST_TIME_DATA))) {
+            try {
                 timeCalculator.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
                 timeCalculator.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
+            } catch (IOException ignored) {
+                // todo - warning
             }
-        } catch (IOException ignored) {
-            // todo - warning
         }
 
         return timeCalculator;
