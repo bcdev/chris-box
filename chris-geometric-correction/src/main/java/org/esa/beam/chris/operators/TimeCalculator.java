@@ -2,8 +2,6 @@ package org.esa.beam.chris.operators;
 
 import sun.net.www.protocol.ftp.FtpURLConnection;
 
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.FileCacheImageInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
