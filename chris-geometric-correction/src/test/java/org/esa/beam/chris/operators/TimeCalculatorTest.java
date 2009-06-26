@@ -47,7 +47,10 @@ public class TimeCalculatorTest extends TestCase {
         calendar.clear();
         calendar.set(2008, 10, 19, 15, 0, 0);
 
-        final double gst = TimeCalculator.toGST(TimeCalculator.toMJD(calendar.getTime()));
+        final double mjd = TimeCalculator.toMJD(calendar.getTime());
+        final double gst = TimeCalculator.toGST(mjd);
+
+        // expected result taken from Luis Alonso
         assertEquals(4.9569015, gst, 1.0E-7);
     }
 

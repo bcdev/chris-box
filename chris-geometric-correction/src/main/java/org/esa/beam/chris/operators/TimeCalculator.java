@@ -31,6 +31,9 @@ public class TimeCalculator {
      */
     private static final long EPOCH_MJD = -3506716800000L;
 
+    private static final double MJD_TO_JD_OFFSET = 2400000.5;
+    private static final double MILLIS_PER_DAY = 86400000.0;
+
     private static volatile TimeCalculator uniqueInstance;
 
     /**
@@ -53,6 +56,8 @@ public class TimeCalculator {
 
     /**
      * Converts UT1 into Greenwich Mean Sidereal Time (GST, IAU 1982 model).
+     * <p/>
+     * Note that the unit of GST is radian (rad).
      *
      * @param mjd the UT1 expressed as Modified Julian Date (MJD).
      *
@@ -94,6 +99,17 @@ public class TimeCalculator {
     }
 
     /**
+     * Returns the Julian Date (JD) corresponding to a date.
+     *
+     * @param date the date.
+     *
+     * @return the JD corresponding to the date.
+     */
+    public static double toJD(Date date) {
+        return toMJD(date) + MJD_TO_JD_OFFSET;
+    }
+
+    /**
      * Returns the Modified Julian Date (MJD) corresponding to a date.
      *
      * @param date the date.
@@ -101,7 +117,18 @@ public class TimeCalculator {
      * @return the MJD corresponding to the date.
      */
     public static double toMJD(Date date) {
-        return (date.getTime() - EPOCH_MJD) / 86400000.0;
+        return (date.getTime() - EPOCH_MJD) / MILLIS_PER_DAY;
+    }
+
+    /**
+     * Returns the Modified Julian Date (MJD) corresponding to a Julian Date (JD).
+     *
+     * @param jd the JD.
+     *
+     * @return the MJD corresponding to the JD.
+     */
+    public static double toMJD(double jd) {
+        return jd - MJD_TO_JD_OFFSET;
     }
 
     /**
@@ -112,7 +139,7 @@ public class TimeCalculator {
      * @return the date corresponding to the MJD.
      */
     static Date toDate(double mjd) {
-        return new Date(EPOCH_MJD + (long) (mjd * 86400000.0));
+        return new Date(EPOCH_MJD + (long) (mjd * MILLIS_PER_DAY));
     }
 
     /**
@@ -280,7 +307,7 @@ public class TimeCalculator {
                     throw new IOException("An error occurred while parsing the TAI-UTC data.", e);
                 }
 
-                map.putIfAbsent(jd - 2400000.5, ls);
+                map.putIfAbsent(jd - MJD_TO_JD_OFFSET, ls);
             }
         } finally {
             scanner.close();

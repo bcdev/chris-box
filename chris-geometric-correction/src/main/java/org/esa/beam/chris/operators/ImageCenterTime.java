@@ -16,16 +16,12 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.util.DateTimeUtils;
 import org.esa.beam.util.io.CsvReader;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 
@@ -36,9 +32,10 @@ import java.util.List;
  * @version $Revision$ $Date$
  */
 class ImageCenterTime {
-    
+
     private static final double DAY_SEC = 86400.0;
-    
+    private static final double JD0 = 3097648.0; // Julian Date (JD) of 1999-12-26 00:00
+
     final double ict1;
     final double ict2;
     final double ict3;
@@ -52,22 +49,18 @@ class ImageCenterTime {
         this.ict4 = ict4;
         this.ict5 = ict5;
     }
-    
+
     static ImageCenterTime create(double[] ictValues, double dTgps) {
-        Calendar calendar = ProductData.UTC.createCalendar();
-        calendar.set(1999, 11, 26, 0, 0);
-        Date jd0Date = calendar.getTime();
-        double jd0 = DateTimeUtils.utcToJD(jd0Date);
-        double ict1 = (ictValues[0] - dTgps) / DAY_SEC + jd0;
-        double ict2 = (ictValues[1] - dTgps) / DAY_SEC + jd0;
-        double ict3 = (ictValues[2] - dTgps) / DAY_SEC + jd0;
-        double ict4 = (ictValues[3] - dTgps) / DAY_SEC + jd0;
-        double ict5 = (ictValues[4] - dTgps) / DAY_SEC + jd0;
+        double ict1 = (ictValues[0] - dTgps) / DAY_SEC + JD0;
+        double ict2 = (ictValues[1] - dTgps) / DAY_SEC + JD0;
+        double ict3 = (ictValues[2] - dTgps) / DAY_SEC + JD0;
+        double ict4 = (ictValues[3] - dTgps) / DAY_SEC + JD0;
+        double ict5 = (ictValues[4] - dTgps) / DAY_SEC + JD0;
         return new ImageCenterTime(ict1, ict2, ict3, ict4, ict5);
-    }    
-    
+    }
+
     static class ITCReader {
-        
+
         private final String[] lastIctRecord;
 
         ITCReader(InputStream is) {
@@ -78,10 +71,15 @@ class ImageCenterTime {
             try {
                 record = readRecords(csvReader);
             } catch (IOException e) {
+                try {
+                    is.close();
+                } catch (IOException e1) {
+                    // ignore
+                }
             }
             lastIctRecord = record;
         }
-        
+
         private String[] readRecords(CsvReader csvReader) throws IOException {
             List<String[]> stringRecords = csvReader.readStringRecords();
             int ndxICT = -1;
@@ -97,11 +95,11 @@ class ImageCenterTime {
                 return null;
             }
         }
-        
+
         String[] getLastIctRecord() {
             return lastIctRecord;
         }
-        
+
         double[] getLastIctValues() {
             double[] ict = new double[5];
             ict[0] = Double.parseDouble(lastIctRecord[ICT.ICT1.index]);
@@ -112,8 +110,9 @@ class ImageCenterTime {
             return ict;
         }
     }
-    
-    private enum ICT{
+
+    private enum ICT {
+
         TIME(0),
         PKT(1),
         FLYBY_PKT(2),
@@ -128,9 +127,9 @@ class ImageCenterTime {
         ICT4(11),
         ICT5_PKT(12),
         ICT5(13);
-        
+
         final int index;
-        
+
         private ICT(int index) {
             this.index = index;
         }
