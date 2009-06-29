@@ -11,6 +11,28 @@ class EcefEciConverter {
     private final double s;
 
     public static void ecefToEci(double gst, double[] ecef, double[] eci) {
+        if (ecef == null) {
+            throw new IllegalArgumentException("ecef == null");
+        }
+        if (eci == null) {
+            throw new IllegalArgumentException("eci == null");
+        }
+        if (ecef.length < 2) {
+            throw new IllegalArgumentException("ecef.length < 2");
+        }
+        if (eci.length < 2) {
+            throw new IllegalArgumentException("eci.length < 2");
+        }
+        if (ecef.length > 6) {
+            throw new IllegalArgumentException("ecef.length < 2");
+        }
+        if (eci.length > 6) {
+            throw new IllegalArgumentException("eci.length < 2");
+        }
+        if (eci.length != ecef.length) {
+            throw new IllegalArgumentException("eci.length != ecef.length");
+        }
+
         final double c = Math.cos(gst);
         final double s = Math.sin(gst);
 
@@ -18,6 +40,28 @@ class EcefEciConverter {
     }
 
     public static void eciToEcef(double gst, double[] eci, double[] ecef) {
+        if (eci == null) {
+            throw new IllegalArgumentException("eci == null");
+        }
+        if (ecef == null) {
+            throw new IllegalArgumentException("ecef == null");
+        }
+        if (eci.length < 2) {
+            throw new IllegalArgumentException("eci.length < 2");
+        }
+        if (ecef.length < 2) {
+            throw new IllegalArgumentException("ecef.length < 2");
+        }
+        if (eci.length > 6) {
+            throw new IllegalArgumentException("eci.length < 2");
+        }
+        if (ecef.length > 6) {
+            throw new IllegalArgumentException("ecef.length < 2");
+        }
+        if (ecef.length != eci.length) {
+            throw new IllegalArgumentException("ecef.length != eci.length");
+        }
+
         final double c = Math.cos(gst);
         final double s = Math.sin(gst);
 
