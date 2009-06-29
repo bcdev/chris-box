@@ -1,5 +1,9 @@
 package org.esa.beam.chris.operators;
 
+import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.util.DateTimeUtils;
+
+import java.util.Calendar;
 import java.util.Date;
 
 class Conversions {
@@ -23,7 +27,6 @@ class Conversions {
      */
     private static final long EPOCH_MJD = -3506716800000L;
     private static final double MJD_TO_JD_OFFSET = 2400000.5;
-    private static final double MILLIS_PER_DAY = 86400000.0;
 
     private Conversions() {
     }
@@ -47,7 +50,7 @@ class Conversions {
      * @return the MJD corresponding to the date.
      */
     public static double dateToMJD(Date date) {
-        return (date.getTime() - EPOCH_MJD) / MILLIS_PER_DAY;
+        return (date.getTime() - EPOCH_MJD) / DateTimeUtils.MILLIS_PER_DAY;
     }
 
     /**
@@ -58,7 +61,7 @@ class Conversions {
      * @return the date corresponding to the MJD.
      */
     static Date mjdToDate(double mjd) {
-        return new Date(EPOCH_MJD + (long) (mjd * MILLIS_PER_DAY));
+        return new Date(EPOCH_MJD + (long) (mjd * DateTimeUtils.MILLIS_PER_DAY));
     }
 
     /**
@@ -176,5 +179,36 @@ class Conversions {
         ecef[0] = b * cu;
         ecef[1] = b * su;
         ecef[2] = ((1.0 - WGS84_E) * a + alt) * sv;
+    }
+    
+    /**
+     * Calculates the julian day from the given parameter.
+     * 
+     * @param year the value used to set the <code>YEAR</code> calendar field.
+     * @param month the value used to set the <code>MONTH</code> calendar field.
+     * Month value is 0-based. e.g., 0 for January.
+     * @param day the value used to set the <code>DAY_OF_MONTH</code> calendar field.
+     */
+    public static double julDay(int year, int month, int day) {
+        return julDay(year, month, day, 0, 0, 0);
+    }
+    
+    /**
+     * Calculates the julian day from the given parameter.
+     * 
+     * @param year the value used to set the <code>YEAR</code> calendar field.
+     * @param month the value used to set the <code>MONTH</code> calendar field.
+     * Month value is 0-based. e.g., 0 for January.
+     * @param day the value used to set the <code>DAY_OF_MONTH</code> calendar field.
+     * @param hourOfDay the value used to set the <code>HOUR_OF_DAY</code> calendar field.
+     * @param minute the value used to set the <code>MINUTE</code> calendar field.
+     * @param second the value used to set the <code>SECOND</code> calendar field.
+     */
+    public static double julDay(int year, int month, int day, int hourOfDay, int minute, int second) {
+        Calendar calendar = ProductData.UTC.createCalendar();
+        calendar.set(year, month, day, hourOfDay, minute, second);
+        Date jdDate = calendar.getTime();
+        double jd = DateTimeUtils.utcToJD(jdDate);
+        return jd;
     }
 }
