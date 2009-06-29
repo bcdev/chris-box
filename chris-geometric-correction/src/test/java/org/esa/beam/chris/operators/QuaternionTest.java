@@ -13,10 +13,10 @@ public class QuaternionTest extends TestCase {
         final Quaternion q = Quaternion.createQuaternion(x, y, z, alpha);
 
         // expected values from IDL source code
-        assertEquals(0.00000000, q.getI(), 0.0);
-        assertEquals(0.38268343, q.getJ(), 0.5E-08);
-        assertEquals(0.00000000, q.getK(), 0.0);
-        assertEquals(0.92387953, q.getR(), 0.5E-08);
+        assertEquals(0.00000000, q.getVectorI(), 0.0);
+        assertEquals(0.38268343, q.getVectorJ(), 0.5E-08);
+        assertEquals(0.00000000, q.getVectorK(), 0.0);
+        assertEquals(0.92387953, q.getScalar(), 0.5E-08);
     }
 
 }

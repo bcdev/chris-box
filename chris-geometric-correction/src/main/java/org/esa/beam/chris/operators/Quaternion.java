@@ -10,10 +10,10 @@ import java.text.MessageFormat;
  */
 class Quaternion {
 
-    private final double r;
-    private final double i;
-    private final double j;
-    private final double k;
+    private final double a;
+    private final double b;
+    private final double c;
+    private final double d;
 
     /**
      * Creates a new quaternion from a rotation axis and a rotation angle.
@@ -23,7 +23,7 @@ class Quaternion {
      * @param z     the z-component of the rotation axis.
      * @param alpha the rotation angle.
      *
-     * @return the quaternion.
+     * @return the quaternion created.
      */
     public static Quaternion createQuaternion(double x, double y, double z, double alpha) {
         final double c = Math.cos(alpha / 2.0);
@@ -33,14 +33,14 @@ class Quaternion {
     }
 
     /**
-     * Creates an array of quaternions from n rotation axes and a single rotation angle.
+     * Creates an array of N quaternions from N rotation axes and a single rotation angle.
      *
-     * @param x     the x-components of the n rotation axes.
-     * @param y     the y-components of the n rotation axes.
-     * @param z     the z-components of the n rotation axes.
+     * @param x     the x-components of the N rotation axes.
+     * @param y     the y-components of the N rotation axes.
+     * @param z     the z-components of the N rotation axes.
      * @param alpha the rotation angle.
      *
-     * @return the quaternions.
+     * @return the N quaternions created.
      */
     public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double alpha) {
         ensureLegalArray(x, "x", 0);
@@ -60,14 +60,14 @@ class Quaternion {
     }
 
     /**
-     * Creates an array of quaternions from n rotation axes and n associated rotation angles.
+     * Creates an array of N quaternions from N rotation axes and N associated rotation angles.
      *
-     * @param x     the x-components of the n rotation axes.
-     * @param y     the y-components of the n rotation axes.
-     * @param z     the z-components of the n rotation axes.
-     * @param alpha the n rotation angles assosicated with the n rotation axes.
+     * @param x     the x-components of the N rotation axes.
+     * @param y     the y-components of the N rotation axes.
+     * @param z     the z-components of the N rotation axes.
+     * @param alpha the N rotation angles.
      *
-     * @return the quaternions.
+     * @return the N quaternions created.
      */
     public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double[] alpha) {
         ensureLegalArray(x, "x", 0);
@@ -89,16 +89,28 @@ class Quaternion {
     /**
      * Constructs a new quaternion.
      *
-     * @param r the scalar part of the quaternion.
-     * @param i the i-component of the vector part of the quaternion.
-     * @param j the j-component of the vector part of the quaternion.
-     * @param k the k-component of the vector part of the quaternion.
+     * @param a the scalar part of the quaternion.
+     * @param b the i-component of the vector part of the quaternion.
+     * @param c the j-component of the vector part of the quaternion.
+     * @param d the k-component of the vector part of the quaternion.
      */
-    public Quaternion(double r, double i, double j, double k) {
-        this.r = r;
-        this.i = i;
-        this.j = j;
-        this.k = k;
+    public Quaternion(double a, double b, double c, double d) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+    }
+
+    /**
+     * Ccopy constructor.
+     *
+     * @param q the quaternion being copied.
+     */
+    public Quaternion(Quaternion q) {
+        this.a = q.a;
+        this.b = q.b;
+        this.c = q.c;
+        this.d = q.d;
     }
 
     /**
@@ -106,8 +118,8 @@ class Quaternion {
      *
      * @return the scalar part of the quaternion.
      */
-    public final double getR() {
-        return r;
+    public final double getScalar() {
+        return a;
     }
 
     /**
@@ -115,8 +127,8 @@ class Quaternion {
      *
      * @return the i-component of the vector part of the quaternion.
      */
-    public final double getI() {
-        return i;
+    public final double getVectorI() {
+        return b;
     }
 
     /**
@@ -124,8 +136,8 @@ class Quaternion {
      *
      * @return the j-component of the vector part of the quaternion.
      */
-    public final double getJ() {
-        return j;
+    public final double getVectorJ() {
+        return c;
     }
 
     /**
@@ -133,8 +145,13 @@ class Quaternion {
      *
      * @return the k-component of the vector part of the quaternion.
      */
-    public final double getK() {
-        return k;
+    public final double getVectorK() {
+        return d;
+    }
+
+    @Override
+    public String toString() {
+        return MessageFormat.format("{0} + i * {1} + j * {2} + k * {3}", a, b, c, d);
     }
 
     private static void ensureLegalArray(double[] a, String name) {
