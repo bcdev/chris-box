@@ -60,7 +60,7 @@ class Quaternion {
     }
 
     /**
-     * Creates an array of N quaternions from N rotation axes and N associated rotation angles.
+     * Creates an array of N quaternions from N rotation axes and N corresponding rotation angles.
      *
      * @param x     the x-components of the N rotation axes.
      * @param y     the y-components of the N rotation axes.
@@ -84,6 +84,29 @@ class Quaternion {
         }
 
         return quaternions;
+    }
+
+    /**
+     * Adds two quaternions and stores the result in a third quaternion.
+     *
+     * @param q1 the 1st quaternion.
+     * @param q2 the 2nd quaternion.
+     * @param q3 the 3rd quaternion which holds the result of {@code q1} multiplied with {@code q2}.
+     *
+     * @return the sum of {@code q1} and {@code q2}.
+     */
+    public static Quaternion add(Quaternion q1, Quaternion q2, Quaternion q3) {
+        final double a = q1.a + q2.a;
+        final double b = q1.b + q2.b;
+        final double c = q1.c + q2.c;
+        final double d = q1.d + q2.d;
+
+        q3.a = a;
+        q3.b = b;
+        q3.c = c;
+        q3.d = d;
+
+        return q3;
     }
 
     /**
@@ -173,15 +196,34 @@ class Quaternion {
     }
 
     /**
+     * Adds another quaternion to this quaternion.
+     * <p/>
+     * Note that the addition is carried out in place,  i.e. the
+     * original components of this quaternion are set to the sum
+     * of the addition.
+     *
+     * @param q the quaternion being added.
+     *
+     * @return the sum of both quaternions.
+     */
+    public final Quaternion add(Quaternion q) {
+        return Quaternion.add(this, q, this);
+    }
+
+    /**
      * Multiplies this quaternion with another quaternion.
      * <p/>
      * Note that the multiplication is carried out in place,  i.e. the
      * original components of this quaternion are set to the result of
      * the mulitiplication.
+     * <p/>
+     * <em>The quaternion group is non-abelian, i.e., in general
+     * {@code q1 * q2 != q2 * q2}, for two quaternions {@code q1}
+     * and {@code q2}.</em>
      *
      * @param q the other quaternion.
      *
-     * @return the Hamilton product of this quaternion and the other quaternion.
+     * @return the Hamilton product of both quaternions.
      */
     public final Quaternion multiply(Quaternion q) {
         return Quaternion.multiply(this, q, this);

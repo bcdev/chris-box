@@ -19,6 +19,27 @@ public class QuaternionTest extends TestCase {
         assertEquals(0.00000000, q.getK(), 0.0);
     }
 
+    public void testAddQuaternions() {
+        final double a1 = 2.0;
+        final double b1 = 3.0;
+        final double c1 = 5.0;
+        final double d1 = 7.0;
+        final Quaternion q1 = new Quaternion(a1, b1, c1, d1);
+
+        final double a2 = 11.0;
+        final double b2 = 13.0;
+        final double c2 = 17.0;
+        final double d2 = 19.0;
+        final Quaternion q2 = new Quaternion(a2, b2, c2, d2);
+
+        q1.add(q2);
+
+        assertEquals(a1 + a2, q1.getR(), 0.0);
+        assertEquals(b1 + b2, q1.getI(), 0.0);
+        assertEquals(c1 + c2, q1.getJ(), 0.0);
+        assertEquals(d1 + d2, q1.getK(), 0.0);
+    }
+
     public void testMultiplyQuaternions() {
         final double a1 = 2.0;
         final double b1 = 3.0;
@@ -35,8 +56,8 @@ public class QuaternionTest extends TestCase {
         q1.multiply(q2);
 
         assertEquals(a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2, q1.getR(), 0.0);
-//        assertEquals(a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2, q1.getI(), 0.0);
-//        assertEquals(a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2, q1.getJ(), 0.0);
-//        assertEquals(a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2, q1.getK(), 0.0);
+        assertEquals(a1 * b2 + b1 * a2 + c1 * d2 - d1 * c2, q1.getI(), 0.0);
+        assertEquals(a1 * c2 - b1 * d2 + c1 * a2 + d1 * b2, q1.getJ(), 0.0);
+        assertEquals(a1 * d2 + b1 * c2 - c1 * b2 + d1 * a2, q1.getK(), 0.0);
     }
 }
