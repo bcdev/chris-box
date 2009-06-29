@@ -43,7 +43,10 @@ public class TheRealThing {
     
     public File ictFile;
     public File gpsFile;
+    public int mode;
 
+    ///////////////////////////////////////////////////////////
+    
     public void doIt() throws IOException {
         // ICT
         ITCReader ictReader = new ImageCenterTime.ITCReader(new FileInputStream(ictFile));
@@ -57,6 +60,14 @@ public class TheRealThing {
         
         // GCP
         // TODO
+        
+        ChrisModeConstants modeConstants = ChrisModeConstants.get(mode);
+        
+        //////////////////////////
+        // Prepare Time Frames
+        //////////////////////////
+        
+        // get Image Center Time from the last element of the telemetry
         
         
     }
