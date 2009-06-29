@@ -10,10 +10,10 @@ import java.text.MessageFormat;
  */
 class Quaternion {
 
-    private final double a;
-    private final double b;
-    private final double c;
-    private final double d;
+    private double a;
+    private double b;
+    private double c;
+    private double d;
 
     /**
      * Creates a new quaternion from a rotation axis and a rotation angle.
@@ -87,6 +87,29 @@ class Quaternion {
     }
 
     /**
+     * Multiplies two quaternions and stores the result in a third quaternion.
+     *
+     * @param q1 the 1st quaternion.
+     * @param q2 the 2nd quaternion.
+     * @param q3 the 3rd quaternion which holds the result of {@code q1} multiplied with {@code q2}.
+     *
+     * @return the Hamilton product of {@code q1} and {@code q2}.
+     */
+    public static Quaternion multiply(Quaternion q1, Quaternion q2, Quaternion q3) {
+        final double a = q1.a * q2.a - q1.b * q2.b - q1.c * q2.c - q1.d * q2.d;
+        final double b = q1.a * q2.b + q1.b * q2.a + q1.c * q2.d - q1.d * q2.c;
+        final double c = q1.a * q2.c - q1.b * q2.d + q1.c * q2.a + q1.d * q2.b;
+        final double d = q1.a * q2.d + q1.b * q2.c - q1.c * q2.b + q1.d * q2.a;
+
+        q3.a = a;
+        q3.b = b;
+        q3.c = c;
+        q3.d = d;
+
+        return q3;
+    }
+
+    /**
      * Constructs a new quaternion.
      *
      * @param a the scalar part of the quaternion.
@@ -114,11 +137,11 @@ class Quaternion {
     }
 
     /**
-     * Returns the scalar part of the quaternion.
+     * Returns the real (or scalar) part of the quaternion.
      *
-     * @return the scalar part of the quaternion.
+     * @return the real (or scalar) part of the quaternion.
      */
-    public final double getScalar() {
+    public final double getR() {
         return a;
     }
 
@@ -127,7 +150,7 @@ class Quaternion {
      *
      * @return the i-component of the vector part of the quaternion.
      */
-    public final double getVectorI() {
+    public final double getI() {
         return b;
     }
 
@@ -136,7 +159,7 @@ class Quaternion {
      *
      * @return the j-component of the vector part of the quaternion.
      */
-    public final double getVectorJ() {
+    public final double getJ() {
         return c;
     }
 
@@ -145,8 +168,23 @@ class Quaternion {
      *
      * @return the k-component of the vector part of the quaternion.
      */
-    public final double getVectorK() {
+    public final double getK() {
         return d;
+    }
+
+    /**
+     * Multiplies this quaternion with another quaternion.
+     * <p/>
+     * Note that the multiplication is carried out in place,  i.e. the
+     * original components of this quaternion are set to the result of
+     * the mulitiplication.
+     *
+     * @param q the other quaternion.
+     *
+     * @return the Hamilton product of this quaternion and the other quaternion.
+     */
+    public final Quaternion multiply(Quaternion q) {
+        return Quaternion.multiply(this, q, this);
     }
 
     @Override
