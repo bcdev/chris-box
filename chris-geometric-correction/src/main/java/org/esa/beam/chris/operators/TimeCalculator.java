@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * Utility class for time conversion.
+ * Utility class for conversion between UTC, UT1 and GPS times.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
