@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentMap;
@@ -24,15 +23,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class TimeCalculator {
 
     private static final String PROPERTY_KEY_FETCH_NEWEST_TIME_DATA = "org.esa.beam.chris.fetchNewestTimeData";
-
-    /**
-     * The epoch (millis) for the Modified Julian Date (MJD) which
-     * corresponds to 1858-11-17 00:00.
-     */
-    private static final long EPOCH_MJD = -3506716800000L;
-
-    private static final double MJD_TO_JD_OFFSET = 2400000.5;
-    private static final double MILLIS_PER_DAY = 86400000.0;
 
     private static volatile TimeCalculator uniqueInstance;
 
@@ -52,94 +42,6 @@ public class TimeCalculator {
     private TimeCalculator() {
         tai = new ConcurrentSkipListMap<Double, Double>();
         ut1 = new ConcurrentSkipListMap<Double, Double>();
-    }
-
-    /**
-     * Converts UT1 into Greenwich Mean Sidereal Time (GST, IAU 1982 model).
-     * <p/>
-     * Note that the unit of GST is radian (rad).
-     *
-     * @param mjd the UT1 expressed as Modified Julian Date (MJD).
-     *
-     * @return the GST corresponding to the MJD given.
-     */
-    public static double toGST(double mjd) {
-        // radians per sidereal second
-        final double secRad = 7.272205216643039903848712E-5;
-
-        // seconds per day, days per Julian century
-        final double daySec = 86400.0;
-        final double cenDay = 36525.0;
-
-        // reference epoch (J2000)
-        final double mjd0 = 51544.5;
-
-        // coefficients of IAU 1982 GMST-UT1 model
-        final double a = 24110.54841;
-        final double b = 8640184.812866;
-        final double c = 0.093104;
-        final double d = 6.2E-6;
-
-        final double mjd1 = Math.floor(mjd);
-        final double mjd2 = mjd - mjd1;
-
-        // Julian centuries since epoch
-        final double t = (mjd2 + (mjd1 - mjd0)) / cenDay;
-        // fractional part of MJD(UT1) in seconds
-        final double f = daySec * mjd2;
-
-        final double twoPi = 2.0 * Math.PI;
-        final double gst = (secRad * ((a + (b + (c - d * t) * t) * t) + f)) % twoPi;
-
-        if (gst < 0.0) {
-            return gst + twoPi;
-        }
-
-        return gst;
-    }
-
-    /**
-     * Returns the Julian Date (JD) corresponding to a date.
-     *
-     * @param date the date.
-     *
-     * @return the JD corresponding to the date.
-     */
-    public static double toJD(Date date) {
-        return toMJD(date) + MJD_TO_JD_OFFSET;
-    }
-
-    /**
-     * Returns the Modified Julian Date (MJD) corresponding to a date.
-     *
-     * @param date the date.
-     *
-     * @return the MJD corresponding to the date.
-     */
-    public static double toMJD(Date date) {
-        return (date.getTime() - EPOCH_MJD) / MILLIS_PER_DAY;
-    }
-
-    /**
-     * Returns the Modified Julian Date (MJD) corresponding to a Julian Date (JD).
-     *
-     * @param jd the JD.
-     *
-     * @return the MJD corresponding to the JD.
-     */
-    public static double toMJD(double jd) {
-        return jd - MJD_TO_JD_OFFSET;
-    }
-
-    /**
-     * Returns the date corresponding to a Modified Julian Date (MJD).
-     *
-     * @param mjd the MJD.
-     *
-     * @return the date corresponding to the MJD.
-     */
-    static Date toDate(double mjd) {
-        return new Date(EPOCH_MJD + (long) (mjd * MILLIS_PER_DAY));
     }
 
     /**
@@ -186,7 +88,7 @@ public class TimeCalculator {
     public final double deltaTAI(double mjd) {
         if (mjd < tai.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No TAI-UTC data available before {0}.", toDate(tai.firstKey())));
+                    MessageFormat.format("No TAI-UTC data available before {0}.", Conversions.mjdToDate(tai.firstKey())));
         }
         // todo - interpolate? (rq-20090623)
         return tai.floorEntry(mjd).getValue();
@@ -204,11 +106,11 @@ public class TimeCalculator {
     public final double deltaUT1(double mjd) {
         if (mjd < ut1.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No UT1-UTC data available before {0}.", toDate(ut1.firstKey())));
+                    MessageFormat.format("No UT1-UTC data available before {0}.", Conversions.mjdToDate(ut1.firstKey())));
         }
         if (mjd > ut1.lastKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No UT1-UTC data available after {0}.", toDate(ut1.lastKey())));
+                    MessageFormat.format("No UT1-UTC data available after {0}.", Conversions.mjdToDate(ut1.lastKey())));
         }
         // todo - interpolate? (rq-20090623)
         return ut1.floorEntry(mjd).getValue();
@@ -307,7 +209,7 @@ public class TimeCalculator {
                     throw new IOException("An error occurred while parsing the TAI-UTC data.", e);
                 }
 
-                map.putIfAbsent(jd - MJD_TO_JD_OFFSET, ls);
+                map.putIfAbsent(jd - 2400000.5, ls);
             }
         } finally {
             scanner.close();

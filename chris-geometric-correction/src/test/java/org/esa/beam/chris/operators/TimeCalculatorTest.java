@@ -38,8 +38,8 @@ public class TimeCalculatorTest extends TestCase {
     }
 
     public void testToDate() {
-        final Date date = TimeCalculator.toDate(41317.0);
-        assertEquals(41317.0, TimeCalculator.toMJD(date), 0.0);
+        final Date date = Conversions.mjdToDate(41317.0);
+        assertEquals(41317.0, Conversions.dateToMJD(date), 0.0);
     }
 
     public void testToGST() {
@@ -47,8 +47,8 @@ public class TimeCalculatorTest extends TestCase {
         calendar.clear();
         calendar.set(2008, 10, 19, 15, 0, 0);
 
-        final double mjd = TimeCalculator.toMJD(calendar.getTime());
-        final double gst = TimeCalculator.toGST(mjd);
+        final double mjd = Conversions.dateToMJD(calendar.getTime());
+        final double gst = Conversions.mjdToGST(mjd);
 
         // expected result taken from Luis Alonso
         assertEquals(4.9569015, gst, 1.0E-7);
@@ -59,13 +59,13 @@ public class TimeCalculatorTest extends TestCase {
         epoch1858.clear();
         epoch1858.set(1858, 10, 17, 0, 0, 0);
 
-        assertEquals(0.0, TimeCalculator.toMJD(epoch1858.getTime()), 0.0);
+        assertEquals(0.0, Conversions.dateToMJD(epoch1858.getTime()), 0.0);
 
         final GregorianCalendar epoch2000 = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         epoch2000.clear();
         epoch2000.set(2000, 0, 1, 0, 0, 0);
 
-        assertEquals(51544.0, TimeCalculator.toMJD(epoch2000.getTime()), 0.0);
+        assertEquals(51544.0, Conversions.dateToMJD(epoch2000.getTime()), 0.0);
     }
 
     public void testDeltaGPS() {
