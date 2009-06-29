@@ -35,7 +35,7 @@ class ImageCenterTime {
 
     private static final double DAY_SEC = 86400.0;
     // Julian Date (JD) of  1999-12-26 00:00
-    private static final double JD0 = Conversions.julDay(1999, 11, 26);
+    private static final double JD0 = Conversions.julianDate(1999, 11, 26);
 
     final double ict1;
     final double ict2;

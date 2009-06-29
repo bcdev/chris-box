@@ -21,7 +21,7 @@ import junit.framework.TestCase;
 public class ConversionsTest extends TestCase {
 
     public void testJulDay() {
-        double julDay0 = Conversions.julDay(1999, 11, 26);
-        assertEquals(3097648.0, julDay0, 0.00000001);
+        double julDay0 = Conversions.julianDate(1999, 11, 26);
+        assertEquals(3097648.0, julDay0, 0.0);
     }
 }

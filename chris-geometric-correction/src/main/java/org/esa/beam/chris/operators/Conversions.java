@@ -180,35 +180,39 @@ class Conversions {
         ecef[1] = b * su;
         ecef[2] = ((1.0 - WGS84_E) * a + alt) * sv;
     }
-    
+
     /**
-     * Calculates the Julian Day from the given parameters.
-     * 
-     * @param year the value used to set the <code>YEAR</code> calendar field.
+     * Calculates the Julian Date (JD) from the given parameters.
+     *
+     * @param year  the value used to set the <code>YEAR</code> calendar field.
      * @param month the value used to set the <code>MONTH</code> calendar field.
-     * Month value is 0-based. e.g., 0 for January.
-     * @param day the value used to set the <code>DAY_OF_MONTH</code> calendar field.
+     *              Month value is 0-based. E.g., 0 for January.
+     * @param day   the value used to set the <code>DAY_OF_MONTH</code> calendar field.
+     *
+     * @return the Julian Date.
      */
-    public static double julDay(int year, int month, int day) {
-        return julDay(year, month, day, 0, 0, 0);
+    public static double julianDate(int year, int month, int day) {
+        return julianDate(year, month, day, 0, 0, 0);
     }
-    
+
     /**
-     * Calculates the julian day from the given parameter.
-     * 
-     * @param year the value used to set the <code>YEAR</code> calendar field.
-     * @param month the value used to set the <code>MONTH</code> calendar field.
-     * Month value is 0-based. e.g., 0 for January.
-     * @param day the value used to set the <code>DAY_OF_MONTH</code> calendar field.
+     * Calculates the Julian Date (JD) from the given parameter.
+     *
+     * @param year      the value used to set the <code>YEAR</code> calendar field.
+     * @param month     the value used to set the <code>MONTH</code> calendar field.
+     *                  Month value is 0-based. E.g., 0 for January.
+     * @param day       the value used to set the <code>DAY_OF_MONTH</code> calendar field.
      * @param hourOfDay the value used to set the <code>HOUR_OF_DAY</code> calendar field.
-     * @param minute the value used to set the <code>MINUTE</code> calendar field.
-     * @param second the value used to set the <code>SECOND</code> calendar field.
+     * @param minute    the value used to set the <code>MINUTE</code> calendar field.
+     * @param second    the value used to set the <code>SECOND</code> calendar field.
+     *
+     * @return the Julian Date.
      */
-    public static double julDay(int year, int month, int day, int hourOfDay, int minute, int second) {
-        Calendar calendar = ProductData.UTC.createCalendar();
+    public static double julianDate(int year, int month, int day, int hourOfDay, int minute, int second) {
+        final Calendar calendar = ProductData.UTC.createCalendar();
         calendar.set(year, month, day, hourOfDay, minute, second);
-        Date jdDate = calendar.getTime();
-        double jd = DateTimeUtils.utcToJD(jdDate);
-        return jd;
+        final Date date = calendar.getTime();
+
+        return DateTimeUtils.utcToJD(date);
     }
 }
