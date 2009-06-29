@@ -182,7 +182,7 @@ class Conversions {
     }
     
     /**
-     * Calculates the julian day from the given parameter.
+     * Calculates the Julian Day from the given parameters.
      * 
      * @param year the value used to set the <code>YEAR</code> calendar field.
      * @param month the value used to set the <code>MONTH</code> calendar field.
