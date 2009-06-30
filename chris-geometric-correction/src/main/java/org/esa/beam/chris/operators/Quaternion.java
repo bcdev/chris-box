@@ -16,40 +16,42 @@ class Quaternion {
     private double d;
 
     /**
-     * Creates a new quaternion from a rotation axis and a rotation angle.
+     * Creates a new quaternion from a unit vector defining an axis
+     * of rotation and a rotation angle.
      *
      * @param x     the x-component of the rotation axis.
      * @param y     the y-component of the rotation axis.
      * @param z     the z-component of the rotation axis.
-     * @param alpha the rotation angle.
+     * @param angle the rotation angle (rad).
      *
      * @return the quaternion created.
      */
-    public static Quaternion createQuaternion(double x, double y, double z, double alpha) {
-        final double c = Math.cos(alpha / 2.0);
-        final double s = Math.sin(alpha / 2.0);
+    public static Quaternion createQuaternion(double x, double y, double z, double angle) {
+        final double c = Math.cos(angle / 2.0);
+        final double s = Math.sin(angle / 2.0);
 
         return new Quaternion(c, s * x, s * y, s * z);
     }
 
     /**
-     * Creates an array of N quaternions from N rotation axes and a single rotation angle.
+     * Creates an array of n quaternions from n unit vectors defining the
+     * axes of rotation and a rotation angle.
      *
-     * @param x     the x-components of the N rotation axes.
-     * @param y     the y-components of the N rotation axes.
-     * @param z     the z-components of the N rotation axes.
-     * @param alpha the rotation angle.
+     * @param x     the x-components of the n unit vectors.
+     * @param y     the y-components of the n unit vectors.
+     * @param z     the z-components of the n unit vectors.
+     * @param angle the rotation angle (rad).
      *
-     * @return the N quaternions created.
+     * @return the n quaternions created.
      */
-    public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double alpha) {
+    public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double angle) {
         ensureLegalArray(x, "x", 0);
         final int n = x.length;
         ensureLegalArray(y, "y", n);
         ensureLegalArray(z, "z", n);
 
-        final double c = Math.cos(alpha / 2.0);
-        final double s = Math.sin(alpha / 2.0);
+        final double c = Math.cos(angle / 2.0);
+        final double s = Math.sin(angle / 2.0);
 
         final Quaternion[] quaternions = new Quaternion[n];
         for (int i = 0; i < n; i++) {
@@ -60,26 +62,27 @@ class Quaternion {
     }
 
     /**
-     * Creates an array of N quaternions from N rotation axes and N corresponding rotation angles.
+     * Creates an array of n quaternions from n unit vectors defining the
+     * axes of rotation and n corresponding rotation angles.
      *
-     * @param x     the x-components of the N rotation axes.
-     * @param y     the y-components of the N rotation axes.
-     * @param z     the z-components of the N rotation axes.
-     * @param alpha the N rotation angles.
+     * @param x      the x-components of the n unit vectors.
+     * @param y      the y-components of the n unit vectors.
+     * @param z      the z-components of the n unit vectors.
+     * @param angles the n rotation angles (rad).
      *
-     * @return the N quaternions created.
+     * @return the n quaternions created.
      */
-    public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double[] alpha) {
+    public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double[] angles) {
         ensureLegalArray(x, "x", 0);
         final int n = x.length;
         ensureLegalArray(y, "y", n);
         ensureLegalArray(z, "z", n);
-        ensureLegalArray(alpha, "alpha", n);
+        ensureLegalArray(angles, "angles", n);
 
         final Quaternion[] quaternions = new Quaternion[n];
         for (int i = 0; i < n; i++) {
-            final double c = Math.cos(alpha[i] / 2.0);
-            final double s = Math.sin(alpha[i] / 2.0);
+            final double c = Math.cos(angles[i] / 2.0);
+            final double s = Math.sin(angles[i] / 2.0);
             quaternions[i] = new Quaternion(c, s * x[i], s * y[i], s * z[i]);
         }
 
@@ -130,6 +133,16 @@ class Quaternion {
         q3.d = d;
 
         return q3;
+    }
+
+    /**
+     * Default constructor.
+     */
+    public Quaternion() {
+        this.a = 0.0;
+        this.b = 0.0;
+        this.c = 0.0;
+        this.d = 0.0;
     }
 
     /**
@@ -218,7 +231,7 @@ class Quaternion {
      * the mulitiplication.
      * <p/>
      * <em>The quaternion group is non-abelian, i.e., in general
-     * {@code q1 * q2 != q2 * q2}, for two quaternions {@code q1}
+     * {@code q1 * q2 != q2 * q1}, for any quaternions {@code q1}
      * and {@code q2}.</em>
      *
      * @param q the other quaternion.
