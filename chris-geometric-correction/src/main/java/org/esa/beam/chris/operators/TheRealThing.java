@@ -20,7 +20,6 @@ import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
-import org.esa.beam.util.DateTimeUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -83,7 +82,7 @@ public class TheRealThing {
                             lastImageCenterTime.ict3 - jd0,
                             lastImageCenterTime.ict4 - jd0,
                             lastImageCenterTime.ict5 - jd0,
-                            lastImageCenterTime.ict1 - (10 + 390)/DateTimeUtils.SECONDS_PER_DAY - jd0};
+                            lastImageCenterTime.ict1 - (10 + 390)/Conversions.SECONDS_PER_DAY - jd0};
         
         double[] T_ict = Arrays.copyOfRange(ict_njd, 0, 5);
         
@@ -105,11 +104,11 @@ public class TheRealThing {
         double[] T_ini = new double[5]; // imaging start time (imaging lasts ~9.5s in every mode)
         double[] T_end = new double[5]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
-            T_ini[i] = ict_njd[i] - (modeConstants.getTimg()/2)/DateTimeUtils.SECONDS_PER_DAY; 
-            T_end[i] = ict_njd[i] + (modeConstants.getTimg()/2)/DateTimeUtils.SECONDS_PER_DAY; 
+            T_ini[i] = ict_njd[i] - (modeConstants.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
+            T_end[i] = ict_njd[i] + (modeConstants.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
         }
-        double T_i = ict_njd[0] - 10/DateTimeUtils.SECONDS_PER_DAY; // "imaging mode" start time
-        double T_e = ict_njd[4] + 10/DateTimeUtils.SECONDS_PER_DAY; // "imaging mode" stop time
+        double T_i = ict_njd[0] - 10/Conversions.SECONDS_PER_DAY; // "imaging mode" start time
+        double T_e = ict_njd[4] + 10/Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
        
         // Searches the closest values in the telemetry to the Critical Times (just for plotting purposses)
         // skipped
@@ -119,7 +118,7 @@ public class TheRealThing {
         // Time elapsed since imaging start at each image line
         double[] T_lin = new double[modeConstants.getNLines()];
         for (int i = 0; i < T_lin.length; i++) {
-            T_lin[i] = (i * modeConstants.getDt() + modeConstants.getTpl()/2)/DateTimeUtils.SECONDS_PER_DAY;
+            T_lin[i] = (i * modeConstants.getDt() + modeConstants.getTpl()/2)/Conversions.SECONDS_PER_DAY;
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
         

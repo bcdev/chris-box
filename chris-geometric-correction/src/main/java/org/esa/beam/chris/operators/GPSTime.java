@@ -16,7 +16,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.util.DateTimeUtils;
 import org.esa.beam.util.io.CsvReader;
 
 import java.io.IOException;
@@ -76,7 +75,7 @@ class GPSTime {
     }
     
     private static double gpsTime2datTime(double gpsWeek, double gpsSec) {
-        double gpsDays = gpsSec / DateTimeUtils.SECONDS_PER_DAY;
+        double gpsDays = gpsSec / Conversions.SECONDS_PER_DAY;
         double jd = GPS_JD_OFFSET + gpsWeek * 7 + gpsDays;
         return jd;
     }

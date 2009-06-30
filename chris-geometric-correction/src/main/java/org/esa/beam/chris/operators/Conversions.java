@@ -29,6 +29,7 @@ class Conversions {
     
     private static final double MJD_TO_JD_OFFSET = 2400000.5;
     private static final double MILLIS_PER_DAY = 86400000.0;
+    public static final double SECONDS_PER_DAY = 86400.0;
 
     private Conversions() {
     }
