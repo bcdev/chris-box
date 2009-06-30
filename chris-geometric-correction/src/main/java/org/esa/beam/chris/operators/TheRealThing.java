@@ -18,10 +18,12 @@ package org.esa.beam.chris.operators;
 
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
+import org.esa.beam.util.DateTimeUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 public class TheRealThing {
@@ -51,7 +53,7 @@ public class TheRealThing {
         // ICT
         ITCReader ictReader = new ImageCenterTime.ITCReader(new FileInputStream(ictFile));
         double[] lastIctValues = ictReader.getLastIctValues();
-        ImageCenterTime ict = ImageCenterTime.create(lastIctValues, dTgps);
+        ImageCenterTime lastImageCenterTime = ImageCenterTime.create(lastIctValues, dTgps);
         
         // GPS
         GPSReader gpsReader = new GPSTime.GPSReader(new FileInputStream(gpsFile));
@@ -67,8 +69,58 @@ public class TheRealThing {
         // Prepare Time Frames
         //////////////////////////
         
-        // get Image Center Time from the last element of the telemetry
+        // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
+        double[] ict_njd = {lastImageCenterTime.ict1 - jd0,
+                            lastImageCenterTime.ict2 - jd0,
+                            lastImageCenterTime.ict3 - jd0,
+                            lastImageCenterTime.ict4 - jd0,
+                            lastImageCenterTime.ict5 - jd0,
+                            lastImageCenterTime.ict1 - (10 + 390)/DateTimeUtils.SECONDS_PER_DAY - jd0};
         
+        double[] T_ict = Arrays.copyOfRange(ict_njd, 0, 5);
+        
+        //---- Nos quedamos con todos los elementos de GPS menos el ultimo ----------------
+        //----   ya q es donde se almacena la AngVel media, y perder un dato --------------
+        //----   de GPS no es un problema. ------------------------------------------------
+        
+        // We are left with all elements but the last GPS
+        // and q is where stores AngVel half, and losing data
+        // GPS is not a problem.
+        int numGPS = gps.size() - 2;
+        double[] gps_njd = new double[numGPS];
+        for (int i = 0; i < gps_njd.length; i++) {
+            gps_njd[i] = gps.get(i).jd - jd0;
+        }
+        
+        // ---- Critical Times ---------------------------------------------
+        
+        double[] T_ini = new double[5]; // imaging start time (imaging lasts ~9.5s in every mode)
+        double[] T_end = new double[5]; // imaging stop time
+        for (int i = 0; i < T_ini.length; i++) {
+            T_ini[i] = ict_njd[i] - (modeConstants.getTimg()/2)/DateTimeUtils.SECONDS_PER_DAY; 
+            T_end[i] = ict_njd[i] + (modeConstants.getTimg()/2)/DateTimeUtils.SECONDS_PER_DAY; 
+        }
+        double T_i = ict_njd[0] - 10/DateTimeUtils.SECONDS_PER_DAY; // "imaging mode" start time
+        double T_e = ict_njd[4] + 10/DateTimeUtils.SECONDS_PER_DAY; // "imaging mode" stop time
+       
+        // Searches the closest values in the telemetry to the Critical Times (just for plotting purposses)
+        // skipped
+        
+        //---- determine per-Line Time Frame -----------------------------------
+        
+        // Time elapsed since imaging start at each image line
+        double[] T_lin = new double[modeConstants.getNLines()];
+        for (int i = 0; i < T_lin.length; i++) {
+            T_lin[i] = (i * modeConstants.getDt() + modeConstants.getTpl()/2)/DateTimeUtils.SECONDS_PER_DAY;
+            // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
+        }
+        
+        double[][] T_img = new double[modeConstants.getNLines()][5];
+        for (int j = 0; j < modeConstants.getNLines(); j++) {
+            for (int i = 0; i < 5; i++) {
+                T_img[j][i] = T_ini[i] + T_lin[j];
+            }
+        }
         
     }
 }
