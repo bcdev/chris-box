@@ -42,6 +42,12 @@ public class TheRealThing {
     
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
     private static final double delay=0.999; 
+    
+    // Variables used for array subscripting, so the code is more readable.
+    private static final int X=0;                      
+    private static final int Y=1;
+    private static final int Z=2;
+
            
     ///////////////////////////////////////////////////////////
     
@@ -188,11 +194,52 @@ public class TheRealThing {
         }
         
         // ==v==v== Get Orbital Plane Vector ==================================================
-        
         // ---- Calculates normal vector to orbital plane --------------------------
+        double[][] Wop = vect_prod(iX,iY,iZ, iVX,iVY,iVZ);
+        double[][] uWop = unit(Wop);
         
-        
+        // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
+        double gst_opv = Conversions.jdToGST(T[Tfix] + jd0);
+        double[] eci_opv = {uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]}; 
+        double[] uWecf = new double[3]; 
+        EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
 
+        double[][] uW = new double[T.length][3];
+        for (int i = 0; i < T.length; i++) {
+            double gst = Conversions.jdToGST(T[i] + jd0);
+            EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
+        }
+        
+        // ==v==v== Get Angular Velocity ======================================================
+        // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
+        
+        // AngVelRaw = AngVel(gps.secs, eci.x, eci.y, eci.z)
+        // AngVel = smooth(AngVelRaw[0:n], 5)
+        // iAngVel = spline(gps_njd, AngVel, T, /double)
+        
+        
+    }
+    
+    private double[][] unit(double[][] vec) {
+        double[][] result = new double[vec.length][vec[0].length];
+        for (int i = 0; i < vec[0].length; i++) {
+            double norm = Math.sqrt (vec[X][i] * vec[X][i] + vec[Y][i] * vec[Y][i] + vec[Z][i] * vec[Z][i]);
+            result[X][i] = vec[X][i] / norm;
+            result[Y][i] = vec[Y][i] / norm;
+            result[Z][i] = vec[Z][i] / norm;
+        }
+        return result;
+    }
+    
+    
+    private double[][] vect_prod(double[] x1, double[] y1,double[] z1, double[] x2, double[] y2,double[] z2) {
+        double[][] product = new double[3][x1.length];
+        for (int i = 0; i < x1.length; i++) {
+            product[X][i] = y1[i] * z2[i] - z1[i] * y2[i];
+            product[Y][i] = z1[i] * x2[i] - x1[i] * z2[i];
+            product[Z][i] = x1[i] * y2[i] - y1[i] * x2[i];
+        }
+        return product;
     }
     
     private double[] get2ndDim(double[][] twoDimArray, int secondDimIndex, int numElems) {
