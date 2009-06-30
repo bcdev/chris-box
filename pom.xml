@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.0.2</version>
+    <version>1.1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 

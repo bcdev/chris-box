@@ -54,7 +54,7 @@ public class TimeCalculatorTest extends TestCase {
         assertEquals(4.9569015, gst, 1.0E-7);
     }
 
-    public void testToMJD() {
+    public void testDateToMJD() {
         final GregorianCalendar epoch1858 = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         epoch1858.clear();
         epoch1858.set(1858, 10, 17, 0, 0, 0);

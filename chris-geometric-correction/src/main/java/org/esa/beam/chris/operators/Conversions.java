@@ -26,7 +26,9 @@ class Conversions {
      * corresponds to 1858-11-17 00:00.
      */
     private static final long EPOCH_MJD = -3506716800000L;
+    
     private static final double MJD_TO_JD_OFFSET = 2400000.5;
+    private static final double MILLIS_PER_DAY = 86400000.0;
 
     private Conversions() {
     }
@@ -50,7 +52,7 @@ class Conversions {
      * @return the MJD corresponding to the date.
      */
     public static double dateToMJD(Date date) {
-        return (date.getTime() - EPOCH_MJD) / DateTimeUtils.MILLIS_PER_DAY;
+        return (date.getTime() - EPOCH_MJD) / MILLIS_PER_DAY;
     }
 
     /**
@@ -61,7 +63,7 @@ class Conversions {
      * @return the date corresponding to the MJD.
      */
     static Date mjdToDate(double mjd) {
-        return new Date(EPOCH_MJD + (long) (mjd * DateTimeUtils.MILLIS_PER_DAY));
+        return new Date(EPOCH_MJD + (long) (mjd * MILLIS_PER_DAY));
     }
 
     /**

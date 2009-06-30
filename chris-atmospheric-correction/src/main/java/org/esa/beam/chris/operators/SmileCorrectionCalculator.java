@@ -9,13 +9,14 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 
 /**
- * todo - API doc
+ * Utility class for calculating the smile correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
 class SmileCorrectionCalculator {
+
     private LocalRegressionSmoother smoother;
 
     public SmileCorrectionCalculator() {
@@ -23,8 +24,7 @@ class SmileCorrectionCalculator {
     }
 
     public double calculate(Band[] radianceBands, RenderedImage hyperMaskImage, RenderedImage cloudMaskImage,
-                            ResamplerFactory resamplerFactory, CalculatorFactory calculatorFactory
-    ) {
+                            ResamplerFactory resamplerFactory, CalculatorFactory calculatorFactory) {
         final RenderedImage smileImage = SmileOpImage.createImage(radianceBands, hyperMaskImage, cloudMaskImage,
                                                                   resamplerFactory, calculatorFactory);
 
@@ -33,8 +33,13 @@ class SmileCorrectionCalculator {
 
         final double[] columnarCorrections = new double[w];
         raster.getPixels(0, 0, w, 1, columnarCorrections);
-//        final double[] smoothedCorrections = new double[w];
-//        smoother.smooth(columnarCorrections, smoothedCorrections);
+
+        // calculation suggested in the ATBD is effectively the same as taking the median (rq-20090630)
+        if (false) {
+            final double[] smoothedCorrections = new double[w];
+            smoother.smooth(columnarCorrections, smoothedCorrections);
+            return Statistics.mean(columnarCorrections);
+        }
 
         return Statistics.median(columnarCorrections);
     }

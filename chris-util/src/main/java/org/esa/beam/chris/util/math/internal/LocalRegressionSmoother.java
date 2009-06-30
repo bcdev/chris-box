@@ -26,7 +26,7 @@ import Jama.SingularValueDecomposition;
  * @author Ralf Quast
  * @version $Revision: 2402 $ $Date: 2008-07-02 21:14:58 +0200 (Wed, 02 Jul 2008) $
  */
-public class LocalRegressionSmoother {
+public class LocalRegressionSmoother implements Smoother {
 
     private final LocalRegressionWeightCalculator regressionWeightCalculator;
 
@@ -126,6 +126,7 @@ public class LocalRegressionSmoother {
      *                                  if {@code y} and {@code z} are references to
      *                                  the same instance.
      */
+    @Override
     public final void smooth(double[] y, double[] z) {
         Assert.argument(y.length == z.length, "!(y.length == z.length)");
         Assert.argument(y.length >= span, "!(y.length >= span)");

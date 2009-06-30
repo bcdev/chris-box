@@ -24,11 +24,14 @@
         <module>beam-gpf</module>
     </dependency>
     <dependency>
+        <module>beam-visat</module>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
         <module>beam-chris-reader</module>
     </dependency>
     <dependency>
-        <module>beam-visat</module>
-        <optional>true</optional>
+        <module>chris-util</module>
     </dependency>
 
     <categories>Application,Processor,CHRIS</categories>
