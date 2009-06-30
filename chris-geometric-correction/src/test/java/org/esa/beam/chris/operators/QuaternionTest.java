@@ -4,15 +4,17 @@ import junit.framework.TestCase;
 
 public class QuaternionTest extends TestCase {
 
+    /**
+     * Test based on IDL source code.
+     */
     public void testCreateQuaternion() {
         final double x = 0.0;
         final double y = 1.0;
         final double z = 0.0;
-        final double alpha = Math.PI / 4.0;
+        final double angle = Math.PI / 4.0;
 
-        final Quaternion q = Quaternion.createQuaternion(x, y, z, alpha);
+        final Quaternion q = Quaternion.createQuaternion(x, y, z, angle);
 
-        // expected values from IDL source code
         assertEquals(0.92387953, q.getR(), 0.5E-08);
         assertEquals(0.00000000, q.getI(), 0.0);
         assertEquals(0.38268343, q.getJ(), 0.5E-08);
@@ -32,7 +34,8 @@ public class QuaternionTest extends TestCase {
         final double d2 = 19.0;
         final Quaternion q2 = new Quaternion(a2, b2, c2, d2);
 
-        q1.add(q2);
+        final Quaternion q3 = q1.add(q2);
+        assertSame(q1, q3);
 
         assertEquals(a1 + a2, q1.getR(), 0.0);
         assertEquals(b1 + b2, q1.getI(), 0.0);
@@ -53,7 +56,8 @@ public class QuaternionTest extends TestCase {
         final double d2 = 19.0;
         final Quaternion q2 = new Quaternion(a2, b2, c2, d2);
 
-        q1.multiply(q2);
+        final Quaternion q3 = q1.multiply(q2);
+        assertSame(q1, q3);
 
         assertEquals(a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2, q1.getR(), 0.0);
         assertEquals(a1 * b2 + b1 * a2 + c1 * d2 - d1 * c2, q1.getI(), 0.0);

@@ -27,8 +27,9 @@ class Quaternion {
      * @return the quaternion created.
      */
     public static Quaternion createQuaternion(double x, double y, double z, double angle) {
-        final double c = Math.cos(angle / 2.0);
-        final double s = Math.sin(angle / 2.0);
+        final double alpha = angle / 2.0;
+        final double c = Math.cos(alpha);
+        final double s = Math.sin(alpha);
 
         return new Quaternion(c, s * x, s * y, s * z);
     }
@@ -50,8 +51,9 @@ class Quaternion {
         ensureLegalArray(y, "y", n);
         ensureLegalArray(z, "z", n);
 
-        final double c = Math.cos(angle / 2.0);
-        final double s = Math.sin(angle / 2.0);
+        final double alpha = angle / 2.0;
+        final double c = Math.cos(alpha);
+        final double s = Math.sin(alpha);
 
         final Quaternion[] quaternions = new Quaternion[n];
         for (int i = 0; i < n; i++) {
@@ -81,8 +83,9 @@ class Quaternion {
 
         final Quaternion[] quaternions = new Quaternion[n];
         for (int i = 0; i < n; i++) {
-            final double c = Math.cos(angles[i] / 2.0);
-            final double s = Math.sin(angles[i] / 2.0);
+            final double alpha = angles[i] / 2.0;
+            final double c = Math.cos(alpha);
+            final double s = Math.sin(alpha);
             quaternions[i] = new Quaternion(c, s * x[i], s * y[i], s * z[i]);
         }
 
