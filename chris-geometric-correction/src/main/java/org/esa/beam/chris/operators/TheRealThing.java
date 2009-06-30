@@ -18,6 +18,8 @@ package org.esa.beam.chris.operators;
 
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
+import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
+import org.esa.beam.chris.operators.math.SplineInterpolator;
 import org.esa.beam.util.DateTimeUtils;
 
 import java.io.File;
@@ -173,7 +175,40 @@ public class TheRealThing {
         // =======================================================================
         // ---- Interpolate GPS ECI position/velocity to per-line time -------
         
+        double[] iX = spline(gps_njd, get2ndDim(eci, 0, numGPS), T);
+        double[] iY = spline(gps_njd, get2ndDim(eci, 1, numGPS), T);
+        double[] iZ = spline(gps_njd, get2ndDim(eci, 2, numGPS), T);
+        double[] iVX = spline(gps_njd, get2ndDim(eci, 3, numGPS), T);
+        double[] iVY = spline(gps_njd, get2ndDim(eci, 4, numGPS), T);
+        double[] iVZ = spline(gps_njd, get2ndDim(eci, 5, numGPS), T);
+        
+        double[] iR = new double[numGPS];
+        for (int i = 0; i < iR.length; i++) {
+            iR[i] = Math.sqrt(Math.pow(iX[i], 2) + Math.pow(iY[i], 2) + Math.pow(iZ[i], 2));
+        }
+        
+        // ==v==v== Get Orbital Plane Vector ==================================================
+        
+        // ---- Calculates normal vector to orbital plane --------------------------
+        
         
 
+    }
+    
+    private double[] get2ndDim(double[][] twoDimArray, int secondDimIndex, int numElems) {
+        double[] secondDim = new double[numElems];
+        for (int i = 0; i < numElems; i++) {
+            secondDim[i] = twoDimArray[i][secondDimIndex];
+        }
+        return secondDim;
+    }
+    
+    private double[] spline(double[]x, double[] y, double[] t) {
+        double[] v = new double[x.length];
+        PolynomialSplineFunction splineFunction = SplineInterpolator.interpolate(x, y);
+        for (int i = 0; i < v.length; i++) {
+            v[i] = splineFunction.value(t[i]);
+        }
+        return v;
     }
 }
