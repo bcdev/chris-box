@@ -122,5 +122,58 @@ public class TheRealThing {
             }
         }
         
+        double[] T = new double[ 1 + 5 * modeConstants.getNLines()];
+        T[0] = ict_njd[5];
+        int Tindex = 1;
+        for (int j = 0; j < modeConstants.getNLines(); j++) {
+            for (int i = 0; i < 5; i++) {
+                T[Tindex] = T_img[j][i];
+                Tindex++;
+            }
+        }
+        
+        double Tobs = T_e - T_i; // Duration of "imaging mode" for each image. (redundant, should be 20s)
+        double[] Tobs2 = new double[T_end.length]; // Duration of actual imaging for each image
+        for (int i = 0; i < Tobs2.length; i++) {
+            Tobs2[i] = T_end[i] - T_ini[i];
+        }
+        
+        // Set the indices of T that correspond to critical times (integration start and stop) for each image
+        
+        // The first element of T corresponds to the acquisition-setup time, so Tini[0] must skip element 0 of T
+        int[] Tini = new int[5];
+        int[] Tend = new int[5];
+        for (int i = 0; i < Tini.length; i++) {
+            Tini[i] = modeConstants.getNLines() * i + 1;
+            Tend[i] = Tini[i] + modeConstants.getNLines() - 1; 
+        }
+        int Tfix = 0; // Index corresponding to the time of fixing the orbit
+        int numT = T.length;
+        
+
+        // ========================================================================
+        // ===                     Inertial Coordinates                         ===
+        // ==v==v== ==v== Converts coordinates from ECEF to ECI ==v==v== ==v==v== =
+        
+        // Pos/Vel with Time from Telemetry
+        
+        double[][] eci = new double[gps.size()][6];
+        for (int i = 0; i < gps.size(); i++) {
+            GPSTime gpsTime = gps.get(i);
+            // position and velocity is given in meters, 
+            // we transform to km in order to keep the values smaller. from now all distances in Km
+            double[] ecf = {gpsTime.posX/1000, gpsTime.posY/1000, gpsTime.posZ/1000,
+                            gpsTime.velX/1000, gpsTime.velY/1000, gpsTime.velZ/1000};
+            double gst = Conversions.jdToGST(gpsTime.jd);
+            EcefEciConverter.ecefToEci(gst, ecf, eci[i]);
+        }
+        
+        // =======================================================================
+        // ===                  Data to per-Line Time Frame                    ===
+        // =======================================================================
+        // ---- Interpolate GPS ECI position/velocity to per-line time -------
+        
+        
+
     }
 }
