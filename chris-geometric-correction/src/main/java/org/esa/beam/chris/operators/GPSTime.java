@@ -41,15 +41,17 @@ class GPSTime {
     final double velX;
     final double velY;
     final double velZ;
+    final double secs;
     final double jd;
     
-    GPSTime(double posX, double posY, double posZ, double velX, double velY, double velZ, double jd) {
+    GPSTime(double posX, double posY, double posZ, double velX, double velY, double velZ, double secs, double jd) {
         this.posX = posX;
         this.posY = posY;
         this.posZ = posZ;
         this.velX = velX;
         this.velY = velY;
         this.velZ = velZ;
+        this.secs = secs;
         this.jd = jd;
     }
     
@@ -67,7 +69,7 @@ class GPSTime {
             double gpsWeek = getDouble(record, GPS.WEEK);
             double jd = gpsTime2datTime(gpsWeek, gpsSec);
             
-            GPSTime gpstime = new GPSTime(posX, posY, posZ, velX, velY, velZ, jd);
+            GPSTime gpstime = new GPSTime(posX, posY, posZ, velX, velY, velZ, gpsSec, jd);
             gpsTimes.add(gpstime);
         }
         return gpsTimes;

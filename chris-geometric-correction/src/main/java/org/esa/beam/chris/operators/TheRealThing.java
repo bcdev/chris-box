@@ -212,10 +212,23 @@ public class TheRealThing {
         // ==v==v== Get Angular Velocity ======================================================
         // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
         
-        // AngVelRaw = AngVel(gps.secs, eci.x, eci.y, eci.z)
-        // AngVel = smooth(AngVelRaw[0:n], 5)
-        // iAngVel = spline(gps_njd, AngVel, T, /double)
+        double[] gpsSecs = new double[gps.size()];
+        double[] eciX = new double[gps.size()];
+        double[] eciY = new double[gps.size()];
+        double[] eciZ = new double[gps.size()];
+        for (int i = 0; i < gps.size(); i++) {
+            gpsSecs[i] = gps.get(i).secs;
+            eciX[i] = eci[i][X];
+            eciY[i] = eci[i][Y];
+            eciZ[i] = eci[i][Z];
+        }
+        double[] AngVelRaw = CoordinateUtils.angVel(gpsSecs, eciX, eciY, eciZ);
+        SimpleSmoother smoother = new SimpleSmoother(5);
+        double[] AngVel = new double[AngVelRaw.length];
+        smoother.smooth(AngVelRaw, AngVel);
+        double[] iAngVel = spline(gps_njd, AngVel, T);
         
+        // ==v==v== Initialize Variables ======================================================
         
     }
     
