@@ -77,7 +77,7 @@ public class TheRealThing {
         // GCP
         // TODO
         
-        ChrisModeConstants modeConstants = ChrisModeConstants.get(info.mode);
+        ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
         
         //////////////////////////
         // Prepare Time Frames
@@ -111,8 +111,8 @@ public class TheRealThing {
         double[] T_ini = new double[5]; // imaging start time (imaging lasts ~9.5s in every mode)
         double[] T_end = new double[5]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
-            T_ini[i] = ict_njd[i] - (modeConstants.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
-            T_end[i] = ict_njd[i] + (modeConstants.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
+            T_ini[i] = ict_njd[i] - (mode.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
+            T_end[i] = ict_njd[i] + (mode.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
         }
         double T_i = ict_njd[0] - 10/Conversions.SECONDS_PER_DAY; // "imaging mode" start time
         double T_e = ict_njd[4] + 10/Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
@@ -123,23 +123,23 @@ public class TheRealThing {
         //---- determine per-Line Time Frame -----------------------------------
         
         // Time elapsed since imaging start at each image line
-        double[] T_lin = new double[modeConstants.getNLines()];
+        double[] T_lin = new double[mode.getNLines()];
         for (int i = 0; i < T_lin.length; i++) {
-            T_lin[i] = (i * modeConstants.getDt() + modeConstants.getTpl()/2)/Conversions.SECONDS_PER_DAY;
+            T_lin[i] = (i * mode.getDt() + mode.getTpl()/2)/Conversions.SECONDS_PER_DAY;
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
         
-        double[][] T_img = new double[modeConstants.getNLines()][5];
-        for (int j = 0; j < modeConstants.getNLines(); j++) {
+        double[][] T_img = new double[mode.getNLines()][5];
+        for (int j = 0; j < mode.getNLines(); j++) {
             for (int i = 0; i < 5; i++) {
                 T_img[j][i] = T_ini[i] + T_lin[j];
             }
         }
         
-        double[] T = new double[ 1 + 5 * modeConstants.getNLines()];
+        double[] T = new double[ 1 + 5 * mode.getNLines()];
         T[0] = ict_njd[5];
         int Tindex = 1;
-        for (int j = 0; j < modeConstants.getNLines(); j++) {
+        for (int j = 0; j < mode.getNLines(); j++) {
             for (int i = 0; i < 5; i++) {
                 T[Tindex] = T_img[j][i];
                 Tindex++;
@@ -158,8 +158,8 @@ public class TheRealThing {
         int[] Tini = new int[5];
         int[] Tend = new int[5];
         for (int i = 0; i < Tini.length; i++) {
-            Tini[i] = modeConstants.getNLines() * i + 1;
-            Tend[i] = Tini[i] + modeConstants.getNLines() - 1; 
+            Tini[i] = mode.getNLines() * i + 1;
+            Tend[i] = Tini[i] + mode.getNLines() - 1; 
         }
         final int Tfix = 0; // Index corresponding to the time of fixing the orbit
         int numT = T.length;
@@ -237,18 +237,18 @@ public class TheRealThing {
         
         // ==v==v== Initialize Variables ======================================================
 
-        double[][][] Range = new double[3][modeConstants.getNLines()][5];
-        double[][][] EjeYaw = new double[3][modeConstants.getNLines()][5];
-        double[][][] EjePitch = new double[3][modeConstants.getNLines()][5];
-        double[][][] EjeRoll = new double[3][modeConstants.getNLines()][5];
-        double[][][] SP = new double[3][modeConstants.getNLines()][5];
-        double[][][] SL = new double[3][modeConstants.getNLines()][5];
-        double[][] PitchAng = new double[modeConstants.getNLines()][5];
-        double[][] RollAng = new double[modeConstants.getNLines()][5];
-        double[][][] PitchAngR = new double[modeConstants.getNCols()][modeConstants.getNLines()][5];
-        double[][][] RollAngR = new double[modeConstants.getNCols()][modeConstants.getNLines()][5];
-        double[][] ObsAngAzi = new double[modeConstants.getNLines()][5];
-        double[][] ObsAngZen = new double[modeConstants.getNLines()][5];
+        double[][][] Range = new double[3][mode.getNLines()][5];
+        double[][][] EjeYaw = new double[3][mode.getNLines()][5];
+        double[][][] EjePitch = new double[3][mode.getNLines()][5];
+        double[][][] EjeRoll = new double[3][mode.getNLines()][5];
+        double[][][] SP = new double[3][mode.getNLines()][5];
+        double[][][] SL = new double[3][mode.getNLines()][5];
+        double[][] PitchAng = new double[mode.getNLines()][5];
+        double[][] RollAng = new double[mode.getNLines()][5];
+        double[][][] PitchAngR = new double[mode.getNCols()][mode.getNLines()][5];
+        double[][][] RollAngR = new double[mode.getNCols()][mode.getNLines()][5];
+        double[][] ObsAngAzi = new double[mode.getNLines()][5];
+        double[][] ObsAngZen = new double[mode.getNLines()][5];
         
         // ===== Process each image separately ==========================================
 
@@ -274,24 +274,24 @@ public class TheRealThing {
             
             // ==v==v== Rotates TGT to perform scanning ======================================
             
-            double[] x = new double[modeConstants.getNLines()];
-            double[] y = new double[modeConstants.getNLines()];
-            double[] z = new double[modeConstants.getNLines()];
-            double[] angles = new double[modeConstants.getNLines()];
-            for (int i = 0; i < angles.length; i++) {
+            double[] x = new double[mode.getNLines()];
+            double[] y = new double[mode.getNLines()];
+            double[] z = new double[mode.getNLines()];
+            double[] angles = new double[mode.getNLines()];
+            for (int i = 0; i < mode.getNLines(); i++) {
                 x[i] = uW[Tini[img]+i][X];
                 y[i] = uW[Tini[img]+i][Y];
                 z[i] = uW[Tini[img]+i][Z];
                 angles[i] = Math.pow(-1, img) * iAngVel[0] / SlowDown * (T_img[i][img] - T_ict[img]) * Conversions.SECONDS_PER_DAY; 
             }
             Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
-            for (int i = 0; i < angles.length; i++) {
+            for (int i = 0; i < mode.getNLines(); i++) {
                 x[i] = iTGT0[Tini[img]+i][X];
                 y[i] = iTGT0[Tini[img]+i][Y];
                 z[i] = iTGT0[Tini[img]+i][Z];
             }
             QuaternionRotation.rotateVectors(quaternions, x, y, z);
-            for (int i = 0; i < angles.length; i++) {
+            for (int i = 0; i < mode.getNLines(); i++) {
                 iTGT0[Tini[img]+i][X] = x[i];
                 iTGT0[Tini[img]+i][Y] = y[i]; 
                 iTGT0[Tini[img]+i][Z] = z[i];
@@ -320,43 +320,50 @@ public class TheRealThing {
 
             // ==== Satellite Rotation Axes ==============================================
 
-            double[][] uEjeYaw = new double[3][modeConstants.getNLines()];
-            for (int i = 0; i < modeConstants.getNLines(); i++) {
+            double[][] uEjeYaw = new double[3][mode.getNLines()];
+            for (int i = 0; i < mode.getNLines(); i++) {
                 uEjeYaw[X][i] = iX[Tini[img]+i];
                 uEjeYaw[Y][i] = iY[Tini[img]+i];
                 uEjeYaw[Z][i] = iZ[Tini[img]+i];
             }
             uEjeYaw = unit(uEjeYaw);
-            for (int i = 0; i < modeConstants.getNLines(); i++) {
+            for (int i = 0; i < mode.getNLines(); i++) {
                 EjeYaw[X][i][img] = uEjeYaw[X][i];
                 EjeYaw[Y][i][img] = uEjeYaw[Y][i];
                 EjeYaw[Z][i][img] = uEjeYaw[Z][i];
             }
 
-//            uEjePitch = uWop[*,Tini[img]:Tend[img]]
-//            EjePitch[*,*,img] = uEjePitch
-//
-//            uEjeRoll = dblarr(3, FLOOR(nLines))
-//
-//            FOR i=0L,FLOOR(nLines)-1 DO uEjeRoll[*,i] = vect_prod(uEjePitch[*,i], uEjeYaw[*,i])
-//            EjeRoll[*,*,img] = uEjeRoll
-//            
-//            // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
-//            // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
+            double[][] uEjePitch = new double[3][mode.getNLines()];
+            for (int i = 0; i < uEjePitch.length; i++) {
+                EjePitch[X][i][img] = uEjePitch[X][i] = uWop[X][Tini[img]+i];
+                EjePitch[Y][i][img] = uEjePitch[Y][i] = uWop[Y][Tini[img]+i];
+                EjePitch[Z][i][img] = uEjePitch[Z][i] = uWop[Z][Tini[img]+i];
+            }
+
+            double[][] uEjeRoll = vect_prod(uEjePitch, uEjeYaw);
+            for (int i = 0; i < mode.getNLines(); i++) {
+                EjeRoll[X][i][img] = uEjeRoll[X][i];
+                EjeRoll[Y][i][img] = uEjeRoll[Y][i];
+                EjeRoll[Z][i][img] = uEjeRoll[Z][i];
+            }
+            
+            // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
+            // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
+            
 //            Range[*,*,img] = -transpose([[View.RangX],[View.RangY],[View.RangZ]])
 //            uRange = unit(Range[*,*,img])
 
             // ScanPlane:
-            double[][] uSP = new double[3][modeConstants.getNLines()];
-            double[][] uSPr = new double[3][modeConstants.getNLines() * modeConstants.getNCols()];
+            double[][] uSP = new double[3][mode.getNLines()];
+            double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
 
             // SightLine:
-            double[][] uSL = new double[3][modeConstants.getNLines()];
-            double[][] uSLr = new double[3][modeConstants.getNLines() * modeConstants.getNCols()];
+            double[][] uSL = new double[3][mode.getNLines()];
+            double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
 
             // RollSign:
-            int[] uRollSign = new int[modeConstants.getNLines()];
-            int[] uRollSignR = new int[modeConstants.getNLines() * modeConstants.getNCols()];
+            int[] uRollSign = new int[mode.getNLines()];
+            int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
         }
     }
@@ -372,13 +379,22 @@ public class TheRealThing {
         return result;
     }
     
-    
     private double[][] vect_prod(double[] x1, double[] y1,double[] z1, double[] x2, double[] y2,double[] z2) {
         double[][] product = new double[3][x1.length];
         for (int i = 0; i < x1.length; i++) {
             product[X][i] = y1[i] * z2[i] - z1[i] * y2[i];
             product[Y][i] = z1[i] * x2[i] - x1[i] * z2[i];
             product[Z][i] = x1[i] * y2[i] - y1[i] * x2[i];
+        }
+        return product;
+    }
+    
+    private double[][] vect_prod(double[][] a1, double[][] a2) {
+        double[][] product = new double[3][a1[0].length];
+        for (int i = 0; i < a1[0].length; i++) {
+            product[X][i] = a1[Y][i] * a2[Z][i] - a1[Z][i] * a2[Y][i];
+            product[Y][i] = a1[Z][i] * a2[X][i] - a1[X][i] * a2[Z][i];
+            product[Z][i] = a1[X][i] * a2[Y][i] - a1[Y][i] * a2[X][i];
         }
         return product;
     }
