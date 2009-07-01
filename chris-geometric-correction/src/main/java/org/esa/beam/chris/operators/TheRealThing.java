@@ -352,19 +352,43 @@ public class TheRealThing {
             
 //            Range[*,*,img] = -transpose([[View.RangX],[View.RangY],[View.RangZ]])
 //            uRange = unit(Range[*,*,img])
+            double[][] uRange = null;
 
             // ScanPlane:
-            double[][] uSP = new double[3][mode.getNLines()];
+            //double[][] uSP = new double[3][mode.getNLines()];
             double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
 
             // SightLine:
-            double[][] uSL = new double[3][mode.getNLines()];
+            //double[][] uSL = new double[3][mode.getNLines()];
             double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
 
             // RollSign:
             int[] uRollSign = new int[mode.getNLines()];
             int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
+            
+            double[][] uSP = vect_prod(uRange, uEjePitch);
+            double[][] uSL = vect_prod(uEjePitch, uSP);
+            double[][] uRoll = unit(vect_prod(uSL, uRange));
+            for (int i = 0; i < mode.getNLines(); i++) {
+                double total = 0;
+                total += uRoll[X][i] / uSP[X][i];
+                total += uRoll[Y][i] / uSP[Y][i];
+                total += uRoll[Z][i] / uSP[Z][i];
+                uRollSign[i] = (int)Math.signum(total);
+            }
+            
+            for (int i = 0; i < mode.getNLines(); i++) {
+                SP[X][i][img] = uSP[X][i];
+                SP[Y][i][img] = uSP[Y][i];
+                SP[Z][i][img] = uSP[Z][i];
+                
+                SL[X][i][img] = uSL[X][i];
+                SL[Y][i][img] = uSL[Y][i];
+                SL[Z][i][img] = uSL[Z][i];
+            }
 
+            
+            
         }
     }
     
