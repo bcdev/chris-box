@@ -26,11 +26,11 @@ import org.esa.beam.util.math.MathUtils;
  */
 class ChrisModeConstants {
     
-    final int nCols;
-    final int nLines;
-    final double tpl;
-    final double fov;
-    static final double ftt =  1.2096E-03;
+    private final int nCols;
+    private final int nLines;
+    private final double tpl;
+    private final double fov;
+    private static final double ftt =  1.2096E-03;
     
     private ChrisModeConstants(int nCols, int nLines, double tpl, double fov) {
         this.nCols = nCols;

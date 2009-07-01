@@ -29,6 +29,13 @@ import java.util.List;
 
 public class TheRealThing {
     
+    public class ChrisInfo {
+        int mode;
+        double[] alt; // dim = 5, per image
+        double[] lat; // dim = 5, per image
+        double[] lon; // dim = 5, per image
+    }
+
     private static final int SlowDown = 5; // Slowdown factor
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
@@ -52,7 +59,7 @@ public class TheRealThing {
     
     public File ictFile;
     public File gpsFile;
-    public int mode;
+    public ChrisInfo info;
 
     ///////////////////////////////////////////////////////////
     
@@ -70,7 +77,7 @@ public class TheRealThing {
         // GCP
         // TODO
         
-        ChrisModeConstants modeConstants = ChrisModeConstants.get(mode);
+        ChrisModeConstants modeConstants = ChrisModeConstants.get(info.mode);
         
         //////////////////////////
         // Prepare Time Frames
@@ -154,7 +161,7 @@ public class TheRealThing {
             Tini[i] = modeConstants.getNLines() * i + 1;
             Tend[i] = Tini[i] + modeConstants.getNLines() - 1; 
         }
-        int Tfix = 0; // Index corresponding to the time of fixing the orbit
+        final int Tfix = 0; // Index corresponding to the time of fixing the orbit
         int numT = T.length;
         
 
@@ -229,6 +236,97 @@ public class TheRealThing {
         double[] iAngVel = spline(gps_njd, AngVel, T);
         
         // ==v==v== Initialize Variables ======================================================
+
+        double[][][] Range = new double[3][modeConstants.getNLines()][5];
+        double[][][] EjeYaw = new double[3][modeConstants.getNLines()][5];
+        double[][][] EjePitch = new double[3][modeConstants.getNLines()][5];
+        double[][][] EjeRoll = new double[3][modeConstants.getNLines()][5];
+        double[][][] SP = new double[3][modeConstants.getNLines()][5];
+        double[][][] SL = new double[3][modeConstants.getNLines()][5];
+        double[][] PitchAng = new double[modeConstants.getNLines()][5];
+        double[][] RollAng = new double[modeConstants.getNLines()][5];
+        double[][][] PitchAngR = new double[modeConstants.getNCols()][modeConstants.getNLines()][5];
+        double[][][] RollAngR = new double[modeConstants.getNCols()][modeConstants.getNLines()][5];
+        double[][] ObsAngAzi = new double[modeConstants.getNLines()][5];
+        double[][] ObsAngZen = new double[modeConstants.getNLines()][5];
+        
+        // ===== Process each image separately ==========================================
+
+        for (int img = 0; img < 5; img++) {
+            System.out.println("Initiating calculation for image "+img);
+            
+            // ==v==v== Find the closest point in the Moving Target to the GCPs ==============
+            // TODO
+            
+            // ---- Target Coordinates in ECI using per-Line Time -------------------
+            double TgtAlt = info.alt[img]/1000; 
+            double[] TGTecf = new double[3];
+            Conversions.wgsToEcef(info.lon[img], info.lat[img], TgtAlt, TGTecf);
+//            if ( use_GCP) { TODO
+//                Conversions.wgsToEcef(GCP0[3], GCP0[2], GCP0[4], TGTecf);
+//            }
+            // Case with Moving Target for imaging time
+            double[][] iTGT0 = new double[T.length][3];
+            for (int i = 0; i < iTGT0.length; i++) {
+                double gst = Conversions.jdToGST(T[i] + jd0);
+                EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]); 
+            }
+            
+            // ==v==v== Rotates TGT to perform scanning ======================================
+            
+            double[] x = new double[modeConstants.getNLines()];
+            double[] y = new double[modeConstants.getNLines()];
+            double[] z = new double[modeConstants.getNLines()];
+            double[] angles = new double[modeConstants.getNLines()];
+            for (int i = 0; i < angles.length; i++) {
+                x[i] = uW[Tini[img]+i][X];
+                y[i] = uW[Tini[img]+i][Y];
+                z[i] = uW[Tini[img]+i][Z];
+                angles[i] = Math.pow(-1, img) * iAngVel[0] / SlowDown * (T_img[i][img] - T_ict[img]) * Conversions.SECONDS_PER_DAY; 
+            }
+            Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
+            for (int i = 0; i < angles.length; i++) {
+                x[i] = iTGT0[Tini[img]+i][X];
+                y[i] = iTGT0[Tini[img]+i][Y];
+                z[i] = iTGT0[Tini[img]+i][Z];
+            }
+            QuaternionRotation.rotateVectors(quaternions, x, y, z);
+            for (int i = 0; i < angles.length; i++) {
+                iTGT0[Tini[img]+i][X] = x[i];
+                iTGT0[Tini[img]+i][Y] = y[i]; 
+                iTGT0[Tini[img]+i][Z] = z[i];
+            }
+                                               
+            // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
+            double[][] iTGT = iTGT0;
+            
+            //==== Calculates View Angles ==============================================
+//
+//                View = ViewAngs(iTGT.X[Tini[img]:Tend[img]], 
+//                                iTGT.Y[Tini[img]:Tend[img]], 
+//                                iTGT.Z[Tini[img]:Tend[img]], 
+//                                
+//                                iX[Tini[img]:Tend[img]], 
+//                                iY[Tini[img]:Tend[img]], 
+//                                iZ[Tini[img]:Tend[img]], 
+//                                
+//                                info.LAT)
+//
+//                ObsAngAzi[*,img] = View.Azi
+//                ObsAngZen[*,img] = View.Zen
+
+            // Observation angles are not needed for the geometric correction but they are used for research. They are a by-product.
+            // But ViewAngs provides also the range from the target to the satellite, which is needed later (Range, of course could be calculated independently).
+
+            // ==== Satellite Rotation Axes ==============================================
+
+            
+        }
+        
+        
+        
+        
+        
         
     }
     

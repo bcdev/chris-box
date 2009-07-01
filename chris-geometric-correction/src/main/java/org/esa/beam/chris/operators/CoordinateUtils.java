@@ -46,8 +46,6 @@ class CoordinateUtils {
      * Angular distance between points.
      */
     static double vectAngle(double x1, double y1, double z1, double x2, double y2, double z2) {
-        double cf = 1.0;
-     
         // Compute vector dot product for both points
         double cs = x1*x2 + y1*y2 + z1*z2;
      
@@ -59,7 +57,7 @@ class CoordinateUtils {
      
         //--- Convert to polar.  ------
         double[] ra = recpol(cs, sn);
-        return cf * ra[1];
+        return ra[1];
     }
     
     /**
