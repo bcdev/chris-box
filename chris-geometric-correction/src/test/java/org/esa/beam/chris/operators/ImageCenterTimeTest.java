@@ -33,10 +33,10 @@ public class ImageCenterTimeTest extends TestCase {
         ImageCenterTime imageCenterTime = ImageCenterTime.create(ictValues, 13);
 
         assertNotNull(imageCenterTime);
-        assertEquals(3098881.4711724636, imageCenterTime.ict1, 0.000001);
-        assertEquals(3098881.4717422836, imageCenterTime.ict2, 0.000001);
-        assertEquals(3098881.472312103, imageCenterTime.ict3, 0.000001);
-        assertEquals(3098881.4728819225, imageCenterTime.ict4, 0.000001);
-        assertEquals(3098881.4734517424, imageCenterTime.ict5, 0.000001);
+        assertEquals(2452772.4711724636, imageCenterTime.ict1, 0.000001);
+        assertEquals(2452772.4717422836, imageCenterTime.ict2, 0.000001);
+        assertEquals(2452772.472312103, imageCenterTime.ict3, 0.000001);
+        assertEquals(2452772.4728819225, imageCenterTime.ict4, 0.000001);
+        assertEquals(2452772.4734517424, imageCenterTime.ict5, 0.000001);
     }
 }

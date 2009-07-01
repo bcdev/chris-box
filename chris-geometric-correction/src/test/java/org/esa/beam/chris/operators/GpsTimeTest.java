@@ -41,7 +41,7 @@ public class GpsTimeTest extends TestCase {
         
         GPSTime gpsTime = gpsTimeList.get(0);
         assertNotNull(gpsTime);
-        assertEquals(2677441.926186921, gpsTime.jd, 0.000001);
+        assertEquals(2452919.465436449, gpsTime.jd, 0.000001);
         
     }
 }

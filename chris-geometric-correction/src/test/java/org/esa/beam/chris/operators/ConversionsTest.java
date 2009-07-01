@@ -22,6 +22,6 @@ public class ConversionsTest extends TestCase {
 
     public void testJulDay() {
         double julDay0 = Conversions.julianDate(1999, 11, 26);
-        assertEquals(3097648.0, julDay0, 0.0);
+        assertEquals(2451539.0, julDay0, 0.0);
     }
 }
