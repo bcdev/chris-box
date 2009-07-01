@@ -320,14 +320,45 @@ public class TheRealThing {
 
             // ==== Satellite Rotation Axes ==============================================
 
-            
+            double[][] uEjeYaw = new double[3][modeConstants.getNLines()];
+            for (int i = 0; i < modeConstants.getNLines(); i++) {
+                uEjeYaw[X][i] = iX[Tini[img]+i];
+                uEjeYaw[Y][i] = iY[Tini[img]+i];
+                uEjeYaw[Z][i] = iZ[Tini[img]+i];
+            }
+            uEjeYaw = unit(uEjeYaw);
+            for (int i = 0; i < modeConstants.getNLines(); i++) {
+                EjeYaw[X][i][img] = uEjeYaw[X][i];
+                EjeYaw[Y][i][img] = uEjeYaw[Y][i];
+                EjeYaw[Z][i][img] = uEjeYaw[Z][i];
+            }
+
+//            uEjePitch = uWop[*,Tini[img]:Tend[img]]
+//            EjePitch[*,*,img] = uEjePitch
+//
+//            uEjeRoll = dblarr(3, FLOOR(nLines))
+//
+//            FOR i=0L,FLOOR(nLines)-1 DO uEjeRoll[*,i] = vect_prod(uEjePitch[*,i], uEjeYaw[*,i])
+//            EjeRoll[*,*,img] = uEjeRoll
+//            
+//            // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
+//            // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
+//            Range[*,*,img] = -transpose([[View.RangX],[View.RangY],[View.RangZ]])
+//            uRange = unit(Range[*,*,img])
+
+            // ScanPlane:
+            double[][] uSP = new double[3][modeConstants.getNLines()];
+            double[][] uSPr = new double[3][modeConstants.getNLines() * modeConstants.getNCols()];
+
+            // SightLine:
+            double[][] uSL = new double[3][modeConstants.getNLines()];
+            double[][] uSLr = new double[3][modeConstants.getNLines() * modeConstants.getNCols()];
+
+            // RollSign:
+            int[] uRollSign = new int[modeConstants.getNLines()];
+            int[] uRollSignR = new int[modeConstants.getNLines() * modeConstants.getNCols()];
+
         }
-        
-        
-        
-        
-        
-        
     }
     
     private double[][] unit(double[][] vec) {
