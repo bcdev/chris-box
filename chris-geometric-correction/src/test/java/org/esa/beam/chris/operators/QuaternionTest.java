@@ -80,7 +80,7 @@ public class QuaternionTest {
         q1.multiply(q2);
 
         final double[] v = {0.0, 1.0, 0.0};
-        q1.rotateVector(v);
+        q1.rotateVector(v, v);
 
         assertEquals(+0.23230132, v[0], 0.5E-08);
         assertEquals(-0.37175982, v[1], 0.5E-08);
