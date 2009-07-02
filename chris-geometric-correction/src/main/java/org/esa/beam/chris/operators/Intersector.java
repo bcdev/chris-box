@@ -39,12 +39,12 @@ class Intersector {
 
         double b = 0.0;
         for (int i = 0; i < 3; i++) {
-            b += direction[i] * (point[i] - center[0]) / (radii[i] * radii[i]);
+            b += direction[i] * (point[i] - center[i]) / (Pow.pow2(radii[i]));
         }
 
         double c = 0.0;
         for (int i = 0; i < 3; i++) {
-            c += Pow.pow2((point[i] - center[0]) / radii[i]);
+            c += Pow.pow2((point[i] - center[i]) / radii[i]);
         }
         c -= 1.0;
 
