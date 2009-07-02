@@ -1,5 +1,7 @@
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.Assert;
+
 import java.text.MessageFormat;
 
 /**
@@ -46,10 +48,14 @@ class Quaternion {
      * @return the n quaternions created.
      */
     public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double angle) {
-        ensureLegalArray(x, "x", 0);
+        Assert.notNull(x);
+        Assert.notNull(y);
+        Assert.notNull(z);
+
         final int n = x.length;
-        ensureLegalArray(y, "y", n);
-        ensureLegalArray(z, "z", n);
+        Assert.argument(x.length != 0);
+        Assert.argument(y.length == n);
+        Assert.argument(z.length == n);
 
         final double alpha = angle / 2.0;
         final double c = Math.cos(alpha);
@@ -75,11 +81,16 @@ class Quaternion {
      * @return the n quaternions created.
      */
     public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double[] angles) {
-        ensureLegalArray(x, "x", 0);
+        Assert.notNull(x);
+        Assert.notNull(y);
+        Assert.notNull(z);
+        Assert.notNull(angles);
+
         final int n = x.length;
-        ensureLegalArray(y, "y", n);
-        ensureLegalArray(z, "z", n);
-        ensureLegalArray(angles, "angles", n);
+        Assert.argument(x.length != 0);
+        Assert.argument(y.length == n);
+        Assert.argument(z.length == n);
+        Assert.argument(angles.length == n);
 
         final Quaternion[] quaternions = new Quaternion[n];
         for (int i = 0; i < n; i++) {
@@ -102,6 +113,10 @@ class Quaternion {
      * @return the sum of {@code q1} and {@code q2}.
      */
     public static Quaternion add(Quaternion q1, Quaternion q2, Quaternion q3) {
+        Assert.notNull(q1);
+        Assert.notNull(q2);
+        Assert.notNull(q3);
+
         final double a = q1.a + q2.a;
         final double b = q1.b + q2.b;
         final double c = q1.c + q2.c;
@@ -125,6 +140,10 @@ class Quaternion {
      * @return the Hamilton product of {@code q1} and {@code q2}.
      */
     public static Quaternion multiply(Quaternion q1, Quaternion q2, Quaternion q3) {
+        Assert.notNull(q1);
+        Assert.notNull(q2);
+        Assert.notNull(q3);
+
         final double a = q1.a * q2.a - q1.b * q2.b - q1.c * q2.c - q1.d * q2.d;
         final double b = q1.a * q2.b + q1.b * q2.a + q1.c * q2.d - q1.d * q2.c;
         final double c = q1.a * q2.c - q1.b * q2.d + q1.c * q2.a + q1.d * q2.b;
@@ -169,6 +188,8 @@ class Quaternion {
      * @param q the quaternion being copied.
      */
     public Quaternion(Quaternion q) {
+        Assert.notNull(q);
+
         this.a = q.a;
         this.b = q.b;
         this.c = q.c;
@@ -248,22 +269,5 @@ class Quaternion {
     @Override
     public String toString() {
         return MessageFormat.format("{0} + i * {1} + j * {2} + k * {3}", a, b, c, d);
-    }
-
-    private static void ensureLegalArray(double[] a, String name) {
-        if (a == null) {
-            throw new IllegalArgumentException(MessageFormat.format("{0} == null", name));
-        }
-        if (a.length == 0) {
-            throw new IllegalArgumentException(MessageFormat.format("{0}.length == 0", name));
-        }
-    }
-
-    private static void ensureLegalArray(double[] a, String name, int length) {
-        ensureLegalArray(a, name);
-
-        if (a.length != length) {
-            throw new IllegalArgumentException(MessageFormat.format("{0}.length != {1}", name, length));
-        }
     }
 }

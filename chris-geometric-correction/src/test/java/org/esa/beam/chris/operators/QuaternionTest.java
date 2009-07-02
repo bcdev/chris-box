@@ -1,13 +1,16 @@
 package org.esa.beam.chris.operators;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import org.junit.Test;
 
-public class QuaternionTest extends TestCase {
+public class QuaternionTest {
 
     /**
      * Test based on IDL source code.
      */
-    public void testCreateQuaternion() {
+    @Test
+    public void createQuaternion() {
         final double x = 0.0;
         final double y = 1.0;
         final double z = 0.0;
@@ -21,7 +24,8 @@ public class QuaternionTest extends TestCase {
         assertEquals(0.00000000, q.getK(), 0.0);
     }
 
-    public void testAddQuaternions() {
+    @Test
+    public void addQuaternions() {
         final double a1 = 2.0;
         final double b1 = 3.0;
         final double c1 = 5.0;
@@ -43,7 +47,8 @@ public class QuaternionTest extends TestCase {
         assertEquals(d1 + d2, q1.getK(), 0.0);
     }
 
-    public void testMultiplyQuaternions() {
+    @Test
+    public void multiplyQuaternions() {
         final double a1 = 2.0;
         final double b1 = 3.0;
         final double c1 = 5.0;

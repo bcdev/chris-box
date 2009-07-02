@@ -1,13 +1,17 @@
 package org.esa.beam.chris.operators;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import org.junit.Test;
 
-public class QuaternionRotationTest extends TestCase {
+
+public class QuaternionRotationTest {
 
     /**
      * Test based on IDL source code.
      */
-    public void testRotateVectors() {
+    @Test
+    public void rotateVectors() {
         final Quaternion q1 = Quaternion.createQuaternion(0.0, 0.0, 1.0, Math.toRadians(32.0));
         final Quaternion q2 = Quaternion.createQuaternion(1.0, 0.0, 0.0, Math.toRadians(116.0));
 

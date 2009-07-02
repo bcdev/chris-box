@@ -23,6 +23,9 @@ package org.esa.beam.chris.util.math.internal;
  */
 public class Pow {
 
+    private Pow() {
+    }
+
     public static double pow2(double x) {
         return x * x;
     }

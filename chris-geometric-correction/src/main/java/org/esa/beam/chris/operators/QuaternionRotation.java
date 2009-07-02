@@ -1,5 +1,7 @@
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.Assert;
+
 import java.text.MessageFormat;
 
 /**
@@ -17,10 +19,14 @@ class QuaternionRotation {
      * @param z the x-components of the n 3-dimensional vectors being rotated.
      */
     public static void rotateVectors(Quaternion q, double[] x, double[] y, double[] z) {
-        ensureLegalArray(x, "x");
+        Assert.notNull(x);
+        Assert.notNull(y);
+        Assert.notNull(z);
+
         final int n = x.length;
-        ensureLegalArray(y, "y", n);
-        ensureLegalArray(z, "z", n);
+        Assert.argument(x.length != 0);
+        Assert.argument(y.length == n);
+        Assert.argument(z.length == n);
 
         final double a = q.getR();
         final double b = q.getI();
@@ -45,21 +51,29 @@ class QuaternionRotation {
     /**
      * Performs a rotation on n 3-dimensional vectors.
      *
-     * @param q the n unit-quaternions, where the ith quaternion defines the
-     *          rotation to be applied to the ith vector.
-     * @param x the x-components of the n 3-dimensional vectors being rotated.
-     * @param y the x-components of the n 3-dimensional vectors being rotated.
-     * @param z the x-components of the n 3-dimensional vectors being rotated.
+     * @param quaternions the n unit-quaternions, where the ith quaternion defines the
+     *                    rotation to be applied to the ith vector.
+     * @param x           the x-components of the n 3-dimensional vectors being rotated.
+     * @param y           the x-components of the n 3-dimensional vectors being rotated.
+     * @param z           the x-components of the n 3-dimensional vectors being rotated.
      */
-    public static void rotateVectors(Quaternion[] q, double[] x, double[] y, double[] z) {
-        ensureLegalArray(q, "q");
-        final int n = q.length;
-        ensureLegalArray(x, "x", n);
-        ensureLegalArray(y, "y", n);
-        ensureLegalArray(z, "z", n);
+    public static void rotateVectors(Quaternion[] quaternions, double[] x, double[] y, double[] z) {
+        Assert.notNull(quaternions);
+        Assert.notNull(x);
+        Assert.notNull(y);
+        Assert.notNull(z);
+
+        final int n = quaternions.length;
+        Assert.argument(quaternions.length != 0);
+        Assert.argument(x.length == n);
+        Assert.argument(y.length == n);
+        Assert.argument(z.length == n);
 
         for (int i = 0; i < n; i++) {
-            forward(q[i], x, y, z, i);
+            Assert.argument(quaternions[i] != null, MessageFormat.format("quaternions[{0}] == null", i));
+        }
+        for (int i = 0; i < n; i++) {
+            forward(quaternions[i], x, y, z, i);
         }
     }
 
@@ -135,34 +149,4 @@ class QuaternionRotation {
         z[i] = w;
     }
 
-    private static <T> void ensureLegalArray(T[] a, String name) {
-        if (a == null) {
-            throw new IllegalArgumentException(MessageFormat.format("{0} == null", name));
-        }
-        if (a.length == 0) {
-            throw new IllegalArgumentException(MessageFormat.format("{0}.length == 0", name));
-        }
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] == null) {
-                throw new IllegalArgumentException(MessageFormat.format("{0}[{1}] == null", name, i));
-            }
-        }
-    }
-
-    private static void ensureLegalArray(double[] a, String name) {
-        if (a == null) {
-            throw new IllegalArgumentException(MessageFormat.format("{0} == null", name));
-        }
-        if (a.length == 0) {
-            throw new IllegalArgumentException(MessageFormat.format("{0}.length == 0", name));
-        }
-    }
-
-    private static void ensureLegalArray(double[] a, String name, int length) {
-        ensureLegalArray(a, name);
-
-        if (a.length != length) {
-            throw new IllegalArgumentException(MessageFormat.format("{0}.length != {1}", name, length));
-        }
-    }
 }
