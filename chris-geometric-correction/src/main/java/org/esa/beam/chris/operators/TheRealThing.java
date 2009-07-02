@@ -16,6 +16,7 @@
  */
 package org.esa.beam.chris.operators;
 
+import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
@@ -31,9 +32,9 @@ public class TheRealThing {
     
     public class ChrisInfo {
         int mode;
-        double[] alt; // dim = 5, per image
-        double[] lat; // dim = 5, per image
-        double[] lon; // dim = 5, per image
+        double alt;
+        double lat;
+        double lon;
     }
 
     private static final int SlowDown = 5; // Slowdown factor
@@ -259,9 +260,9 @@ public class TheRealThing {
             // TODO
             
             // ---- Target Coordinates in ECI using per-Line Time -------------------
-            double TgtAlt = info.alt[img]/1000; 
+            double TgtAlt = info.alt/1000; 
             double[] TGTecf = new double[3];
-            Conversions.wgsToEcef(info.lon[img], info.lat[img], TgtAlt, TGTecf);
+            Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
 //            if ( use_GCP) { TODO
 //                Conversions.wgsToEcef(GCP0[3], GCP0[2], GCP0[4], TGTecf);
 //            }
@@ -301,19 +302,28 @@ public class TheRealThing {
             double[][] iTGT = iTGT0;
             
             //==== Calculates View Angles ==============================================
-//
-//                View = ViewAngs(iTGT.X[Tini[img]:Tend[img]], 
-//                                iTGT.Y[Tini[img]:Tend[img]], 
-//                                iTGT.Z[Tini[img]:Tend[img]], 
-//                                
-//                                iX[Tini[img]:Tend[img]], 
-//                                iY[Tini[img]:Tend[img]], 
-//                                iZ[Tini[img]:Tend[img]], 
-//                                
-//                                info.LAT)
-//
-//                ObsAngAzi[*,img] = View.Azi
-//                ObsAngZen[*,img] = View.Zen
+            
+//            ViewAng[] viewAngs = new ViewAng[mode.getNLines()];
+            double[][] viewRange = new double[3][mode.getNLines()];
+            for (int i = 0; i < mode.getNLines(); i++) {
+                double TgtX = iTGT[X][Tini[img]+i];
+                double TgtY = iTGT[Y][Tini[img]+i];
+                double TgtZ = iTGT[Z][Tini[img]+i];
+                double SatX = iX[Tini[img]+i];
+                double SatY = iY[Tini[img]+i];
+                double SatZ = iZ[Tini[img]+i];
+                double TgtLat = info.lat;
+                ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ, TgtLat);
+                
+                // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
+                // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
+                viewRange[X][i] = -viewAng.rangeX;
+                viewRange[Y][i] = -viewAng.rangeY;
+                viewRange[Z][i] = -viewAng.rangeZ;
+                
+                ObsAngAzi[i][img] = viewAng.azi;
+                ObsAngZen[i][img] = viewAng.zen;
+            }
 
             // Observation angles are not needed for the geometric correction but they are used for research. They are a by-product.
             // But ViewAngs provides also the range from the target to the satellite, which is needed later (Range, of course could be calculated independently).
@@ -347,12 +357,7 @@ public class TheRealThing {
                 EjeRoll[Z][i][img] = uEjeRoll[Z][i];
             }
             
-            // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
-            // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
-            
-//            Range[*,*,img] = -transpose([[View.RangX],[View.RangY],[View.RangZ]])
-//            uRange = unit(Range[*,*,img])
-            double[][] uRange = null;
+            double[][] uRange = unit(viewRange);
 
             // ScanPlane:
             //double[][] uSP = new double[3][mode.getNLines()];
