@@ -3,8 +3,12 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.util.DateTimeUtils;
 
+import java.awt.geom.Point2D;
 import java.util.Calendar;
 import java.util.Date;
+
+import static org.esa.beam.chris.util.math.internal.Pow.pow2;
+import static org.esa.beam.chris.util.math.internal.Pow.pow3;
 
 class Conversions {
 
@@ -176,12 +180,52 @@ class Conversions {
         final double cv = Math.cos(v);
         final double sv = Math.sin(v);
 
-        final double a = WGS84_A / Math.sqrt(1.0 - WGS84_E * sv * sv);
+        final double a = WGS84_A / Math.sqrt(1.0 - WGS84_E * pow2(sv));
         final double b = (a + alt) * cv;
 
         ecef[0] = b * cu;
         ecef[1] = b * su;
         ecef[2] = ((1.0 - WGS84_E) * a + alt) * sv;
+    }
+    
+    /**
+     * Transforms geodetic coordinates (spherical) to Earth Centered Fixed ECF
+     * cartesian coordinates (rectangular) Altitude h starts at the reference
+     * geoid and must be in kilometers, Latitude and Longitude are operated in degrees.
+     * 
+     * NOTE: accuracy might be improved for coordinates close to the XY plane or
+     * the Z axis by using alternative trigonometric formulation in those cases
+     * 
+     */
+    public static Point2D ecef2wgs(double x, double y, double z) {
+        double b = WGS84_A * (1.0 - WGS84_F);
+        b = b * Math.signum(z);
+
+        double R = Math.sqrt(pow2(x) + pow2(y));
+        double E = (b*z - (pow2(WGS84_A) - pow2(b)))/(WGS84_A*R);
+        double F = (b*z + (pow2(WGS84_A) - pow2(b)))/(WGS84_A*R);
+        double P = 4*(E*F + 1)/3.0;
+        double Q = 2*(pow2(E) - pow2(F));
+        double D = Math.sqrt(pow3(P) + pow2(Q));
+        double nu = Math.pow((D-Q), (1.0/3.0)) - Math.pow((D+Q), (1.0/3.0));
+        double G = (Math.sqrt(pow2(E)+nu) + E)/2.0;
+        double t = Math.sqrt(pow2(G) + (F - nu*G)/(2*G - E)) - G;
+
+        double LATgdt = Math.atan2(WGS84_A * (1 - pow2(t)), 2*b*t);
+        double LONgdt = Math.atan2(y, x);
+        double ALTgdt = (R - WGS84_A*t) * Math.cos(LATgdt) + (z - b) * Math.sin(LATgdt);
+
+        if (x == 0.0 && y == 0.0 && z != 0.0) {
+            LATgdt = Math.PI/2.0 * Math.signum(z);
+            LONgdt = 0.0;
+            ALTgdt = Math.abs(z - b);
+        }
+        if (z == 0.0) {
+            LATgdt = 0.0;
+            ALTgdt = R - WGS84_A;
+        }
+
+        return new Point2D.Double(Math.toDegrees(LONgdt), Math.toDegrees(LATgdt));
     }
 
     /**

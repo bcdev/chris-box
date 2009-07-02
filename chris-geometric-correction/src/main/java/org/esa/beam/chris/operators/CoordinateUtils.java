@@ -16,6 +16,11 @@
  */
 package org.esa.beam.chris.operators;
 
+import java.awt.geom.Point2D;
+
+import static org.esa.beam.chris.util.math.internal.Pow.pow2;
+
+
 class CoordinateUtils {
 
     /**
@@ -82,5 +87,59 @@ class CoordinateUtils {
         double r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)); // Find radii
 
         return new double[] {r, a};
+    }
+    
+    
+    /**
+     * Calculate the View Angles in the LHLV coordinate system (Local Horizon, Local Vertical)
+     * 
+     * NOTE: The local vertical is obtained from the latitude geodetica calculated from the position TGT
+     */
+    static ViewAng computeViewAng(double TgtX, double TgtY, double TgtZ, double SatX, double SatY, double SatZ, double TgtLat) {
+        double RangX = SatX - TgtX;
+        double RangY = SatY - TgtY;
+        double RangZ = SatZ - TgtZ;
+        double Rango = Math.sqrt(pow2(RangX) + pow2(RangY) + pow2(RangZ));
+        
+        // Calculates the latitude of geodetica TGT (point where you define the vertical Local)
+        Point2D gdt = Conversions.ecef2wgs(TgtX, TgtY, TgtZ);
+        
+        double sin_lat = Math.sin(Math.toRadians(gdt.getY()));
+        double cos_lat = Math.cos(Math.toRadians(gdt.getY()));
+        
+        double sin_theta = TgtY / Math.sqrt(pow2(TgtX) + pow2(TgtY));
+        double cos_theta = TgtX / Math.sqrt(pow2(TgtX)+pow2(TgtY));
+        
+        double top_s = sin_lat * cos_theta * RangX + sin_lat * sin_theta * RangY - cos_lat * RangZ;
+        double top_e = -sin_theta * RangX + cos_theta * RangY;
+        double top_z = cos_lat * cos_theta * RangX + cos_lat * sin_theta * RangY + sin_lat * RangZ;
+
+        double AZI = Math.atan(-top_e/top_s);
+        if (top_s > 0) {
+            AZI += Math.PI;
+        }
+        if (top_s < 0) {
+            AZI += 2.0 * Math.PI;
+        }
+        AZI = AZI % (2.0 * Math.PI);
+        double ZEN = Math.PI/2 - Math.asin(top_z/Rango);
+
+        return new ViewAng(AZI, ZEN, RangX, RangY, RangZ);
+    }
+    
+    static class ViewAng {
+        final double azi;
+        final double zen;
+        final double rangeX;
+        final double rangeY;
+        final double rangeZ;
+        
+        public ViewAng(double azi, double zen, double rangeX, double rangeY, double rangeZ) {
+            this.azi = azi;
+            this.zen = zen;
+            this.rangeX = rangeX;
+            this.rangeY = rangeY;
+            this.rangeZ = rangeZ;
+        }
     }
 }
