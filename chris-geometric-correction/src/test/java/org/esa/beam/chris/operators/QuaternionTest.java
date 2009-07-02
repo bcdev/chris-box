@@ -70,6 +70,9 @@ public class QuaternionTest {
         assertEquals(a1 * d2 + b1 * c2 - c1 * b2 + d1 * a2, q1.getK(), 0.0);
     }
 
+    /**
+     * Test based on IDL source code.
+     */
     @Test
     public void rotateVector() {
         final Quaternion q1 = Quaternion.createQuaternion(0.0, 0.0, 1.0, Math.toRadians(32.0));
