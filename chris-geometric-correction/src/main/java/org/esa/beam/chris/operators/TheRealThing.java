@@ -16,19 +16,37 @@
  */
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
+
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
+import org.esa.beam.dataio.chris.ChrisConstants;
+import org.esa.beam.framework.dataio.ProductIO;
+import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.GeoPos;
+import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.gpf.Operator;
+import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.Tile;
+import org.esa.beam.framework.gpf.annotations.Parameter;
+import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.util.StringUtils;
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-public class TheRealThing {
+public class TheRealThing extends Operator {
     
     public class ChrisInfo {
         int mode;
@@ -56,22 +74,38 @@ public class TheRealThing {
     private static final int Z=2;
 
            
-    ///////////////////////////////////////////////////////////
-    
-    public File ictFile;
-    public File gpsFile;
     public ChrisInfo info;
+    ///////////////////////////////////////////////////////////
+    @Parameter
+    public File ictFile;
+    @Parameter
+    public File gpsFile;
+    @SourceProduct
+    public Product chrisProduct;
 
     ///////////////////////////////////////////////////////////
-    
-    public void doIt() throws IOException {
+    @Override
+    public void initialize() throws OperatorException {
+        fillInfo();
         // ICT
-        ITCReader ictReader = new ImageCenterTime.ITCReader(new FileInputStream(ictFile));
+        ITCReader ictReader;
+        try {
+            ictReader = new ImageCenterTime.ITCReader(new FileInputStream(ictFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            throw new OperatorException(e);
+        }
         double[] lastIctValues = ictReader.getLastIctValues();
         ImageCenterTime lastImageCenterTime = ImageCenterTime.create(lastIctValues, dTgps);
         
         // GPS
-        GPSReader gpsReader = new GPSTime.GPSReader(new FileInputStream(gpsFile));
+        GPSReader gpsReader;
+        try {
+            gpsReader = new GPSTime.GPSReader(new FileInputStream(gpsFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            throw new OperatorException(e);
+        }
         List<String[]> gpsRecords = gpsReader.getReadRecords();
         List<GPSTime> gps = GPSTime.create(gpsRecords, dTgps, delay);
         
@@ -407,13 +441,73 @@ public class TheRealThing {
 
             System.out.println("Starting model-IGM generation");
             
-            
+            double[] ixSubset = new double[mode.getNLines()];
+            double[] iySubset = new double[mode.getNLines()];
+            double[] izSubset = new double[mode.getNLines()];
+            double[] timeSubset = new double[mode.getNLines()];
+            for (int i = 0; i < timeSubset.length; i++) {
+                ixSubset[i] = iX[Tini[img]+i];
+                iySubset[i] = iY[Tini[img]+i];
+                izSubset[i] = iZ[Tini[img]+i];
+                timeSubset[i] = T[Tini[img]+i];
+            }
+            PROBA_DO_IGM(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), uEjePitch, uPitchAng, 
+                         uEjeRoll, uRollAng, uEjeYaw, TgtAlt, ixSubset, 
+                         iySubset, izSubset, timeSubset);
 
-
-            
+            chrisProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
+            chrisProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
+            setTargetProduct(chrisProduct);
         }
     }
     
+    @Override
+    public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
+        // TODO Auto-generated method stub
+    }
+    
+    private void PROBA_DO_IGM(int lines, int cols, double fov, double ifov, double[][] ejePitch, double[] pitchAng,
+                              double[][] ejeRoll, double[] rollAng, double[][] ejeYaw, double tgtAlt,
+                              double[] ixSubset, double[] iySubset, double[] izSubset, double[] timeSubset) {
+        // TODO Auto-generated method stub
+        
+    }
+    
+    private void fillInfo() {
+        info = new ChrisInfo();
+        
+        MetadataElement root = chrisProduct.getMetadataRoot();
+        if (root == null) {
+            info = null;
+            return;
+        }
+        MetadataElement mph = root.getElement(ChrisConstants.MPH_NAME);
+        if (mph == null) {
+            info = null;
+            return;
+        }
+        info.lat = getMetaDataValueDouble(mph, ChrisConstants.ATTR_NAME_TARGET_LAT);
+        info.lon = getMetaDataValueDouble(mph, ChrisConstants.ATTR_NAME_TARGET_LON);
+        info.alt = getMetaDataValueDouble(mph, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        info.mode = getMetaDataValueInt(mph, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+    }
+    
+    private double getMetaDataValueDouble(MetadataElement mph, String name) {
+        String str = mph.getAttributeString(name, null);
+        if (StringUtils.isNotNullAndNotEmpty(str)) {
+            return Double.valueOf(str);
+        }
+        throw new IllegalArgumentException("mph: "+mph.getName()+"; name: "+name);
+    }
+    
+    private int getMetaDataValueInt(MetadataElement mph, String name) {
+        String str = mph.getAttributeString(name, null);
+        if (StringUtils.isNotNullAndNotEmpty(str)) {
+            return Integer.valueOf(str);
+        }
+        throw new IllegalArgumentException("mph: "+mph.getName()+"; name: "+name);
+    }
+
     private double[][] unit(double[][] vec) {
         double[][] result = new double[vec.length][vec[0].length];
         for (int i = 0; i < vec[0].length; i++) {
@@ -461,4 +555,18 @@ public class TheRealThing {
         }
         return v;
     }
+    
+    public static void main(String[] args) throws IOException {
+        
+        TheRealThing thing = new TheRealThing();
+        String productFile = "chris.dim";
+        Product sourceProduct = ProductIO.readProduct(productFile, null);
+        thing.setSourceProduct(sourceProduct);
+        
+        thing.gpsFile = new File("gps_file");
+        thing.ictFile = new File("ict_file");
+        Product targetProduct = thing.getTargetProduct();
+        ProductIO.writeProduct(targetProduct, "chris_geo.dim", null);
+    }
+
 }
