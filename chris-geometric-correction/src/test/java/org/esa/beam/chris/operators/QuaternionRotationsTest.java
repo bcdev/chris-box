@@ -5,7 +5,7 @@ import static org.junit.Assert.assertSame;
 import org.junit.Test;
 
 
-public class QuaternionRotationTest {
+public class QuaternionRotationsTest {
 
     /**
      * Test based on IDL source code.
@@ -22,9 +22,9 @@ public class QuaternionRotationTest {
         final double[] y = {0.0, 1.0, 0.0};
         final double[] z = {0.0, 0.0, 1.0};
 
-        QuaternionRotation.forward(q3, x, y, z, 0);
-        QuaternionRotation.forward(q3, x, y, z, 1);
-        QuaternionRotation.forward(q3, x, y, z, 2);
+        QuaternionRotations.forward(q3, x, y, z, 0);
+        QuaternionRotations.forward(q3, x, y, z, 1);
+        QuaternionRotations.forward(q3, x, y, z, 2);
 
         assertEquals(0.84804810, x[0], 0.5E-08);
         assertEquals(0.23230132, x[1], 0.5E-08);
@@ -36,9 +36,9 @@ public class QuaternionRotationTest {
         assertEquals(0.89879405, z[1], 0.5E-08);
         assertEquals(-0.43837115, z[2], 0.5E-08);
 
-        QuaternionRotation.inverse(q3, x, y, z, 0);
-        QuaternionRotation.inverse(q3, x, y, z, 1);
-        QuaternionRotation.inverse(q3, x, y, z, 2);
+        QuaternionRotations.inverse(q3, x, y, z, 0);
+        QuaternionRotations.inverse(q3, x, y, z, 1);
+        QuaternionRotations.inverse(q3, x, y, z, 2);
 
         assertEquals(1.0, x[0], 0.5E-08);
         assertEquals(0.0, x[1], 0.5E-08);

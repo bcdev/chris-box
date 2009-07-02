@@ -69,4 +69,18 @@ public class QuaternionTest {
         assertEquals(a1 * c2 - b1 * d2 + c1 * a2 + d1 * b2, q1.getJ(), 0.0);
         assertEquals(a1 * d2 + b1 * c2 - c1 * b2 + d1 * a2, q1.getK(), 0.0);
     }
+
+    @Test
+    public void rotateVector() {
+        final Quaternion q1 = Quaternion.createQuaternion(0.0, 0.0, 1.0, Math.toRadians(32.0));
+        final Quaternion q2 = Quaternion.createQuaternion(1.0, 0.0, 0.0, Math.toRadians(116.0));
+        q1.multiply(q2);
+
+        final double[] v = {0.0, 1.0, 0.0};
+        q1.rotateVector(v);
+
+        assertEquals(+0.23230132, v[0], 0.5E-08);
+        assertEquals(-0.37175982, v[1], 0.5E-08);
+        assertEquals(+0.89879405, v[2], 0.5E-08);
+    }
 }

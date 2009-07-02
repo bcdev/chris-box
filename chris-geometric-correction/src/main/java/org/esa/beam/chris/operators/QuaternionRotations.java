@@ -8,7 +8,7 @@ import java.text.MessageFormat;
  * Utility class for calculating 3-dimensional vector rotations
  * defined by unit quaternions.
  */
-class QuaternionRotation {
+class QuaternionRotations {
 
     /**
      * Performs a rotation on n 3-dimensional vectors.

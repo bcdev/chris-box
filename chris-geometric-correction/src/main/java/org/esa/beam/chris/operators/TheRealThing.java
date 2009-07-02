@@ -291,7 +291,7 @@ public class TheRealThing {
                 y[i] = iTGT0[Tini[img]+i][Y];
                 z[i] = iTGT0[Tini[img]+i][Z];
             }
-            QuaternionRotation.rotateVectors(quaternions, x, y, z);
+            QuaternionRotations.rotateVectors(quaternions, x, y, z);
             for (int i = 0; i < mode.getNLines(); i++) {
                 iTGT0[Tini[img]+i][X] = x[i];
                 iTGT0[Tini[img]+i][Y] = y[i]; 

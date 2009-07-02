@@ -158,6 +158,41 @@ class Quaternion {
     }
 
     /**
+     * Rotates a 3-dimensional vector by the rotation defined by this quaternion.
+     * <p/>
+     * The rotation is calculated in-place, i.e. on return elements of {@code vector}
+     * are overwritten with the result of the rotation.
+     *
+     * @param v the vector.
+     *
+     * @return the rotated vector.
+     */
+    public double[] rotateVector(double[] v) {
+        Assert.notNull(v);
+        Assert.argument(v.length == 3);
+
+        final double ab = a * b;
+        final double ac = a * c;
+        final double ad = a * d;
+        final double bb = b * b;
+        final double bc = b * c;
+        final double bd = b * d;
+        final double cc = c * c;
+        final double cd = c * d;
+        final double dd = d * d;
+
+        final double x = v[0];
+        final double y = v[1];
+        final double z = v[2];
+
+        v[0] = 2.0 * ((bc - ad) * y + (ac + bd) * z - (cc + dd) * x) + x;
+        v[1] = 2.0 * ((ad + bc) * x - (bb + dd) * y + (cd - ab) * z) + y;
+        v[2] = 2.0 * ((bd - ac) * x + (ab + cd) * y - (bb + cc) * z) + z;
+
+        return v;
+    }
+
+    /**
      * Default constructor.
      */
     public Quaternion() {
