@@ -141,6 +141,7 @@ class EcefEciConverter {
         } else if (eci.length == 6) {
             final double u = ecefToEciX(c, s, ecef[3], ecef[4]) - WE * y;
             final double v = ecefToEciY(c, s, ecef[3], ecef[4]) + WE * x;
+            eci[2] = ecef[2];
             eci[3] = u;
             eci[4] = v;
             eci[5] = ecef[5];
@@ -166,6 +167,7 @@ class EcefEciConverter {
         } else if (ecef.length == 6) {
             final double u = eciToEcefX(c, s, eci[3], eci[4]) - WE * y;
             final double v = eciToEcefY(c, s, eci[3], eci[4]) + WE * x;
+            ecef[2] = eci[2];
             ecef[3] = u;
             ecef[4] = v;
             ecef[5] = eci[5];
