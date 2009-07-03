@@ -122,7 +122,7 @@ public class TheRealThing extends Operator {
                             lastImageCenterTime.ict3 - jd0,
                             lastImageCenterTime.ict4 - jd0,
                             lastImageCenterTime.ict5 - jd0,
-                            lastImageCenterTime.ict1 - (10 + 390)/Conversions.SECONDS_PER_DAY - jd0};
+                            lastImageCenterTime.ict1 - (10.0 + 390.0)/Conversions.SECONDS_PER_DAY - jd0};
         
         double[] T_ict = Arrays.copyOfRange(ict_njd, 0, 5);
         
@@ -144,8 +144,8 @@ public class TheRealThing extends Operator {
         double[] T_ini = new double[5]; // imaging start time (imaging lasts ~9.5s in every mode)
         double[] T_end = new double[5]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
-            T_ini[i] = ict_njd[i] - (mode.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
-            T_end[i] = ict_njd[i] + (mode.getTimg()/2)/Conversions.SECONDS_PER_DAY; 
+            T_ini[i] = ict_njd[i] - (mode.getTimg()/2.0)/Conversions.SECONDS_PER_DAY; 
+            T_end[i] = ict_njd[i] + (mode.getTimg()/2.0)/Conversions.SECONDS_PER_DAY; 
         }
         double T_i = ict_njd[0] - 10/Conversions.SECONDS_PER_DAY; // "imaging mode" start time
         double T_e = ict_njd[4] + 10/Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
@@ -209,8 +209,8 @@ public class TheRealThing extends Operator {
             GPSTime gpsTime = gps.get(i);
             // position and velocity is given in meters, 
             // we transform to km in order to keep the values smaller. from now all distances in Km
-            double[] ecf = {gpsTime.posX/1000, gpsTime.posY/1000, gpsTime.posZ/1000,
-                            gpsTime.velX/1000, gpsTime.velY/1000, gpsTime.velZ/1000};
+            double[] ecf = {gpsTime.posX/1000.0, gpsTime.posY/1000.0, gpsTime.posZ/1000.0,
+                            gpsTime.velX/1000.0, gpsTime.velY/1000.0, gpsTime.velZ/1000.0};
             double gst = Conversions.jdToGST(gpsTime.jd);
             EcefEciConverter.ecefToEci(gst, ecf, eci[i]);
         }
