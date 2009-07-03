@@ -14,12 +14,11 @@
  */
 package org.esa.beam.chris.operators;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
 
 /**
  * Tests for class {@link TimeCalculator}.
@@ -28,54 +27,26 @@ import java.util.TimeZone;
  * @version $Revision$ $Date$
  * @since CHRIS-Box 1.1
  */
-public class TimeCalculatorTest extends TestCase {
+public class TimeCalculatorTest {
 
     private TimeCalculator timeCalculator;
 
-    public void testGetInstance() throws IOException {
+    @Test
+    public void getInstance() throws IOException {
         assertNotNull(timeCalculator);
         assertSame(timeCalculator, TimeCalculator.getInstance());
     }
 
-    public void testToDate() {
-        final Date date = Conversions.mjdToDate(41317.0);
-        assertEquals(41317.0, Conversions.dateToMJD(date), 0.0);
-    }
-
-    public void testToGST() {
-        final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        calendar.clear();
-        calendar.set(2008, 10, 19, 15, 0, 0);
-
-        final double mjd = Conversions.dateToMJD(calendar.getTime());
-        final double gst = Conversions.mjdToGST(mjd);
-
-        // expected result taken from Luis Alonso
-        assertEquals(4.9569015, gst, 1.0E-7);
-    }
-
-    public void testDateToMJD() {
-        final GregorianCalendar epoch1858 = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        epoch1858.clear();
-        epoch1858.set(1858, 10, 17, 0, 0, 0);
-
-        assertEquals(0.0, Conversions.dateToMJD(epoch1858.getTime()), 0.0);
-
-        final GregorianCalendar epoch2000 = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        epoch2000.clear();
-        epoch2000.set(2000, 0, 1, 0, 0, 0);
-
-        assertEquals(51544.0, Conversions.dateToMJD(epoch2000.getTime()), 0.0);
-    }
-
-    public void testDeltaGPS() {
+    @Test
+    public void deltaGPS() {
         // 1999-JAN-01
         assertEquals(32.0 - 19.0, timeCalculator.deltaGPS(51179.0), 0.0);
         // 2006-JAN-01
         assertEquals(33.0 - 19.0, timeCalculator.deltaGPS(53736.0), 0.0);
     }
 
-    public void testDeltaTAI() {
+    @Test
+    public void deltaTAI() {
         try {
             timeCalculator.deltaTAI(41316.0);
             fail();
@@ -94,7 +65,8 @@ public class TimeCalculatorTest extends TestCase {
         assertEquals(33.0, timeCalculator.deltaTAI(53736.0), 0.0);
     }
 
-    public void testDeltaUT1() {
+    @Test
+    public void deltaUT1() {
         try {
             timeCalculator.deltaUT1(48621.0);
             fail();
@@ -122,8 +94,8 @@ public class TimeCalculatorTest extends TestCase {
         }
     }
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void before() throws Exception {
         timeCalculator = TimeCalculator.getInstance();
     }
 }

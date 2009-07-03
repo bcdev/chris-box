@@ -1,44 +1,30 @@
 package org.esa.beam.chris.operators;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
-public class EcefEciConverterTest extends TestCase {
 
-    public void testEcefToEci() {
-        final double lon = 10.2414;
-        final double lat = 53.4800;
-        final double alt = 40.0;
+public class EcefEciConverterTest {
 
-        final double[] ecef = new double[3];
+    @Test
+    public void ecefToEci() {
+        // ECEF coordinates corresponding to Hamburger Sternwarte (WGS-84)
+        // lon = 10.2414° E
+        // lat = 53.4800° N
+        // alt = 40.0 m
+        final double ecefX = 3743300.458313003;
+        final double ecefY = 676318.7711106260;
+        final double ecefZ = 5102545.269331731;
+        final double[] ecef = new double[]{ecefX, ecefY, ecefZ};
 
-        Conversions.wgsToEcef(lon, lat, alt, ecef);
+        final double[] eci = EcefEciConverter.ecefToEci(Math.PI / 2.0, ecef, ecef.clone());
+        final double eciX = eci[0];
+        final double eciY = eci[1];
+        final double eciZ = eci[2];
 
-        double x = ecef[0];
-        double y = ecef[1];
-        double z = ecef[2];
-
-        System.out.println("x = " + x);
-        System.out.println("y = " + y);
-        System.out.println("z = " + z);
-        assertEquals(6364406.8, Math.sqrt(x * x + y * y + z * z), 0.1);
-
-        final EcefEciConverter converter = new EcefEciConverter(Math.PI);
-        final double[] eci = new double[3];
-        converter.ecefToEci(ecef, eci);
-
-        x = eci[0];
-        y = eci[1];
-        z = eci[2];
-
-        System.out.println("x = " + x);
-        System.out.println("y = " + y);
-        System.out.println("z = " + z);
-        assertEquals(6364406.8, Math.sqrt(x * x + y * y + z * z), 0.1);
-
-        converter.ecefToEci(ecef, ecef);
-        assertEquals(x, ecef[0]);
-        assertEquals(y, ecef[1]);
-        assertEquals(z, ecef[2]);
+        assertEquals(-ecefY, eciX, 5.0E-10);
+        assertEquals(ecefX, eciY, 5.0E-10);
+        assertEquals(ecefZ, eciZ, 0.0);
     }
 
 }

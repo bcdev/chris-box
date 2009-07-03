@@ -10,7 +10,7 @@ class EcefEciConverter {
     private final double c;
     private final double s;
 
-    public static void ecefToEci(double gst, double[] ecef, double[] eci) {
+    public static double[] ecefToEci(double gst, double[] ecef, double[] eci) {
         if (ecef == null) {
             throw new IllegalArgumentException("ecef == null");
         }
@@ -36,10 +36,10 @@ class EcefEciConverter {
         final double c = Math.cos(gst);
         final double s = Math.sin(gst);
 
-        ecefToEci(c, s, ecef, eci);
+        return ecefToEci(c, s, ecef, eci);
     }
 
-    public static void eciToEcef(double gst, double[] eci, double[] ecef) {
+    public static double[] eciToEcef(double gst, double[] eci, double[] ecef) {
         if (eci == null) {
             throw new IllegalArgumentException("eci == null");
         }
@@ -65,7 +65,7 @@ class EcefEciConverter {
         final double c = Math.cos(gst);
         final double s = Math.sin(gst);
 
-        eciToEcef(c, s, eci, ecef);
+        return eciToEcef(c, s, eci, ecef);
     }
 
     public EcefEciConverter(double gst) {
@@ -73,7 +73,7 @@ class EcefEciConverter {
         s = Math.sin(gst);
     }
 
-    public void ecefToEci(double[] ecef, double[] eci) {
+    public double[] ecefToEci(double[] ecef, double[] eci) {
         if (ecef == null) {
             throw new IllegalArgumentException("ecef == null");
         }
@@ -96,10 +96,10 @@ class EcefEciConverter {
             throw new IllegalArgumentException("eci.length != ecef.length");
         }
 
-        ecefToEci(c, s, ecef, eci);
+        return ecefToEci(c, s, ecef, eci);
     }
 
-    public void eciToEcef(double[] eci, double[] ecef) {
+    public double[] eciToEcef(double[] eci, double[] ecef) {
         if (eci == null) {
             throw new IllegalArgumentException("eci == null");
         }
@@ -122,10 +122,10 @@ class EcefEciConverter {
             throw new IllegalArgumentException("ecef.length != eci.length");
         }
 
-        eciToEcef(c, s, eci, ecef);
+        return eciToEcef(c, s, eci, ecef);
     }
 
-    static void ecefToEci(double c, double s, double[] ecef, double[] eci) {
+    static double[] ecefToEci(double c, double s, double[] ecef, double[] eci) {
         final double x = ecefToEciX(c, s, ecef[0], ecef[1]);
         final double y = ecefToEciY(c, s, ecef[0], ecef[1]);
         eci[0] = x;
@@ -145,9 +145,11 @@ class EcefEciConverter {
             eci[4] = v;
             eci[5] = ecef[5];
         }
+
+        return eci;
     }
 
-    static void eciToEcef(double c, double s, double[] eci, double[] ecef) {
+    static double[] eciToEcef(double c, double s, double[] eci, double[] ecef) {
         final double x = eciToEcefX(c, s, eci[0], eci[1]);
         final double y = eciToEcefY(c, s, eci[0], eci[1]);
 
@@ -168,6 +170,8 @@ class EcefEciConverter {
             ecef[4] = v;
             ecef[5] = eci[5];
         }
+
+        return ecef;
     }
 
     static double ecefToEciX(double c, double s, double ecefX, double ecefY) {
