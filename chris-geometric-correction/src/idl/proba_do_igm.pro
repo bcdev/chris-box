@@ -57,7 +57,7 @@ FOR L=0,nLines-1 DO begin
 		LoS_Range[L,C] = min([SQRT(TOTAL((SatPos-tmp[*,0])^2)), SQRT(TOTAL((SatPos-tmp[*,1])^2))], mn_ndx)
 		LoS_TGT[*,L,C] = tmp[*,mn_ndx]
 
-		tmp = eci2ecf(Time[L]+jd0, VL_TGT[X,L,C], VL_TGT[Y,L,C], VL_TGT[Z,L,C])
+		tmp = eci2ecf(Time[L]+jd0, VL_TGT[X,L,C], VL_TGT[Y,L,C], VL_TGT[Z,L,C])   <<<< VL_TGT IS ZERO 
 		LoS_Img[X,L,C]=tmp.X
 		LoS_Img[Y,L,C]=tmp.Y
 		LoS_Img[Z,L,C]=tmp.Z

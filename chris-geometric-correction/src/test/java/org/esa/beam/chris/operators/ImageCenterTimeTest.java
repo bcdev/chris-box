@@ -3,12 +3,13 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
 
 import java.io.InputStream;
+import java.io.IOException;
 
 import junit.framework.TestCase;
 
 public class ImageCenterTimeTest extends TestCase {
 
-    public void testReadImageCenterTimes() {
+    public void testReadImageCenterTimes() throws IOException {
         final InputStream is = ImageCenterTimeTest.class.getResourceAsStream(
                 "Pass2049.Barrax_13350_CHRIS_center_times_20030512_65534");
         
@@ -33,10 +34,10 @@ public class ImageCenterTimeTest extends TestCase {
         ImageCenterTime imageCenterTime = ImageCenterTime.create(ictValues, 13);
 
         assertNotNull(imageCenterTime);
-        assertEquals(2452772.4711724636, imageCenterTime.ict1, 0.000001);
-        assertEquals(2452772.4717422836, imageCenterTime.ict2, 0.000001);
-        assertEquals(2452772.472312103, imageCenterTime.ict3, 0.000001);
-        assertEquals(2452772.4728819225, imageCenterTime.ict4, 0.000001);
-        assertEquals(2452772.4734517424, imageCenterTime.ict5, 0.000001);
+        assertEquals(2452771.9711724636, imageCenterTime.ict1, 1.0E-10);
+        assertEquals(2452771.9717422836, imageCenterTime.ict2, 1.0E-10);
+        assertEquals(2452771.9723121030, imageCenterTime.ict3, 1.0E-10);
+        assertEquals(2452771.9728819225, imageCenterTime.ict4, 1.0E-10);
+        assertEquals(2452771.9734517424, imageCenterTime.ict5, 1.0E-10);
     }
 }

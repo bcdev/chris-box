@@ -30,7 +30,7 @@ public class MultiminTest extends TestCase {
         final double[] x = new double[]{1.0, 1.0, 1.0};
         final double[][] e = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-        final boolean success = Multimin.powell(new TestFunctions.Cigar(), x, e, ACCURACY_GOAL, 200);
+        final boolean success = Multimin.powell(new Functions.Cigar(), x, e, ACCURACY_GOAL, 200);
         assertTrue(success);
 
         assertEquals(0.0, x[0], ACCURACY_GOAL);
@@ -42,7 +42,7 @@ public class MultiminTest extends TestCase {
         final double[] x = new double[]{0.0, 0.0, 0.0};
         final double[][] e = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-        final boolean success = Multimin.powell(new TestFunctions.Rosenbrock(), x, e, ACCURACY_GOAL, 200);
+        final boolean success = Multimin.powell(new Functions.Rosenbrock(), x, e, ACCURACY_GOAL, 200);
         assertTrue(success);
 
         assertEquals(1.0, x[0], ACCURACY_GOAL);

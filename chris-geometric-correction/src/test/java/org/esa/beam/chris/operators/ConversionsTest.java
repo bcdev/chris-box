@@ -16,32 +16,26 @@
  */
 package org.esa.beam.chris.operators;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-public class ConversionsTest extends TestCase {
+public class ConversionsTest {
 
-    public void testToDate() {
+    @Test
+    public void dateToJD() {
         final Date date = Conversions.mjdToDate(41317.0);
         assertEquals(41317.0, Conversions.dateToMJD(date), 0.0);
+
+        final double jd = Conversions.dateToJD(date);
+        assertEquals(41317.0, Conversions.jdToMJD(jd), 0.0);
     }
 
-    public void testToGST() {
-        final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        calendar.clear();
-        calendar.set(2008, 10, 19, 15, 0, 0);
-
-        final double mjd = Conversions.dateToMJD(calendar.getTime());
-        final double gst = Conversions.mjdToGST(mjd);
-
-        // expected result taken from Luis Alonso
-        assertEquals(4.9569015, gst, 1.0E-7);
-    }
-
-    public void testDateToMJD() {
+    @Test
+    public void dateToMJD() {
         final GregorianCalendar epoch1858 = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         epoch1858.clear();
         epoch1858.set(1858, 10, 17, 0, 0, 0);
@@ -55,8 +49,29 @@ public class ConversionsTest extends TestCase {
         assertEquals(51544.0, Conversions.dateToMJD(epoch2000.getTime()), 0.0);
     }
 
-    public void testJulDay() {
-        double julDay0 = Conversions.julianDate(1999, 11, 26);
-        assertEquals(2451539.0, julDay0, 0.0);
+    @Test
+    public void mjdToDate() {
+        final Date date = Conversions.mjdToDate(41317.0);
+        assertEquals(41317.0, Conversions.dateToMJD(date), 0.0);
     }
+
+    @Test
+    public void mjdToGST() {
+        final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        calendar.clear();
+        calendar.set(2008, 10, 19, 15, 0, 0);
+
+        final double mjd = Conversions.dateToMJD(calendar.getTime());
+        final double gst = Conversions.mjdToGST(mjd);
+
+        // expected result taken from Luis Alonso
+        assertEquals(4.9569015, gst, 1.0E-7);
+    }
+
+    @Test
+    public void julianDate() {
+        double julDay0 = Conversions.julianDate(1999, 11, 26);
+        assertEquals(2451538.5, julDay0, 0.0);
+    }
+
 }

@@ -8,7 +8,7 @@ public class EcefEciConverterTest {
 
     @Test
     public void ecefToEci() {
-        // ECEF coordinates corresponding to Hamburger Sternwarte (WGS-84)
+        // ECEF coordinates of the Hamburger Sternwarte (WGS-84)
         // lon = 10.2414° E
         // lat = 53.4800° N
         // alt = 40.0 m

@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 
 public class TheRealThing extends Operator {
     
@@ -59,10 +60,6 @@ public class TheRealThing extends Operator {
     //This way the calculations can be performed more efficiently.
     private static final double jd0 = Conversions.julianDate(2001, 0, 1);
 
-    // Time difference between GPS Time and UT1 (year dependent). In 2009 it will be 14.
-    // It is CRITICAL to substract it to both GPS and ITC data
-    private static final int dTgps = 13; 
-    
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
     private static final double delay=0.999; 
     
@@ -96,8 +93,18 @@ public class TheRealThing extends Operator {
             throw new OperatorException(e);
         }
         double[] lastIctValues = ictReader.getLastIctValues();
-        ImageCenterTime lastImageCenterTime = ImageCenterTime.create(lastIctValues, dTgps);
-        
+        final ImageCenterTime lastImageCenterTime;
+        double dTgps;
+        try {
+            final Date startDate = chrisProduct.getStartTime().getAsDate();
+            final double startMJD = Conversions.dateToMJD(startDate);
+            dTgps = TimeCalculator.getInstance().deltaGPS(startMJD);
+
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        }
+        lastImageCenterTime = ImageCenterTime.create(lastIctValues, dTgps);
+
         // GPS
         GPSReader gpsReader;
         try {

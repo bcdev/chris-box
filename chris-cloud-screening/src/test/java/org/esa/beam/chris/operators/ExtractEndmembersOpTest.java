@@ -19,6 +19,7 @@ import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.jai.BandOpImage;
+import junit.framework.TestCase;
 
 /**
  * Tests for class {@link ExtractEndmembersOp}.
@@ -26,9 +27,9 @@ import org.esa.beam.jai.BandOpImage;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class ExtractEndmembersOpTest {
+public class ExtractEndmembersOpTest extends TestCase {
 
-//    public void testCalculateEndmembers() throws IOException {
+    public void testCalculateEndmembers() {
 //        final double[][] reflectances = {
 //                new double[]{0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
 //                new double[]{0.6, 0.1, 0.2, 0.3, 0.4, 0.5},
@@ -79,7 +80,7 @@ public class ExtractEndmembersOpTest {
 //
 //        final Product targetProduct = op.getTargetProduct();
 ////        assertNotNull(targetProduct);
-//    }
+    }
 
     private static Product createReflectanceProduct(double[][] values) {
         final Product reflectanceProduct = new Product("R", "R", 3, 2);

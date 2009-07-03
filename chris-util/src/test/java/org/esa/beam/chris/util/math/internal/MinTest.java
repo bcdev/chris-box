@@ -28,7 +28,7 @@ public class MinTest extends TestCase {
     private static final double ACCURACY_GOAL = 1.0E-6;
 
     public void testBrackCos() {
-        final Bracket bracket = Min.brack(new TestFunctions.Cos(), 0.0, 0.5, new Bracket());
+        final Bracket bracket = Min.brack(new Functions.Cos(), 0.0, 0.5, new Bracket());
 
         assertTrue(bracket.lowerX < bracket.minimumX);
         assertTrue(bracket.upperX > bracket.minimumX);
@@ -38,7 +38,7 @@ public class MinTest extends TestCase {
     }
 
     public void testBrackSin() {
-        final Bracket bracket = Min.brack(new TestFunctions.Sin(), 0.0, 0.5, new Bracket());
+        final Bracket bracket = Min.brack(new Functions.Sin(), 0.0, 0.5, new Bracket());
 
         assertTrue(bracket.lowerX < bracket.minimumX);
         assertTrue(bracket.upperX > bracket.minimumX);
@@ -48,7 +48,7 @@ public class MinTest extends TestCase {
     }
 
     public void testBrentCos() {
-        final UnivariateFunction function = new TestFunctions.Cos();
+        final UnivariateFunction function = new Functions.Cos();
         final Bracket bracket = new Bracket(2.0, 5.0, function);
 
         final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);
@@ -59,7 +59,7 @@ public class MinTest extends TestCase {
     }
 
     public void testBrentSin() {
-        final UnivariateFunction function = new TestFunctions.Sin();
+        final UnivariateFunction function = new Functions.Sin();
         final Bracket bracket = new Bracket(3.0, 6.0, function);
 
         final Boolean success = Min.brent(function, bracket, ACCURACY_GOAL);

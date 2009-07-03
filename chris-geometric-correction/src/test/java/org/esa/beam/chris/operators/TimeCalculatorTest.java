@@ -40,9 +40,11 @@ public class TimeCalculatorTest {
     @Test
     public void deltaGPS() {
         // 1999-JAN-01
-        assertEquals(32.0 - 19.0, timeCalculator.deltaGPS(51179.0), 0.0);
+        assertEquals(13.0, timeCalculator.deltaGPS(51179.0), 0.0);
         // 2006-JAN-01
-        assertEquals(33.0 - 19.0, timeCalculator.deltaGPS(53736.0), 0.0);
+        assertEquals(14.0, timeCalculator.deltaGPS(53736.0), 0.0);
+        // 2009-JAN-01
+        assertEquals(15.0, timeCalculator.deltaGPS(54832.0), 0.0);
     }
 
     @Test

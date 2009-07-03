@@ -26,7 +26,7 @@ import junit.framework.TestCase;
 public class RootsTest extends TestCase {
 
     public void testBrent() throws Exception {
-        final UnivariateFunction f = new TestFunctions.Cos();
+        final UnivariateFunction f = new Functions.Cos();
         final Roots.Bracket bracket = new Roots.Bracket(0.0, 2.0);
         final boolean success = Roots.brent(f, bracket, 100);
 
@@ -35,7 +35,7 @@ public class RootsTest extends TestCase {
     }
 
     public void testBrentWithRootAtBracketingIntervalLowerLimit() throws Exception {
-        final UnivariateFunction f = new TestFunctions.Sin();
+        final UnivariateFunction f = new Functions.Sin();
         final Roots.Bracket bracket = new Roots.Bracket(0.0, 1.0);
         final boolean success = Roots.brent(f, bracket, 100);
 
@@ -44,7 +44,7 @@ public class RootsTest extends TestCase {
     }
 
     public void testBrentWithRootAtBracketingIntervalUpperLimit() throws Exception {
-        final UnivariateFunction f = new TestFunctions.Sin();
+        final UnivariateFunction f = new Functions.Sin();
         final Roots.Bracket bracket = new Roots.Bracket(-1.0, 0.0);
         final boolean success = Roots.brent(f, bracket, 100);
 
@@ -53,7 +53,7 @@ public class RootsTest extends TestCase {
     }
 
     public void testBrentWithRootNotInBracketingInterval() throws Exception {
-        final UnivariateFunction f = new TestFunctions.Cos();
+        final UnivariateFunction f = new Functions.Cos();
 
         Roots.Bracket bracket;
         bracket = new Roots.Bracket(0.0, 1.0);

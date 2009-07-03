@@ -66,7 +66,7 @@ class GPSTime {
             double velZ = getDouble(record, GPS.VELOZ);
             
             double gpsSec = getDouble(record, GPS.SECONDS) - delay - dTgps;
-            double gpsWeek = getDouble(record, GPS.WEEK);
+            int gpsWeek = getInt(record, GPS.WEEK);
             double jd = gpsTime2datTime(gpsWeek, gpsSec);
             
             GPSTime gpstime = new GPSTime(posX, posY, posZ, velX, velY, velZ, gpsSec, jd);
@@ -76,7 +76,7 @@ class GPSTime {
         
     }
     
-    private static double gpsTime2datTime(double gpsWeek, double gpsSec) {
+    private static double gpsTime2datTime(int gpsWeek, double gpsSec) {
         double gpsDays = gpsSec / Conversions.SECONDS_PER_DAY;
         double jd = GPS_JD_OFFSET + gpsWeek * 7 + gpsDays;
         return jd;
@@ -86,6 +86,10 @@ class GPSTime {
         return Double.parseDouble(record[index.index]);
     }
     
+    private static int getInt(String[] record, GPS index) {
+        return Integer.parseInt(record[index.index]);
+    }
+
     static class GPSReader {
 
         private final List<String[]> records;

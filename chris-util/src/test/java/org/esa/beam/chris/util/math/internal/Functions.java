@@ -21,7 +21,7 @@ package org.esa.beam.chris.util.math.internal;
  * @version $Revision$ $Date$
  * @since BEAM 4.2
  */
-class TestFunctions {
+class Functions {
 
     static class Cos implements UnivariateFunction {
 
