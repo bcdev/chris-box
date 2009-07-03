@@ -23,11 +23,10 @@ import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.GeoPos;
-import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
@@ -35,7 +34,6 @@ import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.util.StringUtils;
 
 import java.awt.Rectangle;
 import java.io.File;
@@ -475,39 +473,12 @@ public class TheRealThing extends Operator {
     
     private void fillInfo() {
         info = new ChrisInfo();
-        
-        MetadataElement root = chrisProduct.getMetadataRoot();
-        if (root == null) {
-            info = null;
-            return;
-        }
-        MetadataElement mph = root.getElement(ChrisConstants.MPH_NAME);
-        if (mph == null) {
-            info = null;
-            return;
-        }
-        info.lat = getMetaDataValueDouble(mph, ChrisConstants.ATTR_NAME_TARGET_LAT);
-        info.lon = getMetaDataValueDouble(mph, ChrisConstants.ATTR_NAME_TARGET_LON);
-        info.alt = getMetaDataValueDouble(mph, ChrisConstants.ATTR_NAME_TARGET_ALT);
-        info.mode = getMetaDataValueInt(mph, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        info.mode = OpUtils.getAnnotationInt(chrisProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        info.lat = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
+        info.lon = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
+        info.alt = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
     }
     
-    private double getMetaDataValueDouble(MetadataElement mph, String name) {
-        String str = mph.getAttributeString(name, null);
-        if (StringUtils.isNotNullAndNotEmpty(str)) {
-            return Double.valueOf(str);
-        }
-        throw new IllegalArgumentException("mph: "+mph.getName()+"; name: "+name);
-    }
-    
-    private int getMetaDataValueInt(MetadataElement mph, String name) {
-        String str = mph.getAttributeString(name, null);
-        if (StringUtils.isNotNullAndNotEmpty(str)) {
-            return Integer.valueOf(str);
-        }
-        throw new IllegalArgumentException("mph: "+mph.getName()+"; name: "+name);
-    }
-
     private double[][] unit(double[][] vec) {
         double[][] result = new double[vec.length][vec[0].length];
         for (int i = 0; i < vec[0].length; i++) {
