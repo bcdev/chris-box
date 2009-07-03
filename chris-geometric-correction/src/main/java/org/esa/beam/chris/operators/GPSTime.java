@@ -33,7 +33,7 @@ import java.util.List;
  */
 class GPSTime {
     
-    private static final double GPS_JD_OFFSET = Conversions.julianDate(1980, 5, 1);
+    private static final double GPS_JD_OFFSET = Conversions.julianDate(1980, 0, 6);
     
     final double posX;
     final double posY;
