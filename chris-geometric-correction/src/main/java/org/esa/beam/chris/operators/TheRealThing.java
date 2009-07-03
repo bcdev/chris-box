@@ -81,6 +81,8 @@ public class TheRealThing extends Operator {
     @SourceProduct
     public Product chrisProduct;
 
+    private double[][][] igm;
+
     ///////////////////////////////////////////////////////////
     @Override
     public void initialize() throws OperatorException {
@@ -450,9 +452,10 @@ public class TheRealThing extends Operator {
                 izSubset[i] = iZ[Tini[img]+i];
                 timeSubset[i] = T[Tini[img]+i];
             }
-            PROBA_DO_IGM(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), uEjePitch, uPitchAng, 
+//            ProbaIgmDoer.doIgmJava(nLines, nCols, FOV, IFOV, uEjePitch, uPitchAng, uEjeRoll, uRollAng, uEjeYaw, TgtAlt, iX, iY, iZ, Time, Mode)
+            igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), uEjePitch, uPitchAng, 
                          uEjeRoll, uRollAng, uEjeYaw, TgtAlt, ixSubset, 
-                         iySubset, izSubset, timeSubset);
+                         iySubset, izSubset, timeSubset, info.mode);
 
             final int width = chrisProduct.getSceneRasterWidth();
             final int height = chrisProduct.getSceneRasterHeight();
@@ -462,17 +465,20 @@ public class TheRealThing extends Operator {
             setTargetProduct(targetProduct);
         }
     }
-    
+
     @Override
-    public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
-        // TODO Auto-generated method stub
-    }
-    
-    private void PROBA_DO_IGM(int lines, int cols, double fov, double ifov, double[][] ejePitch, double[] pitchAng,
-                              double[][] ejeRoll, double[] rollAng, double[][] ejeYaw, double tgtAlt,
-                              double[] ixSubset, double[] iySubset, double[] izSubset, double[] timeSubset) {
-        // TODO Auto-generated method stub
-        
+    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        int index = 0;
+        if (targetBand.getName().equals("geo_lon")) {
+            index = 1;
+        }
+        Rectangle rectangle = targetTile.getRectangle();
+        for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
+            for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
+                targetTile.setSample(x, y, igm[index][y][x]);
+            }
+            checkForCancelation(pm);
+        }
     }
     
     private void fillInfo() {
