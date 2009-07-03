@@ -453,9 +453,12 @@ public class TheRealThing extends Operator {
                          uEjeRoll, uRollAng, uEjeYaw, TgtAlt, ixSubset, 
                          iySubset, izSubset, timeSubset);
 
-            chrisProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
-            chrisProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
-            setTargetProduct(chrisProduct);
+            final int width = chrisProduct.getSceneRasterWidth();
+            final int height = chrisProduct.getSceneRasterHeight();
+            Product targetProduct = new Product("chris_geo_corrected", "", width, height);
+            targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
+            targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
+            setTargetProduct(targetProduct);
         }
     }
     
@@ -529,15 +532,17 @@ public class TheRealThing extends Operator {
     
     public static void main(String[] args) throws IOException {
         
+        File baseDir = new File("/home/marcoz/EOData/Chris/geoc/");
         TheRealThing thing = new TheRealThing();
-        String productFile = "chris.dim";
+        File productFile = new File(baseDir, "CHRIS_AM_080805_A348_41_NR.dim");
         Product sourceProduct = ProductIO.readProduct(productFile, null);
-        thing.setSourceProduct(sourceProduct);
+        thing.chrisProduct = sourceProduct;
         
-        thing.gpsFile = new File("gps_file");
-        thing.ictFile = new File("ict_file");
+        thing.gpsFile = new File(baseDir, "CHRIS_41800_41804_PROBA1_GPS_Data");
+        thing.ictFile = new File(baseDir, "Pass9682.Amazon-River_41800_CHRIS_center_times_20080805_65534");
         Product targetProduct = thing.getTargetProduct();
-        ProductIO.writeProduct(targetProduct, "chris_geo.dim", null);
+        File targetFile = new File(baseDir, "chris_geo_corrected.dim");
+        ProductIO.writeProduct(targetProduct, targetFile.getAbsolutePath(), null);
     }
 
 }
