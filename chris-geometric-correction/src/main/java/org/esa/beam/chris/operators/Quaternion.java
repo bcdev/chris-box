@@ -33,7 +33,7 @@ class Quaternion {
         final double c = Math.cos(alpha);
         final double s = Math.sin(alpha);
 
-        return new Quaternion(c, s * x, s * y, s * z);
+        return new Quaternion(x, y, z, c, s);
     }
 
     /**
@@ -63,7 +63,7 @@ class Quaternion {
 
         final Quaternion[] quaternions = new Quaternion[n];
         for (int i = 0; i < n; i++) {
-            quaternions[i] = new Quaternion(c, s * x[i], s * y[i], s * z[i]);
+            quaternions[i] = new Quaternion(x[i], y[i], z[i], c, s);
         }
 
         return quaternions;
@@ -97,7 +97,7 @@ class Quaternion {
             final double alpha = angles[i] / 2.0;
             final double c = Math.cos(alpha);
             final double s = Math.sin(alpha);
-            quaternions[i] = new Quaternion(c, s * x[i], s * y[i], s * z[i]);
+            quaternions[i] = new Quaternion(x[i], y[i], z[i], c, s);
         }
 
         return quaternions;
@@ -199,11 +199,8 @@ class Quaternion {
     /**
      * Default constructor.
      */
-    public Quaternion() {
-        this.a = 0.0;
-        this.b = 0.0;
-        this.c = 0.0;
-        this.d = 0.0;
+    Quaternion() {
+        this(0.0, 0.0, 0.0, 0.0);
     }
 
     /**
@@ -222,7 +219,7 @@ class Quaternion {
     }
 
     /**
-     * Ccopy constructor.
+     * Copy constructor.
      *
      * @param q the quaternion being copied.
      */
@@ -233,6 +230,28 @@ class Quaternion {
         this.b = q.b;
         this.c = q.c;
         this.d = q.d;
+    }
+
+    /**
+     * Constructs a new unit quaternion.
+     *
+     * @param x the x-component of the rotation axis.
+     * @param y the y-component of the rotation axis.
+     * @param z the z-component of the rotation axis.
+     * @param c the cosine of the rotation angle.
+     * @param s the sine of the rotation angle.
+     */
+    private Quaternion(double x, double y, double z, double c, double s) {
+        final double norm = norm(x, y, z);
+
+        x /= norm;
+        y /= norm;
+        z /= norm;
+
+        this.a = c;
+        this.b = s * x;
+        this.c = s * y;
+        this.d = s * z;
     }
 
     /**
@@ -308,5 +327,35 @@ class Quaternion {
     @Override
     public String toString() {
         return MessageFormat.format("{0} + i * {1} + j * {2} + k * {3}", a, b, c, d);
+    }
+
+    static double norm(double x, double y, double z) {
+        final double xx = x * x;
+        final double yy = y * y;
+        final double zz = z * z;
+
+        double sum = 0.0;
+        // add the two smallest numbers first in order to minimize round-off error
+        if (yy < xx) {
+            sum += yy;
+            if (zz < xx) {
+                sum += zz;
+                sum += xx;
+            } else {
+                sum += xx;
+                sum += zz;
+            }
+        } else {
+            sum += xx;
+            if (zz < yy) {
+                sum += zz;
+                sum += yy;
+            } else {
+                sum += yy;
+                sum += zz;
+            }
+        }
+
+        return Math.sqrt(sum);
     }
 }

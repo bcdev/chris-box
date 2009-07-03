@@ -86,4 +86,14 @@ public class QuaternionTest {
         assertEquals(-0.37175982, v[1], 0.5E-08);
         assertEquals(+0.89879405, v[2], 0.5E-08);
     }
+
+    @Test
+    public void norm() {
+        assertEquals(Math.sqrt(50.0), Quaternion.norm(3.0, 4.0, 5.0), 0.0);
+        assertEquals(Math.sqrt(50.0), Quaternion.norm(4.0, 3.0, 5.0), 0.0);
+        assertEquals(Math.sqrt(50.0), Quaternion.norm(5.0, 4.0, 3.0), 0.0);
+        assertEquals(Math.sqrt(50.0), Quaternion.norm(5.0, 3.0, 4.0), 0.0);
+        assertEquals(Math.sqrt(50.0), Quaternion.norm(4.0, 5.0, 3.0), 0.0);
+        assertEquals(Math.sqrt(50.0), Quaternion.norm(3.0, 5.0, 4.0), 0.0);
+    }
 }
