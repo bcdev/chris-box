@@ -37,13 +37,17 @@ class CoordinateUtils {
      * @return the Angular Velocity for a given 3D trajectory
      */
     static double[] angVel(double[] secs, double[] xeci, double[] yeci, double[] zeci) {
-        double[] av = new double[secs.length - 1];
-        for (int i = 0; i < av.length; i++) {
+        double[] av = new double[secs.length];
+        for (int i = 0; i < (av.length-1); i++) {
             double a = vectAngle(xeci[i], yeci[i], zeci[i], xeci[i+1], yeci[i+1], zeci[i+1]);
             double b = secs[i] - secs[i+1];
             
             av[i] = a / Math.abs(b);
         }
+        double a = vectAngle(xeci[0], yeci[0], zeci[0], xeci[secs.length-1], yeci[secs.length-1], zeci[secs.length-1]);
+        double b = secs[0] - secs[secs.length-1];
+        
+        av[secs.length-1] = a / Math.abs(b);
         return av;
     }
 

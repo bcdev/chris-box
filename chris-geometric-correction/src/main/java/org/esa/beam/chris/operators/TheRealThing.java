@@ -263,9 +263,10 @@ public class TheRealThing extends Operator {
             eciZ[i] = eci[i][Z];
         }
         double[] AngVelRaw = CoordinateUtils.angVel(gpsSecs, eciX, eciY, eciZ);
+        double[] AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
         SimpleSmoother smoother = new SimpleSmoother(5);
-        double[] AngVel = new double[AngVelRaw.length];
-        smoother.smooth(AngVelRaw, AngVel);
+        double[] AngVel = new double[AngVelRawSubset.length];
+        smoother.smooth(AngVelRawSubset, AngVel);
         double[] iAngVel = spline(gps_njd, AngVel, T);
         
         // ==v==v== Initialize Variables ======================================================
@@ -338,9 +339,9 @@ public class TheRealThing extends Operator {
 //            ViewAng[] viewAngs = new ViewAng[mode.getNLines()];
             double[][] viewRange = new double[3][mode.getNLines()];
             for (int i = 0; i < mode.getNLines(); i++) {
-                double TgtX = iTGT[X][Tini[img]+i];
-                double TgtY = iTGT[Y][Tini[img]+i];
-                double TgtZ = iTGT[Z][Tini[img]+i];
+                double TgtX = iTGT[Tini[img]+i][X];
+                double TgtY = iTGT[Tini[img]+i][Y];
+                double TgtZ = iTGT[Tini[img]+i][Z];
                 double SatX = iX[Tini[img]+i];
                 double SatY = iY[Tini[img]+i];
                 double SatZ = iZ[Tini[img]+i];
@@ -455,7 +456,7 @@ public class TheRealThing extends Operator {
 
             final int width = chrisProduct.getSceneRasterWidth();
             final int height = chrisProduct.getSceneRasterHeight();
-            Product targetProduct = new Product("chris_geo_corrected", "", width, height);
+            Product targetProduct = new Product("chris_geo_corrected", "foo", width, height);
             targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
             targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
             setTargetProduct(targetProduct);
@@ -522,7 +523,7 @@ public class TheRealThing extends Operator {
     }
     
     private double[] spline(double[]x, double[] y, double[] t) {
-        double[] v = new double[x.length];
+        double[] v = new double[t.length];
         PolynomialSplineFunction splineFunction = SplineInterpolator.interpolate(x, y);
         for (int i = 0; i < v.length; i++) {
             v[i] = splineFunction.value(t[i]);
