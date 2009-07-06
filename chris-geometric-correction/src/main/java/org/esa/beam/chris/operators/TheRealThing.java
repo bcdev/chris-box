@@ -159,8 +159,8 @@ public class TheRealThing extends Operator {
             T_ini[i] = ict_njd[i] - (mode.getTimg() / 2.0) / Conversions.SECONDS_PER_DAY;
             T_end[i] = ict_njd[i] + (mode.getTimg() / 2.0) / Conversions.SECONDS_PER_DAY;
         }
-        double T_i = ict_njd[0] - 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" start time
-        double T_e = ict_njd[4] + 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
+//        double T_i = ict_njd[0] - 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" start time
+//        double T_e = ict_njd[4] + 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
 
         // Searches the closest values in the telemetry to the Critical Times (just for plotting purposses)
         // skipped
@@ -191,11 +191,11 @@ public class TheRealThing extends Operator {
             }
         }
 
-        double Tobs = T_e - T_i; // Duration of "imaging mode" for each image. (redundant, should be 20s)
-        double[] Tobs2 = new double[T_end.length]; // Duration of actual imaging for each image
-        for (int i = 0; i < Tobs2.length; i++) {
-            Tobs2[i] = T_end[i] - T_ini[i];
-        }
+        //double Tobs = T_e - T_i; // Duration of "imaging mode" for each image. (redundant, should be 20s)
+//        double[] Tobs2 = new double[T_end.length]; // Duration of actual imaging for each image
+//        for (int i = 0; i < Tobs2.length; i++) {
+//            Tobs2[i] = T_end[i] - T_ini[i];
+//        }
 
         // Set the indices of T that correspond to critical times (integration start and stop) for each image
 
@@ -207,7 +207,6 @@ public class TheRealThing extends Operator {
             Tend[i] = Tini[i] + mode.getNLines() - 1;
         }
         final int Tfix = 0; // Index corresponding to the time of fixing the orbit
-        int numT = T.length;
 
 
         // ========================================================================
@@ -285,7 +284,7 @@ public class TheRealThing extends Operator {
 
         // ==v==v== Initialize Variables ======================================================
 
-        double[][][] Range = new double[3][mode.getNLines()][5];
+        //double[][][] Range = new double[3][mode.getNLines()][5];
         double[][][] EjeYaw = new double[3][mode.getNLines()][5];
         double[][][] EjePitch = new double[3][mode.getNLines()][5];
         double[][][] EjeRoll = new double[3][mode.getNLines()][5];
@@ -293,8 +292,8 @@ public class TheRealThing extends Operator {
         double[][][] SL = new double[3][mode.getNLines()][5];
         double[][] PitchAng = new double[mode.getNLines()][5];
         double[][] RollAng = new double[mode.getNLines()][5];
-        double[][][] PitchAngR = new double[mode.getNCols()][mode.getNLines()][5];
-        double[][][] RollAngR = new double[mode.getNCols()][mode.getNLines()][5];
+        //double[][][] PitchAngR = new double[mode.getNCols()][mode.getNLines()][5];
+        //double[][][] RollAngR = new double[mode.getNCols()][mode.getNLines()][5];
         double[][] ObsAngAzi = new double[mode.getNLines()][5];
         double[][] ObsAngZen = new double[mode.getNLines()][5];
 
@@ -410,15 +409,15 @@ public class TheRealThing extends Operator {
 
             // ScanPlane:
             //double[][] uSP = new double[3][mode.getNLines()];
-            double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
+            //double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
 
             // SightLine:
             //double[][] uSL = new double[3][mode.getNLines()];
-            double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
+            //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
 
             // RollSign:
             int[] uRollSign = new int[mode.getNLines()];
-            int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
+            //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
             double[][] uSP = vect_prod(uRange, uEjePitch);
             double[][] uSL = vect_prod(uEjePitch, uSP);
