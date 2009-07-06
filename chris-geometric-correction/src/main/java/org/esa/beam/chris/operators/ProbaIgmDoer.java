@@ -204,14 +204,14 @@ class ProbaIgmDoer {
             }
         }
 
-//      VL_TGT = dblarr(3,nLines,nCols)
-//      VL_Range = dblarr(nLines,nCols)
-//      VL_Img = dblarr(3,nLines,nCols)
+//      LOS_TGT = dblarr(3,nLines,nCols)
+//      LOS_Range = dblarr(nLines,nCols)
+//      LOS_Img = dblarr(3,nLines,nCols)
 //      IGM = fltarr(nCols,nLines,2)
 
-        final double[][][] VL_TGT = new double[nCols][nLines][3];
-        final double[][] VL_Range = new double[nCols][nLines];
-        final double[][][] VL_Img = new double[nCols][nLines][3];
+//        final double[][][] LOS_TGT = new double[nCols][nLines][3];
+        //final double[][] LOS_Range = new double[nCols][nLines];
+        //final double[][][] LOS_Img = new double[nCols][nLines][3];
         final double[][][] IGM = new double[2][nLines][nCols];
 
 //      Sphr_R = [aEarth, aEarth, (1-f)*aEarth]+TgtAlt          ; The geoide surface has an altide equal to the Target's mean altitude (from the metadata).
@@ -222,6 +222,7 @@ class ProbaIgmDoer {
             final double[] SatPos = new double[]{iX[L], iY[L], iZ[L]};
             final double[] center = new double[3];
 
+            final double gst = Conversions.jdToGST(Time[L] + jd0);
             for (int C = 0; C < nCols; C++) {
 //              tmp = Line_Sphr_i(reform(LoS[*,L,C],3), Sphr_R, SatPos)
 //              LoS_Range[L,C] = min([SQRT(TOTAL((SatPos-tmp[*,0])^2)), SQRT(TOTAL((SatPos-tmp[*,1])^2))], mn_ndx)
@@ -229,9 +230,8 @@ class ProbaIgmDoer {
                 final double[] tmp = SatPos.clone();
                 Intersector.intersect(tmp, LoS[C][L], center, Sphr_R);
 
-//              tmp = eci2ecf(Time[L]+jd0, VL_TGT[X,L,C], VL_TGT[Y,L,C], VL_TGT[Z,L,C])
-                final double gst = Conversions.jdToGST(Time[L] + jd0);
-                EcefEciConverter.eciToEcef(gst, VL_TGT[C][L], tmp);
+//              tmp = eci2ecf(Time[L]+jd0, LOS_TGT[X,L,C], LOS_TGT[Y,L,C], LOS_TGT[Z,L,C])
+                EcefEciConverter.eciToEcef(gst, tmp, tmp);
 
 //              LoS_Img[X,L,C]=tmp.X
 //              LoS_Img[Y,L,C]=tmp.Y

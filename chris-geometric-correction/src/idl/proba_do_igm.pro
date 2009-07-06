@@ -42,9 +42,9 @@ FOR L=0,nLines-1 DO begin
 	ENDFOR
 ENDFOR
 
-VL_TGT = dblarr(3,nLines,nCols)
-VL_Range = dblarr(nLines,nCols)
-VL_Img = dblarr(3,nLines,nCols)
+LoS_TGT = dblarr(3,nLines,nCols)
+LoS_Range = dblarr(nLines,nCols)
+LoS_Img = dblarr(3,nLines,nCols)
 IGM = fltarr(nCols,nLines,2)
 
 Sphr_R = [aEarth, aEarth, (1-f)*aEarth]+TgtAlt			; The geoide surface has an altide equal to the Target's mean altitude (from the metadata).
@@ -57,7 +57,7 @@ FOR L=0,nLines-1 DO begin
 		LoS_Range[L,C] = min([SQRT(TOTAL((SatPos-tmp[*,0])^2)), SQRT(TOTAL((SatPos-tmp[*,1])^2))], mn_ndx)
 		LoS_TGT[*,L,C] = tmp[*,mn_ndx]
 
-		tmp = eci2ecf(Time[L]+jd0, VL_TGT[X,L,C], VL_TGT[Y,L,C], VL_TGT[Z,L,C])   <<<< VL_TGT IS ZERO 
+		tmp = eci2ecf(Time[L]+jd0, LoS_TGT[X,L,C], LoS_TGT[Y,L,C], LoS_TGT[Z,L,C])
 		LoS_Img[X,L,C]=tmp.X
 		LoS_Img[Y,L,C]=tmp.Y
 		LoS_Img[Z,L,C]=tmp.Z
