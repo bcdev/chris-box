@@ -51,6 +51,7 @@ public class TheRealThing extends Operator {
         double alt;
         double lat;
         double lon;
+        int imageNumber;
     }
 
     private static final int SlowDown = 5; // Slowdown factor
@@ -299,7 +300,8 @@ public class TheRealThing extends Operator {
 
         // ===== Process each image separately ==========================================
 
-        for (int img = 0; img < 5; img++) {
+//        for (int img = 0; img < 5; img++) {
+            int img = info.imageNumber;
             System.out.println("Initiating calculation for image " + img);
 
             // ==v==v== Find the closest point in the Moving Target to the GCPs ==============
@@ -466,19 +468,18 @@ public class TheRealThing extends Operator {
                 izSubset[i] = iZ[Tini[img] + i];
                 timeSubset[i] = T[Tini[img] + i];
             }
-//            ProbaIgmDoer.doIgmJava(nLines, nCols, FOV, IFOV, uEjePitch, uPitchAng, uEjeRoll, uRollAng, uEjeYaw, TgtAlt, iX, iY, iZ, Time, Mode)
             igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), uEjePitch,
                                          uPitchAng,
                                          uEjeRoll, uRollAng, uEjeYaw, TgtAlt, ixSubset,
                                          iySubset, izSubset, timeSubset, info.mode);
 
-            final int width = chrisProduct.getSceneRasterWidth();
-            final int height = chrisProduct.getSceneRasterHeight();
-            Product targetProduct = new Product("chris_geo_corrected", "foo", width, height);
-            targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
-            targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
-            setTargetProduct(targetProduct);
-        }
+//        }
+        final int width = chrisProduct.getSceneRasterWidth();
+        final int height = chrisProduct.getSceneRasterHeight();
+        Product targetProduct = new Product("chris_geo_corrected", "foo", width, height);
+        targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
+        targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
+        setTargetProduct(targetProduct);
     }
 
     @Override
@@ -502,6 +503,8 @@ public class TheRealThing extends Operator {
         info.lat = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
         info.lon = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
         info.alt = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        String image = OpUtils.getAnnotationString(chrisProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER);
+        info.imageNumber = Integer.valueOf(image.substring(0, 1));
     }
 
     private double[][] unit(double[][] vec) {
