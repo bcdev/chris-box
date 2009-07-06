@@ -99,7 +99,6 @@ public class TheRealThing extends Operator {
             final Date startDate = chrisProduct.getStartTime().getAsDate();
             final double startMJD = Conversions.dateToMJD(startDate);
             dTgps = TimeCalculator.getInstance().deltaGPS(startMJD);
-
         } catch (IOException e) {
             throw new OperatorException(e);
         }
@@ -220,7 +219,13 @@ public class TheRealThing extends Operator {
             // we transform to km in order to keep the values smaller. from now all distances in Km
             double[] ecf = {gpsTime.posX/1000.0, gpsTime.posY/1000.0, gpsTime.posZ/1000.0,
                             gpsTime.velX/1000.0, gpsTime.velY/1000.0, gpsTime.velZ/1000.0};
-            double gst = Conversions.jdToGST(gpsTime.jd);
+            final double dTut1;
+            try {
+                dTut1 = TimeCalculator.getInstance().deltaUT1(gpsTime.jd);
+            } catch (IOException e) {
+                throw new OperatorException(e);
+            }
+            double gst = Conversions.jdToGST(gpsTime.jd + dTut1);
             EcefEciConverter.ecefToEci(gst, ecf, eci[i]);
         }
         

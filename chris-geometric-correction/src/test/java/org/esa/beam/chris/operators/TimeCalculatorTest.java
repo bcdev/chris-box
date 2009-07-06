@@ -79,21 +79,16 @@ public class TimeCalculatorTest {
         assertEquals(-0.1251669, timeCalculator.deltaUT1(48622.0), 0.0);
 
         // 2008-NOV-13
-        // TODO - update time auxiliary data
-        assertEquals(-0.5391982, timeCalculator.deltaUT1(54783.0), 0.0);
+        // NOTE: Failure of this tests usually occurs because newer time data are used for calculation
+        assertEquals(-0.5391980, timeCalculator.deltaUT1(54783.0), 0.0);
 
         // 2008-NOV-13
-        assertEquals(-0.5403142, timeCalculator.deltaUT1(54784.0), 0.0);
+        // NOTE: Failure of this tests usually occurs because newer time data are used for calculation
+        assertEquals(-0.5403143, timeCalculator.deltaUT1(54784.0), 0.0);
 
         // 2009-NOV-21
-        assertEquals(0.1493375, timeCalculator.deltaUT1(55156.0), 0.0);
-
-        try {
-            final double lastPrediction = 55373.0;
-            timeCalculator.deltaUT1(lastPrediction + 1.0);
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
+        // NOTE: Failure of this tests usually occurs because newer time data are used for calculation
+        assertEquals(0.1470921, timeCalculator.deltaUT1(55156.0), 0.0);
     }
 
     @Before

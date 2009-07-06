@@ -2,12 +2,12 @@ package org.esa.beam.chris.operators;
 
 import sun.net.www.protocol.ftp.FtpURLConnection;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -22,7 +22,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class TimeCalculator {
 
-    private static final String PROPERTY_KEY_FETCH_NEWEST_TIME_DATA = "org.esa.beam.chris.fetchNewestTimeData";
+    private static final String PROPERTY_KEY_AUX_DATA_DIR = "org.esa.beam.chris.auxDataDir";
+    private static final String PROPERTY_KEY_FETCH_CURRENT_TIME_DATA = "org.esa.beam.chris.fetchCurrentTimeData";
+    private static final String PROPERTY_KEY_WRITE_CURRENT_TIME_DATA = "org.esa.beam.chris.writeCurrentTimeData";
 
     private static volatile TimeCalculator uniqueInstance;
 
@@ -33,7 +35,6 @@ public class TimeCalculator {
      * consists of leap-seconds only.
      */
     private final ConcurrentNavigableMap<Double, Double> tai;
-
     /**
      * Internal UT1-UTC table.
      */
@@ -88,9 +89,8 @@ public class TimeCalculator {
     public final double deltaTAI(double mjd) {
         if (mjd < tai.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No TAI-UTC data available before {0}.", Conversions.mjdToDate(tai.firstKey())));
+                    MessageFormat.format("No TAI-UTC data available before MJD {0}.", tai.firstKey()));
         }
-        // todo - interpolate? (rq-20090623)
         return tai.floorEntry(mjd).getValue();
     }
 
@@ -106,14 +106,26 @@ public class TimeCalculator {
     public final double deltaUT1(double mjd) {
         if (mjd < ut1.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No UT1-UTC data available before {0}.", Conversions.mjdToDate(ut1.firstKey())));
+                    MessageFormat.format("No UT1-UTC data available before MJD {0}.", ut1.firstKey()));
         }
         if (mjd > ut1.lastKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No UT1-UTC data available after {0}.", Conversions.mjdToDate(ut1.lastKey())));
+                    MessageFormat.format("No UT1-UTC data available after MJD {0}.", ut1.lastKey()));
         }
-        // todo - interpolate? (rq-20090623)
-        return ut1.floorEntry(mjd).getValue();
+
+        return interpolate(mjd, ut1.floorEntry(mjd), ut1.ceilingEntry(mjd));
+    }
+
+    private static double interpolate(double mjd, Map.Entry<Double, Double> floor, Map.Entry<Double, Double> ceiling) {
+        final double floorKey = floor.getKey();
+        final double floorValue = floor.getValue();
+        final double ceilingKey = ceiling.getKey();
+
+        if (floorKey == ceilingKey) {
+            return floorValue;
+        }
+
+        return floorValue + (ceiling.getValue() - floorValue) * ((mjd - floorKey) / (ceilingKey - floorKey));
     }
 
     /**
@@ -168,10 +180,11 @@ public class TimeCalculator {
 
     private static TimeCalculator createInstance() throws IOException {
         final TimeCalculator timeCalculator = new TimeCalculator();
-        readTAI(TimeCalculator.class.getResourceAsStream("leapsec.dat"), timeCalculator.tai);
-        readUT1(TimeCalculator.class.getResourceAsStream("finals.data"), timeCalculator.ut1);
 
-        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_FETCH_NEWEST_TIME_DATA))) {
+        readTAI("leapsec.dat", timeCalculator.tai);
+        readUT1("finals.data", timeCalculator.ut1);
+
+        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_FETCH_CURRENT_TIME_DATA))) {
             try {
                 timeCalculator.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
                 timeCalculator.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
@@ -183,13 +196,38 @@ public class TimeCalculator {
         return timeCalculator;
     }
 
+    private static void readTAI(String name, ConcurrentMap<Double, Double> map) throws IOException {
+        final File finalsFile = getFile(name);
+        if (finalsFile == null) {
+            readTAI(TimeCalculator.class.getResourceAsStream(name), map);
+        } else {
+            readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map);
+        }
+    }
+
     private static void readTAI(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
+        final Writer writer;
+        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_WRITE_CURRENT_TIME_DATA))) {
+            writer = getWriter("leapsec.dat");
+        } else {
+            writer = null;
+        }
+
         try {
             while (scanner.hasNextLine()) {
                 final String line = scanner.nextLine();
+
+                if (writer != null) {
+                    try {
+                        writer.write(line);
+                        writer.write("\n");
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
 
                 final int datePos = line.indexOf("=JD");
                 final int timePos = line.indexOf("TAI-UTC=");
@@ -213,6 +251,22 @@ public class TimeCalculator {
             }
         } finally {
             scanner.close();
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    private static void readUT1(String name, ConcurrentMap<Double, Double> map) throws IOException {
+        final File finalsFile = getFile(name);
+        if (finalsFile == null) {
+            readUT1(TimeCalculator.class.getResourceAsStream(name), map);
+        } else {
+            readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map);
         }
     }
 
@@ -220,9 +274,25 @@ public class TimeCalculator {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
+        final Writer writer;
+        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_WRITE_CURRENT_TIME_DATA))) {
+            writer = getWriter("finals.data");
+        } else {
+            writer = null;
+        }
+
         try {
             while (scanner.hasNextLine()) {
                 final String line = scanner.nextLine();
+
+                if (writer != null) {
+                    try {
+                        writer.write(line);
+                        writer.write("\n");
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
 
                 final String mjdString = line.substring(7, 15);
                 final String utdString = line.substring(58, 68);
@@ -245,6 +315,45 @@ public class TimeCalculator {
             }
         } finally {
             scanner.close();
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
         }
     }
+
+    private static Writer getWriter(String fileName) {
+        final String timeDataDir = System.getProperty(PROPERTY_KEY_AUX_DATA_DIR);
+
+        if (timeDataDir != null) {
+            final File file = new File(timeDataDir, fileName);
+            try {
+                final OutputStream os = new FileOutputStream(file);
+                return new BufferedWriter(new OutputStreamWriter(os, "US-ASCII"));
+            } catch (FileNotFoundException e) {
+                // ignore
+            } catch (UnsupportedEncodingException e) {
+                // ignore
+            }
+        }
+
+        return null;
+    }
+
+    private static File getFile(String fileName) {
+        final String timeDataDir = System.getProperty(PROPERTY_KEY_AUX_DATA_DIR);
+
+        if (timeDataDir != null) {
+            final File file = new File(timeDataDir, fileName);
+            if (file.canRead()) {
+                return file;
+            }
+        }
+
+        return null;
+    }
+
 }
