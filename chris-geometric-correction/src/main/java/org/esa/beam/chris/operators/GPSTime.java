@@ -32,9 +32,9 @@ import java.util.List;
  * @version $Revision$ $Date$
  */
 class GPSTime {
-    
+
     private static final double GPS_JD_OFFSET = Conversions.julianDate(1980, 0, 6);
-    
+
     final double posX;
     final double posY;
     final double posZ;
@@ -43,7 +43,7 @@ class GPSTime {
     final double velZ;
     final double secs;
     final double jd;
-    
+
     GPSTime(double posX, double posY, double posZ, double velX, double velY, double velZ, double secs, double jd) {
         this.posX = posX;
         this.posY = posY;
@@ -54,8 +54,8 @@ class GPSTime {
         this.secs = secs;
         this.jd = jd;
     }
-    
-    static List<GPSTime> create(List<String[]> records, double dTgps, double delay) {
+
+    static List<GPSTime> create(List<String[]> records, double dTgps, double delay) throws IOException {
         List<GPSTime> gpsTimes = new ArrayList<GPSTime>(records.size());
         for (String[] record : records) {
             double posX = getDouble(record, GPS.POSX);
@@ -64,28 +64,28 @@ class GPSTime {
             double velX = getDouble(record, GPS.VELOX);
             double velY = getDouble(record, GPS.VELOY);
             double velZ = getDouble(record, GPS.VELOZ);
-            
+
             double gpsSec = getDouble(record, GPS.SECONDS) - delay - dTgps;
             int gpsWeek = getInt(record, GPS.WEEK);
-            double jd = gpsTime2datTime(gpsWeek, gpsSec);
-            
+            double jd = gpsTimeToJD(gpsWeek, gpsSec);
+
             GPSTime gpstime = new GPSTime(posX, posY, posZ, velX, velY, velZ, gpsSec, jd);
             gpsTimes.add(gpstime);
         }
         return gpsTimes;
-        
+
     }
-    
-    private static double gpsTime2datTime(int gpsWeek, double gpsSec) {
+
+    private static double gpsTimeToJD(int gpsWeek, double gpsSec) throws IOException {
         double gpsDays = gpsSec / Conversions.SECONDS_PER_DAY;
-        double jd = GPS_JD_OFFSET + gpsWeek * 7 + gpsDays;
-        return jd;
+        final double utcJD = GPS_JD_OFFSET + gpsWeek * 7 + gpsDays;
+        return getUT1(utcJD);
     }
 
     private static double getDouble(String[] record, GPS index) {
         return Double.parseDouble(record[index.index]);
     }
-    
+
     private static int getInt(String[] record, GPS index) {
         return Integer.parseInt(record[index.index]);
     }
@@ -129,7 +129,7 @@ class GPSTime {
             return records;
         }
     }
-    
+
     private enum GPS {
 
         TIME(0),
@@ -157,4 +157,9 @@ class GPSTime {
             this.index = index;
         }
     }
+
+    private static double getUT1(double jd) throws IOException {
+        return jd + TimeCalculator.getInstance().deltaUT1(Conversions.jdToMJD(jd));
+    }
+
 }

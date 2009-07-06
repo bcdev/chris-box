@@ -34,10 +34,15 @@ public class ImageCenterTimeTest extends TestCase {
         ImageCenterTime imageCenterTime = ImageCenterTime.create(ictValues, 13);
 
         assertNotNull(imageCenterTime);
-        assertEquals(2452771.9711724636, imageCenterTime.ict1, 1.0E-10);
-        assertEquals(2452771.9717422836, imageCenterTime.ict2, 1.0E-10);
-        assertEquals(2452771.9723121030, imageCenterTime.ict3, 1.0E-10);
-        assertEquals(2452771.9728819225, imageCenterTime.ict4, 1.0E-10);
-        assertEquals(2452771.9734517424, imageCenterTime.ict5, 1.0E-10);
+        assertEquals(getUT1(2452771.9711724636), imageCenterTime.ict1, 1.0E-10);
+        assertEquals(getUT1(2452771.9717422836), imageCenterTime.ict2, 1.0E-10);
+        assertEquals(getUT1(2452771.9723121030), imageCenterTime.ict3, 1.0E-10);
+        assertEquals(getUT1(2452771.9728819225), imageCenterTime.ict4, 1.0E-10);
+        assertEquals(getUT1(2452771.9734517424), imageCenterTime.ict5, 1.0E-10);
     }
+
+    private static double getUT1(double jd) throws IOException {
+        return jd + TimeCalculator.getInstance().deltaUT1(Conversions.jdToMJD(jd));
+    }
+
 }

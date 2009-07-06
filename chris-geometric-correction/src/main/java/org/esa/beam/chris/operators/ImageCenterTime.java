@@ -52,12 +52,12 @@ class ImageCenterTime {
         this.ict5 = ict5;
     }
 
-    static ImageCenterTime create(double[] ictValues, double dTgps) {
-        double ict1 = (ictValues[0] - dTgps) / DAY_SEC + JD0;
-        double ict2 = (ictValues[1] - dTgps) / DAY_SEC + JD0;
-        double ict3 = (ictValues[2] - dTgps) / DAY_SEC + JD0;
-        double ict4 = (ictValues[3] - dTgps) / DAY_SEC + JD0;
-        double ict5 = (ictValues[4] - dTgps) / DAY_SEC + JD0;
+    static ImageCenterTime create(double[] ictValues, double dTgps) throws IOException {
+        double ict1 = getUT1((ictValues[0] - dTgps) / DAY_SEC + JD0);
+        double ict2 = getUT1((ictValues[1] - dTgps) / DAY_SEC + JD0);
+        double ict3 = getUT1((ictValues[2] - dTgps) / DAY_SEC + JD0);
+        double ict4 = getUT1((ictValues[3] - dTgps) / DAY_SEC + JD0);
+        double ict5 = getUT1((ictValues[4] - dTgps) / DAY_SEC + JD0);
         return new ImageCenterTime(ict1, ict2, ict3, ict4, ict5);
     }
 
@@ -136,4 +136,9 @@ class ImageCenterTime {
             this.index = index;
         }
     }
+
+    private static double getUT1(double jd) throws IOException {
+        return jd + TimeCalculator.getInstance().deltaUT1(Conversions.jdToMJD(jd));
+    }
+
 }

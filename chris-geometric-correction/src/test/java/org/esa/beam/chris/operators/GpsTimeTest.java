@@ -19,6 +19,7 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 
 import java.io.InputStream;
+import java.io.IOException;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -26,7 +27,7 @@ import junit.framework.TestCase;
 
 public class GpsTimeTest extends TestCase {
 
-    public void testReadGPSTimes() {
+    public void testReadGPSTimes() throws IOException {
         final InputStream is = GpsTimeTest.class.getResourceAsStream(
                 "CHRIS_13350_13354_PROBA1_GPS_Data.txt");
         
@@ -41,7 +42,12 @@ public class GpsTimeTest extends TestCase {
         
         GPSTime gpsTime = gpsTimeList.get(0);
         assertNotNull(gpsTime);
-        assertEquals(2452771.965436449, gpsTime.jd, 0.000001);
+        assertEquals(getUT1(2452771.965436449), gpsTime.jd, 0.000001);
         
     }
+
+    private static double getUT1(double jd) throws IOException {
+        return jd + TimeCalculator.getInstance().deltaUT1(Conversions.jdToMJD(jd));
+    }
+
 }
