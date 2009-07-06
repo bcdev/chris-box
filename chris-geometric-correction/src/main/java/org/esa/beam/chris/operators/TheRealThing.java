@@ -242,7 +242,7 @@ public class TheRealThing extends Operator {
 
         double[] iR = new double[numGPS];
         for (int i = 0; i < iR.length; i++) {
-            iR[i] = Math.sqrt(Math.pow(iX[i], 2) + Math.pow(iY[i], 2) + Math.pow(iZ[i], 2));
+            iR[i] = Math.sqrt(iX[i] * iX[i] + iY[i] * iY[i] + iZ[i] * iZ[i]);
         }
 
         // ==v==v== Get Orbital Plane Vector ==================================================
