@@ -504,7 +504,7 @@ public class TheRealThing extends Operator {
         info.lon = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
         info.alt = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
         String image = OpUtils.getAnnotationString(chrisProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER);
-        info.imageNumber = Integer.valueOf(image.substring(0, 1));
+        info.imageNumber = Integer.valueOf(image.substring(0, 1)) - 1;
     }
 
     private double[][] unit(double[][] vec) {
