@@ -17,6 +17,8 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
+
+import org.esa.beam.chris.operators.AuxDataFinder.TelemetryFiles;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
@@ -573,15 +575,20 @@ public class TheRealThing extends Operator {
     public static void main(String[] args) throws IOException {
 
         File baseDir = new File("/home/marcoz/EOData/Chris/geoc/");
-        TheRealThing thing = new TheRealThing();
         File productFile = new File(baseDir, "CHRIS_AM_080805_A348_41_NR.dim");
+        doCorrectFile(productFile);
+    }
+    
+    public static void doCorrectFile(File productFile) throws IOException {
+        File baseDir = productFile.getParentFile();
+        TheRealThing thing = new TheRealThing();
         Product sourceProduct = ProductIO.readProduct(productFile, null);
         thing.chrisProduct = sourceProduct;
-
-        thing.gpsFile = new File(baseDir, "CHRIS_41800_41804_PROBA1_GPS_Data");
-        thing.ictFile = new File(baseDir, "Pass9682.Amazon-River_41800_CHRIS_center_times_20080805_65534");
+        TelemetryFiles telemetryFiles = AuxDataFinder.findTelemetryFiles(sourceProduct, baseDir, baseDir);
+        thing.gpsFile = telemetryFiles.gpsFile;
+        thing.ictFile = telemetryFiles.telemetryFile;
         Product targetProduct = thing.getTargetProduct();
-        File targetFile = new File(baseDir, "chris_geo_corrected.dim");
+        File targetFile = new File(baseDir, sourceProduct.getName()+"_GEOCOR.dim");
         ProductIO.writeProduct(targetProduct, targetFile.getAbsolutePath(), null);
     }
 
