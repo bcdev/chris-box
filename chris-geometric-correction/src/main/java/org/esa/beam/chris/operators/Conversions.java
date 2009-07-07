@@ -12,9 +12,9 @@ import java.util.TimeZone;
 class Conversions {
 
     /**
-     * Major radius of WGS-84 ellipsoid (m).
+     * Major radius of WGS-84 ellipsoid (km).
      */
-    private static final double WGS84_A = 6378137.0;
+    private static final double WGS84_A = 6378.137;
     /**
      * Flattening of WGS-84 ellipsoid.
      */
