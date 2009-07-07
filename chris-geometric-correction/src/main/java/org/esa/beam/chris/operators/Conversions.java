@@ -233,8 +233,16 @@ class Conversions {
             LATgdt = 0.0;
             ALTgdt = R - WGS84_A;
         }
+        double lonDeg = Math.toDegrees(LONgdt);
+        if (lonDeg > 180) {
+            lonDeg -= 360;
+        }
+        double latDeg = Math.toDegrees(LATgdt);
+        if (latDeg > 90) {
+            latDeg -= 180;
+        }
 
-        return new Point2D.Double(Math.toDegrees(LONgdt), Math.toDegrees(LATgdt));
+        return new Point2D.Double(lonDeg, latDeg);
     }
 
     /**
