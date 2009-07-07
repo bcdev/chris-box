@@ -446,11 +446,10 @@ public class TheRealThing extends Operator {
             double[] uPitchAng = new double[mode.getNLines()];
             double[] uRollAng = new double[mode.getNLines()];
             for (int i = 0; i < mode.getNLines(); i++) {
-                uPitchAng[i] = Math.PI / 2 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i], uEjeYaw[X][i],
-                                                                       uEjeYaw[Y][i], uEjeYaw[Z][i]);
-                uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSP[Z][i], uRange[X][i],
-                                                                       uRange[Y][i], uRange[Z][i]);
-
+                uPitchAng[i] = Math.PI / 2 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
+                                                                       uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
+                uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSL[Z][i],
+                                                                       uRange[X][i], uRange[Y][i], uRange[Z][i]);
                 // Stores the results for each image
                 PitchAng[i][img] = uPitchAng[i];
                 RollAng[i][img] = uRollAng[i];
