@@ -395,7 +395,7 @@ public class TheRealThing extends Operator {
             }
 
             double[][] uEjePitch = new double[3][mode.getNLines()];
-            for (int i = 0; i < uEjePitch.length; i++) {
+            for (int i = 0; i < mode.getNLines(); i++) {
                 EjePitch[X][i][img] = uEjePitch[X][i] = uWop[X][Tini[img] + i];
                 EjePitch[Y][i][img] = uEjePitch[Y][i] = uWop[Y][Tini[img] + i];
                 EjePitch[Z][i][img] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
