@@ -138,7 +138,7 @@ class ImageCenterTime {
     }
 
     private static double getUT1(double jd) throws IOException {
-        return jd + TimeCalculator.getInstance().deltaUT1(Conversions.jdToMJD(jd));
+        return jd + TimeCalculator.getInstance().deltaUT1(Conversions.jdToMJD(jd)) / Conversions.SECONDS_PER_DAY;
     }
 
 }
