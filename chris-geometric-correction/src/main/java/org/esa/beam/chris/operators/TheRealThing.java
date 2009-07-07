@@ -67,6 +67,8 @@ public class TheRealThing extends Operator {
     private static final int X = 0;
     private static final int Y = 1;
     private static final int Z = 2;
+    
+    private static final int NUM_IMG = 5;
 
 
     public ChrisInfo info;
@@ -137,7 +139,7 @@ public class TheRealThing extends Operator {
                 acquisitionSetupTime
         };
 
-        double[] T_ict = Arrays.copyOfRange(ict_njd, 0, 5);
+        double[] T_ict = Arrays.copyOfRange(ict_njd, 0, NUM_IMG);
 
         //---- Nos quedamos con todos los elementos de GPS menos el ultimo ----------------
         //----   ya q es donde se almacena la AngVel media, y perder un dato --------------
@@ -146,7 +148,7 @@ public class TheRealThing extends Operator {
         // We are left with all elements but the last GPS
         // and q is where stores AngVel half, and losing data
         // GPS is not a problem.
-        int numGPS = gps.size() - 2;
+        final int numGPS = gps.size() - 2;
         double[] gps_njd = new double[numGPS];
         for (int i = 0; i < gps_njd.length; i++) {
             gps_njd[i] = gps.get(i).jd - jd0;
@@ -154,8 +156,8 @@ public class TheRealThing extends Operator {
 
         // ---- Critical Times ---------------------------------------------
 
-        double[] T_ini = new double[5]; // imaging start time (imaging lasts ~9.5s in every mode)
-        double[] T_end = new double[5]; // imaging stop time
+        double[] T_ini = new double[NUM_IMG]; // imaging start time (imaging lasts ~9.5s in every mode)
+        double[] T_end = new double[NUM_IMG]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
             T_ini[i] = ict_njd[i] - (mode.getTimg() / 2.0) / Conversions.SECONDS_PER_DAY;
             T_end[i] = ict_njd[i] + (mode.getTimg() / 2.0) / Conversions.SECONDS_PER_DAY;
@@ -170,24 +172,24 @@ public class TheRealThing extends Operator {
 
         // Time elapsed since imaging start at each image line
         double[] T_lin = new double[mode.getNLines()];
-        for (int i = 0; i < T_lin.length; i++) {
-            T_lin[i] = (i * mode.getDt() + mode.getTpl() / 2) / Conversions.SECONDS_PER_DAY;
+        for (int line = 0; line < T_lin.length; line++) {
+            T_lin[line] = (line * mode.getDt() + mode.getTpl() / 2) / Conversions.SECONDS_PER_DAY;
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
 
-        double[][] T_img = new double[mode.getNLines()][5];
-        for (int j = 0; j < mode.getNLines(); j++) {
-            for (int i = 0; i < 5; i++) {
-                T_img[j][i] = T_ini[i] + T_lin[j];
+        double[][] T_img = new double[mode.getNLines()][NUM_IMG];
+        for (int line = 0; line < mode.getNLines(); line++) {
+            for (int img = 0; img < NUM_IMG; img++) {
+                T_img[line][img] = T_ini[img] + T_lin[line];
             }
         }
 
-        double[] T = new double[1 + 5 * mode.getNLines()];
+        double[] T = new double[1 + NUM_IMG * mode.getNLines()];
         T[0] = ict_njd[5];
         int Tindex = 1;
-        for (int img = 0; img < 5; img++) {
-            for (int j = 0; j < mode.getNLines(); j++) {
-                T[Tindex] = T_img[j][img];
+        for (int img = 0; img < NUM_IMG; img++) {
+            for (int line = 0; line < mode.getNLines(); line++) {
+                T[Tindex] = T_img[line][img];
                 Tindex++;
             }
         }
@@ -201,11 +203,11 @@ public class TheRealThing extends Operator {
         // Set the indices of T that correspond to critical times (integration start and stop) for each image
 
         // The first element of T corresponds to the acquisition-setup time, so Tini[0] must skip element 0 of T
-        int[] Tini = new int[5];
-        int[] Tend = new int[5];
-        for (int i = 0; i < Tini.length; i++) {
-            Tini[i] = mode.getNLines() * i + 1;
-            Tend[i] = Tini[i] + mode.getNLines() - 1;
+        int[] Tini = new int[NUM_IMG];
+        int[] Tend = new int[NUM_IMG];
+        for (int img = 0; img < NUM_IMG; img++) {
+            Tini[img] = mode.getNLines() * img + 1;
+            Tend[img] = Tini[img] + mode.getNLines() - 1;
         }
         final int Tfix = 0; // Index corresponding to the time of fixing the orbit
 
@@ -285,22 +287,22 @@ public class TheRealThing extends Operator {
 
         // ==v==v== Initialize Variables ======================================================
 
-        //double[][][] Range = new double[3][mode.getNLines()][5];
-        double[][][] EjeYaw = new double[3][mode.getNLines()][5];
-        double[][][] EjePitch = new double[3][mode.getNLines()][5];
-        double[][][] EjeRoll = new double[3][mode.getNLines()][5];
-        double[][][] SP = new double[3][mode.getNLines()][5];
-        double[][][] SL = new double[3][mode.getNLines()][5];
-        double[][] PitchAng = new double[mode.getNLines()][5];
-        double[][] RollAng = new double[mode.getNLines()][5];
-        //double[][][] PitchAngR = new double[mode.getNCols()][mode.getNLines()][5];
-        //double[][][] RollAngR = new double[mode.getNCols()][mode.getNLines()][5];
-        double[][] ObsAngAzi = new double[mode.getNLines()][5];
-        double[][] ObsAngZen = new double[mode.getNLines()][5];
+        //double[][][] Range = new double[3][mode.getNLines()][NUM_IMG];
+        double[][][] EjeYaw = new double[3][mode.getNLines()][NUM_IMG];
+        double[][][] EjePitch = new double[3][mode.getNLines()][NUM_IMG];
+        double[][][] EjeRoll = new double[3][mode.getNLines()][NUM_IMG];
+        double[][][] SP = new double[3][mode.getNLines()][NUM_IMG];
+        double[][][] SL = new double[3][mode.getNLines()][NUM_IMG];
+        double[][] PitchAng = new double[mode.getNLines()][NUM_IMG];
+        double[][] RollAng = new double[mode.getNLines()][NUM_IMG];
+        //double[][][] PitchAngR = new double[mode.getNCols()][mode.getNLines()][NUM_IMG];
+        //double[][][] RollAngR = new double[mode.getNCols()][mode.getNLines()][NUM_IMG];
+        double[][] ObsAngAzi = new double[mode.getNLines()][NUM_IMG];
+        double[][] ObsAngZen = new double[mode.getNLines()][NUM_IMG];
 
         // ===== Process each image separately ==========================================
 
-//        for (int img = 0; img < 5; img++) {
+//        for (int img = 0; img < NUM_IMG; img++) {
             int img = info.imageNumber;
             System.out.println("Initiating calculation for image " + img);
 
