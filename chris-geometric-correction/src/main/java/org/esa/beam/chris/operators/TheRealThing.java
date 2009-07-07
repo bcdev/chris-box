@@ -127,13 +127,14 @@ public class TheRealThing extends Operator {
         //////////////////////////
 
         // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
+        final double acquisitionSetupTime = lastImageCenterTime.ict1 - (10.0 + 390.0) / Conversions.SECONDS_PER_DAY - jd0;
         double[] ict_njd = {
                 lastImageCenterTime.ict1 - jd0,
                 lastImageCenterTime.ict2 - jd0,
                 lastImageCenterTime.ict3 - jd0,
                 lastImageCenterTime.ict4 - jd0,
                 lastImageCenterTime.ict5 - jd0,
-                lastImageCenterTime.ict1 - (10.0 + 390.0) / Conversions.SECONDS_PER_DAY - jd0
+                acquisitionSetupTime
         };
 
         double[] T_ict = Arrays.copyOfRange(ict_njd, 0, 5);
