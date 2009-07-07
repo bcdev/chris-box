@@ -112,7 +112,7 @@ class CoordinateUtils {
         double cos_lat = Math.cos(Math.toRadians(gdt.getY()));
         
         double sin_theta = TgtY / Math.sqrt(pow2(TgtX) + pow2(TgtY));
-        double cos_theta = TgtX / Math.sqrt(pow2(TgtX)+pow2(TgtY));
+        double cos_theta = TgtX / Math.sqrt(pow2(TgtX) + pow2(TgtY));
         
         double top_s = sin_lat * cos_theta * RangX + sin_lat * sin_theta * RangY - cos_lat * RangZ;
         double top_e = -sin_theta * RangX + cos_theta * RangY;
