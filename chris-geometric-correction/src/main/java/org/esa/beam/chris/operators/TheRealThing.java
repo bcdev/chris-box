@@ -185,9 +185,9 @@ public class TheRealThing extends Operator {
         double[] T = new double[1 + 5 * mode.getNLines()];
         T[0] = ict_njd[5];
         int Tindex = 1;
-        for (int j = 0; j < mode.getNLines(); j++) {
-            for (int i = 0; i < 5; i++) {
-                T[Tindex] = T_img[j][i];
+        for (int img = 0; img < 5; img++) {
+            for (int j = 0; j < mode.getNLines(); j++) {
+                T[Tindex] = T_img[j][img];
                 Tindex++;
             }
         }
@@ -241,7 +241,7 @@ public class TheRealThing extends Operator {
         double[] iVY = spline(gps_njd, get2ndDim(eci, 4, numGPS), T);
         double[] iVZ = spline(gps_njd, get2ndDim(eci, 5, numGPS), T);
 
-        double[] iR = new double[numGPS];
+        double[] iR = new double[T.length];
         for (int i = 0; i < iR.length; i++) {
             iR[i] = Math.sqrt(iX[i] * iX[i] + iY[i] * iY[i] + iZ[i] * iZ[i]);
         }
