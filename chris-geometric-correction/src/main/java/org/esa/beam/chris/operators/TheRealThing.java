@@ -26,6 +26,7 @@ import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.PixelGeoCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
@@ -33,6 +34,7 @@ import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
+import org.esa.beam.util.ProductUtils;
 
 import java.awt.Rectangle;
 import java.io.File;
@@ -478,9 +480,21 @@ public class TheRealThing extends Operator {
         final int width = chrisProduct.getSceneRasterWidth();
         final int height = chrisProduct.getSceneRasterHeight();
         Product targetProduct = new Product("chris_geo_corrected", "foo", width, height);
-        targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
-        targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
+        Band latBand = targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
+        Band lonBand = targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
+        String[] bandNames = chrisProduct.getBandNames();
+        for (String bandName : bandNames) {
+            Band targetBand = ProductUtils.copyBand(bandName, chrisProduct, targetProduct);
+            targetBand.setSourceImage(chrisProduct.getBand(bandName).getSourceImage());
+        }
         setTargetProduct(targetProduct);
+//        try {
+//            PixelGeoCoding pixelGeoCoding = new PixelGeoCoding(latBand, lonBand, null, 5, ProgressMonitor.NULL);
+//            targetProduct.setGeoCoding(pixelGeoCoding);
+//        } catch (IOException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
     }
 
     @Override
