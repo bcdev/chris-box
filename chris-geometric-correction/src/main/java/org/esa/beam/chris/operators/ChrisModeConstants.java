@@ -79,7 +79,7 @@ class ChrisModeConstants {
      * Instant Field of View [rad]
      */
     double getIfov() {
-        return fov / ftt;
+        return fov / nCols;
     }
     
     /**
