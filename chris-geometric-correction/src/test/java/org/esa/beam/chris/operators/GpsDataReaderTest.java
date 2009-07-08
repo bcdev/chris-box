@@ -16,8 +16,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.GPSTime.GPSReader;
-
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.List;
@@ -25,24 +23,24 @@ import java.util.List;
 import junit.framework.TestCase;
 
 
-public class GpsTimeTest extends TestCase {
+public class GpsDataReaderTest extends TestCase {
 
     public void testReadGPSTimes() throws IOException {
-        final InputStream is = GpsTimeTest.class.getResourceAsStream(
+        final InputStream is = GpsDataReaderTest.class.getResourceAsStream(
                 "CHRIS_13350_13354_PROBA1_GPS_Data.txt");
         
-        GPSReader reader = new GPSTime.GPSReader(is);
+        GpsDataRecord.GpsDataReader reader = new GpsDataRecord.GpsDataReader(is);
         List<String[]> readRecords = reader.getReadRecords();
         assertNotNull(readRecords);
         assertEquals(183, readRecords.size());
         
-        List<GPSTime> gpsTimeList = GPSTime.create(readRecords, 0, 0);
-        assertNotNull(gpsTimeList);
-        assertEquals(183, gpsTimeList.size());
+        List<GpsDataRecord> gpsDataRecordList = GpsDataRecord.create(readRecords, 0, 0);
+        assertNotNull(gpsDataRecordList);
+        assertEquals(183, gpsDataRecordList.size());
         
-        GPSTime gpsTime = gpsTimeList.get(0);
-        assertNotNull(gpsTime);
-        assertEquals(getUT1(2452771.965436449), gpsTime.jd, 0.000001);
+        GpsDataRecord gpsDataRecord = gpsDataRecordList.get(0);
+        assertNotNull(gpsDataRecord);
+        assertEquals(getUT1(2452771.965436449), gpsDataRecord.jd, 0.000001);
         
     }
 

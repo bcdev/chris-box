@@ -31,7 +31,7 @@ import java.util.List;
  * @author Marco Zuehlke
  * @version $Revision$ $Date$
  */
-class GPSTime {
+class GpsDataRecord {
 
     private static final double GPS_JD_OFFSET = TimeConverter.julianDate(1980, 0, 6);
 
@@ -44,7 +44,8 @@ class GPSTime {
     final double secs;
     final double jd;
 
-    GPSTime(double posX, double posY, double posZ, double velX, double velY, double velZ, double secs, double jd) {
+    GpsDataRecord(double posX, double posY, double posZ, double velX, double velY, double velZ, double secs,
+                  double jd) {
         this.posX = posX;
         this.posY = posY;
         this.posZ = posZ;
@@ -55,8 +56,8 @@ class GPSTime {
         this.jd = jd;
     }
 
-    static List<GPSTime> create(List<String[]> records, double dTgps, double delay) throws IOException {
-        List<GPSTime> gpsTimes = new ArrayList<GPSTime>(records.size());
+    static List<GpsDataRecord> create(List<String[]> records, double dTgps, double delay) throws IOException {
+        List<GpsDataRecord> gpsDataRecords = new ArrayList<GpsDataRecord>(records.size());
         for (String[] record : records) {
             double posX = getDouble(record, GPS.POSX);
             double posY = getDouble(record, GPS.POSY);
@@ -69,10 +70,10 @@ class GPSTime {
             int gpsWeek = getInt(record, GPS.WEEK);
             double jd = gpsTimeToJD(gpsWeek, gpsSec);
 
-            GPSTime gpstime = new GPSTime(posX, posY, posZ, velX, velY, velZ, gpsSec, jd);
-            gpsTimes.add(gpstime);
+            GpsDataRecord gpstime = new GpsDataRecord(posX, posY, posZ, velX, velY, velZ, gpsSec, jd);
+            gpsDataRecords.add(gpstime);
         }
-        return gpsTimes;
+        return gpsDataRecords;
 
     }
 
@@ -90,11 +91,11 @@ class GPSTime {
         return Integer.parseInt(record[index.index]);
     }
 
-    static class GPSReader {
+    static class GpsDataReader {
 
         private final List<String[]> records;
 
-        GPSReader(InputStream is) {
+        GpsDataReader(InputStream is) {
             Reader reader = new InputStreamReader(is);
             char[] separators = new char[]{'\t'};
             CsvReader csvReader = new CsvReader(reader, separators, true, "TIME");

@@ -18,8 +18,7 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
-import org.esa.beam.chris.operators.GPSTime.GPSReader;
-import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
+import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
@@ -42,8 +41,8 @@ import org.esa.beam.util.ProductUtils;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -68,7 +67,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
     //This way the calculations can be performed more efficiently.
-    private static final double jd0 = TimeConverter.julianDate(2001, 0, 1);
+    private static final double JD0 = TimeConverter.julianDate(2001, 0, 1);
 
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
     private static final double DELAY = 0.999;
@@ -97,57 +96,29 @@ public class PerformGeometricCorrectionOp extends Operator {
     public void initialize() throws OperatorException {
         final Telemetry telemetry = getTelemetry();
         final Info info = createInfo();
-
-        // ICT
-        ITCReader ictReader;
-        try {
-            ictReader = new ImageCenterTime.ITCReader(new FileInputStream(telemetry.getIctFile()));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            throw new OperatorException(e);
-        }
-        double[] lastIctValues = ictReader.getLastIctValues();
-        final ImageCenterTime lastImageCenterTime;
         final double dTgps = getDeltaGPS(sourceProduct);
-        try {
-            lastImageCenterTime = ImageCenterTime.create(lastIctValues, dTgps);
-        } catch (IOException e) {
-            throw new OperatorException(e);
-        }
 
-        // GPS
-        GPSReader gpsReader;
-        try {
-            gpsReader = new GPSTime.GPSReader(new FileInputStream(telemetry.getGpsFile()));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            throw new OperatorException(e);
-        }
-        List<String[]> gpsRecords = gpsReader.getReadRecords();
-        List<GPSTime> gps;
-        try {
-            gps = GPSTime.create(gpsRecords, dTgps, DELAY);
-        } catch (IOException e) {
-            throw new OperatorException(e);
-        }
+        final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
+        final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
+
 
         // GCP
         // TODO
 
-        ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
+        final ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
 
         //////////////////////////
         // Prepare Time Frames
         //////////////////////////
 
         // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
-        final double acquisitionSetupTime = lastImageCenterTime.ict1 - (10.0 + 390.0) / TimeConverter.SECONDS_PER_DAY - jd0;
+        final double acquisitionSetupTime = ictData.ict1 - (10.0 + 390.0) / TimeConverter.SECONDS_PER_DAY - JD0;
         double[] ict_njd = {
-                lastImageCenterTime.ict1 - jd0,
-                lastImageCenterTime.ict2 - jd0,
-                lastImageCenterTime.ict3 - jd0,
-                lastImageCenterTime.ict4 - jd0,
-                lastImageCenterTime.ict5 - jd0,
+                ictData.ict1 - JD0,
+                ictData.ict2 - JD0,
+                ictData.ict3 - JD0,
+                ictData.ict4 - JD0,
+                ictData.ict5 - JD0,
                 acquisitionSetupTime
         };
 
@@ -160,10 +131,10 @@ public class PerformGeometricCorrectionOp extends Operator {
         // We are left with all elements but the last GPS
         // and q is where stores AngVel half, and losing data
         // GPS is not a problem.
-        final int numGPS = gps.size() - 2;
+        final int numGPS = gpsData.size() - 2;
         double[] gps_njd = new double[numGPS];
         for (int i = 0; i < gps_njd.length; i++) {
-            gps_njd[i] = gps.get(i).jd - jd0;
+            gps_njd[i] = gpsData.get(i).jd - JD0;
         }
 
         // ---- Critical Times ---------------------------------------------
@@ -230,16 +201,16 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // Pos/Vel with Time from Telemetry
 
-        double[][] eci = new double[gps.size()][6];
-        for (int i = 0; i < gps.size(); i++) {
-            GPSTime gpsTime = gps.get(i);
+        double[][] eci = new double[gpsData.size()][6];
+        for (int i = 0; i < gpsData.size(); i++) {
+            GpsDataRecord gpsDataRecord = gpsData.get(i);
             // position and velocity is given in meters, 
             // we transform to km in order to keep the values smaller. from now all distances in Km
             double[] ecf = {
-                    gpsTime.posX / 1000.0, gpsTime.posY / 1000.0, gpsTime.posZ / 1000.0,
-                    gpsTime.velX / 1000.0, gpsTime.velY / 1000.0, gpsTime.velZ / 1000.0
+                    gpsDataRecord.posX / 1000.0, gpsDataRecord.posY / 1000.0, gpsDataRecord.posZ / 1000.0,
+                    gpsDataRecord.velX / 1000.0, gpsDataRecord.velY / 1000.0, gpsDataRecord.velZ / 1000.0
             };
-            double gst = TimeConverter.jdToGST(gpsTime.jd);
+            double gst = TimeConverter.jdToGST(gpsDataRecord.jd);
             EcefEciConverter.ecefToEci(gst, ecf, eci[i]);
         }
 
@@ -266,26 +237,26 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[][] uWop = unit(Wop);
 
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
-        double gst_opv = TimeConverter.jdToGST(T[Tfix] + jd0);
+        double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
         double[] eci_opv = {uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
         double[] uWecf = new double[3];
         EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
 
         double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
-            double gst = TimeConverter.jdToGST(T[i] + jd0);
+            double gst = TimeConverter.jdToGST(T[i] + JD0);
             EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
         }
 
         // ==v==v== Get Angular Velocity ======================================================
         // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
 
-        double[] gpsSecs = new double[gps.size()];
-        double[] eciX = new double[gps.size()];
-        double[] eciY = new double[gps.size()];
-        double[] eciZ = new double[gps.size()];
-        for (int i = 0; i < gps.size(); i++) {
-            gpsSecs[i] = gps.get(i).secs;
+        double[] gpsSecs = new double[gpsData.size()];
+        double[] eciX = new double[gpsData.size()];
+        double[] eciY = new double[gpsData.size()];
+        double[] eciZ = new double[gpsData.size()];
+        for (int i = 0; i < gpsData.size(); i++) {
+            gpsSecs[i] = gpsData.get(i).secs;
             eciX[i] = eci[i][X];
             eciY[i] = eci[i][Y];
             eciZ[i] = eci[i][Z];
@@ -330,7 +301,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
         for (int i = 0; i < iTGT0.length; i++) {
-            double gst = TimeConverter.jdToGST(T[i] + jd0);
+            double gst = TimeConverter.jdToGST(T[i] + JD0);
             EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
         }
 
@@ -473,8 +444,6 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==== Rotate the Line of Sight and intercept with Earth ==============================================
 
-        System.out.println("Starting model-IGM generation");
-
         double[] ixSubset = new double[mode.getNLines()];
         double[] iySubset = new double[mode.getNLines()];
         double[] izSubset = new double[mode.getNLines()];
@@ -513,7 +482,7 @@ public class PerformGeometricCorrectionOp extends Operator {
     private Info createInfo() {
         Info info = new Info();
 
-        info.mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        info.mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
         info.lat = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
         info.lon = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
         info.alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
@@ -600,7 +569,7 @@ public class PerformGeometricCorrectionOp extends Operator {
     }
 
     private static double getDeltaGPS(Product product) {
-        final Date date = product.getStartTime().getAsDate();
+        final Date date = product.getStartTime().getAsDate(); // image center time for CHRIS products
         final double mjd = TimeConverter.dateToMJD(date);
 
         try {
@@ -647,6 +616,42 @@ public class PerformGeometricCorrectionOp extends Operator {
         targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
 
         return targetProduct;
+    }
+
+    private static List<GpsDataRecord> readGpsData(File gpsFile, double delay, double deltaGPS) {
+        InputStream is = null;
+        try {
+            is = new FileInputStream(gpsFile);
+            return GpsDataRecord.create(new GpsDataRecord.GpsDataReader(is).getReadRecords(), deltaGPS, delay);
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    private static IctDataRecord readIctData(File ictFile, double deltaGPS) {
+        InputStream is = null;
+        try {
+            is = new FileInputStream(ictFile);
+            return IctDataRecord.create(new IctDataReader(is).getLastIctValues(), deltaGPS);
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
     }
 
     public static class Spi extends OperatorSpi {

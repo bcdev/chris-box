@@ -31,7 +31,7 @@ import java.util.List;
  * @author Marco Zuehlke
  * @version $Revision$ $Date$
  */
-class ImageCenterTime {
+class IctDataRecord {
 
     private static final double DAY_SEC = 86400.0;
     // Julian Date (JD) of  1999-12-26 00:00
@@ -43,7 +43,7 @@ class ImageCenterTime {
     final double ict4;
     final double ict5;
 
-    ImageCenterTime(double ict1, double ict2, double ict3, double ict4, double ict5) {
+    IctDataRecord(double ict1, double ict2, double ict3, double ict4, double ict5) {
         this.ict1 = ict1;
         this.ict2 = ict2;
         this.ict3 = ict3;
@@ -51,20 +51,20 @@ class ImageCenterTime {
         this.ict5 = ict5;
     }
 
-    static ImageCenterTime create(double[] ictValues, double dTgps) throws IOException {
+    static IctDataRecord create(double[] ictValues, double dTgps) throws IOException {
         double ict1 = getUT1((ictValues[0] - dTgps) / DAY_SEC + JD0);
         double ict2 = getUT1((ictValues[1] - dTgps) / DAY_SEC + JD0);
         double ict3 = getUT1((ictValues[2] - dTgps) / DAY_SEC + JD0);
         double ict4 = getUT1((ictValues[3] - dTgps) / DAY_SEC + JD0);
         double ict5 = getUT1((ictValues[4] - dTgps) / DAY_SEC + JD0);
-        return new ImageCenterTime(ict1, ict2, ict3, ict4, ict5);
+        return new IctDataRecord(ict1, ict2, ict3, ict4, ict5);
     }
 
-    static class ITCReader {
+    static class IctDataReader {
 
         private final String[] lastIctRecord;
 
-        ITCReader(InputStream is) {
+        IctDataReader(InputStream is) {
             Reader reader = new InputStreamReader(is);
             char[] separators = new char[]{'\t'};
             CsvReader csvReader = new CsvReader(reader, separators, true, "TIME");
