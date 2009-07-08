@@ -33,7 +33,7 @@ import java.util.List;
  */
 class GPSTime {
 
-    private static final double GPS_JD_OFFSET = TimeConversion.julianDate(1980, 0, 6);
+    private static final double GPS_JD_OFFSET = TimeConverter.julianDate(1980, 0, 6);
 
     final double posX;
     final double posY;
@@ -77,7 +77,7 @@ class GPSTime {
     }
 
     private static double gpsTimeToJD(int gpsWeek, double gpsSec) throws IOException {
-        double gpsDays = gpsSec / TimeConversion.SECONDS_PER_DAY;
+        double gpsDays = gpsSec / TimeConverter.SECONDS_PER_DAY;
         final double utcJD = GPS_JD_OFFSET + gpsWeek * 7 + gpsDays;
         return getUT1(utcJD);
     }
@@ -159,7 +159,7 @@ class GPSTime {
     }
 
     private static double getUT1(double jd) throws IOException {
-        return jd + TimeConversion.getInstance().deltaUT1(TimeConversion.jdToMJD(jd)) / TimeConversion.SECONDS_PER_DAY;
+        return jd + TimeConverter.getInstance().deltaUT1(TimeConverter.jdToMJD(jd)) / TimeConverter.SECONDS_PER_DAY;
     }
 
 }

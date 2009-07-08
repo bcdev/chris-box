@@ -149,7 +149,7 @@ class ProbaIgmDoer {
         final double f = 1 / 298.257223563;
 
         // Origen de tiempo del NJD (New Julian Day) q me he inventado para q en las graficas no se vaya de baras el eje de tiempos ya q el JD tiene demasiadas cifras :(
-        final double jd0 = TimeConversion.julianDate(2003, 0, 1);
+        final double jd0 = TimeConverter.julianDate(2003, 0, 1);
 
         final int X = 0;
         final int Y = 1;
@@ -221,7 +221,7 @@ class ProbaIgmDoer {
             final double[] SatPos = new double[]{iX[L], iY[L], iZ[L]};
             final double[] center = new double[3];
 
-            final double gst = TimeConversion.jdToGST(Time[L] + jd0);
+            final double gst = TimeConverter.jdToGST(Time[L] + jd0);
             for (int C = 0; C < nCols; C++) {
 //              tmp = Line_Sphr_i(reform(LoS[*,L,C],3), Sphr_R, SatPos)
 //              LoS_Range[L,C] = min([SQRT(TOTAL((SatPos-tmp[*,0])^2)), SQRT(TOTAL((SatPos-tmp[*,1])^2))], mn_ndx)

@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @version $Revision$ $Date$
  * @since CHRIS-Box 1.1
  */
-public class TimeConversion {
+public class TimeConverter {
 
     /**
      * Internal TAI-UTC table.
@@ -69,9 +69,9 @@ public class TimeConversion {
     private static final String PROPERTY_KEY_FETCH_CURRENT_TIME_DATA = "org.esa.beam.chris.fetchCurrentTimeData";
     private static final String PROPERTY_KEY_WRITE_CURRENT_TIME_DATA = "org.esa.beam.chris.writeCurrentTimeData";
 
-    private static volatile TimeConversion uniqueInstance;
+    private static volatile TimeConverter uniqueInstance;
 
-    private TimeConversion() {
+    private TimeConverter() {
         tai = new ConcurrentSkipListMap<Double, Double>();
         ut1 = new ConcurrentSkipListMap<Double, Double>();
     }
@@ -86,9 +86,9 @@ public class TimeConversion {
      *
      * @throws IOException if an error occurred.
      */
-    public static TimeConversion getInstance() throws IOException {
+    public static TimeConverter getInstance() throws IOException {
         if (uniqueInstance == null) {
-            synchronized (TimeConversion.class) {
+            synchronized (TimeConverter.class) {
                 if (uniqueInstance == null) {
                     uniqueInstance = createInstance();
                 }
@@ -209,28 +209,28 @@ public class TimeConversion {
         updateUT1(connection.getInputStream());
     }
 
-    private static TimeConversion createInstance() throws IOException {
-        final TimeConversion timeConversion = new TimeConversion();
+    private static TimeConverter createInstance() throws IOException {
+        final TimeConverter timeConverter = new TimeConverter();
 
-        readTAI("leapsec.dat", timeConversion.tai);
-        readUT1("finals.data", timeConversion.ut1);
+        readTAI("leapsec.dat", timeConverter.tai);
+        readUT1("finals.data", timeConverter.ut1);
 
         if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_FETCH_CURRENT_TIME_DATA))) {
             try {
-                timeConversion.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
-                timeConversion.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
+                timeConverter.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
+                timeConverter.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
             } catch (IOException ignored) {
                 // todo - warning
             }
         }
 
-        return timeConversion;
+        return timeConverter;
     }
 
     private static void readTAI(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readTAI(TimeConversion.class.getResourceAsStream(name), map);
+            readTAI(TimeConverter.class.getResourceAsStream(name), map);
         } else {
             readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map);
         }
@@ -295,7 +295,7 @@ public class TimeConversion {
     private static void readUT1(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readUT1(TimeConversion.class.getResourceAsStream(name), map);
+            readUT1(TimeConverter.class.getResourceAsStream(name), map);
         } else {
             readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map);
         }

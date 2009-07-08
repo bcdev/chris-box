@@ -67,7 +67,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
     //This way the calculations can be performed more efficiently.
-    private static final double jd0 = TimeConversion.julianDate(2001, 0, 1);
+    private static final double jd0 = TimeConverter.julianDate(2001, 0, 1);
 
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
     private static final double delay = 0.999;
@@ -138,7 +138,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         //////////////////////////
 
         // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
-        final double acquisitionSetupTime = lastImageCenterTime.ict1 - (10.0 + 390.0) / TimeConversion.SECONDS_PER_DAY - jd0;
+        final double acquisitionSetupTime = lastImageCenterTime.ict1 - (10.0 + 390.0) / TimeConverter.SECONDS_PER_DAY - jd0;
         double[] ict_njd = {
                 lastImageCenterTime.ict1 - jd0,
                 lastImageCenterTime.ict2 - jd0,
@@ -168,8 +168,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] T_ini = new double[NUM_IMG]; // imaging start time (imaging lasts ~9.5s in every mode)
         double[] T_end = new double[NUM_IMG]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
-            T_ini[i] = ict_njd[i] - (mode.getTimg() / 2.0) / TimeConversion.SECONDS_PER_DAY;
-            T_end[i] = ict_njd[i] + (mode.getTimg() / 2.0) / TimeConversion.SECONDS_PER_DAY;
+            T_ini[i] = ict_njd[i] - (mode.getTimg() / 2.0) / TimeConverter.SECONDS_PER_DAY;
+            T_end[i] = ict_njd[i] + (mode.getTimg() / 2.0) / TimeConverter.SECONDS_PER_DAY;
         }
 //        double T_i = ict_njd[0] - 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" start time
 //        double T_e = ict_njd[4] + 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
@@ -182,7 +182,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         // Time elapsed since imaging start at each image line
         double[] T_lin = new double[mode.getNLines()];
         for (int line = 0; line < T_lin.length; line++) {
-            T_lin[line] = (line * mode.getDt() + mode.getTpl() / 2) / TimeConversion.SECONDS_PER_DAY;
+            T_lin[line] = (line * mode.getDt() + mode.getTpl() / 2) / TimeConverter.SECONDS_PER_DAY;
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
 
@@ -236,7 +236,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                     gpsTime.posX / 1000.0, gpsTime.posY / 1000.0, gpsTime.posZ / 1000.0,
                     gpsTime.velX / 1000.0, gpsTime.velY / 1000.0, gpsTime.velZ / 1000.0
             };
-            double gst = TimeConversion.jdToGST(gpsTime.jd);
+            double gst = TimeConverter.jdToGST(gpsTime.jd);
             EcefEciConverter.ecefToEci(gst, ecf, eci[i]);
         }
 
@@ -263,14 +263,14 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[][] uWop = unit(Wop);
 
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
-        double gst_opv = TimeConversion.jdToGST(T[Tfix] + jd0);
+        double gst_opv = TimeConverter.jdToGST(T[Tfix] + jd0);
         double[] eci_opv = {uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
         double[] uWecf = new double[3];
         EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
 
         double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
-            double gst = TimeConversion.jdToGST(T[i] + jd0);
+            double gst = TimeConverter.jdToGST(T[i] + jd0);
             EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
         }
 
@@ -327,7 +327,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
         for (int i = 0; i < iTGT0.length; i++) {
-            double gst = TimeConversion.jdToGST(T[i] + jd0);
+            double gst = TimeConverter.jdToGST(T[i] + jd0);
             EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
         }
 
@@ -341,7 +341,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             x[i] = uW[Tini[img] + i][X];
             y[i] = uW[Tini[img] + i][Y];
             z[i] = uW[Tini[img] + i][Z];
-            angles[i] = Math.pow(-1, img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConversion.SECONDS_PER_DAY;
+            angles[i] = Math.pow(-1, img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
         }
         Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
         for (int i = 0; i < mode.getNLines(); i++) {
@@ -604,10 +604,10 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private static double getDeltaGPS(Product product) {
         final Date date = product.getStartTime().getAsDate();
-        final double mjd = TimeConversion.dateToMJD(date);
+        final double mjd = TimeConverter.dateToMJD(date);
 
         try {
-            return TimeConversion.getInstance().deltaGPS(mjd);
+            return TimeConverter.getInstance().deltaGPS(mjd);
         } catch (IOException e) {
             throw new OperatorException(e);
         }

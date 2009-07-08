@@ -35,7 +35,7 @@ class ImageCenterTime {
 
     private static final double DAY_SEC = 86400.0;
     // Julian Date (JD) of  1999-12-26 00:00
-    private static final double JD0 = TimeConversion.julianDate(1999, 11, 26);
+    private static final double JD0 = TimeConverter.julianDate(1999, 11, 26);
 
     final double ict1;
     final double ict2;
@@ -137,7 +137,7 @@ class ImageCenterTime {
     }
 
     private static double getUT1(double jd) throws IOException {
-        return jd + TimeConversion.getInstance().deltaUT1(TimeConversion.jdToMJD(jd)) / TimeConversion.SECONDS_PER_DAY;
+        return jd + TimeConverter.getInstance().deltaUT1(TimeConverter.jdToMJD(jd)) / TimeConverter.SECONDS_PER_DAY;
     }
 
 }

@@ -42,7 +42,7 @@ public class ImageCenterTimeTest extends TestCase {
     }
 
     private static double getUT1(double jd) throws IOException {
-        return jd + TimeConversion.getInstance().deltaUT1(TimeConversion.jdToMJD(jd)) / TimeConversion.SECONDS_PER_DAY;
+        return jd + TimeConverter.getInstance().deltaUT1(TimeConverter.jdToMJD(jd)) / TimeConverter.SECONDS_PER_DAY;
     }
 
 }
