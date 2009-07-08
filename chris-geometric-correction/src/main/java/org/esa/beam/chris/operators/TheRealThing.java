@@ -500,7 +500,7 @@ public class TheRealThing extends Operator {
     @Override
     public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         int index = 0;
-        if (targetBand.getName().equals("geo_lat")) {
+        if (targetBand.getName().equals("latitude")) {
             index = 1;
         }
         Rectangle rectangle = targetTile.getRectangle();
