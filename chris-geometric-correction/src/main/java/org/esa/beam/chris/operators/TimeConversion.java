@@ -6,27 +6,25 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * Utility class for conversion between UTC, UT1 and GPS times.
+ * Utility class for converting between several time systems.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  * @since CHRIS-Box 1.1
  */
-public class TimeCalculator {
-
-    private static final String PROPERTY_KEY_AUX_DATA_DIR = "org.esa.beam.chris.auxDataDir";
-    private static final String PROPERTY_KEY_FETCH_CURRENT_TIME_DATA = "org.esa.beam.chris.fetchCurrentTimeData";
-    private static final String PROPERTY_KEY_WRITE_CURRENT_TIME_DATA = "org.esa.beam.chris.writeCurrentTimeData";
-
-    private static volatile TimeCalculator uniqueInstance;
+public class TimeConversion {
 
     /**
      * Internal TAI-UTC table.
@@ -39,8 +37,41 @@ public class TimeCalculator {
      * Internal UT1-UTC table.
      */
     private final ConcurrentNavigableMap<Double, Double> ut1;
+    /**
+     * The epoch (days) for the Julian Date (JD) which
+     * corresponds to 4713-01-01 12:00 BC.
+     */
+    public static final double EPOCH_JD = -2440587.5;
+    /**
+     * The epoch (days) for the Modified Julian Date (MJD) which
+     * corresponds to 1858-11-17 00:00.
+     */
+    public static final double EPOCH_MJD = -40587.0;
+    /**
+     * The epoch (millis) for the Modified Julian Date (MJD) which
+     * corresponds to 1858-11-17 00:00.
+     */
+    public static final long EPOCH_MJD_MILLIS = -3506716800000L;
+    /**
+     * The number of days between {@link #EPOCH_MJD} and {@link #EPOCH_JD}.
+     */
+    public static final double MJD_TO_JD_OFFSET = EPOCH_MJD - EPOCH_JD; // 2400000.5;
+    /**
+     * The number of milli-seconds per day.
+     */
+    public static final double MILLIS_PER_DAY = 86400000.0;
+    /**
+     * The number of seconds per day.
+     */
+    public static final double SECONDS_PER_DAY = 86400.0;
 
-    private TimeCalculator() {
+    private static final String PROPERTY_KEY_AUX_DATA_DIR = "org.esa.beam.chris.auxDataDir";
+    private static final String PROPERTY_KEY_FETCH_CURRENT_TIME_DATA = "org.esa.beam.chris.fetchCurrentTimeData";
+    private static final String PROPERTY_KEY_WRITE_CURRENT_TIME_DATA = "org.esa.beam.chris.writeCurrentTimeData";
+
+    private static volatile TimeConversion uniqueInstance;
+
+    private TimeConversion() {
         tai = new ConcurrentSkipListMap<Double, Double>();
         ut1 = new ConcurrentSkipListMap<Double, Double>();
     }
@@ -55,9 +86,9 @@ public class TimeCalculator {
      *
      * @throws IOException if an error occurred.
      */
-    public static TimeCalculator getInstance() throws IOException {
+    public static TimeConversion getInstance() throws IOException {
         if (uniqueInstance == null) {
-            synchronized (TimeCalculator.class) {
+            synchronized (TimeConversion.class) {
                 if (uniqueInstance == null) {
                     uniqueInstance = createInstance();
                 }
@@ -178,28 +209,28 @@ public class TimeCalculator {
         updateUT1(connection.getInputStream());
     }
 
-    private static TimeCalculator createInstance() throws IOException {
-        final TimeCalculator timeCalculator = new TimeCalculator();
+    private static TimeConversion createInstance() throws IOException {
+        final TimeConversion timeConversion = new TimeConversion();
 
-        readTAI("leapsec.dat", timeCalculator.tai);
-        readUT1("finals.data", timeCalculator.ut1);
+        readTAI("leapsec.dat", timeConversion.tai);
+        readUT1("finals.data", timeConversion.ut1);
 
         if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_FETCH_CURRENT_TIME_DATA))) {
             try {
-                timeCalculator.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
-                timeCalculator.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
+                timeConversion.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
+                timeConversion.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
             } catch (IOException ignored) {
                 // todo - warning
             }
         }
 
-        return timeCalculator;
+        return timeConversion;
     }
 
     private static void readTAI(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readTAI(TimeCalculator.class.getResourceAsStream(name), map);
+            readTAI(TimeConversion.class.getResourceAsStream(name), map);
         } else {
             readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map);
         }
@@ -264,7 +295,7 @@ public class TimeCalculator {
     private static void readUT1(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readUT1(TimeCalculator.class.getResourceAsStream(name), map);
+            readUT1(TimeConversion.class.getResourceAsStream(name), map);
         } else {
             readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map);
         }
@@ -356,4 +387,160 @@ public class TimeCalculator {
         return null;
     }
 
+    /**
+     * Returns the Julian Date (JD) corresponding to a date.
+     *
+     * @param date the date.
+     *
+     * @return the JD corresponding to the date.
+     */
+    public static double dateToJD(Date date) {
+        return date.getTime() / MILLIS_PER_DAY - EPOCH_JD;
+    }
+
+    /**
+     * Returns the Modified Julian Date (MJD) corresponding to a date.
+     *
+     * @param date the date.
+     *
+     * @return the MJD corresponding to the date.
+     */
+    public static double dateToMJD(Date date) {
+        return date.getTime() / MILLIS_PER_DAY - EPOCH_MJD;
+    }
+
+    /**
+     * Returns the date corresponding to a Modified Julian Date (MJD).
+     *
+     * @param mjd the MJD.
+     *
+     * @return the date corresponding to the MJD.
+     */
+    public static Date mjdToDate(double mjd) {
+        return new Date(Math.round((EPOCH_MJD + mjd) * MILLIS_PER_DAY));
+    }
+
+    /**
+     * Converts UT1 into Greenwich Mean Sidereal Time (GST, IAU 1982 model).
+     * <p/>
+     * Note that the unit of GST is radian (rad).
+     *
+     * @param mjd the UT1 expressed as Modified Julian Date (MJD).
+     *
+     * @return the GST corresponding to the MJD given.
+     */
+    public static double mjdToGST(double mjd) {
+        // radians per sidereal second
+        final double secRad = 7.272205216643039903848712E-5;
+
+        // seconds per day, days per Julian century
+        final double daySec = 86400.0;
+        final double cenDay = 36525.0;
+
+        // reference epoch (J2000)
+        final double mjd0 = 51544.5;
+
+        // coefficients of IAU 1982 GMST-UT1 model
+        final double a = 24110.54841;
+        final double b = 8640184.812866;
+        final double c = 0.093104;
+        final double d = 6.2E-6;
+
+        final double mjd1 = Math.floor(mjd);
+        final double mjd2 = mjd - mjd1;
+
+        // Julian centuries since epoch
+        final double t = (mjd2 + (mjd1 - mjd0)) / cenDay;
+        // fractional part of MJD(UT1) in seconds
+        final double f = daySec * mjd2;
+
+        final double twoPi = 2.0 * Math.PI;
+        final double gst = (secRad * ((a + (b + (c - d * t) * t) * t) + f)) % twoPi;
+
+        if (gst < 0.0) {
+            return gst + twoPi;
+        }
+
+        return gst;
+    }
+
+    /**
+     * Returns the date corresponding to a Julian Date (JD).
+     *
+     * @param jd the JD.
+     *
+     * @return the date corresponding to the JD.
+     */
+    public static Date jdToDate(double jd) {
+        return new Date(Math.round((EPOCH_JD + jd) * MILLIS_PER_DAY));
+    }
+
+    /**
+     * Returns the Julian Date (JD) corresponding to a Modified Julian Date (JD).
+     *
+     * @param mjd the MJD.
+     *
+     * @return the JD corresponding to the MJD.
+     */
+    public static double mjdToJD(double mjd) {
+        return mjd + MJD_TO_JD_OFFSET;
+    }
+
+    /**
+     * Converts UT1 into Greenwich Mean Sidereal Time (GST, IAU 1982 model).
+     * <p/>
+     * Note that the unit of GST is radian (rad).
+     *
+     * @param jd the UT1 expressed as Julian Date (JD).
+     *
+     * @return the GST corresponding to the JD given.
+     */
+    public static double jdToGST(double jd) {
+        return mjdToGST(jdToMJD(jd));
+    }
+
+    /**
+     * Returns the Modified Julian Date (MJD) corresponding to a Julian Date (JD).
+     *
+     * @param jd the JD.
+     *
+     * @return the MJD corresponding to the JD.
+     */
+    public static double jdToMJD(double jd) {
+        return jd - MJD_TO_JD_OFFSET;
+    }
+
+    /**
+     * Returns the Julian Date (JD) for the given parameters.
+     *
+     * @param year       the year.
+     * @param month      the month (zero-based, e.g. use 0 for January and 11 for December).
+     * @param dayOfMonth the day-of-month.
+     *
+     * @return the Julian Date.
+     */
+    public static double julianDate(int year, int month, int dayOfMonth) {
+        return julianDate(year, month, dayOfMonth, 0, 0, 0);
+    }
+
+    /**
+     * Calculates the Julian Date (JD) from the given parameter.
+     *
+     * @param year       the year.
+     * @param month      the month (zero-based, e.g. use 0 for January and 11 for December).
+     * @param dayOfMonth the day-of-month.
+     * @param hourOfDay  the hour-of-day.
+     * @param minute     the minute.
+     * @param second     the second.
+     *
+     * @return the Julian Date.
+     */
+    public static double julianDate(int year, int month, int dayOfMonth, int hourOfDay, int minute, int second) {
+        final GregorianCalendar utc = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        utc.clear();
+        utc.set(year, month, dayOfMonth, hourOfDay, minute, second);
+        utc.set(Calendar.MILLISECOND, 0);
+
+        return utc.getTimeInMillis() / MILLIS_PER_DAY - EPOCH_JD;
+    }
 }
