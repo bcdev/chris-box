@@ -55,7 +55,7 @@ import java.util.List;
                   description = "Performs the geometric correction for a CHRIS/Proba RCI.")
 public class PerformGeometricCorrectionOp extends Operator {
 
-    private static class ChrisInfo {
+    private static class Info {
 
         int mode;
         double alt;
@@ -89,8 +89,6 @@ public class PerformGeometricCorrectionOp extends Operator {
     @SourceProduct
     private Product sourceProduct;
 
-    private ChrisInfo info;
-
     private double[][][] igm;
 
     ///////////////////////////////////////////////////////////
@@ -98,8 +96,8 @@ public class PerformGeometricCorrectionOp extends Operator {
     @Override
     public void initialize() throws OperatorException {
         final Telemetry telemetry = getTelemetry();
+        final Info info = createInfo();
 
-        fillInfo();
         // ICT
         ITCReader ictReader;
         try {
@@ -512,6 +510,18 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
     }
 
+    private Info createInfo() {
+        Info info = new Info();
+
+        info.mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        info.lat = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
+        info.lon = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
+        info.alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        info.imageNumber = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER, 0, 1) - 1;
+
+        return info;
+    }
+
     private Product createTargetProduct() {
         final String type = sourceProduct.getProductType() + "_GC";
         final Product targetProduct = createCopy(sourceProduct, "GC", type, new BandFilter() {
@@ -541,17 +551,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
     }
 
-    private void fillInfo() {
-        info = new ChrisInfo();
-        info.mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE);
-        info.lat = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
-        info.lon = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
-        info.alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
-        String image = OpUtils.getAnnotationString(sourceProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER);
-        info.imageNumber = Integer.valueOf(image.substring(0, 1)) - 1;
-    }
-
-    private double[][] unit(double[][] vec) {
+    private static double[][] unit(double[][] vec) {
         double[][] result = new double[vec.length][vec[0].length];
         for (int i = 0; i < vec[0].length; i++) {
             double norm = Math.sqrt(vec[X][i] * vec[X][i] + vec[Y][i] * vec[Y][i] + vec[Z][i] * vec[Z][i]);
@@ -562,7 +562,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         return result;
     }
 
-    private double[][] vect_prod(double[] x1, double[] y1, double[] z1, double[] x2, double[] y2, double[] z2) {
+    private static double[][] vect_prod(double[] x1, double[] y1, double[] z1, double[] x2, double[] y2, double[] z2) {
         double[][] product = new double[3][x1.length];
         for (int i = 0; i < x1.length; i++) {
             product[X][i] = y1[i] * z2[i] - z1[i] * y2[i];
@@ -572,7 +572,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         return product;
     }
 
-    private double[][] vect_prod(double[][] a1, double[][] a2) {
+    private static double[][] vect_prod(double[][] a1, double[][] a2) {
         double[][] product = new double[3][a1[0].length];
         for (int i = 0; i < a1[0].length; i++) {
             product[X][i] = a1[Y][i] * a2[Z][i] - a1[Z][i] * a2[Y][i];
@@ -582,7 +582,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         return product;
     }
 
-    private double[] get2ndDim(double[][] twoDimArray, int secondDimIndex, int numElems) {
+    private static double[] get2ndDim(double[][] twoDimArray, int secondDimIndex, int numElems) {
         double[] secondDim = new double[numElems];
         for (int i = 0; i < numElems; i++) {
             secondDim[i] = twoDimArray[i][secondDimIndex];
@@ -590,7 +590,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         return secondDim;
     }
 
-    private double[] spline(double[] x, double[] y, double[] t) {
+    private static double[] spline(double[] x, double[] y, double[] t) {
         double[] v = new double[t.length];
         PolynomialSplineFunction splineFunction = SplineInterpolator.interpolate(x, y);
         for (int i = 0; i < v.length; i++) {
