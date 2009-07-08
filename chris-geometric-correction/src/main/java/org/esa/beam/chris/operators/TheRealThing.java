@@ -291,212 +291,210 @@ public class TheRealThing extends Operator {
 
         // ==v==v== Initialize Variables ======================================================
 
-        //double[][][] Range = new double[3][mode.getNLines()][NUM_IMG];
-        double[][][] EjeYaw = new double[3][mode.getNLines()][NUM_IMG];
-        double[][][] EjePitch = new double[3][mode.getNLines()][NUM_IMG];
-        double[][][] EjeRoll = new double[3][mode.getNLines()][NUM_IMG];
-        double[][][] SP = new double[3][mode.getNLines()][NUM_IMG];
-        double[][][] SL = new double[3][mode.getNLines()][NUM_IMG];
-        double[][] PitchAng = new double[mode.getNLines()][NUM_IMG];
-        double[][] RollAng = new double[mode.getNLines()][NUM_IMG];
-        //double[][][] PitchAngR = new double[mode.getNCols()][mode.getNLines()][NUM_IMG];
-        //double[][][] RollAngR = new double[mode.getNCols()][mode.getNLines()][NUM_IMG];
-        double[][] ObsAngAzi = new double[mode.getNLines()][NUM_IMG];
-        double[][] ObsAngZen = new double[mode.getNLines()][NUM_IMG];
+        //double[][] Range = new double[3][mode.getNLines()];
+        //double[][] EjeYaw = new double[3][mode.getNLines()];
+        //double[][] EjePitch = new double[3][mode.getNLines()];
+        //double[][] EjeRoll = new double[3][mode.getNLines()];
+        //double[][] SP = new double[3][mode.getNLines()];
+        //double[][] SL = new double[3][mode.getNLines()];
+        //double[] PitchAng = new double[mode.getNLines()];
+        //double[] RollAng = new double[mode.getNLines()];
+        //double[][] PitchAngR = new double[mode.getNCols()][mode.getNLines()];
+        //double[][] RollAngR = new double[mode.getNCols()][mode.getNLines()];
+        //double[] ObsAngAzi = new double[mode.getNLines()];
+        //double[] ObsAngZen = new double[mode.getNLines()];
 
-        // ===== Process each image separately ==========================================
+        // ===== Process the correct image ==========================================
 
-//        for (int img = 0; img < NUM_IMG; img++) {
-            int img = info.imageNumber;
-            System.out.println("Initiating calculation for image " + img);
+        int img = info.imageNumber;
+        System.out.println("Initiating calculation for image " + img);
 
-            // ==v==v== Find the closest point in the Moving Target to the GCPs ==============
-            // TODO
+        // ==v==v== Find the closest point in the Moving Target to the GCPs ==============
+        // TODO
 
-            // ---- Target Coordinates in ECI using per-Line Time -------------------
-            double TgtAlt = info.alt / 1000;
-            double[] TGTecf = new double[3];
-            Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
+        // ---- Target Coordinates in ECI using per-Line Time -------------------
+        double TgtAlt = info.alt / 1000;
+        double[] TGTecf = new double[3];
+        Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
 //            if ( use_GCP) { TODO
 //                Conversions.wgsToEcef(GCP0[3], GCP0[2], GCP0[4], TGTecf);
 //            }
-            // Case with Moving Target for imaging time
-            double[][] iTGT0 = new double[T.length][3];
-            for (int i = 0; i < iTGT0.length; i++) {
-                double gst = Conversions.jdToGST(T[i] + jd0);
-                EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
-            }
+        // Case with Moving Target for imaging time
+        double[][] iTGT0 = new double[T.length][3];
+        for (int i = 0; i < iTGT0.length; i++) {
+            double gst = Conversions.jdToGST(T[i] + jd0);
+            EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
+        }
 
-            // ==v==v== Rotates TGT to perform scanning ======================================
+        // ==v==v== Rotates TGT to perform scanning ======================================
 
-            double[] x = new double[mode.getNLines()];
-            double[] y = new double[mode.getNLines()];
-            double[] z = new double[mode.getNLines()];
-            double[] angles = new double[mode.getNLines()];
-            for (int i = 0; i < mode.getNLines(); i++) {
-                x[i] = uW[Tini[img] + i][X];
-                y[i] = uW[Tini[img] + i][Y];
-                z[i] = uW[Tini[img] + i][Z];
-                angles[i] = Math.pow(-1,
-                                     img) * iAngVel[0] / SlowDown * (T_img[i][img] - T_ict[img]) * Conversions.SECONDS_PER_DAY;
-            }
-            Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
-            for (int i = 0; i < mode.getNLines(); i++) {
-                x[i] = iTGT0[Tini[img] + i][X];
-                y[i] = iTGT0[Tini[img] + i][Y];
-                z[i] = iTGT0[Tini[img] + i][Z];
-            }
-            QuaternionRotations.rotateVectors(quaternions, x, y, z);
-            for (int i = 0; i < mode.getNLines(); i++) {
-                iTGT0[Tini[img] + i][X] = x[i];
-                iTGT0[Tini[img] + i][Y] = y[i];
-                iTGT0[Tini[img] + i][Z] = z[i];
-            }
+        double[] x = new double[mode.getNLines()];
+        double[] y = new double[mode.getNLines()];
+        double[] z = new double[mode.getNLines()];
+        double[] angles = new double[mode.getNLines()];
+        for (int i = 0; i < mode.getNLines(); i++) {
+            x[i] = uW[Tini[img] + i][X];
+            y[i] = uW[Tini[img] + i][Y];
+            z[i] = uW[Tini[img] + i][Z];
+            angles[i] = Math.pow(-1, img) * iAngVel[0] / SlowDown * (T_img[i][img] - T_ict[img]) * Conversions.SECONDS_PER_DAY;
+        }
+        Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
+        for (int i = 0; i < mode.getNLines(); i++) {
+            x[i] = iTGT0[Tini[img] + i][X];
+            y[i] = iTGT0[Tini[img] + i][Y];
+            z[i] = iTGT0[Tini[img] + i][Z];
+        }
+        QuaternionRotations.rotateVectors(quaternions, x, y, z);
+        for (int i = 0; i < mode.getNLines(); i++) {
+            iTGT0[Tini[img] + i][X] = x[i];
+            iTGT0[Tini[img] + i][Y] = y[i];
+            iTGT0[Tini[img] + i][Z] = z[i];
+        }
 
-            // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
-            double[][] iTGT = iTGT0;
+        // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
+        double[][] iTGT = iTGT0;
 
-            //==== Calculates View Angles ==============================================
+        //==== Calculates View Angles ==============================================
 
 //            ViewAng[] viewAngs = new ViewAng[mode.getNLines()];
-            double[][] viewRange = new double[3][mode.getNLines()];
-            for (int i = 0; i < mode.getNLines(); i++) {
-                double TgtX = iTGT[Tini[img] + i][X];
-                double TgtY = iTGT[Tini[img] + i][Y];
-                double TgtZ = iTGT[Tini[img] + i][Z];
-                double SatX = iX[Tini[img] + i];
-                double SatY = iY[Tini[img] + i];
-                double SatZ = iZ[Tini[img] + i];
-                double TgtLat = info.lat;
-                ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ, TgtLat);
+        double[][] viewRange = new double[3][mode.getNLines()];
+        for (int i = 0; i < mode.getNLines(); i++) {
+            double TgtX = iTGT[Tini[img] + i][X];
+            double TgtY = iTGT[Tini[img] + i][Y];
+            double TgtZ = iTGT[Tini[img] + i][Z];
+            double SatX = iX[Tini[img] + i];
+            double SatY = iY[Tini[img] + i];
+            double SatZ = iZ[Tini[img] + i];
+            double TgtLat = info.lat;
+            ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ, TgtLat);
 
-                // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
-                // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
-                viewRange[X][i] = -viewAng.rangeX;
-                viewRange[Y][i] = -viewAng.rangeY;
-                viewRange[Z][i] = -viewAng.rangeZ;
+            // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
+            // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
+            viewRange[X][i] = -viewAng.rangeX;
+            viewRange[Y][i] = -viewAng.rangeY;
+            viewRange[Z][i] = -viewAng.rangeZ;
 
-                ObsAngAzi[i][img] = viewAng.azi;
-                ObsAngZen[i][img] = viewAng.zen;
-            }
+            //ObsAngAzi[i] = viewAng.azi;
+            //ObsAngZen[i] = viewAng.zen;
+        }
 
-            // Observation angles are not needed for the geometric correction but they are used for research. They are a by-product.
-            // But ViewAngs provides also the range from the target to the satellite, which is needed later (Range, of course could be calculated independently).
+        // Observation angles are not needed for the geometric correction but they are used for research. They are a by-product.
+        // But ViewAngs provides also the range from the target to the satellite, which is needed later (Range, of course could be calculated independently).
 
-            // ==== Satellite Rotation Axes ==============================================
+        // ==== Satellite Rotation Axes ==============================================
 
-            double[][] uEjeYaw = new double[3][mode.getNLines()];
-            for (int i = 0; i < mode.getNLines(); i++) {
-                uEjeYaw[X][i] = iX[Tini[img] + i];
-                uEjeYaw[Y][i] = iY[Tini[img] + i];
-                uEjeYaw[Z][i] = iZ[Tini[img] + i];
-            }
-            uEjeYaw = unit(uEjeYaw);
-            for (int i = 0; i < mode.getNLines(); i++) {
-                EjeYaw[X][i][img] = uEjeYaw[X][i];
-                EjeYaw[Y][i][img] = uEjeYaw[Y][i];
-                EjeYaw[Z][i][img] = uEjeYaw[Z][i];
-            }
-
-            double[][] uEjePitch = new double[3][mode.getNLines()];
-            for (int i = 0; i < mode.getNLines(); i++) {
-                EjePitch[X][i][img] = uEjePitch[X][i] = uWop[X][Tini[img] + i];
-                EjePitch[Y][i][img] = uEjePitch[Y][i] = uWop[Y][Tini[img] + i];
-                EjePitch[Z][i][img] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
-            }
-
-            double[][] uEjeRoll = vect_prod(uEjePitch, uEjeYaw);
-            for (int i = 0; i < mode.getNLines(); i++) {
-                EjeRoll[X][i][img] = uEjeRoll[X][i];
-                EjeRoll[Y][i][img] = uEjeRoll[Y][i];
-                EjeRoll[Z][i][img] = uEjeRoll[Z][i];
-            }
-
-            double[][] uRange = unit(viewRange);
-
-            // ScanPlane:
-            //double[][] uSP = new double[3][mode.getNLines()];
-            //double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
-
-            // SightLine:
-            //double[][] uSL = new double[3][mode.getNLines()];
-            //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
-
-            // RollSign:
-            int[] uRollSign = new int[mode.getNLines()];
-            //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
-
-            double[][] uSP = vect_prod(uRange, uEjePitch);
-            double[][] uSL = vect_prod(uEjePitch, uSP);
-            double[][] uRoll = unit(vect_prod(uSL, uRange));
-            for (int i = 0; i < mode.getNLines(); i++) {
-                double total = 0;
-                total += uRoll[X][i] / uSP[X][i];
-                total += uRoll[Y][i] / uSP[Y][i];
-                total += uRoll[Z][i] / uSP[Z][i];
-                uRollSign[i] = (int) Math.signum(total);
-            }
-
-            for (int i = 0; i < mode.getNLines(); i++) {
-                SP[X][i][img] = uSP[X][i];
-                SP[Y][i][img] = uSP[Y][i];
-                SP[Z][i][img] = uSP[Z][i];
-
-                SL[X][i][img] = uSL[X][i];
-                SL[Y][i][img] = uSL[Y][i];
-                SL[Z][i][img] = uSL[Z][i];
-            }
-
-            double[] uPitchAng = new double[mode.getNLines()];
-            double[] uRollAng = new double[mode.getNLines()];
-            for (int i = 0; i < mode.getNLines(); i++) {
-                uPitchAng[i] = Math.PI / 2 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
-                                                                       uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
-                uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSL[Z][i],
-                                                                       uRange[X][i], uRange[Y][i], uRange[Z][i]);
-                // Stores the results for each image
-                PitchAng[i][img] = uPitchAng[i];
-                RollAng[i][img] = uRollAng[i];
-            }
-
-            // ==== Rotate the Line of Sight and intercept with Earth ==============================================
-
-            System.out.println("Starting model-IGM generation");
-
-            double[] ixSubset = new double[mode.getNLines()];
-            double[] iySubset = new double[mode.getNLines()];
-            double[] izSubset = new double[mode.getNLines()];
-            double[] timeSubset = new double[mode.getNLines()];
-            for (int i = 0; i < timeSubset.length; i++) {
-                ixSubset[i] = iX[Tini[img] + i];
-                iySubset[i] = iY[Tini[img] + i];
-                izSubset[i] = iZ[Tini[img] + i];
-                timeSubset[i] = T[Tini[img] + i];
-            }
-            igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), uEjePitch,
-                                         uPitchAng,
-                                         uEjeRoll, uRollAng, uEjeYaw, TgtAlt, ixSubset,
-                                         iySubset, izSubset, timeSubset, info.mode);
-
+        double[][] uEjeYaw = new double[3][mode.getNLines()];
+        for (int i = 0; i < mode.getNLines(); i++) {
+            uEjeYaw[X][i] = iX[Tini[img] + i];
+            uEjeYaw[Y][i] = iY[Tini[img] + i];
+            uEjeYaw[Z][i] = iZ[Tini[img] + i];
+        }
+        uEjeYaw = unit(uEjeYaw);
+//        for (int i = 0; i < mode.getNLines(); i++) {
+//            EjeYaw[X][i] = uEjeYaw[X][i];
+//            EjeYaw[Y][i] = uEjeYaw[Y][i];
+//            EjeYaw[Z][i] = uEjeYaw[Z][i];
 //        }
+
+        double[][] uEjePitch = new double[3][mode.getNLines()];
+        for (int i = 0; i < mode.getNLines(); i++) {
+            uEjePitch[X][i] = uWop[X][Tini[img] + i];
+            uEjePitch[Y][i] = uWop[Y][Tini[img] + i];
+            uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
+        }
+//        for (int i = 0; i < mode.getNLines(); i++) {
+//            EjePitch[X][i] = uEjePitch[X][i] = uWop[X][Tini[img] + i];
+//            EjePitch[Y][i] = uEjePitch[Y][i] = uWop[Y][Tini[img] + i];
+//            EjePitch[Z][i] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
+//        }
+
+        double[][] uEjeRoll = vect_prod(uEjePitch, uEjeYaw);
+//        for (int i = 0; i < mode.getNLines(); i++) {
+//            EjeRoll[X][i] = uEjeRoll[X][i];
+//            EjeRoll[Y][i] = uEjeRoll[Y][i];
+//            EjeRoll[Z][i] = uEjeRoll[Z][i];
+//        }
+
+        double[][] uRange = unit(viewRange);
+
+        // ScanPlane:
+        //double[][] uSP = new double[3][mode.getNLines()];
+        //double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
+
+        // SightLine:
+        //double[][] uSL = new double[3][mode.getNLines()];
+        //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
+
+        // RollSign:
+        int[] uRollSign = new int[mode.getNLines()];
+        //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
+
+        double[][] uSP = vect_prod(uRange, uEjePitch);
+        double[][] uSL = vect_prod(uEjePitch, uSP);
+        double[][] uRoll = unit(vect_prod(uSL, uRange));
+        for (int i = 0; i < mode.getNLines(); i++) {
+            double total = 0;
+            total += uRoll[X][i] / uSP[X][i];
+            total += uRoll[Y][i] / uSP[Y][i];
+            total += uRoll[Z][i] / uSP[Z][i];
+            uRollSign[i] = (int) Math.signum(total);
+        }
+
+//        for (int i = 0; i < mode.getNLines(); i++) {
+//            SP[X][i] = uSP[X][i];
+//            SP[Y][i] = uSP[Y][i];
+//            SP[Z][i] = uSP[Z][i];
+//
+//            SL[X][i] = uSL[X][i];
+//            SL[Y][i] = uSL[Y][i];
+//            SL[Z][i] = uSL[Z][i];
+//        }
+
+        double[] uPitchAng = new double[mode.getNLines()];
+        double[] uRollAng = new double[mode.getNLines()];
+        for (int i = 0; i < mode.getNLines(); i++) {
+            uPitchAng[i] = Math.PI / 2 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
+                                                                   uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
+            uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSL[Z][i],
+                                                                   uRange[X][i], uRange[Y][i], uRange[Z][i]);
+            // Stores the results for each image
+            //PitchAng[i] = uPitchAng[i];
+            //RollAng[i] = uRollAng[i];
+        }
+
+        // ==== Rotate the Line of Sight and intercept with Earth ==============================================
+
+        System.out.println("Starting model-IGM generation");
+
+        double[] ixSubset = new double[mode.getNLines()];
+        double[] iySubset = new double[mode.getNLines()];
+        double[] izSubset = new double[mode.getNLines()];
+        double[] timeSubset = new double[mode.getNLines()];
+        for (int i = 0; i < timeSubset.length; i++) {
+            ixSubset[i] = iX[Tini[img] + i];
+            iySubset[i] = iY[Tini[img] + i];
+            izSubset[i] = iZ[Tini[img] + i];
+            timeSubset[i] = T[Tini[img] + i];
+        }
+        igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), 
+                                     uEjePitch, uPitchAng,
+                                     uEjeRoll, uRollAng, 
+                                     uEjeYaw, 
+                                     TgtAlt, 
+                                     ixSubset, iySubset, izSubset, 
+                                     timeSubset, info.mode);
+
         final int width = chrisProduct.getSceneRasterWidth();
         final int height = chrisProduct.getSceneRasterHeight();
         Product targetProduct = new Product("chris_geo_corrected", "foo", width, height);
-        Band latBand = targetProduct.addBand("geo_lat", ProductData.TYPE_FLOAT64);
-        Band lonBand = targetProduct.addBand("geo_lon", ProductData.TYPE_FLOAT64);
+        targetProduct.addBand("latitude", ProductData.TYPE_FLOAT64);
+        targetProduct.addBand("longitude", ProductData.TYPE_FLOAT64);
         String[] bandNames = chrisProduct.getBandNames();
         for (String bandName : bandNames) {
             Band targetBand = ProductUtils.copyBand(bandName, chrisProduct, targetProduct);
             targetBand.setSourceImage(chrisProduct.getBand(bandName).getSourceImage());
         }
         setTargetProduct(targetProduct);
-//        try {
-//            PixelGeoCoding pixelGeoCoding = new PixelGeoCoding(latBand, lonBand, null, 5, ProgressMonitor.NULL);
-//            targetProduct.setGeoCoding(pixelGeoCoding);
-//        } catch (IOException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
     }
 
     @Override
