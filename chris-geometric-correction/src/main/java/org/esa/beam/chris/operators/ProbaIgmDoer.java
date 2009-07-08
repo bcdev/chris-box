@@ -164,13 +164,12 @@ class ProbaIgmDoer {
         final double[] ScanAng = new double[nCols];
         if (Mode == 5) {
             // In Mode 5 the last pixel is the one pointing to the target, i.e. ScanAng must equal zero for the last pixel.
-            final double fovOffset = FOV / 2.0;
             for (int i = 0; i < ScanAng.length; i++) {
-                ScanAng[i] = (i + 0.5) * IFOV - fovOffset;
+                ScanAng[i] = (i + 0.5) * IFOV - FOV;
             }
         } else {
             for (int i = 0; i < ScanAng.length; i++) {
-                ScanAng[i] = (i + 0.5) * IFOV - FOV;
+                ScanAng[i] = (i + 0.5) * IFOV - FOV / 2.0;
             }
         }
 

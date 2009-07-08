@@ -572,17 +572,24 @@ public class TheRealThing extends Operator {
 
     public static void main(String[] args) throws IOException {
 
-        File baseDir = new File("/home/marcoz/EOData/Chris/geoc/");
-        File productFile = new File(baseDir, "CHRIS_AM_080805_A348_41_NR.dim");
+        File baseDir = new File("testdata");
+        File productFile = new File(baseDir, "CHRIS_BR_030512_342A_41.dim");
         doCorrectFile(productFile);
     }
     
     public static void doCorrectFile(File productFile) throws IOException {
         File baseDir = productFile.getParentFile();
+        final String telemetryDirName = System.getProperty("org.esa.beam.chris.telemetryDataDir");
+        final File telemetryDir;
+        if (telemetryDirName != null) {
+            telemetryDir = new File(telemetryDirName);
+        } else {
+            telemetryDir = baseDir;
+        }
         TheRealThing thing = new TheRealThing();
         Product sourceProduct = ProductIO.readProduct(productFile, null);
         thing.chrisProduct = sourceProduct;
-        TelemetryFiles telemetryFiles = AuxDataFinder.findTelemetryFiles(sourceProduct, baseDir, baseDir);
+        TelemetryFiles telemetryFiles = AuxDataFinder.findTelemetryFiles(sourceProduct, telemetryDir, telemetryDir, baseDir);
         thing.gpsFile = telemetryFiles.gpsFile;
         thing.ictFile = telemetryFiles.telemetryFile;
         Product targetProduct = thing.getTargetProduct();

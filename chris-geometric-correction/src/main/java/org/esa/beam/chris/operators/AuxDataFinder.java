@@ -22,6 +22,7 @@ import org.esa.beam.framework.datamodel.Product;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.FileNotFoundException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,24 +42,31 @@ class AuxDataFinder {
         
     }
 
-    public static TelemetryFiles findTelemetryFiles(Product chrisProduct, File telemetryArchiveBase, File gpsArchiveBase) {
+    public static TelemetryFiles findTelemetryFiles(Product chrisProduct, File telemetryArchiveBase, File gpsArchiveBase, File localDir) throws
+                                                                                                                                         FileNotFoundException {
         String imageDateWithDashes = OpUtils.getAnnotationString(chrisProduct, ChrisConstants.ATTR_NAME_IMAGE_DATE);
         String imageDate = imageDateWithDashes.replace("-", "");
         String targetName = OpUtils.getAnnotationString(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_NAME);
         
         Pattern telemetryPattern = Pattern.compile(".*\\."+targetName+"_(\\d+)_CHRIS_center_times_"+imageDate+"_.*");
-        File[] telemetryFiles = telemetryArchiveBase.listFiles(new PatternFilenameFilter(telemetryPattern));
-        if (telemetryFiles.length != 1) {
-            return null;
+        File[] telemetryFiles = localDir.listFiles(new PatternFilenameFilter(telemetryPattern));
+        if (telemetryFiles.length == 0) {
+            telemetryFiles = telemetryArchiveBase.listFiles(new PatternFilenameFilter(telemetryPattern));
         }
-        
+        if (telemetryFiles.length == 0) {
+            throw new FileNotFoundException("CHRIS center times file not found.");            
+        }
         String reference = getGroup(telemetryPattern, telemetryFiles[0].getName());
         
         Pattern gpsPattern = Pattern.compile("CHRIS_"+reference+"_\\d+_PROBA1_GPS_Data");
-        File[] gpsFiles = gpsArchiveBase.listFiles(new PatternFilenameFilter(gpsPattern));
-        if (gpsFiles.length != 1) {
-            return new TelemetryFiles(null, telemetryFiles[0]);
+        File[] gpsFiles = localDir.listFiles(new PatternFilenameFilter(gpsPattern));
+        if (gpsFiles.length == 0) {
+            gpsFiles = gpsArchiveBase.listFiles(new PatternFilenameFilter(gpsPattern));
         }
+        if (gpsFiles.length == 0) {
+            throw new FileNotFoundException("GPS data file not found.");
+        }
+        
         return new TelemetryFiles(gpsFiles[0], telemetryFiles[0]);
     }
     
