@@ -17,25 +17,26 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.ProgressMonitor;
-
-import org.esa.beam.chris.operators.AuxDataFinder.TelemetryFiles;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.GPSTime.GPSReader;
 import org.esa.beam.chris.operators.ImageCenterTime.ITCReader;
+import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
+import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.framework.dataio.ProductIO;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.Tile;
+import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.util.ProductUtils;
 
 import java.awt.Rectangle;
@@ -54,7 +55,7 @@ import java.util.List;
                   description = "Performs the geometric correction for a CHRIS/Proba RCI.")
 public class PerformGeometricCorrectionOp extends Operator {
 
-    public class ChrisInfo {
+    private static class ChrisInfo {
 
         int mode;
         double alt;
@@ -70,42 +71,46 @@ public class PerformGeometricCorrectionOp extends Operator {
     private static final double jd0 = TimeConverter.julianDate(2001, 0, 1);
 
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
-    private static final double delay = 0.999;
+    private static final double DELAY = 0.999;
 
     // Variables used for array subscripting, so the code is more readable.
     private static final int X = 0;
     private static final int Y = 1;
     private static final int Z = 2;
-    
+
     private static final int NUM_IMG = 5;
 
 
-    public ChrisInfo info;
     ///////////////////////////////////////////////////////////
-    @Parameter
-    public File ictFile;
-    @Parameter
-    public File gpsFile;
+
+    @Parameter()
+    private String telemetryRepositoryPath;
+
     @SourceProduct
-    public Product chrisProduct;
+    private Product sourceProduct;
+
+    private ChrisInfo info;
 
     private double[][][] igm;
 
     ///////////////////////////////////////////////////////////
+
     @Override
     public void initialize() throws OperatorException {
+        final Telemetry telemetry = getTelemetry();
+
         fillInfo();
         // ICT
         ITCReader ictReader;
         try {
-            ictReader = new ImageCenterTime.ITCReader(new FileInputStream(ictFile));
+            ictReader = new ImageCenterTime.ITCReader(new FileInputStream(telemetry.getIctFile()));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             throw new OperatorException(e);
         }
         double[] lastIctValues = ictReader.getLastIctValues();
         final ImageCenterTime lastImageCenterTime;
-        final double dTgps = getDeltaGPS(chrisProduct);
+        final double dTgps = getDeltaGPS(sourceProduct);
         try {
             lastImageCenterTime = ImageCenterTime.create(lastIctValues, dTgps);
         } catch (IOException e) {
@@ -115,7 +120,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         // GPS
         GPSReader gpsReader;
         try {
-            gpsReader = new GPSTime.GPSReader(new FileInputStream(gpsFile));
+            gpsReader = new GPSTime.GPSReader(new FileInputStream(telemetry.getGpsFile()));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             throw new OperatorException(e);
@@ -123,7 +128,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         List<String[]> gpsRecords = gpsReader.getReadRecords();
         List<GPSTime> gps;
         try {
-            gps = GPSTime.create(gpsRecords, dTgps, delay);
+            gps = GPSTime.create(gpsRecords, dTgps, DELAY);
         } catch (IOException e) {
             throw new OperatorException(e);
         }
@@ -341,7 +346,8 @@ public class PerformGeometricCorrectionOp extends Operator {
             x[i] = uW[Tini[img] + i][X];
             y[i] = uW[Tini[img] + i][Y];
             z[i] = uW[Tini[img] + i][Z];
-            angles[i] = Math.pow(-1, img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
+            angles[i] = Math.pow(-1,
+                                 img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
         }
         Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
         for (int i = 0; i < mode.getNLines(); i++) {
@@ -481,25 +487,43 @@ public class PerformGeometricCorrectionOp extends Operator {
             izSubset[i] = iZ[Tini[img] + i];
             timeSubset[i] = T[Tini[img] + i];
         }
-        igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(), 
+        igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(),
                                      uEjePitch, uPitchAng,
-                                     uEjeRoll, uRollAng, 
-                                     uEjeYaw, 
-                                     TgtAlt, 
-                                     ixSubset, iySubset, izSubset, 
+                                     uEjeRoll, uRollAng,
+                                     uEjeYaw,
+                                     TgtAlt,
+                                     ixSubset, iySubset, izSubset,
                                      timeSubset, info.mode);
 
-        final int width = chrisProduct.getSceneRasterWidth();
-        final int height = chrisProduct.getSceneRasterHeight();
-        Product targetProduct = new Product("chris_geo_corrected", "foo", width, height);
-        targetProduct.addBand("latitude", ProductData.TYPE_FLOAT64);
-        targetProduct.addBand("longitude", ProductData.TYPE_FLOAT64);
-        String[] bandNames = chrisProduct.getBandNames();
-        for (String bandName : bandNames) {
-            Band targetBand = ProductUtils.copyBand(bandName, chrisProduct, targetProduct);
-            targetBand.setSourceImage(chrisProduct.getBand(bandName).getSourceImage());
+        setTargetProduct(createTargetProduct());
+    }
+
+    private Telemetry getTelemetry() {
+        final File telemetryRepository;
+        if (telemetryRepositoryPath != null) {
+            telemetryRepository = new File(telemetryRepositoryPath);
+        } else {
+            telemetryRepository = null;
         }
-        setTargetProduct(targetProduct);
+        try {
+            return TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository, telemetryRepository);
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        }
+    }
+
+    private Product createTargetProduct() {
+        final String type = sourceProduct.getProductType() + "_GC";
+        final Product targetProduct = createCopy(sourceProduct, "GC", type, new BandFilter() {
+            @Override
+            public boolean accept(Band band) {
+                return !"longitude".equals(band.getName()) && !"latitude".equals(band.getName());
+            }
+        });
+        targetProduct.addBand("longitude", ProductData.TYPE_FLOAT64);
+        targetProduct.addBand("latitude", ProductData.TYPE_FLOAT64);
+
+        return targetProduct;
     }
 
     @Override
@@ -519,11 +543,11 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private void fillInfo() {
         info = new ChrisInfo();
-        info.mode = OpUtils.getAnnotationInt(chrisProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE);
-        info.lat = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
-        info.lon = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
-        info.alt = OpUtils.getAnnotationDouble(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
-        String image = OpUtils.getAnnotationString(chrisProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER);
+        info.mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        info.lat = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
+        info.lon = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
+        info.alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        String image = OpUtils.getAnnotationString(sourceProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER);
         info.imageNumber = Integer.valueOf(image.substring(0, 1)) - 1;
     }
 
@@ -575,33 +599,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         return v;
     }
 
-    public static void main(String[] args) throws IOException {
-
-        File baseDir = new File("testdata");
-        File productFile = new File(baseDir, "CHRIS_BR_030512_342A_41.dim");
-        doCorrectFile(productFile);
-    }
-    
-    public static void doCorrectFile(File productFile) throws IOException {
-        File baseDir = productFile.getParentFile();
-        final String telemetryDirName = System.getProperty("org.esa.beam.chris.telemetryDataDir");
-        final File telemetryDir;
-        if (telemetryDirName != null) {
-            telemetryDir = new File(telemetryDirName);
-        } else {
-            telemetryDir = baseDir;
-        }
-        PerformGeometricCorrectionOp thing = new PerformGeometricCorrectionOp();
-        Product sourceProduct = ProductIO.readProduct(productFile, null);
-        thing.chrisProduct = sourceProduct;
-        TelemetryFiles telemetryFiles = AuxDataFinder.findTelemetryFiles(sourceProduct, telemetryDir, telemetryDir, baseDir);
-        thing.gpsFile = telemetryFiles.gpsFile;
-        thing.ictFile = telemetryFiles.telemetryFile;
-        Product targetProduct = thing.getTargetProduct();
-        File targetFile = new File(baseDir, sourceProduct.getName()+"_GEOCOR.dim");
-        ProductIO.writeProduct(targetProduct, targetFile.getAbsolutePath(), null);
-    }
-
     private static double getDeltaGPS(Product product) {
         final Date date = product.getStartTime().getAsDate();
         final double mjd = TimeConverter.dateToMJD(date);
@@ -610,6 +607,52 @@ public class PerformGeometricCorrectionOp extends Operator {
             return TimeConverter.getInstance().deltaGPS(mjd);
         } catch (IOException e) {
             throw new OperatorException(e);
+        }
+    }
+
+    // TODO - this is almost a general utility method (rq-20090708)
+    private static Product createCopy(Product sourceProduct, String name, String type, BandFilter bandFilter) {
+        final int w = sourceProduct.getSceneRasterWidth();
+        final int h = sourceProduct.getSceneRasterHeight();
+        final Product targetProduct = new Product(name, type, w, h);
+
+        // 1. set start and end times
+        targetProduct.setStartTime(sourceProduct.getStartTime());
+        targetProduct.setEndTime(sourceProduct.getEndTime());
+
+        // 2. copy flag codings
+        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+
+        // TODO - tie point grids
+
+        // 3. copy all bands from source product to target product
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (bandFilter.accept(sourceBand)) {
+                final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+                targetBand.setSourceImage(sourceBand.getSourceImage());
+                final FlagCoding flagCoding = sourceBand.getFlagCoding();
+                if (flagCoding != null) {
+                    targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
+                }
+            }
+        }
+
+        // 4. copy bitmask definitions
+        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+
+        // 5. copy metadata tree
+        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+
+        // 6. set preferred tile size
+        targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
+
+        return targetProduct;
+    }
+
+    public static class Spi extends OperatorSpi {
+
+        public Spi() {
+            super(PerformGeometricCorrectionOp.class);
         }
     }
 
