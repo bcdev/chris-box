@@ -82,11 +82,10 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     ///////////////////////////////////////////////////////////
 
-    @Parameter
-    private String telemetryRepositoryPath;
-
-    @Parameter
-    private boolean fetchLatestTimeData;
+    @Parameter(label = "Telemetry search path",
+               description = "The path of the directory containing the CHRIS telemetry data. If left blank,\n" +
+                             "the path of the CHRIS telemetry repository is used.")
+    private String telemetrySearchPath;
 
     @SourceProduct
     private Product sourceProduct;
@@ -104,14 +103,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
         final ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
-
-        try {
-            if (fetchLatestTimeData) {
-                TimeConverter.getInstance().fetchLatestTimeData();
-            }
-        } catch (IOException e) {
-            throw new OperatorException(e);
-        }
 
         //////////////////////////
         // Prepare Time Frames
@@ -473,13 +464,13 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private Telemetry getTelemetry() {
         final File telemetryRepository;
-        if (telemetryRepositoryPath == null || telemetryRepositoryPath.isEmpty()) {
-            telemetryRepositoryPath = System.getProperty("beam.chris.telemetryRepositoryPath");
+        if (telemetrySearchPath == null || telemetrySearchPath.isEmpty()) {
+            telemetrySearchPath = System.getProperty("beam.chris.telemetryRepositoryPath");
         }
-        if (telemetryRepositoryPath == null || telemetryRepositoryPath.isEmpty()) {
+        if (telemetrySearchPath == null || telemetrySearchPath.isEmpty()) {
             telemetryRepository = null;
         } else {
-            telemetryRepository = new File(telemetryRepositoryPath);
+            telemetryRepository = new File(telemetrySearchPath);
         }
         try {
             return TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);

@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -65,8 +66,6 @@ public class TimeConverter {
      */
     public static final double SECONDS_PER_DAY = 86400.0;
 
-    private static final String PROPERTY_KEY_AUX_DATA_DIR = "beam.chris.auxDataDir";
-
     private static volatile TimeConverter uniqueInstance;
 
     private TimeConverter() {
@@ -118,7 +117,7 @@ public class TimeConverter {
     public final double deltaTAI(double mjd) {
         if (mjd < tai.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No TAI-UTC data available before MJD {0}.", tai.firstKey()));
+                    MessageFormat.format("No TAI-UTC data available before {0}.", mjdToDate(tai.firstKey())));
         }
         return tai.floorEntry(mjd).getValue();
     }
@@ -135,21 +134,38 @@ public class TimeConverter {
     public final double deltaUT1(double mjd) {
         if (mjd < ut1.firstKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No UT1-UTC data available before MJD {0}.", ut1.firstKey()));
+                    MessageFormat.format("No UT1-UTC data available before {0}.", mjdToDate(ut1.firstKey())));
         }
         if (mjd > ut1.lastKey()) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("No UT1-UTC data available after MJD {0}.", ut1.lastKey()));
+                    MessageFormat.format("No UT1-UTC data available after {0}.", mjdToDate(ut1.lastKey())));
         }
 
         return interpolate(mjd, ut1.floorEntry(mjd), ut1.ceilingEntry(mjd));
     }
 
-    public void fetchLatestTimeData() throws IOException {
+    public long lastModified() {
+        final File file = getFile("finals.data");
+        if (file != null) {
+            return file.lastModified();
+        }
+        return 0L;
+    }
+
+    public void updateTimeTables() throws IOException {
         synchronized (this) {
             this.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
             this.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
         }
+    }
+
+    private static TimeConverter createInstance() throws IOException {
+        final TimeConverter timeConverter = new TimeConverter();
+
+        readTAI("leapsec.dat", timeConverter.tai);
+        readUT1("finals.data", timeConverter.ut1);
+
+        return timeConverter;
     }
 
     /**
@@ -202,15 +218,6 @@ public class TimeConverter {
         readUT1(is, ut1, true);
     }
 
-    private static TimeConverter createInstance() throws IOException {
-        final TimeConverter timeConverter = new TimeConverter();
-
-        readTAI("leapsec.dat", timeConverter.tai);
-        readUT1("finals.data", timeConverter.ut1);
-
-        return timeConverter;
-    }
-
     private static void readTAI(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
@@ -224,25 +231,11 @@ public class TimeConverter {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
-        final Writer writer;
-        if (write) {
-            writer = getWriter("leapsec.dat");
-        } else {
-            writer = null;
-        }
-
+        final ArrayList<String> lineList = new ArrayList<String>();
         try {
             while (scanner.hasNextLine()) {
                 final String line = scanner.nextLine();
-
-                if (writer != null) {
-                    try {
-                        writer.write(line);
-                        writer.write("\n");
-                    } catch (IOException e) {
-                        // ignore
-                    }
-                }
+                lineList.add(line);
 
                 final int datePos = line.indexOf("=JD");
                 final int timePos = line.indexOf("TAI-UTC=");
@@ -266,13 +259,10 @@ public class TimeConverter {
             }
         } finally {
             scanner.close();
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+        }
+
+        if (write) {
+            writeFile("leapsec.dat", lineList);
         }
     }
 
@@ -289,25 +279,11 @@ public class TimeConverter {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
-        final Writer writer;
-        if (write) {
-            writer = getWriter("finals.data");
-        } else {
-            writer = null;
-        }
-
+        final ArrayList<String> lineList = new ArrayList<String>();
         try {
             while (scanner.hasNextLine()) {
                 final String line = scanner.nextLine();
-
-                if (writer != null) {
-                    try {
-                        writer.write(line);
-                        writer.write("\n");
-                    } catch (IOException e) {
-                        // ignore
-                    }
-                }
+                lineList.add(line);
 
                 final String mjdString = line.substring(7, 15);
                 final String utdString = line.substring(58, 68);
@@ -325,26 +301,22 @@ public class TimeConverter {
                 } catch (NumberFormatException e) {
                     throw new IOException("An error occurred while parsing the UT1-UTC data.", e);
                 }
-
                 map.put(mjd, utd);
             }
         } finally {
             scanner.close();
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+        }
+
+        if (write) {
+            writeFile("finals.data", lineList);
         }
     }
 
     private static Writer getWriter(String fileName) {
-        final String timeDataDir = System.getProperty(PROPERTY_KEY_AUX_DATA_DIR);
-
-        if (timeDataDir != null) {
-            final File file = new File(timeDataDir, fileName);
+        final File userDir = getUserDir(".beam", "chris-geometric-correction", "auxdata");
+        if (userDir != null) {
+            userDir.mkdirs();
+            final File file = new File(userDir, fileName);
             try {
                 final OutputStream os = new FileOutputStream(file);
                 return new BufferedWriter(new OutputStreamWriter(os, "US-ASCII"));
@@ -358,17 +330,46 @@ public class TimeConverter {
         return null;
     }
 
-    private static File getFile(String fileName) {
-        final String timeDataDir = System.getProperty(PROPERTY_KEY_AUX_DATA_DIR);
+    private static void writeFile(String fileName, ArrayList<String> lineList) throws IOException {
+        final Writer writer = getWriter(fileName);
 
-        if (timeDataDir != null) {
-            final File file = new File(timeDataDir, fileName);
+        if (writer != null) {
+            try {
+                for (final String line : lineList) {
+                    writer.write(line);
+                    writer.write("\n");
+                }
+            } finally {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    private static File getFile(String fileName) {
+        final File timeFileDir = getUserDir(".beam", "chris-geometric-correction", "auxdata");
+
+        if (timeFileDir != null) {
+            final File file = new File(timeFileDir, fileName);
             if (file.canRead()) {
                 return file;
             }
         }
 
         return null;
+    }
+
+    private static File getUserDir(String... children) {
+        File dir = new File(System.getProperty("user.home"));
+
+        for (final String child : children) {
+            dir = new File(dir, child);
+        }
+
+        return dir;
     }
 
     private static double interpolate(double mjd, Map.Entry<Double, Double> floor, Map.Entry<Double, Double> ceiling) {

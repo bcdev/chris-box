@@ -15,14 +15,20 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.chris.operators.PerformGeometricCorrectionOp;
+import org.esa.beam.chris.operators.TimeConverter;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
+import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
+import javax.swing.JOptionPane;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -33,7 +39,18 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class PerformGeometricCorrectionAction extends AbstractVisatAction {
 
+    private static final String TITLE = "CHRIS/Proba Geometric Correction";
+    private static final String KEY_FETCH_LATEST_TIME_TABLES = "beam.chris.fetchLatestTimeTables";
+    private static final int PERIOD_FETCH_LATEST_TIME_TABLES = 7;
+
     private final AtomicReference<ModelessDialog> dialog;
+    private static final String QUESTION_FETCH_LATEST_TIME_TABLES =
+            MessageFormat.format(
+                    "Your UT1 and leap second time tables are older than {0} days. Fetching\n" +
+                    "the latest time tables from the web can take a few minutes.\n" +
+                    "\n" +
+                    "Do you want to fetch the latest time tables now?",
+                    PERIOD_FETCH_LATEST_TIME_TABLES);
 
     public PerformGeometricCorrectionAction() {
         dialog = new AtomicReference<ModelessDialog>();
@@ -41,6 +58,26 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
 
     @Override
     public void actionPerformed(CommandEvent commandEvent) {
+        final TimeConverter converter;
+
+        try {
+            converter = TimeConverter.getInstance();
+        } catch (IOException e) {
+            handleError("The geometric correction cannot be carried out because an error occurred.", e);
+            return;
+        }
+        if (isTimeConverterOudated(converter, PERIOD_FETCH_LATEST_TIME_TABLES)) {
+            final int answer = showQuestionDialog(QUESTION_FETCH_LATEST_TIME_TABLES, KEY_FETCH_LATEST_TIME_TABLES);
+            if (answer == JOptionPane.YES_OPTION) {
+                try {
+                    converter.updateTimeTables();
+                    showInfoDialog("The UT1 and leap second time tables have been updated successfully.");
+                } catch (IOException e) {
+                    handleError("An error occurred while updating the UT1 and leap second time tables.", e);
+                }
+            }
+        }
+
         dialog.compareAndSet(null, createDialog(getAppContext()));
         dialog.get().show();
     }
@@ -51,16 +88,31 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
         setEnabled(selectedProduct == null || new GeometricCorrectionProductFilter().accept(selectedProduct));
     }
 
+    private void handleError(String message, IOException e) {
+        getAppContext().handleError(message, e);
+    }
+
     private static ModelessDialog createDialog(AppContext appContext) {
         final DefaultSingleTargetProductDialog dialog =
                 new DefaultSingleTargetProductDialog(OperatorSpi.getOperatorAlias(PerformGeometricCorrectionOp.class),
-                                                     appContext,
-                                                     "CHRIS/Proba Geometric Correction",
-                                                     "chrisGeometricCorrectionTool");
+                                                     appContext, TITLE, "chrisGeometricCorrectionTool");
         dialog.getJDialog().setName("chrisGeometricCorrectionDialog");
         dialog.setTargetProductNameSuffix("_GC");
 
         return dialog;
+    }
+
+    private static void showInfoDialog(String message) {
+        VisatApp.getApp().showInfoDialog(TITLE, message, null);
+    }
+
+    private static int showQuestionDialog(String message, String preferencesKey) {
+        return VisatApp.getApp().showQuestionDialog(TITLE, message, preferencesKey);
+    }
+
+    private static boolean isTimeConverterOudated(TimeConverter converter, int days) {
+        final Date now = new Date();
+        return now.getTime() - converter.lastModified() > days * TimeConverter.MILLIS_PER_DAY;
     }
 
 }
