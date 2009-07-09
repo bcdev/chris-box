@@ -65,9 +65,7 @@ public class TimeConverter {
      */
     public static final double SECONDS_PER_DAY = 86400.0;
 
-    private static final String PROPERTY_KEY_AUX_DATA_DIR = "org.esa.beam.chris.auxDataDir";
-    private static final String PROPERTY_KEY_FETCH_CURRENT_TIME_DATA = "org.esa.beam.chris.fetchCurrentTimeData";
-    private static final String PROPERTY_KEY_WRITE_CURRENT_TIME_DATA = "org.esa.beam.chris.writeCurrentTimeData";
+    private static final String PROPERTY_KEY_AUX_DATA_DIR = "beam.chris.auxDataDir";
 
     private static volatile TimeConverter uniqueInstance;
 
@@ -147,38 +145,11 @@ public class TimeConverter {
         return interpolate(mjd, ut1.floorEntry(mjd), ut1.ceilingEntry(mjd));
     }
 
-    private static double interpolate(double mjd, Map.Entry<Double, Double> floor, Map.Entry<Double, Double> ceiling) {
-        final double floorKey = floor.getKey();
-        final double floorValue = floor.getValue();
-        final double ceilingKey = ceiling.getKey();
-
-        if (floorKey == ceilingKey) {
-            return floorValue;
+    public void fetchLatestTimeData() throws IOException {
+        synchronized (this) {
+            this.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
+            this.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
         }
-
-        return floorValue + (ceiling.getValue() - floorValue) * ((mjd - floorKey) / (ceilingKey - floorKey));
-    }
-
-    /**
-     * Updates the internal TAI-UTC table with newer data read from an input stream.
-     *
-     * @param is the input stream.
-     *
-     * @throws IOException if an error occurred while reading the TAI-UTC data from the input stream.
-     */
-    private void updateTAI(InputStream is) throws IOException {
-        readTAI(is, tai);
-    }
-
-    /**
-     * Updates the internal UT1-UTC table with newer data read from an input stream.
-     *
-     * @param is the input stream.
-     *
-     * @throws IOException if an error occurred while reading the UT1-UTC data from the input stream.
-     */
-    private void updateUT1(InputStream is) throws IOException {
-        readUT1(is, ut1);
     }
 
     /**
@@ -196,6 +167,17 @@ public class TimeConverter {
     }
 
     /**
+     * Updates the internal TAI-UTC table with newer data read from an input stream.
+     *
+     * @param is the input stream.
+     *
+     * @throws IOException if an error occurred while reading the TAI-UTC data from the input stream.
+     */
+    private void updateTAI(InputStream is) throws IOException {
+        readTAI(is, tai, true);
+    }
+
+    /**
      * Updates the internal UT1-UTC table with newer data read from a URL.
      *
      * @param spec the string to parse a a URL.
@@ -209,20 +191,22 @@ public class TimeConverter {
         updateUT1(connection.getInputStream());
     }
 
+    /**
+     * Updates the internal UT1-UTC table with newer data read from an input stream.
+     *
+     * @param is the input stream.
+     *
+     * @throws IOException if an error occurred while reading the UT1-UTC data from the input stream.
+     */
+    private void updateUT1(InputStream is) throws IOException {
+        readUT1(is, ut1, true);
+    }
+
     private static TimeConverter createInstance() throws IOException {
         final TimeConverter timeConverter = new TimeConverter();
 
         readTAI("leapsec.dat", timeConverter.tai);
         readUT1("finals.data", timeConverter.ut1);
-
-        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_FETCH_CURRENT_TIME_DATA))) {
-            try {
-                timeConverter.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
-                timeConverter.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
-            } catch (IOException ignored) {
-                // todo - warning
-            }
-        }
 
         return timeConverter;
     }
@@ -230,18 +214,18 @@ public class TimeConverter {
     private static void readTAI(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readTAI(TimeConverter.class.getResourceAsStream(name), map);
+            readTAI(TimeConverter.class.getResourceAsStream(name), map, false);
         } else {
-            readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map);
+            readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map, false);
         }
     }
 
-    private static void readTAI(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readTAI(InputStream is, ConcurrentMap<Double, Double> map, boolean write) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
         final Writer writer;
-        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_WRITE_CURRENT_TIME_DATA))) {
+        if (write) {
             writer = getWriter("leapsec.dat");
         } else {
             writer = null;
@@ -295,18 +279,18 @@ public class TimeConverter {
     private static void readUT1(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readUT1(TimeConverter.class.getResourceAsStream(name), map);
+            readUT1(TimeConverter.class.getResourceAsStream(name), map, false);
         } else {
-            readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map);
+            readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map, false);
         }
     }
 
-    private static void readUT1(InputStream is, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readUT1(InputStream is, ConcurrentMap<Double, Double> map, boolean write) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
         final Writer writer;
-        if ("true".equalsIgnoreCase(System.getProperty(PROPERTY_KEY_WRITE_CURRENT_TIME_DATA))) {
+        if (write) {
             writer = getWriter("finals.data");
         } else {
             writer = null;
@@ -385,6 +369,18 @@ public class TimeConverter {
         }
 
         return null;
+    }
+
+    private static double interpolate(double mjd, Map.Entry<Double, Double> floor, Map.Entry<Double, Double> ceiling) {
+        final double floorKey = floor.getKey();
+        final double floorValue = floor.getValue();
+        final double ceilingKey = ceiling.getKey();
+
+        if (floorKey == ceilingKey) {
+            return floorValue;
+        }
+
+        return floorValue + (ceiling.getValue() - floorValue) * ((mjd - floorKey) / (ceilingKey - floorKey));
     }
 
     /**

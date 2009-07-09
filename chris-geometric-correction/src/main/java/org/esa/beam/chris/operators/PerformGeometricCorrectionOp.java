@@ -82,8 +82,11 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     ///////////////////////////////////////////////////////////
 
-    @Parameter()
+    @Parameter
     private String telemetryRepositoryPath;
+
+    @Parameter
+    private boolean fetchLatestTimeData;
 
     @SourceProduct
     private Product sourceProduct;
@@ -100,9 +103,15 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
-
-
         final ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
+
+        try {
+            if (fetchLatestTimeData) {
+                TimeConverter.getInstance().fetchLatestTimeData();
+            }
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        }
 
         //////////////////////////
         // Prepare Time Frames
@@ -464,13 +473,13 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private Telemetry getTelemetry() {
         final File telemetryRepository;
-        if (telemetryRepositoryPath == null) {
+        if (telemetryRepositoryPath == null || telemetryRepositoryPath.isEmpty()) {
             telemetryRepositoryPath = System.getProperty("beam.chris.telemetryRepositoryPath");
         }
-        if (telemetryRepositoryPath != null) {
-            telemetryRepository = new File(telemetryRepositoryPath);
-        } else {
+        if (telemetryRepositoryPath == null || telemetryRepositoryPath.isEmpty()) {
             telemetryRepository = null;
+        } else {
+            telemetryRepository = new File(telemetryRepositoryPath);
         }
         try {
             return TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
