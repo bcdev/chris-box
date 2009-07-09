@@ -102,9 +102,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
 
 
-        // GCP
-        // TODO
-
         final ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
 
         //////////////////////////
@@ -467,13 +464,16 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private Telemetry getTelemetry() {
         final File telemetryRepository;
+        if (telemetryRepositoryPath == null) {
+            telemetryRepositoryPath = System.getProperty("beam.chris.telemetryRepositoryPath");
+        }
         if (telemetryRepositoryPath != null) {
             telemetryRepository = new File(telemetryRepositoryPath);
         } else {
             telemetryRepository = null;
         }
         try {
-            return TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository, telemetryRepository);
+            return TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
         } catch (IOException e) {
             throw new OperatorException(e);
         }

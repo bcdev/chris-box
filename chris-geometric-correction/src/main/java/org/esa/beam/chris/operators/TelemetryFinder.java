@@ -52,8 +52,7 @@ class TelemetryFinder {
         }
     }
 
-    public static Telemetry findTelemetry(Product chrisProduct, File gpsRepository,
-                                          File ictRepository) throws IOException {
+    public static Telemetry findTelemetry(Product chrisProduct, File telemetryRepository) throws IOException {
         Assert.notNull(chrisProduct);
 
         final String imageDateWithDashes = OpUtils.getAnnotationString(chrisProduct,
@@ -63,11 +62,11 @@ class TelemetryFinder {
 
         final File productDir = chrisProduct.getFileLocation().getParentFile();
         final Pattern ictPattern = createIctPattern(imageDate, targetName);
-        final File ictFile = findTelemetryFile(productDir, ictRepository, new PatternFilenameFilter(ictPattern));
+        final File ictFile = findTelemetryFile(productDir, telemetryRepository, new PatternFilenameFilter(ictPattern));
         final String reference = getReferenceString(ictPattern, ictFile.getName());
 
         final Pattern gpsPattern = createGpsPattern(reference);
-        final File gpsFile = findTelemetryFile(productDir, gpsRepository, new PatternFilenameFilter(gpsPattern));
+        final File gpsFile = findTelemetryFile(productDir, telemetryRepository, new PatternFilenameFilter(gpsPattern));
 
         return new Telemetry(gpsFile, ictFile);
     }
@@ -94,7 +93,7 @@ class TelemetryFinder {
                 if (!repositoryDir.canRead()) {
                     throw new IOException("Cannot read from directory '" + repositoryDir.getPath() + "'.");
                 }
-                files = repositoryDir.listFiles(filter);
+                files = findTelemetryFiles(repositoryDir, filter);
             }
         }
         if (files.length == 0) {
@@ -102,6 +101,24 @@ class TelemetryFinder {
                     "Cannot find telemetry file matching pattern ''{0}''.", filter.getPattern()));
         }
         return files[0];
+    }
+
+    private static File[] findTelemetryFiles(File dir, FilenameFilter filter) {
+        File[] telemetryFiles = dir.listFiles(filter);
+
+        if (telemetryFiles.length != 0) {
+            return telemetryFiles;
+        }
+        for (final File file : dir.listFiles()) {
+            if (file.isDirectory() && file.canRead()) {
+                telemetryFiles = findTelemetryFiles(file, filter);
+                if (telemetryFiles.length != 0) {
+                    return telemetryFiles;
+                }
+            }
+        }
+        
+        return telemetryFiles;
     }
 
     private static String getReferenceString(Pattern ictPattern, String ictFileName) {
@@ -128,4 +145,5 @@ class TelemetryFinder {
             return pattern.pattern();
         }
     }
+
 }
