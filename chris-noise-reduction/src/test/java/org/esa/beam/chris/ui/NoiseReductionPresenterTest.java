@@ -4,6 +4,9 @@ import junit.framework.TestCase;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.ui.DefaultAppContext;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,7 +18,7 @@ import java.io.File;
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-public class NoiseReductionPresenterTest extends TestCase {
+public class NoiseReductionPresenterTest {
 
     private String[] metadataNames;
     private Product first;
@@ -24,8 +27,8 @@ public class NoiseReductionPresenterTest extends TestCase {
     private Product[] expectedProducts;
     private DefaultAppContext appContext;
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    protected void before() throws Exception {
         metadataNames = new String[]{
                 ChrisConstants.ATTR_NAME_CHRIS_MODE,
                 ChrisConstants.ATTR_NAME_TARGET_NAME,
@@ -42,8 +45,13 @@ public class NoiseReductionPresenterTest extends TestCase {
         appContext = new DefaultAppContext("test");
     }
 
-    public void testConstuctor() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts, new AdvancedSettingsPresenter());
+    @Test
+    public void constuction() {
+        if (noX11()) {
+            return;
+        }
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
+                                                                  new AdvancedSettingsPresenter());
 
         Product[] actualProducts = nrp.getDestripingFactorsSourceProducts();
         assertNotNull(actualProducts);
@@ -60,8 +68,13 @@ public class NoiseReductionPresenterTest extends TestCase {
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
     }
 
-    public void testConstructorWithoutProducts() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, new Product[0], new AdvancedSettingsPresenter());
+    @Test
+    public void constructionWithoutProducts() {
+        if (noX11()) {
+            return;
+        }
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, new Product[0],
+                                                                  new AdvancedSettingsPresenter());
 
         DefaultTableModel metadata = nrp.getMetadataTableModel();
         assertEquals(5, metadata.getRowCount());
@@ -70,8 +83,13 @@ public class NoiseReductionPresenterTest extends TestCase {
         }
     }
 
-    public void testAddRemove() throws NoiseReductionValidationException {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts, new AdvancedSettingsPresenter());
+    @Test
+    public void addRemovePoduct() throws NoiseReductionValidationException {
+        if (noX11()) {
+            return;
+        }
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
+                                                                  new AdvancedSettingsPresenter());
 
         Product fourth = createChrisDummyProduct("fourth", "chris", "DummyTarget4");
         nrp.addProduct(fourth);
@@ -107,8 +125,13 @@ public class NoiseReductionPresenterTest extends TestCase {
         assertEquals(0, nrp.getProductTableSelectionModel().getMaxSelectionIndex());
     }
 
-    public void testSelectionChange() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts, new AdvancedSettingsPresenter());
+    @Test
+    public void selectionChange() {
+        if (noX11()) {
+            return;
+        }
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
+                                                                  new AdvancedSettingsPresenter());
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
 
         nrp.getProductTableSelectionModel().setSelectionInterval(2, 2);
@@ -118,8 +141,13 @@ public class NoiseReductionPresenterTest extends TestCase {
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode2", "DummyTarget2");
     }
 
-    public void testProductAsOutput() {
-        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts, new AdvancedSettingsPresenter());
+    @Test
+    public void productAsOutput() {
+        if (noX11()) {
+            return;
+        }
+        NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
+                                                                  new AdvancedSettingsPresenter());
 
         assertTrue(nrp.isChecked(first));
         assertTrue(nrp.isChecked(second));
@@ -133,7 +161,7 @@ public class NoiseReductionPresenterTest extends TestCase {
     }
 
     private static Product createChrisDummyProduct(String name, String mode, String targetName) {
-        Product product = new Product("CHRIS_BR_123456_"+name+"_21", "CHRIS_M2", 1, 1);
+        Product product = new Product("CHRIS_BR_123456_" + name + "_21", "CHRIS_M2", 1, 1);
         product.setFileLocation(new File("CHRIS_BR_123456_9876_21.hdf"));
         MetadataElement mphElement = new MetadataElement("MPH");
         mphElement.addAttribute(new MetadataAttribute(ChrisConstants.ATTR_NAME_CHRIS_MODE,
@@ -173,4 +201,7 @@ public class NoiseReductionPresenterTest extends TestCase {
         assertEquals("Not available", metaData.getValueAt(4, 1));
     }
 
+    private static boolean noX11() {
+        return "true".equalsIgnoreCase(System.getProperty("system.noX11", "false"));
+    }
 }
