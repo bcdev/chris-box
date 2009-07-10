@@ -28,7 +28,7 @@ public class NoiseReductionPresenterTest {
     private DefaultAppContext appContext;
 
     @Before
-    protected void before() throws Exception {
+    public void before() throws Exception {
         metadataNames = new String[]{
                 ChrisConstants.ATTR_NAME_CHRIS_MODE,
                 ChrisConstants.ATTR_NAME_TARGET_NAME,
@@ -47,9 +47,6 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void constuction() {
-        if (noX11()) {
-            return;
-        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
 
@@ -70,9 +67,6 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void constructionWithoutProducts() {
-        if (noX11()) {
-            return;
-        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, new Product[0],
                                                                   new AdvancedSettingsPresenter());
 
@@ -85,9 +79,6 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void addRemovePoduct() throws NoiseReductionValidationException {
-        if (noX11()) {
-            return;
-        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
 
@@ -127,9 +118,6 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void selectionChange() {
-        if (noX11()) {
-            return;
-        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
@@ -143,9 +131,6 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void productAsOutput() {
-        if (noX11()) {
-            return;
-        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
 
