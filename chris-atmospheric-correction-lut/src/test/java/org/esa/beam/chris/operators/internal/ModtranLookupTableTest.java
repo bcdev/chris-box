@@ -17,6 +17,8 @@ package org.esa.beam.chris.operators.internal;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.io.IOException;
 
@@ -33,25 +35,30 @@ public class ModtranLookupTableTest {
     // unit conversion constant
     private static final double DEKA_KILO = 1.0E4;
 
-    private ModtranLookupTable modtranLookupTable;
+    private static ModtranLookupTable modtranLookupTable;
 
-    // @Before
-    public void before() throws IOException {
-        modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
+    @BeforeClass
+    public static void beforeClass() {
+        try {
+            modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
+        } catch (IOException e) {
+            System.out.println(e);
+        }
     }
 
     @Test
-    public void placebo() {
-        // JUnit expects that at least a single test is declared
-    }
-
-    // @Test
     public void lookupTablePresence() {
+        if (modtranLookupTable == null) {
+            System.out.println("ModtranLookupTableTest.lookupTablePresence FAILED!");        
+        }
         assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
     }
 
-    // @Test
+    @Test
     public void lookupTableIntegrity() {
+        if (modtranLookupTable == null) {
+            System.out.println("ModtranLookupTableTest.lookupTableIntegrity FAILED!");
+        }
         checkLookupTableA();
         checkLookupTableB();
         checkModtranLookupTable();
