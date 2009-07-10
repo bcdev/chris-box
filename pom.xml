@@ -65,20 +65,20 @@
             <name>Public Maven Repository at Brockmann-Consult</name>
             <url>http://www.brockmann-consult.de/svn/os/</url>
         </repository>
-    </distributionManagement>    
+    </distributionManagement>
 
     <modules>
         <module>chris-bootstrap</module>
-        <module>chris-util</module>		
+        <module>chris-util</module>
         <module>chris-atmospheric-correction</module>
         <module>chris-atmospheric-correction-lut</module>
         <module>chris-cloud-screening</module>
         <module>chris-geometric-correction</module>
         <module>chris-noise-reduction</module>
         <module>chris-toa-reflectance-computation</module>
-		<!-- not yet available
-        <module>chris-aod-retrieval</module>
-		-->
+        <!-- not yet available
+          <module>chris-aod-retrieval</module>
+          -->
     </modules>
 
     <dependencyManagement>
@@ -269,7 +269,7 @@
        -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>    
+    </properties>
 
     <build>
         <!-- Maven plugin configurations common to all BEAM modules -->
@@ -295,12 +295,12 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                     <artifactId>maven-eclipse-plugin</artifactId>
-                     <configuration>
-                         <downloadSources>true</downloadSources>
-                         <downloadJavadocs>true</downloadJavadocs>
-                     </configuration>
-                 </plugin>
+                    <artifactId>maven-eclipse-plugin</artifactId>
+                    <configuration>
+                        <downloadSources>true</downloadSources>
+                        <downloadJavadocs>true</downloadJavadocs>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
@@ -313,22 +313,37 @@
                         </execution>
                     </executions>
                 </plugin>
-	           <plugin>
-    	           <groupId>com.bc.maven.plugins</groupId>
-	               <artifactId>maven-javahelp-plugin</artifactId>
-	               <version>1.0</version>
-	               <executions>
-	                   <execution>
-	                       <goals>
-	                           <goal>javahelp-indexer</goal>
+                <plugin>
+                    <groupId>com.bc.maven.plugins</groupId>
+                    <artifactId>maven-javahelp-plugin</artifactId>
+                    <version>1.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>javahelp-indexer</goal>
                             </goals>
-		              </execution>
-	               </executions>
-                </plugin>            
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
-        
+
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludeResources>true</excludeResources>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.2-beta-1</version>
@@ -339,7 +354,7 @@
                     <finalName>chris-box</finalName>
                 </configuration>
             </plugin>
-        </plugins>        
+        </plugins>
     </build>
 
     <reporting>
