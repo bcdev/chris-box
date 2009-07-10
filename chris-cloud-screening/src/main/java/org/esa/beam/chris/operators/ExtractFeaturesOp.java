@@ -18,7 +18,7 @@ import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
-import java.awt.*;
+import java.awt.Rectangle;
 import java.io.IOException;
 import static java.lang.Math.*;
 import java.text.MessageFormat;
@@ -210,7 +210,8 @@ public class ExtractFeaturesOp extends Operator {
                 {756.0, 775.0},
                 {808.0, 840.0},
                 {885.0, 985.0},
-                {985.0, 1010.0}});
+                {985.0, 1010.0}
+        });
 
         for (final Band band : bands) {
             if (absBandFilter.accept(band)) {
@@ -376,9 +377,23 @@ public class ExtractFeaturesOp extends Operator {
     private static double whiteness(double[] wavelengths, double[] reflectances, double brightness) {
         double sum = 0.0;
 
-        for (int i = 1; i < reflectances.length; ++i) {
-            sum += 0.5 * (abs(reflectances[i] - brightness) + abs(
-                    reflectances[i - 1] - brightness)) * (wavelengths[i] - wavelengths[i - 1]);
+        for (int i = 1; i < reflectances.length; i++) {
+            final double y1 = reflectances[i - 1] - brightness;
+            final double y2 = reflectances[i] - brightness;
+
+            // trapezoidal integration
+            final double x1 = wavelengths[i - 1];
+            final double x2 = wavelengths[i];
+            
+            if (y1 >= 0.0 && y2 >= 0.0 || y1 <= 0.0 && y2 <= 0.0) {
+                // abscissa is not intersected
+                sum += 0.5 * (abs(y1) + abs(y2)) * (x2 - x1);
+            } else {
+                // abscissa is intersected at
+                final double x0 = x1 - y1 * (x2 - x1) / (y2 - y1);
+                // sum of two triangles
+                sum += 0.5 * (abs(y1) * (x0 - x1) + abs(y2) * (x2 - x0));
+            }
         }
 
         return sum / (wavelengths[wavelengths.length - 1] - wavelengths[0]);

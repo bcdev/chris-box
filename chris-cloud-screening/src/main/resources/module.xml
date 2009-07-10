@@ -26,6 +26,8 @@
 
     <changelog>
         <![CDATA[
+        Changes in Version 1.1</br>
+        [CBOX-70] Inaccurate calculation of whiteness
         Changes in Version 1.0.2<br/>
         [CBOX.69] Change non-UTF8 characters        
         [CBOX-68] Make modules binary compatible to BEAM 4.6<br/><br/>
