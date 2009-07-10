@@ -68,11 +68,6 @@ public class TimeConverter {
 
     private static volatile TimeConverter uniqueInstance;
 
-    private TimeConverter() {
-        tai = new ConcurrentSkipListMap<Double, Double>();
-        ut1 = new ConcurrentSkipListMap<Double, Double>();
-    }
-
     /**
      * Returns a reference to the single instance of this class.
      * <p/>
@@ -144,6 +139,12 @@ public class TimeConverter {
         return interpolate(mjd, ut1.floorEntry(mjd), ut1.ceilingEntry(mjd));
     }
 
+    /**
+     * Returns the date (in millis) when the time tables used by an
+     * instance of this class were last modified (updated).
+     *
+     * @return the date (millis) of last modification.
+     */
     public long lastModified() {
         final File file = getFile("finals.data");
         if (file != null) {
@@ -152,6 +153,13 @@ public class TimeConverter {
         return 0L;
     }
 
+    /**
+     * Updates the time tables used by an instance of this class by
+     * fetching the latest versions of  the files 'leapsec.dat' and
+     * 'finals.dat' from ftp://maia.usno.navy.mil/ser7/
+     *
+     * @throws IOException when an IO error occurred.
+     */
     public void updateTimeTables() throws IOException {
         synchronized (this) {
             this.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
@@ -166,6 +174,11 @@ public class TimeConverter {
         readUT1("finals.data", timeConverter.ut1);
 
         return timeConverter;
+    }
+
+    private TimeConverter() {
+        tai = new ConcurrentSkipListMap<Double, Double>();
+        ut1 = new ConcurrentSkipListMap<Double, Double>();
     }
 
     /**
