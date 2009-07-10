@@ -36,8 +36,13 @@ public class ModtranLookupTableTest {
     private ModtranLookupTable modtranLookupTable;
 
     // @Before
-    protected void setUp() throws IOException {
+    public void before() throws IOException {
         modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
+    }
+
+    @Test
+    public void placebo() {
+        // JUnit expects that at least a single test is declared
     }
 
     // @Test
@@ -45,14 +50,12 @@ public class ModtranLookupTableTest {
         assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
     }
 
-    @Test
+    // @Test
     public void lookupTableIntegrity() {
-        if (modtranLookupTable != null) {
-            checkLookupTableA();
-            checkLookupTableB();
-            checkModtranLookupTable();
-            checkWaterVapourDimension();
-        }
+        checkLookupTableA();
+        checkLookupTableB();
+        checkModtranLookupTable();
+        checkWaterVapourDimension();
     }
 
     private void checkLookupTableA() {

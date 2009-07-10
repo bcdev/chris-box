@@ -35,6 +35,18 @@ public class ScreeningDialogTest {
 
     @Test
     public void placebo() {
+        // JUnit expects that at least a single test is declared
+    }
+
+    // @Before
+    public void before() throws Exception {
+        dialog = new ScreeningDialog(new DefaultAppContext("test"));
+        dialog.show();
+    }
+
+    // @After
+    public void after() throws Exception {
+        dialog.hide();
     }
 
     // @Test
@@ -46,16 +58,5 @@ public class ScreeningDialogTest {
 
         dialog.hide();
         assertNull(dialog.getFormModel().getSourceProduct());
-    }
-
-    // @Before
-    protected void setUp() throws Exception {
-        dialog = new ScreeningDialog(new DefaultAppContext("test"));
-        dialog.show();
-    }
-
-    // @After
-    protected void tearDown() throws Exception {
-        dialog.hide();
     }
 }
