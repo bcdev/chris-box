@@ -29,6 +29,9 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.datamodel.Pin;
+import org.esa.beam.framework.datamodel.ProductNodeGroup;
+import org.esa.beam.framework.datamodel.ProductNode;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -62,6 +65,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         double lon;
         int imageNumber;
     }
+    
     private static final int[] chronologicalImageNumber = new int[] {2, 1, 3, 0, 5};
     private static final int SLOW_DOWN = 5; // Slowdown factor
 
