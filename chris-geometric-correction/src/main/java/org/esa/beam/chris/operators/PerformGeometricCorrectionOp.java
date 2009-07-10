@@ -66,7 +66,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         int imageNumber;
     }
     
-    private static final int[] chronologicalImageNumber = new int[] {2, 1, 3, 0, 5};
+    private static final int[] chronologicalImageNumber = new int[] {2, 1, 3, 0, 4};
     private static final int SLOW_DOWN = 5; // Slowdown factor
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
