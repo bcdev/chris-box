@@ -83,15 +83,15 @@ public class TimeConverterTest {
 
         // 2008-NOV-13
         // NOTE: Failure of this tests usually occurs because newer time data are used for calculation
-        assertEquals(-0.5391980, timeConverter.deltaUT1(54783.0), 0.0);
+        assertEquals(-0.5391981, timeConverter.deltaUT1(54783.0), 0.0);
 
         // 2008-NOV-13
         // NOTE: Failure of this tests usually occurs because newer time data are used for calculation
-        assertEquals(-0.5403143, timeConverter.deltaUT1(54784.0), 0.0);
+        assertEquals(-0.5403142, timeConverter.deltaUT1(54784.0), 0.0);
 
         // 2009-NOV-21
         // NOTE: Failure of this tests usually occurs because newer time data are used for calculation
-        assertEquals(0.1470921, timeConverter.deltaUT1(55156.0), 0.0);
+        assertEquals(0.1457441, timeConverter.deltaUT1(55156.0), 0.0);
     }
 
     @Test

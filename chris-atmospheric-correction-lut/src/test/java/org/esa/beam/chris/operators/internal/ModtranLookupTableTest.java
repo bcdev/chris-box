@@ -43,13 +43,15 @@ public class ModtranLookupTableTest {
             modtranLookupTable = new ModtranLookupTableReader().readModtranLookupTable();
         } catch (IOException e) {
             System.out.println(e);
+        } catch (OutOfMemoryError e) {
+            System.out.println(e);
         }
     }
 
     @Test
     public void lookupTablePresence() {
         if (modtranLookupTable == null) {
-            System.out.println("ModtranLookupTableTest.lookupTablePresence FAILED!");
+            System.out.println("CANNOT EXECUTE ModtranLookupTableTest.lookupTablePresence!");
             return;
         }
         assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
@@ -58,7 +60,7 @@ public class ModtranLookupTableTest {
     @Test
     public void lookupTableIntegrity() {
         if (modtranLookupTable == null) {
-            System.out.println("ModtranLookupTableTest.lookupTableIntegrity FAILED!");
+            System.out.println("CANNOT EEXECUTE: ModtranLookupTableTest.lookupTableIntegrity!");
             return;
         }
         checkLookupTableA();
