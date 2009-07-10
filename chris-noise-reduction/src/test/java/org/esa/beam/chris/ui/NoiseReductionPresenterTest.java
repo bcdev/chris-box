@@ -11,6 +11,7 @@ import static org.junit.Assert.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.File;
+import java.awt.HeadlessException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,7 +46,7 @@ public class NoiseReductionPresenterTest {
         appContext = new DefaultAppContext("test");
     }
 
-    @Test
+    @Test(expected = HeadlessException.class)
     public void constuction() {
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
