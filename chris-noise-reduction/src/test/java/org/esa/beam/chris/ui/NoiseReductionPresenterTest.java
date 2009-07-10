@@ -50,7 +50,7 @@ public class NoiseReductionPresenterTest {
         appContext = new DefaultAppContext("test");
     }
 
-    @Test(expected = HeadlessException.class)
+    @Test
     public void constuction() {
         if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
