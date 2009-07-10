@@ -38,7 +38,7 @@ public class ScreeningFormTest {
 
     @Before
     public void before() throws Exception {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         final DefaultAppContext appContext = new DefaultAppContext("test");
@@ -57,7 +57,7 @@ public class ScreeningFormTest {
 
     @Test
     public void featureCheckBoxStatus() throws ValidationException {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         // for mode 1 all features are available

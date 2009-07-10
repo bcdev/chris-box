@@ -31,6 +31,9 @@ public class NoiseReductionPresenterTest {
 
     @Before
     public void before() throws Exception {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
+            return;
+        }
         metadataNames = new String[]{
                 ChrisConstants.ATTR_NAME_CHRIS_MODE,
                 ChrisConstants.ATTR_NAME_TARGET_NAME,

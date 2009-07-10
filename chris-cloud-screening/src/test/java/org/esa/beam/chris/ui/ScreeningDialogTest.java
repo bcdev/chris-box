@@ -37,7 +37,7 @@ public class ScreeningDialogTest {
 
     @Before
     public void before() throws Exception {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         dialog = new ScreeningDialog(new DefaultAppContext("test"));
@@ -46,7 +46,7 @@ public class ScreeningDialogTest {
 
     @After
     public void after() throws Exception {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         dialog.hide();
@@ -54,7 +54,7 @@ public class ScreeningDialogTest {
 
     @Test
     public void sourceProductIsReleasedWhenDialogIsHidden() {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         final Product product = new Product("test", "test", 1, 1);
