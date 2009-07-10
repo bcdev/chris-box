@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.File;
 import java.awt.HeadlessException;
+import java.awt.GraphicsEnvironment;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,6 +49,9 @@ public class NoiseReductionPresenterTest {
 
     @Test(expected = HeadlessException.class)
     public void constuction() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
 
@@ -68,6 +72,9 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void constructionWithoutProducts() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, new Product[0],
                                                                   new AdvancedSettingsPresenter());
 
@@ -80,6 +87,9 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void addRemovePoduct() throws NoiseReductionValidationException {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
 
@@ -119,6 +129,9 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void selectionChange() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
         checkMetadata(nrp.getMetadataTableModel(), "DummyMode1", "DummyTarget1");
@@ -132,6 +145,9 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void productAsOutput() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
                                                                   new AdvancedSettingsPresenter());
 
@@ -185,9 +201,5 @@ public class NoiseReductionPresenterTest {
 
         assertEquals("Not available", metaData.getValueAt(3, 1));
         assertEquals("Not available", metaData.getValueAt(4, 1));
-    }
-
-    private static boolean noX11() {
-        return "true".equalsIgnoreCase(System.getProperty("system.noX11", "false"));
     }
 }

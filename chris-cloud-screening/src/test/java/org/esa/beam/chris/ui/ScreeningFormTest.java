@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.awt.GraphicsEnvironment;
+
 /**
  * Tests for class {@link ScreeningForm}.
  *
@@ -34,8 +36,11 @@ public class ScreeningFormTest {
 
     private ScreeningForm form;
 
-    // @Before
+    @Before
     public void before() throws Exception {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         final DefaultAppContext appContext = new DefaultAppContext("test");
         final ScreeningFormModel formModel = new ScreeningFormModel();
         formModel.getParameterValueContainer().setValue("useWv", true);
@@ -51,12 +56,10 @@ public class ScreeningFormTest {
     }
 
     @Test
-    public void placebo() {
-        // JUnit expects that at least a single test is declared
-    }
-
-    // @Test
     public void featureCheckBoxStatus() throws ValidationException {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         // for mode 1 all features are available
         form.setSourceProduct(new Product("a", "CHRIS_M1_NR", 1, 1));
         assertTrue(form.isWvCheckBoxEnabled());

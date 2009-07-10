@@ -22,6 +22,8 @@ import static org.junit.Assert.assertSame;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.awt.GraphicsEnvironment;
+
 /**
  * Tests for class {@link ScreeningDialog}.
  *
@@ -33,24 +35,28 @@ public class ScreeningDialogTest {
 
     private ScreeningDialog dialog;
 
-    @Test
-    public void placebo() {
-        // JUnit expects that at least a single test is declared
-    }
-
-    // @Before
+    @Before
     public void before() throws Exception {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         dialog = new ScreeningDialog(new DefaultAppContext("test"));
         dialog.show();
     }
 
-    // @After
+    @After
     public void after() throws Exception {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         dialog.hide();
     }
 
-    // @Test
+    @Test
     public void sourceProductIsReleasedWhenDialogIsHidden() {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         final Product product = new Product("test", "test", 1, 1);
 
         dialog.getForm().setSourceProduct(product);
