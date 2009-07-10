@@ -49,7 +49,8 @@ public class ModtranLookupTableTest {
     @Test
     public void lookupTablePresence() {
         if (modtranLookupTable == null) {
-            System.out.println("ModtranLookupTableTest.lookupTablePresence FAILED!");        
+            System.out.println("ModtranLookupTableTest.lookupTablePresence FAILED!");
+            return;
         }
         assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
     }
@@ -58,6 +59,7 @@ public class ModtranLookupTableTest {
     public void lookupTableIntegrity() {
         if (modtranLookupTable == null) {
             System.out.println("ModtranLookupTableTest.lookupTableIntegrity FAILED!");
+            return;
         }
         checkLookupTableA();
         checkLookupTableB();
