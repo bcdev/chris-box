@@ -61,11 +61,16 @@
 
     <distributionManagement>
         <repository>
-            <id>bc-public</id>
-            <name>Public Maven Repository at Brockmann-Consult</name>
-            <url>http://www.brockmann-consult.de/svn/os/</url>
+            <id>bc-mvn-repo</id>
+            <name>Public Maven Repository at Brockmann Consult</name>
+            <url>scp://apache.bc.local/bc-mvn-repo/os</url>
         </repository>
-    </distributionManagement>
+        <snapshotRepository>
+            <id>bc-mvn-repo</id>
+            <name>Public Maven Repository at Brockmann Consult</name>
+            <url>scp://apache.bc.local/bc-mvn-repo/os</url>
+        </snapshotRepository>
+    </distributionManagement>    
 
     <modules>
         <module>chris-bootstrap</module>
