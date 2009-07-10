@@ -49,7 +49,7 @@ public class NoiseReductionPresenterTest {
 
     @Test(expected = HeadlessException.class)
     public void constuction() {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
@@ -72,7 +72,7 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void constructionWithoutProducts() {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, new Product[0],
@@ -87,7 +87,7 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void addRemovePoduct() throws NoiseReductionValidationException {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
@@ -129,7 +129,7 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void selectionChange() {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
@@ -145,7 +145,7 @@ public class NoiseReductionPresenterTest {
 
     @Test
     public void productAsOutput() {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment().isHeadlessInstance()) {
             return;
         }
         NoiseReductionPresenter nrp = new NoiseReductionPresenter(appContext, expectedProducts,
