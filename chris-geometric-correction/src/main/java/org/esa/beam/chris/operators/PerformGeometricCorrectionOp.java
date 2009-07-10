@@ -24,6 +24,7 @@ import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -32,6 +33,7 @@ import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.datamodel.Pin;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
 import org.esa.beam.framework.datamodel.ProductNode;
+import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -65,8 +67,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         double lon;
         int imageNumber;
     }
-    
-    private static final int[] chronologicalImageNumber = new int[] {2, 1, 3, 0, 4};
+
+    private static final int[] chronologicalImageNumber = new int[]{2, 1, 3, 0, 4};
     private static final int SLOW_DOWN = 5; // Slowdown factor
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
@@ -289,24 +291,74 @@ public class PerformGeometricCorrectionOp extends Operator {
         int img = info.imageNumber;
         System.out.println("Initiating calculation for image " + img);
 
-        // ==v==v== Find the closest point in the Moving Target to the GCPs ==============
-        // TODO
-
         // ---- Target Coordinates in ECI using per-Line Time -------------------
         double TgtAlt = info.alt / 1000;
         double[] TGTecf = new double[3];
-        Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
-//            if ( use_GCP) { TODO
-//                Conversions.wgsToEcef(GCP0[3], GCP0[2], GCP0[4], TGTecf);
-//            }
+        double[] GCP_ecf = new double[3];
+        final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
+        final int gcpCount = gcpGroup.getNodeCount();
+        if (gcpCount != 0) {
+            // we assume only one GCP at target altitude
+            final Pin gcp = gcpGroup.get(0);
+            final GeoPos gcpPos = gcp.getGeoPos();
+            Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), TgtAlt, GCP_ecf);
+        } else {
+            Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
+        }
+
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
         for (int i = 0; i < iTGT0.length; i++) {
             double gst = TimeConverter.jdToGST(T[i] + JD0);
             EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
         }
+        double T_GCP = Double.NaN;
+        if (gcpCount != 0) {
+            double[][] GCP_eci = new double[T.length][3];
+            // we assume only one GCP at target altitude
+            final Pin gcp = gcpGroup.get(0);
+            final GeoPos gcpPos = gcp.getGeoPos();
+
+            // Transform Moving Target to ECF in order to find the point closest to GCP0
+            // iTGT0_ecf = eci2ecf(T+jd0, iTGT0[X,*], iTGT0[Y,*], iTGT0[Z,*])
+            final double[][] iTGT0_ecf = new double[iTGT0.length][3];
+            for (int i = 0; i < iTGT0.length; i++) {
+                final double gst = TimeConverter.jdToGST(T[i] + JD0);
+                EcefEciConverter.eciToEcef(gst, iTGT0[i], iTGT0_ecf[i]);
+            }
+
+            // Find the closest point
+            // diff = SQRT((iTGT0_ecf[X,*] - GCP_ecf[X])^2 + (iTGT0_ecf[Y,*] - GCP_ecf[Y])^2 + (iTGT0_ecf[Z,*] - GCP_ecf[Z])^2)	; Calculates the distance between the GCP and each point of the moving target
+            // mn = min(diff,wmin) ; Finds where the minimun point is located (wmin)
+
+            double minDiff = Double.MAX_VALUE;
+            double tmin = Double.NaN;
+            for (int i = 0; i < iTGT0_ecf.length; i++) {
+                double[] pos = iTGT0_ecf[i];
+                final double diff = Math.sqrt(
+                        Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(pos[Z] - GCP_ecf[Z]));
+                if (minDiff < diff) {
+                    minDiff = diff;
+                    tmin = T[i];
+                }
+            }
+
+            // T_GCP = T[wmin]			; Assigns the acquisition time to the GCP
+            T_GCP = tmin;
+            // GCP_eci = ecf2eci(T+jd0, GCP_ecf.X, GCP_ecf.Y, GCP_ecf.Z, units = GCP_ecf.units)	; Transform GCP coords to ECI for every time in the acquisition
+            for (int i = 0; i < T.length; i++) {
+                final double gst = TimeConverter.jdToGST(T[i] + JD0);
+                EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
+            }
+            iTGT0 = GCP_eci;
+        }
 
         // ==v==v== Rotates TGT to perform scanning ======================================
+
+        double refTime = T_ict[img];
+        if (gcpCount != 0) {
+            refTime = T_GCP;
+        }
 
         double[] x = new double[mode.getNLines()];
         double[] y = new double[mode.getNLines()];
@@ -317,7 +369,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             y[i] = uW[Tini[img] + i][Y];
             z[i] = uW[Tini[img] + i][Z];
             angles[i] = Math.pow(-1,
-                                 img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
+                                 img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - refTime) * TimeConverter.SECONDS_PER_DAY;
         }
         Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
         for (int i = 0; i < mode.getNLines(); i++) {
@@ -334,6 +386,21 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
         double[][] iTGT = iTGT0;
+
+        // Determine the roll offset due to GCP not being in the middle of the CCD
+        // IF info.Mode NE 5 THEN nC2 = nCols/2 ELSE nC2 = nCols-1		; Determine the column number of the middle of the CCD
+        // dRoll = (nC2-GCP[X])*IFOV									; calculates the IFOV angle difference from GCP0's pixel column to the image central pixel (the nominal target)
+        double dRoll = 0.0;
+        if (gcpCount != 0) {
+            final int nC2;
+            if (info.mode != 5) {
+                nC2 = mode.getNCols() / 2;
+            } else {
+                nC2 = mode.getNCols() - 1;
+            }
+            final Pin gcp = gcpGroup.get(0);
+            dRoll = (nC2 - gcp.getPixelPos().getX()) * mode.getIfov();
+        }
 
         //==== Calculates View Angles ==============================================
 
@@ -438,6 +505,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                                                                    uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
             uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSL[Z][i],
                                                                    uRange[X][i], uRange[Y][i], uRange[Z][i]);
+            uRollAng[i] += dRoll;
             // Stores the results for each image
             //PitchAng[i] = uPitchAng[i];
             //RollAng[i] = uRollAng[i];
