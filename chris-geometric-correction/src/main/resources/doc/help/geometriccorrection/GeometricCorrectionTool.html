@@ -17,9 +17,119 @@
 </table>
 
 <h3>CHRIS/Proba Geometric Correction</h3>
+
+<h5>Introduction</h5>
+
 <p>
-    No help available yet.
+    CHRIS/Proba is a system designed for multi-angular image acquisition of a given target, with the capability
+    along-track and across-track pointing increasing its overpass frequency. In order to in-crease the radiometric
+    signal the platform performs a slow-down manoeuvre consisting in rotating while scanning to keep the target
+    for a longer time under the sensor. Besides, the scan direction is reversed during the acquisition of the
+    second and fourth images to reduce the acceleration needed for the operation. These characteristics introduce
+    strong perspective distortions, especially for the first and last images with larger observation zenith angles.
 </p>
+
+<p>
+    Many applications require the images to be geometrically referenced and/or rectified. In particular for those that
+    make use of multi-angular information the geometric processing must be very accurate.
+</p>
+
+<h5>Algorithm</h5>
+
+<p>
+    No description available yet.
+</p>
+
+<h3>User Interface</h3>
+
+<p>
+    The atmospheric correction tool can be invoked from VISAT tool menu by selecting
+    the <b>Atmospheric Correction...</b> command in the <b>CHRIS-Box</b> submenu. In the command line it is
+    available by means of the Graph Processing Tool <code>gpt</code> which is located in the BEAM <code>bin</code>
+    directory. For further information type <code>gpt chris.ComputeSurfaceReflectances -h</code> at the command prompt.
+</p>
+
+<p>
+    Selecting the <b>Atmospheric Correction...</b> command from the VISAT tool menu pops up the
+    following dialog:
+</p>
+
+<p align="center">
+    <!-- todo - make screenshot -->
+    <img src="images/gc-dialog.png" alt="Geometric Correction Dialog"/>
+</p>
+
+<h5>Source Product Group</h5>
+
+<p class="i1">
+    <b>Name:</b>
+    Here the user specifies the name of the source product. The combo box presents
+    a list of all products open in VISAT. The user may select one of these
+    or, by clicking on the button next to the combo box, choose a product
+    from the file system.
+</p>
+
+<h5>Target Product Group</h5>
+
+<p class="i1">
+    <b>Name:</b>
+    Used to specify the name of the target product.
+</p>
+
+<p class="i1">
+    <b>Save as:</b>
+    Used to specify whether the target product should be saved to the file system. The
+    combo box presents a list of file formats, currently BEAM-DIMAP, GeoTIFF, and HDF5.
+    The text field allows to specify a target directory.
+</p>
+
+<p class="i1">
+    <b>Open in VISAT:</b>
+    Used to specify whether the target product should be opened in VISAT. When the
+    the target product is not saved, it is opened in VISAT automatically.
+</p>
+
+<p align="center">
+    <!-- todo - make screenshot -->
+    <img src="images/gc-parameters.png" alt="Geometric Correction Parameters"/>
+</p>
+
+<h5>Processing Parameters Panel</h5>
+
+<p class="i1">
+    <b>Telemetry search path:</b>
+    Use this field to specify the search path for the CHRIS telemetry data. A default search
+    path for the CHRIS telemetry data can be defined by editing the <code>beam.config</code> file
+    located in the <code>config</code> directory of your BEAM installation: simply add an entry
+    similar to
+</p>
+<pre>
+    beam.chris.telemetryRepositoryPath = /path/to/local/telemetry/repository
+</pre>
+<p class="i1">
+    to the <code>beam.config</code> file. Note that the parent directory of the source product
+    is searched for CHRIS telemetry data <em>before</em> searching the local repository.
+</p>
+
+<h5>Button Group</h5>
+
+<p class="i1">
+    <b>Run</b>
+    Creates the target product. The geometric correction is actually deferred until the target band data are accessed,
+    either by writing the product to the file system or by viewing the band data. When the <b>Save as</b> option is
+    checked, the atmospheric correction is triggered automatically.
+</p>
+
+<p class="i1">
+    <b>Close</b>
+    Closes the dialog.
+</p>
+
+<p class="i1">
+    <b>Help</b>
+    Displays this page in VISAT Help.
+</p>
+
 
 <hr>
 </body>

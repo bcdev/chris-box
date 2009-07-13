@@ -337,7 +337,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                 double[] pos = iTGT0_ecf[i];
                 final double diff = Math.sqrt(
                         Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(pos[Z] - GCP_ecf[Z]));
-                if (minDiff < diff) {
+                if (diff < minDiff) {
                     minDiff = diff;
                     tmin = T[i];
                 }
