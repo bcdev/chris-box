@@ -14,10 +14,8 @@
  */
 package org.esa.beam.chris.operators.internal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import org.junit.Test;
-import org.junit.Before;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -52,17 +50,13 @@ public class ModtranLookupTableTest {
     public void lookupTablePresence() {
         if (modtranLookupTable == null) {
             System.out.println("CANNOT EXECUTE ModtranLookupTableTest.lookupTablePresence!");
-            return;
+            fail("CANNOT EXECUTE ModtranLookupTableTest.lookupTablePresence!");
         }
         assertNotNull(getClass().getResourceAsStream(ModtranLookupTableReader.LUT_FILE_NAME));
     }
 
     @Test
     public void lookupTableIntegrity() {
-        if (modtranLookupTable == null) {
-            System.out.println("CANNOT EEXECUTE: ModtranLookupTableTest.lookupTableIntegrity!");
-            return;
-        }
         checkLookupTableA();
         checkLookupTableB();
         checkModtranLookupTable();
