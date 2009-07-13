@@ -14,8 +14,8 @@ class Intersector {
      * Note that all parameters must be arrays of length 3.
      *
      * @param point     any point on the straight line. On return contains
-     *                  the intersection point closest this point.  If the
-     *                  straight line and the ellipsoid do not intersect,
+     *                  the intersection point closest this point.
+     *                  If the straight line and the ellipsoid do not intersect,
      *                  all coordinates are {@link Double#NaN}.
      * @param direction the direction of the straight line.
      * @param center    the center of the ellipsoid.
@@ -48,14 +48,12 @@ class Intersector {
         }
         c -= 1.0;
 
-        final double p = b / a;
-        final double q = c / a;
-
+        final double d = b * b - a * c;
         final double t;
-        if (p > 0.0) {
-            t = -p + Math.sqrt(p * p - q);
+        if (b > 0.0) {
+            t = (-b + Math.sqrt(d)) / a;
         } else {
-            t = -p - Math.sqrt(p * p - q);
+            t = (-b - Math.sqrt(d)) / a;
         }
 
         for (int i = 0; i < 3; i++) {
