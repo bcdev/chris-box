@@ -30,6 +30,11 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ExecutionException;
+import java.awt.Window;
+
+import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
+import com.bc.ceres.core.ProgressMonitor;
 
 /**
  * Action for invoking the geometric correction.
@@ -41,7 +46,7 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
 
     private static final String TITLE = "CHRIS/Proba Geometric Correction";
     private static final String KEY_FETCH_LATEST_TIME_TABLES = "beam.chris.fetchLatestTimeTables";
-    private static final int PERIOD_FETCH_LATEST_TIME_TABLES = 7;
+    private static final int UPDATE_PERIOD = 7;
 
     private final AtomicReference<ModelessDialog> dialog;
     private static final String QUESTION_FETCH_LATEST_TIME_TABLES =
@@ -50,7 +55,7 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
                     "the latest time tables from the web can take a few minutes.\n" +
                     "\n" +
                     "Do you want to fetch the latest time tables now?",
-                    PERIOD_FETCH_LATEST_TIME_TABLES);
+                    UPDATE_PERIOD);
 
     public PerformGeometricCorrectionAction() {
         dialog = new AtomicReference<ModelessDialog>();
@@ -66,20 +71,15 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
             handleError("The geometric correction cannot be carried out because an error occurred.", e);
             return;
         }
-        if (isTimeConverterOudated(converter, PERIOD_FETCH_LATEST_TIME_TABLES)) {
+        if (isTimeConverterOudated(converter, UPDATE_PERIOD)) {
             final int answer = showQuestionDialog(QUESTION_FETCH_LATEST_TIME_TABLES, KEY_FETCH_LATEST_TIME_TABLES);
             if (answer == JOptionPane.YES_OPTION) {
-                try {
-                    converter.updateTimeTables();
-                    showInfoDialog("The UT1 and leap second time tables have been updated successfully.");
-                } catch (IOException e) {
-                    handleError("An error occurred while updating the UT1 and leap second time tables.", e);
-                }
+                new TimeConverterUpdater(getAppContext().getApplicationWindow(), TITLE, converter).execute();
             }
+        } else {
+            dialog.compareAndSet(null, createDialog(getAppContext()));
+            dialog.get().show();
         }
-
-        dialog.compareAndSet(null, createDialog(getAppContext()));
-        dialog.get().show();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
         setEnabled(selectedProduct == null || new GeometricCorrectionProductFilter().accept(selectedProduct));
     }
 
-    private void handleError(String message, IOException e) {
+    private void handleError(String message, Throwable e) {
         getAppContext().handleError(message, e);
     }
 
@@ -115,4 +115,35 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
         return now.getTime() - converter.lastModified() > days * TimeConverter.MILLIS_PER_DAY;
     }
 
+    private class TimeConverterUpdater extends ProgressMonitorSwingWorker<Object, Object> {
+
+        private final TimeConverter converter;
+
+        public TimeConverterUpdater(Window applicationWindow, String title, TimeConverter converter) {
+            super(applicationWindow, title);
+            this.converter = converter;
+        }
+
+        @Override
+        protected Object doInBackground(ProgressMonitor pm) throws Exception {
+            converter.updateTimeTables(pm);
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            try {
+                get();
+            } catch (InterruptedException e) {
+                handleError("An error occurred while updating the UT1 and leap second time tables.", e);
+                return;
+            } catch (ExecutionException e) {
+                handleError("An error occurred while updating the UT1 and leap second time tables.", e.getCause());
+                return;
+            }
+            showInfoDialog("The UT1 and leap second time tables have been updated successfully.");
+            dialog.compareAndSet(null, createDialog(getAppContext()));
+            dialog.get().show();
+        }
+    }
 }

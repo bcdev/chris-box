@@ -18,6 +18,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
+
 /**
  * Utility class for converting between several time systems.
  *
@@ -146,11 +149,13 @@ public class TimeConverter {
      * @return the date (millis) of last modification.
      */
     public long lastModified() {
-        final File file = getFile("finals.data");
-        if (file != null) {
-            return file.lastModified();
+        synchronized (this) {
+            final File file = getFile("finals.data");
+            if (file != null) {
+                return file.lastModified();
+            }
+            return 0L;
         }
-        return 0L;
     }
 
     /**
@@ -158,12 +163,19 @@ public class TimeConverter {
      * fetching the latest versions of  the files 'leapsec.dat' and
      * 'finals.dat' from ftp://maia.usno.navy.mil/ser7/
      *
+     * @param pm the {@link ProgressMonitor}.
+     *
      * @throws IOException when an IO error occurred.
      */
-    public void updateTimeTables() throws IOException {
-        synchronized (this) {
-            this.updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat");
-            this.updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data");
+    public void updateTimeTables(ProgressMonitor pm) throws IOException {
+        try {
+            synchronized (this) {
+                pm.beginTask("Updating UT1 and leap second time tables", 100);
+                updateTAI("ftp://maia.usno.navy.mil/ser7/leapsec.dat", SubProgressMonitor.create(pm, 10));
+                updateUT1("ftp://maia.usno.navy.mil/ser7/finals.data", SubProgressMonitor.create(pm, 90));
+            }
+        } finally {
+            pm.done();
         }
     }
 
@@ -185,144 +197,127 @@ public class TimeConverter {
      * Updates the internal UT1-UTC table with newer data read from a URL.
      *
      * @param spec the string to parse a a URL.
+     * @param pm   the {@link ProgressMonitor}.
      *
      * @throws IOException if an error occurred.
      */
-    private void updateTAI(String spec) throws IOException {
+    private void updateTAI(String spec, ProgressMonitor pm) throws IOException {
         final URL url = new URL(spec);
         final URLConnection connection = new FtpURLConnection(url);
 
-        updateTAI(connection.getInputStream());
+        updateTAI(connection.getInputStream(), pm);
     }
 
     /**
      * Updates the internal TAI-UTC table with newer data read from an input stream.
      *
      * @param is the input stream.
+     * @param pm the {@link ProgressMonitor}.
      *
      * @throws IOException if an error occurred while reading the TAI-UTC data from the input stream.
      */
-    private void updateTAI(InputStream is) throws IOException {
-        readTAI(is, tai, true);
+    private void updateTAI(InputStream is, ProgressMonitor pm) throws IOException {
+        final String[] lines = readTAI(is, tai, pm);
+        writeLines("leapsec.dat", lines);
     }
 
     /**
      * Updates the internal UT1-UTC table with newer data read from a URL.
      *
      * @param spec the string to parse a a URL.
+     * @param pm   the {@link ProgressMonitor}.
      *
      * @throws IOException if an error occurred.
      */
-    private void updateUT1(String spec) throws IOException {
+    private void updateUT1(String spec, ProgressMonitor pm) throws IOException {
         final URL url = new URL(spec);
         final URLConnection connection = new FtpURLConnection(url);
 
-        updateUT1(connection.getInputStream());
+        updateUT1(connection.getInputStream(), pm);
     }
 
     /**
      * Updates the internal UT1-UTC table with newer data read from an input stream.
      *
      * @param is the input stream.
+     * @param pm the {@link ProgressMonitor}.
      *
      * @throws IOException if an error occurred while reading the UT1-UTC data from the input stream.
      */
-    private void updateUT1(InputStream is) throws IOException {
-        readUT1(is, ut1, true);
+    private void updateUT1(InputStream is, ProgressMonitor pm) throws IOException {
+        final String[] lines = readUT1(is, ut1, pm);
+        writeLines("finals.data", lines);
+
     }
 
     private static void readTAI(String name, ConcurrentMap<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readTAI(TimeConverter.class.getResourceAsStream(name), map, false);
+            readTAI(TimeConverter.class.getResourceAsStream(name), map, ProgressMonitor.NULL);
         } else {
-            readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map, false);
+            readTAI(new BufferedInputStream(new FileInputStream(finalsFile)), map, ProgressMonitor.NULL);
         }
     }
 
-    private static void readTAI(InputStream is, ConcurrentMap<Double, Double> map, boolean write) throws IOException {
-        final Scanner scanner = new Scanner(is, "US-ASCII");
-        scanner.useLocale(Locale.US);
+    private static String[] readTAI(InputStream is, Map<Double, Double> map, ProgressMonitor pm) throws IOException {
+        final String[] lines = readLines(is, "Reading TAI-UTC data", pm);
 
-        final ArrayList<String> lineList = new ArrayList<String>();
-        try {
-            while (scanner.hasNextLine()) {
-                final String line = scanner.nextLine();
-                lineList.add(line);
+        for (final String line : lines) {
+            final int datePos = line.indexOf("=JD");
+            final int timePos = line.indexOf("TAI-UTC=");
+            final int stopPos = line.indexOf(" S ");
 
-                final int datePos = line.indexOf("=JD");
-                final int timePos = line.indexOf("TAI-UTC=");
-                final int stopPos = line.indexOf(" S ");
-
-                if (datePos == -1 || timePos == -1 || stopPos == -1) {
-                    continue; // try next line
-                }
-
-                final double jd;
-                final double ls;
-
-                try {
-                    jd = Double.parseDouble(line.substring(datePos + 3, timePos));
-                    ls = Double.parseDouble(line.substring(timePos + 8, stopPos));
-                } catch (NumberFormatException e) {
-                    throw new IOException("An error occurred while parsing the TAI-UTC data.", e);
-                }
-
-                map.putIfAbsent(jd - 2400000.5, ls);
+            if (datePos == -1 || timePos == -1 || stopPos == -1) {
+                continue; // try next line
             }
-        } finally {
-            scanner.close();
+
+            final double jd;
+            final double ls;
+
+            try {
+                jd = Double.parseDouble(line.substring(datePos + 3, timePos));
+                ls = Double.parseDouble(line.substring(timePos + 8, stopPos));
+            } catch (NumberFormatException e) {
+                throw new IOException("An error occurred while parsing the TAI-UTC data.", e);
+            }
+            map.put(jd - MJD_TO_JD_OFFSET, ls);
         }
 
-        if (write) {
-            writeFile("leapsec.dat", lineList);
-        }
+        return lines;
     }
 
-    private static void readUT1(String name, ConcurrentMap<Double, Double> map) throws IOException {
+    private static void readUT1(String name, Map<Double, Double> map) throws IOException {
         final File finalsFile = getFile(name);
         if (finalsFile == null) {
-            readUT1(TimeConverter.class.getResourceAsStream(name), map, false);
+            readUT1(TimeConverter.class.getResourceAsStream(name), map, ProgressMonitor.NULL);
         } else {
-            readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map, false);
+            readUT1(new BufferedInputStream(new FileInputStream(finalsFile)), map, ProgressMonitor.NULL);
         }
     }
 
-    private static void readUT1(InputStream is, ConcurrentMap<Double, Double> map, boolean write) throws IOException {
-        final Scanner scanner = new Scanner(is, "US-ASCII");
-        scanner.useLocale(Locale.US);
+    private static String[] readUT1(InputStream is, Map<Double, Double> map, ProgressMonitor pm) throws IOException {
+        final String[] lines = readLines(is, "Reading UT1-UTC data", pm);
 
-        final ArrayList<String> lineList = new ArrayList<String>();
-        try {
-            while (scanner.hasNextLine()) {
-                final String line = scanner.nextLine();
-                lineList.add(line);
-
-                final String mjdString = line.substring(7, 15);
-                final String utdString = line.substring(58, 68);
-
-                if (mjdString.trim().isEmpty() || utdString.trim().isEmpty()) {
-                    continue; // try next line
-                }
-
-                final double mjd;
-                final double utd;
-
-                try {
-                    mjd = Double.parseDouble(mjdString);
-                    utd = Double.parseDouble(utdString);
-                } catch (NumberFormatException e) {
-                    throw new IOException("An error occurred while parsing the UT1-UTC data.", e);
-                }
-                map.put(mjd, utd);
+        for (final String line : lines) {
+            final String mjdString = line.substring(7, 15);
+            final String utdString = line.substring(58, 68);
+            if (mjdString.trim().isEmpty() || utdString.trim().isEmpty()) {
+                continue; // try next line
             }
-        } finally {
-            scanner.close();
+
+            final double mjd;
+            final double utd;
+
+            try {
+                mjd = Double.parseDouble(mjdString);
+                utd = Double.parseDouble(utdString);
+            } catch (NumberFormatException e) {
+                throw new IOException("An error occurred while parsing the UT1-UTC data.", e);
+            }
+            map.put(mjd, utd);
         }
 
-        if (write) {
-            writeFile("finals.data", lineList);
-        }
+        return lines;
     }
 
     private static Writer getWriter(String fileName) {
@@ -343,12 +338,35 @@ public class TimeConverter {
         return null;
     }
 
-    private static void writeFile(String fileName, ArrayList<String> lineList) throws IOException {
+    private static String[] readLines(InputStream is, String taskName, ProgressMonitor pm) {
+        final Scanner scanner = new Scanner(is, "US-ASCII");
+        scanner.useLocale(Locale.US);
+
+        final ArrayList<String> lineList = new ArrayList<String>();
+        try {
+            pm.beginTask(taskName, ProgressMonitor.UNKNOWN);
+            while (scanner.hasNextLine()) {
+                if (pm.isCanceled()) {
+                    return new String[0];
+                }
+                final String line = scanner.nextLine();
+                lineList.add(line);
+                pm.worked(1);
+            }
+        } finally {
+            pm.done();
+            scanner.close();
+        }
+
+        return lineList.toArray(new String[lineList.size()]);
+    }
+
+    private static void writeLines(String fileName, String[] lines) throws IOException {
         final Writer writer = getWriter(fileName);
 
         if (writer != null) {
             try {
-                for (final String line : lineList) {
+                for (final String line : lines) {
                     writer.write(line);
                     writer.write("\n");
                 }
