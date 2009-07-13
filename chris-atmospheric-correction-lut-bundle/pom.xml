@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-atmospheric-correction-lut-bundle</artifactId>
     <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table Bundle</name>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0</version>
     <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table Bundle</description>
 
 	<build>
