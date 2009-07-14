@@ -28,12 +28,13 @@ import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
+import org.esa.beam.framework.datamodel.GeoPos;
+import org.esa.beam.framework.datamodel.Pin;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.datamodel.Pin;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
-import org.esa.beam.framework.datamodel.ProductNode;
-import org.esa.beam.framework.datamodel.GeoPos;
+import org.esa.beam.framework.datamodel.TiePointGrid;
+import org.esa.beam.framework.datamodel.TiePointGeoCoding;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -61,14 +62,37 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private static class Info {
 
-        int mode;
-        double alt;
-        double lat;
-        double lon;
-        int imageNumber;
+        private static final int[] CHRONOLOGICAL_IMAGE_NUMBERS = new int[]{2, 1, 3, 0, 4};
+
+        final int mode;
+        final double alt;
+        final double lat;
+        final double lon;
+        final int imageNumber;
+
+        public static Info createInfo(Product product) {
+            final int mode = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
+            final double alt = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_ALT);
+            final double lat = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LAT);
+            final double lon = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LON);
+            final int imageNumber = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_IMAGE_NUMBER, 0, 1);
+
+            return new Info(mode, alt, lat, lon, imageNumber);
+        }
+
+        public Info(int mode, double alt, double lat, double lon, int imageNumber) {
+            this.mode = mode;
+            this.alt = alt;
+            this.lat = lat;
+            this.lon = lon;
+            this.imageNumber = imageNumber;
+        }
+
+        final int getChronologicalImageNumber() {
+            return CHRONOLOGICAL_IMAGE_NUMBERS[imageNumber - 1];
+        }
     }
 
-    private static final int[] chronologicalImageNumber = new int[]{2, 1, 3, 0, 4};
     private static final int SLOW_DOWN = 5; // Slowdown factor
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
@@ -103,7 +127,7 @@ public class PerformGeometricCorrectionOp extends Operator {
     @Override
     public void initialize() throws OperatorException {
         final Telemetry telemetry = getTelemetry();
-        final Info info = createInfo();
+        final Info info = Info.createInfo(sourceProduct);
         final double dTgps = getDeltaGPS(sourceProduct);
 
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
@@ -288,23 +312,14 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ===== Process the correct image ==========================================
 
-        int img = info.imageNumber;
-        System.out.println("Initiating calculation for image " + img);
+        final int img = info.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        double TgtAlt = info.alt / 1000;
-        double[] TGTecf = new double[3];
-        double[] GCP_ecf = new double[3];
+        final double TgtAlt = info.alt / 1000;
+        final double[] TGTecf = new double[3];
         final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
         final int gcpCount = gcpGroup.getNodeCount();
-        if (gcpCount != 0) {
-            // we assume only one GCP at target altitude
-            final Pin gcp = gcpGroup.get(0);
-            final GeoPos gcpPos = gcp.getGeoPos();
-            Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), TgtAlt, GCP_ecf);
-        } else {
-            Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
-        }
+        Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
 
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
@@ -314,10 +329,17 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
         double T_GCP = Double.NaN;
         if (gcpCount != 0) {
-            double[][] GCP_eci = new double[T.length][3];
             // we assume only one GCP at target altitude
             final Pin gcp = gcpGroup.get(0);
             final GeoPos gcpPos = gcp.getGeoPos();
+
+            if (gcpPos == null) {
+                throw new OperatorException("GCP without geolocation found,");
+            }
+            
+            final double[] GCP_ecf = new double[3];
+            Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), TgtAlt, GCP_ecf);
+            final double[][] GCP_eci = new double[T.length][3];
 
             // Transform Moving Target to ECF in order to find the point closest to GCP0
             // iTGT0_ecf = eci2ecf(T+jd0, iTGT0[X,*], iTGT0[Y,*], iTGT0[Z,*])
@@ -332,7 +354,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             // mn = min(diff,wmin) ; Finds where the minimun point is located (wmin)
 
             double minDiff = Double.MAX_VALUE;
-            double tmin = Double.NaN;
+            double tmin = Double.MAX_VALUE;
             for (int i = 0; i < iTGT0_ecf.length; i++) {
                 double[] pos = iTGT0_ecf[i];
                 final double diff = Math.sqrt(
@@ -343,6 +365,9 @@ public class PerformGeometricCorrectionOp extends Operator {
                 }
             }
 
+            System.out.println("minDiff = " + minDiff);
+            System.out.println("tmin = " + tmin);
+            System.out.println("tmin - T_ict[img]= " + (tmin - T_ict[img]));
             // T_GCP = T[wmin]			; Assigns the acquisition time to the GCP
             T_GCP = tmin;
             // GCP_eci = ecf2eci(T+jd0, GCP_ecf.X, GCP_ecf.Y, GCP_ecf.Z, units = GCP_ecf.units)	; Transform GCP coords to ECI for every time in the acquisition
@@ -360,28 +385,16 @@ public class PerformGeometricCorrectionOp extends Operator {
             refTime = T_GCP;
         }
 
-        double[] x = new double[mode.getNLines()];
-        double[] y = new double[mode.getNLines()];
-        double[] z = new double[mode.getNLines()];
-        double[] angles = new double[mode.getNLines()];
+        final Quaternion[] quaternions = new Quaternion[mode.getNLines()];
         for (int i = 0; i < mode.getNLines(); i++) {
-            x[i] = uW[Tini[img] + i][X];
-            y[i] = uW[Tini[img] + i][Y];
-            z[i] = uW[Tini[img] + i][Z];
-            angles[i] = Math.pow(-1,
-                                 img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - refTime) * TimeConverter.SECONDS_PER_DAY;
+            final double x = uW[Tini[img] + i][X];
+            final double y = uW[Tini[img] + i][Y];
+            final double z = uW[Tini[img] + i][Z];
+            final double a = Math.pow(-1, img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - refTime) * TimeConverter.SECONDS_PER_DAY;
+            quaternions[i] = Quaternion.createQuaternion(x, y, z, a);
         }
-        Quaternion[] quaternions = Quaternion.createQuaternions(x, y, z, angles);
         for (int i = 0; i < mode.getNLines(); i++) {
-            x[i] = iTGT0[Tini[img] + i][X];
-            y[i] = iTGT0[Tini[img] + i][Y];
-            z[i] = iTGT0[Tini[img] + i][Z];
-        }
-        QuaternionRotations.rotateVectors(quaternions, x, y, z);
-        for (int i = 0; i < mode.getNLines(); i++) {
-            iTGT0[Tini[img] + i][X] = x[i];
-            iTGT0[Tini[img] + i][Y] = y[i];
-            iTGT0[Tini[img] + i][Z] = z[i];
+            quaternions[i].transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
         }
 
         // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
@@ -531,7 +544,30 @@ public class PerformGeometricCorrectionOp extends Operator {
                                      ixSubset, iySubset, izSubset,
                                      timeSubset, info.mode);
 
-        setTargetProduct(createTargetProduct());
+        final Product targetProduct = createTargetProduct();
+
+        final int gridWidth = targetProduct.getSceneRasterWidth() / 1;
+        final int gridHeight = targetProduct.getSceneRasterHeight() / 1;
+        final double subsamplingX = 1.0;
+        final double subsamplingY = 1.0;
+
+        final float[] lons = new float[gridWidth * gridHeight];
+        final float[] lats = new float[gridWidth * gridHeight];
+        for (int i = 0; i < gridHeight; i++) {
+            for (int j = 0; j < gridWidth; j++) {
+                lons[i * gridWidth + j] = (float) igm[0][i * 1][j * 1];
+                lats[i * gridWidth + j] = (float) igm[1][i * 1][j * 1];
+            }
+        }
+        final TiePointGrid lonGrid = new TiePointGrid("lon", gridWidth, gridHeight, 0.5f, 0.5f, (float) subsamplingX,
+                                                      (float) subsamplingY, lons);
+        final TiePointGrid latGrid = new TiePointGrid("lat", gridWidth, gridHeight, 0.5f, 0.5f, (float) subsamplingX,
+                                                      (float) subsamplingY, lats);
+        targetProduct.addTiePointGrid(lonGrid);
+        targetProduct.addTiePointGrid(latGrid);
+        targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
+
+        setTargetProduct(targetProduct);
     }
 
     private Telemetry getTelemetry() {
@@ -549,19 +585,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         } catch (IOException e) {
             throw new OperatorException(e);
         }
-    }
-
-    private Info createInfo() {
-        Info info = new Info();
-
-        info.mode = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
-        info.lat = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LAT);
-        info.lon = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_LON);
-        info.alt = OpUtils.getAnnotationDouble(sourceProduct, ChrisConstants.ATTR_NAME_TARGET_ALT);
-        int tagImageNumber = OpUtils.getAnnotationInt(sourceProduct, ChrisConstants.ATTR_NAME_IMAGE_NUMBER, 0, 1) - 1;
-        info.imageNumber = chronologicalImageNumber[tagImageNumber];
-
-        return info;
     }
 
     private Product createTargetProduct() {
@@ -687,6 +710,9 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // 6. set preferred tile size
         targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
+
+        // TODO - pins
+        // TODO - gcps
 
         return targetProduct;
     }

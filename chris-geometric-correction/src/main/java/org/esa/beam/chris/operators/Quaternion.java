@@ -5,17 +5,17 @@ import com.bc.ceres.core.Assert;
 import java.text.MessageFormat;
 
 /**
- * Quaternion class.
+ * Class for rotating 3-dimensional vectors by means of quaternions.
  * <p/>
  * See http://www.wikipedia.org/wiki/Quaternions for an explanation of
  * Quaternions.
  */
 class Quaternion {
 
-    private double a;
-    private double b;
-    private double c;
-    private double d;
+    private final double a;
+    private final double b;
+    private final double c;
+    private final double d;
 
     /**
      * Creates a new quaternion from a unit vector defining an axis
@@ -37,136 +37,35 @@ class Quaternion {
     }
 
     /**
-     * Creates an array of n quaternions from n unit vectors defining the
-     * axes of rotation and a rotation angle.
-     *
-     * @param x     the x-components of the n unit vectors.
-     * @param y     the y-components of the n unit vectors.
-     * @param z     the z-components of the n unit vectors.
-     * @param angle the rotation angle (rad).
-     *
-     * @return the n quaternions created.
-     */
-    public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double angle) {
-        Assert.notNull(x);
-        Assert.notNull(y);
-        Assert.notNull(z);
-
-        final int n = x.length;
-        Assert.argument(x.length != 0);
-        Assert.argument(y.length == n);
-        Assert.argument(z.length == n);
-
-        final double alpha = angle / 2.0;
-        final double c = Math.cos(alpha);
-        final double s = Math.sin(alpha);
-
-        final Quaternion[] quaternions = new Quaternion[n];
-        for (int i = 0; i < n; i++) {
-            quaternions[i] = new Quaternion(x[i], y[i], z[i], c, s);
-        }
-
-        return quaternions;
-    }
-
-    /**
-     * Creates an array of n quaternions from n unit vectors defining the
-     * axes of rotation and n corresponding rotation angles.
-     *
-     * @param x      the x-components of the n unit vectors.
-     * @param y      the y-components of the n unit vectors.
-     * @param z      the z-components of the n unit vectors.
-     * @param angles the n rotation angles (rad).
-     *
-     * @return the n quaternions created.
-     */
-    public static Quaternion[] createQuaternions(double[] x, double[] y, double[] z, double[] angles) {
-        Assert.notNull(x);
-        Assert.notNull(y);
-        Assert.notNull(z);
-        Assert.notNull(angles);
-
-        final int n = x.length;
-        Assert.argument(x.length != 0);
-        Assert.argument(y.length == n);
-        Assert.argument(z.length == n);
-        Assert.argument(angles.length == n);
-
-        final Quaternion[] quaternions = new Quaternion[n];
-        for (int i = 0; i < n; i++) {
-            final double alpha = angles[i] / 2.0;
-            final double c = Math.cos(alpha);
-            final double s = Math.sin(alpha);
-            quaternions[i] = new Quaternion(x[i], y[i], z[i], c, s);
-        }
-
-        return quaternions;
-    }
-
-    /**
-     * Adds two quaternions and stores the result in a third quaternion.
+     * Returns the Hamiltonian product of two quaternions.
      *
      * @param q1 the 1st quaternion.
      * @param q2 the 2nd quaternion.
-     * @param q3 the 3rd quaternion which holds the result of {@code q1} multiplied with {@code q2}.
-     *
-     * @return the sum of {@code q1} and {@code q2}.
-     */
-    public static Quaternion add(Quaternion q1, Quaternion q2, Quaternion q3) {
-        Assert.notNull(q1);
-        Assert.notNull(q2);
-        Assert.notNull(q3);
-
-        final double a = q1.a + q2.a;
-        final double b = q1.b + q2.b;
-        final double c = q1.c + q2.c;
-        final double d = q1.d + q2.d;
-
-        q3.a = a;
-        q3.b = b;
-        q3.c = c;
-        q3.d = d;
-
-        return q3;
-    }
-
-    /**
-     * Multiplies two quaternions and stores the result in a third quaternion.
-     *
-     * @param q1 the 1st quaternion.
-     * @param q2 the 2nd quaternion.
-     * @param q3 the 3rd quaternion which holds the result of {@code q1} multiplied with {@code q2}.
      *
      * @return the Hamilton product of {@code q1} and {@code q2}.
      */
-    public static Quaternion multiply(Quaternion q1, Quaternion q2, Quaternion q3) {
+    public static Quaternion multiply(Quaternion q1, Quaternion q2) {
         Assert.notNull(q1);
         Assert.notNull(q2);
-        Assert.notNull(q3);
 
         final double a = q1.a * q2.a - q1.b * q2.b - q1.c * q2.c - q1.d * q2.d;
         final double b = q1.a * q2.b + q1.b * q2.a + q1.c * q2.d - q1.d * q2.c;
         final double c = q1.a * q2.c - q1.b * q2.d + q1.c * q2.a + q1.d * q2.b;
         final double d = q1.a * q2.d + q1.b * q2.c - q1.c * q2.b + q1.d * q2.a;
 
-        q3.a = a;
-        q3.b = b;
-        q3.c = c;
-        q3.d = d;
-
-        return q3;
+        return new Quaternion(a, b, c, d);
     }
 
     /**
-     * Rotates a 3-dimensional vector by the rotation defined by this quaternion.
+     * Transforms a 3-dimensional vector by the rotation defined by this quaternion.
      *
      * @param u the original vector.
-     * @param v the rotated vector. Note that it is legal that {@code v} and {@code u}
-     *          refer to the same object.
+     * @param v the rotated vector. It is legal that {@code v} and {@code u} refer
+     *          to the same object.
      *
      * @return the rotated vector.
      */
-    public double[] rotateVector(double[] u, double[] v) {
+    public double[] transform(double[] u, double[] v) {
         Assert.notNull(u);
         Assert.argument(u.length == 3);
 
@@ -197,25 +96,53 @@ class Quaternion {
     }
 
     /**
-     * Default constructor.
+     * Transforms a 3-dimensional vector by the inverse of the rotation defined by
+     * this quaternion.
+     *
+     * @param u the original vector.
+     * @param v the rotated vector. It is legal that {@code v} and {@code u} refer
+     *          to the same object.
+     *
+     * @return the rotated vector.
      */
-    Quaternion() {
-        this(0.0, 0.0, 0.0, 0.0);
+    public double[] inverseTransform(double[] u, double[] v) {
+        Assert.notNull(u);
+        Assert.argument(u.length == 3);
+
+        if (v != u) {
+            Assert.notNull(v);
+            Assert.argument(v.length == 3);
+        }
+
+        final double ab = a * b;
+        final double ac = a * c;
+        final double ad = a * d;
+        final double bb = b * b;
+        final double bc = b * c;
+        final double bd = b * d;
+        final double cc = c * c;
+        final double cd = c * d;
+        final double dd = d * d;
+
+        final double x = u[0];
+        final double y = u[1];
+        final double z = u[2];
+
+        v[0] = 2.0 * ((bc + ad) * y + (ac - bd) * z - (cc + dd) * x) + x;
+        v[1] = 2.0 * ((bc - ad) * x - (bb + dd) * y + (cd + ab) * z) + y;
+        v[2] = 2.0 * ((bd + ac) * x + (cd - ab) * y - (bb + cc) * z) + z;
+
+        return v;
     }
 
     /**
-     * Constructs a new quaternion.
-     *
-     * @param a the scalar part of the quaternion.
-     * @param b the i-component of the vector part of the quaternion.
-     * @param c the j-component of the vector part of the quaternion.
-     * @param d the k-component of the vector part of the quaternion.
+     * Default constructor.
+     * <p/>
+     * The rotation defined by the quaternion constructed corresponds to the
+     * identity transform.
      */
-    public Quaternion(double a, double b, double c, double d) {
-        this.a = a;
-        this.b = b;
-        this.c = c;
-        this.d = d;
+    public Quaternion() {
+        this(1.0, 0.0, 0.0, 0.0);
     }
 
     /**
@@ -235,6 +162,23 @@ class Quaternion {
     /**
      * Constructs a new unit quaternion.
      *
+     * @param a the scalar part of the quaternion.
+     * @param b the i-component of the vector part of the quaternion.
+     * @param c the j-component of the vector part of the quaternion.
+     * @param d the k-component of the vector part of the quaternion.
+     */
+    private Quaternion(double a, double b, double c, double d) {
+        final double norm = norm4(a, b, c, d);
+
+        this.a = a / norm;
+        this.b = b / norm;
+        this.c = c / norm;
+        this.d = d / norm;
+    }
+
+    /**
+     * Constructs a new unit quaternion.
+     *
      * @param x the x-component of the rotation axis.
      * @param y the y-component of the rotation axis.
      * @param z the z-component of the rotation axis.
@@ -242,16 +186,7 @@ class Quaternion {
      * @param s the sine of the rotation angle.
      */
     private Quaternion(double x, double y, double z, double c, double s) {
-        final double norm = norm(x, y, z);
-
-        x /= norm;
-        y /= norm;
-        z /= norm;
-
-        this.a = c;
-        this.b = s * x;
-        this.c = s * y;
-        this.d = s * z;
+        this(c, s * x, s * y, s * z);
     }
 
     /**
@@ -290,72 +225,17 @@ class Quaternion {
         return d;
     }
 
-    /**
-     * Adds another quaternion to this quaternion.
-     * <p/>
-     * Note that the addition is carried out in place,  i.e. the
-     * original components of this quaternion are set to the sum
-     * of the addition.
-     *
-     * @param q the quaternion being added.
-     *
-     * @return the sum of both quaternions.
-     */
-    public final Quaternion add(Quaternion q) {
-        return Quaternion.add(this, q, this);
-    }
-
-    /**
-     * Multiplies this quaternion with another quaternion.
-     * <p/>
-     * Note that the multiplication is carried out in place,  i.e. the
-     * original components of this quaternion are set to the result of
-     * the mulitiplication.
-     * <p/>
-     * <em>The quaternion group is non-abelian, i.e., in general
-     * {@code q1 * q2 != q2 * q1}, for any quaternions {@code q1}
-     * and {@code q2}.</em>
-     *
-     * @param q the other quaternion.
-     *
-     * @return the Hamilton product of both quaternions.
-     */
-    public final Quaternion multiply(Quaternion q) {
-        return Quaternion.multiply(this, q, this);
-    }
-
     @Override
     public String toString() {
         return MessageFormat.format("{0} + i * {1} + j * {2} + k * {3}", a, b, c, d);
     }
 
-    static double norm(double x, double y, double z) {
-        final double xx = x * x;
-        final double yy = y * y;
-        final double zz = z * z;
+    static double norm4(double a, double b, double c, double d) {
+        final double aa = a * a;
+        final double bb = b * b;
+        final double cc = c * c;
+        final double dd = d * d;
 
-        double sum = 0.0;
-        // add the two smallest numbers first in order to minimize round-off error
-        if (yy < xx) {
-            sum += yy;
-            if (zz < xx) {
-                sum += zz;
-                sum += xx;
-            } else {
-                sum += xx;
-                sum += zz;
-            }
-        } else {
-            sum += xx;
-            if (zz < yy) {
-                sum += zz;
-                sum += yy;
-            } else {
-                sum += yy;
-                sum += zz;
-            }
-        }
-
-        return Math.sqrt(sum);
+        return Math.sqrt(aa + bb + cc + dd);
     }
 }

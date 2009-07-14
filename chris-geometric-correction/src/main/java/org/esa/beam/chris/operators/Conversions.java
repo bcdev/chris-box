@@ -91,12 +91,12 @@ class Conversions {
             ALTgdt = R - WGS84_A;
         }
         double lonDeg = Math.toDegrees(LONgdt);
-        if (lonDeg > 180) {
-            lonDeg -= 360;
+        if (lonDeg > 180.0) {
+            lonDeg -= 360.0;
         }
         double latDeg = Math.toDegrees(LATgdt);
-        if (latDeg > 90) {
-            latDeg -= 180;
+        if (latDeg > 90.0) {
+            latDeg -= 180.0;
         }
 
         return new Point2D.Double(lonDeg, latDeg);

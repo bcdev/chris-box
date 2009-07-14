@@ -146,7 +146,7 @@ class ProbaIgmDoer {
         // Radio [km] de la Tierra en el Ecuador WGS84
         final double aEarth = 6378.137;
         // Factor de achatamiento de la Tierra WGS84
-        final double f = 1 / 298.257223563;
+        final double f = 1.0 / 298.257223563;
 
         // Origen de tiempo del NJD (New Julian Day) q me he inventado para q en las graficas no se vaya de baras el eje de tiempos ya q el JD tiene demasiadas cifras :(
         final double jd0 = TimeConverter.julianDate(2003, 0, 1);
@@ -179,27 +179,27 @@ class ProbaIgmDoer {
 
 //          newRoll = QTVROT(uEjeRoll[*,L], qPitch)             ; New-Roll-Axis: Rotates the Roll-axis around the Pitch-axis to match the Scan-Plane normal vector
             double[] uEjeRoll1D = new double[]{uEjeRoll[X][L], uEjeRoll[Y][L], uEjeRoll[Z][L]};
-            final double[] newRoll = qPitch.rotateVector(uEjeRoll1D, new double[3]);
+            final double[] newRoll = qPitch.transform(uEjeRoll1D, new double[3]);
 
 //            fwdLoS = QTVROT(-uEjeYaw[*,L], qPitch)                ; Rotates the Downward LoS (-Yaw_Axis) around pitch-axis to get the Forward LoS
             final double[] fwdLoS = new double[3];
             for (int i = 0; i < fwdLoS.length; i++) {
                 fwdLoS[i] = -uEjeYaw[i][L];
             }
-            qPitch.rotateVector(fwdLoS, fwdLoS);
+            qPitch.transform(fwdLoS, fwdLoS);
 
 //          qRoll = QTCOMPOSE(newRoll, uRollAng[L])             ; Quaternion for roll rotation around the new-roll-axis
             final Quaternion qRoll = createQuaternion(newRoll, uRollAng[L]);
 
 //          Nadir2 = QTVROT(fwdLoS, qRoll)                      ; Rotates the Forward LoS around new-roll-axis
-            final double[] Nadir2 = qRoll.rotateVector(fwdLoS, new double[3]);
+            final double[] Nadir2 = qRoll.transform(fwdLoS, new double[3]);
 
             for (int C = 0; C < nCols; C++) {
 //              qRoll_VL = QTCOMPOSE(newRoll, ScanAng[C])   ; Quaternion for rotating along the CCD space lines
                 final Quaternion qRoll_VL = createQuaternion(newRoll, ScanAng[C]);
 
 //              LoS[*,L,C] = QTVROT(Nadir2, qRoll_VL)   ; Line of Sight
-                qRoll_VL.rotateVector(Nadir2, LoS[C][L]);
+                qRoll_VL.transform(Nadir2, LoS[C][L]);
             }
         }
 
@@ -244,6 +244,7 @@ class ProbaIgmDoer {
                 IGM[1][L][C] = point.getY();
             }
         }
+
         return IGM;
     }
     

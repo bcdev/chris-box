@@ -59,9 +59,16 @@ class TelemetryFinder {
                                                                        ChrisConstants.ATTR_NAME_IMAGE_DATE);
         final String imageDate = imageDateWithDashes.replace("-", "");
         final String targetName = OpUtils.getAnnotationString(chrisProduct, ChrisConstants.ATTR_NAME_TARGET_NAME);
-
-        final File productDir = chrisProduct.getFileLocation().getParentFile();
         final Pattern ictPattern = createIctPattern(imageDate, targetName);
+
+        final File file = chrisProduct.getFileLocation();
+        final File productDir;
+        if (file != null) {
+            productDir = file.getParentFile();
+        } else {
+            productDir = null;
+        }
+
         final File ictFile = findTelemetryFile(productDir, telemetryRepository, new PatternFilenameFilter(ictPattern));
         final String reference = getReferenceString(ictPattern, ictFile.getName());
 
