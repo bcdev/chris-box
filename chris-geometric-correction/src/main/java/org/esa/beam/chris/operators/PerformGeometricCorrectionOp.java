@@ -31,10 +31,9 @@ import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.Pin;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
-import org.esa.beam.framework.datamodel.TiePointGrid;
 import org.esa.beam.framework.datamodel.TiePointGeoCoding;
+import org.esa.beam.framework.datamodel.TiePointGrid;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -43,8 +42,16 @@ import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
+import org.jfree.data.xy.DefaultXYDataset;
 
+import javax.swing.JFrame;
 import java.awt.Rectangle;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -97,7 +104,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
     //This way the calculations can be performed more efficiently.
-    private static final double JD0 = TimeConverter.julianDate(2001, 0, 1);
+    private static final double JD0 = TimeConverter.julianDate(2003, 0, 1);
 
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
     private static final double DELAY = 0.999;
@@ -327,7 +334,20 @@ public class PerformGeometricCorrectionOp extends Operator {
             double gst = TimeConverter.jdToGST(T[i] + JD0);
             EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
         }
-        double T_GCP = Double.NaN;
+
+        // ==v==v== Rotates TGT to perform scanning ======================================
+
+        final double refTime = T_ict[img];
+
+        for (int i = 0; i < mode.getNLines(); i++) {
+            final double x = uW[Tini[img] + i][X];
+            final double y = uW[Tini[img] + i][Y];
+            final double z = uW[Tini[img] + i][Z];
+            final double a = Math.pow(-1.0,
+                                      img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - refTime) * TimeConverter.SECONDS_PER_DAY;
+            Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
+        }
+
         if (gcpCount != 0) {
             // we assume only one GCP at target altitude
             final Pin gcp = gcpGroup.get(0);
@@ -336,7 +356,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             if (gcpPos == null) {
                 throw new OperatorException("GCP without geolocation found,");
             }
-            
+
             final double[] GCP_ecf = new double[3];
             Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), TgtAlt, GCP_ecf);
             final double[][] GCP_eci = new double[T.length][3];
@@ -355,46 +375,79 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             double minDiff = Double.MAX_VALUE;
             double tmin = Double.MAX_VALUE;
-            for (int i = 0; i < iTGT0_ecf.length; i++) {
+            int wmin = -1;
+            for (int i = Tini[img]; i < Tend[img]; i++) {
                 double[] pos = iTGT0_ecf[i];
                 final double diff = Math.sqrt(
                         Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(pos[Z] - GCP_ecf[Z]));
+                System.out.println("i = " + (i - Tini[img]));
+                System.out.println("diff = " + diff);
                 if (diff < minDiff) {
                     minDiff = diff;
                     tmin = T[i];
+                    wmin = i;
                 }
             }
 
             System.out.println("minDiff = " + minDiff);
             System.out.println("tmin = " + tmin);
-            System.out.println("tmin - T_ict[img]= " + (tmin - T_ict[img]));
+            final double tdiff = tmin - T_ict[img];
+            System.out.println("tmin - T_ict[img]= " + tdiff);
+
+            final double[] T2 = T.clone();
+            for (int i = 0; i < T.length; i++) {
+                final double newT = tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
+                T[i] = newT;
+            }
+
+//            Tini[img] = Tini[img] + (wmin - Tini[img] + mode.getNLines() / 2);
+//            Tend[img] = Tend[img] + (wmin - Tini[img] + mode.getNLines() / 2);
+
             // T_GCP = T[wmin]			; Assigns the acquisition time to the GCP
-            T_GCP = tmin;
+            final double T_GCP = tmin;
             // GCP_eci = ecf2eci(T+jd0, GCP_ecf.X, GCP_ecf.Y, GCP_ecf.Z, units = GCP_ecf.units)	; Transform GCP coords to ECI for every time in the acquisition
             for (int i = 0; i < T.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD0);
                 EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
             }
+
+            for (int i = 0; i < mode.getNLines(); i++) {
+                final double x = uW[Tini[img] + i][X];
+                final double y = uW[Tini[img] + i][Y];
+                final double z = uW[Tini[img] + i][Z];
+                final double a = Math.pow(-1.0,
+                                          img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - tmin) * TimeConverter.SECONDS_PER_DAY;
+                Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
+            }
+
+            final DefaultXYDataset ds1 = new DefaultXYDataset();
+            final double[][] ds1XY = new double[2][T.length];
+            final double[][] ds2XY = new double[2][T.length];
+            for (int i = 0; i < T.length; i++) {
+                final double[] tmp = new double[3];
+                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T2[i] + JD0), iTGT0[i], tmp);
+                final Point2D p1 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
+                ds1XY[0][i] = p1.getX();
+                ds1XY[1][i] = p1.getY();
+                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T[i] + JD0), GCP_eci[i], tmp);
+                final Point2D p2 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
+                ds2XY[0][i] = p2.getX();
+                ds2XY[1][i] = p2.getY();
+            }
+            ds1.addSeries("Nominal", ds1XY);
+            ds1.addSeries("GCP", ds2XY);
+            final XYPlot xyPlot = new XYPlot(ds1, new NumberAxis("lon"), new NumberAxis("lat"),
+                                             new StandardXYItemRenderer());
+
+            final JFreeChart chart = new JFreeChart(xyPlot);
+            final ChartPanel chartPanel = new ChartPanel(chart);
+            chartPanel.setVisible(true);
+
+            final JFrame frame = new JFrame("Plots");
+            frame.add(chartPanel);
+            frame.setVisible(true);
+
             iTGT0 = GCP_eci;
-        }
-
-        // ==v==v== Rotates TGT to perform scanning ======================================
-
-        double refTime = T_ict[img];
-        if (gcpCount != 0) {
-            refTime = T_GCP;
-        }
-
-        final Quaternion[] quaternions = new Quaternion[mode.getNLines()];
-        for (int i = 0; i < mode.getNLines(); i++) {
-            final double x = uW[Tini[img] + i][X];
-            final double y = uW[Tini[img] + i][Y];
-            final double z = uW[Tini[img] + i][Z];
-            final double a = Math.pow(-1, img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - refTime) * TimeConverter.SECONDS_PER_DAY;
-            quaternions[i] = Quaternion.createQuaternion(x, y, z, a);
-        }
-        for (int i = 0; i < mode.getNLines(); i++) {
-            quaternions[i].transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
         }
 
         // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
@@ -514,8 +567,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] uPitchAng = new double[mode.getNLines()];
         double[] uRollAng = new double[mode.getNLines()];
         for (int i = 0; i < mode.getNLines(); i++) {
-            uPitchAng[i] = Math.PI / 2 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
-                                                                   uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
+            uPitchAng[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
+                                                                     uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
             uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSL[Z][i],
                                                                    uRange[X][i], uRange[Y][i], uRange[Z][i]);
             uRollAng[i] += dRoll;
@@ -546,27 +599,6 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final Product targetProduct = createTargetProduct();
 
-        final int gridWidth = targetProduct.getSceneRasterWidth() / 1;
-        final int gridHeight = targetProduct.getSceneRasterHeight() / 1;
-        final double subsamplingX = 1.0;
-        final double subsamplingY = 1.0;
-
-        final float[] lons = new float[gridWidth * gridHeight];
-        final float[] lats = new float[gridWidth * gridHeight];
-        for (int i = 0; i < gridHeight; i++) {
-            for (int j = 0; j < gridWidth; j++) {
-                lons[i * gridWidth + j] = (float) igm[0][i * 1][j * 1];
-                lats[i * gridWidth + j] = (float) igm[1][i * 1][j * 1];
-            }
-        }
-        final TiePointGrid lonGrid = new TiePointGrid("lon", gridWidth, gridHeight, 0.5f, 0.5f, (float) subsamplingX,
-                                                      (float) subsamplingY, lons);
-        final TiePointGrid latGrid = new TiePointGrid("lat", gridWidth, gridHeight, 0.5f, 0.5f, (float) subsamplingX,
-                                                      (float) subsamplingY, lats);
-        targetProduct.addTiePointGrid(lonGrid);
-        targetProduct.addTiePointGrid(latGrid);
-        targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
-
         setTargetProduct(targetProduct);
     }
 
@@ -592,11 +624,26 @@ public class PerformGeometricCorrectionOp extends Operator {
         final Product targetProduct = createCopy(sourceProduct, "GC", type, new BandFilter() {
             @Override
             public boolean accept(Band band) {
-                return !"longitude".equals(band.getName()) && !"latitude".equals(band.getName());
+                return true;
             }
         });
-        targetProduct.addBand("longitude", ProductData.TYPE_FLOAT64);
-        targetProduct.addBand("latitude", ProductData.TYPE_FLOAT64);
+
+        final int w = targetProduct.getSceneRasterWidth();
+        final int h = targetProduct.getSceneRasterHeight();
+
+        final float[] lons = new float[w * h];
+        final float[] lats = new float[w * h];
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                lons[y * w + x] = (float) igm[0][y][x];
+                lats[y * w + x] = (float) igm[1][y][x];
+            }
+        }
+        final TiePointGrid lonGrid = new TiePointGrid("lon", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lons);
+        final TiePointGrid latGrid = new TiePointGrid("lat", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lats);
+        targetProduct.addTiePointGrid(lonGrid);
+        targetProduct.addTiePointGrid(latGrid);
+        targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
 
         return targetProduct;
     }
@@ -711,8 +758,26 @@ public class PerformGeometricCorrectionOp extends Operator {
         // 6. set preferred tile size
         targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
 
-        // TODO - pins
-        // TODO - gcps
+        // 7. copy pins
+        for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
+            final Pin pin = sourceProduct.getPinGroup().get(i);
+            targetProduct.getPinGroup().add(new Pin(pin.getName(),
+                                                    pin.getLabel(),
+                                                    pin.getDescription(),
+                                                    pin.getPixelPos(),
+                                                    pin.getGeoPos(),
+                                                    pin.getSymbol()));
+        }
+        // 8. copy GCPs
+        for (int i = 0; i < sourceProduct.getGcpGroup().getNodeCount(); i++) {
+            final Pin pin = sourceProduct.getGcpGroup().get(i);
+            targetProduct.getGcpGroup().add(new Pin(pin.getName(),
+                                                    pin.getLabel(),
+                                                    pin.getDescription(),
+                                                    pin.getPixelPos(),
+                                                    pin.getGeoPos(),
+                                                    pin.getSymbol()));
+        }
 
         return targetProduct;
     }
