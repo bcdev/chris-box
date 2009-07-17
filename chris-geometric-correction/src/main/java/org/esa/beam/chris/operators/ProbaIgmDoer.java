@@ -149,7 +149,7 @@ class ProbaIgmDoer {
         final double f = 1.0 / 298.257223563;
 
         // Origen de tiempo del NJD (New Julian Day) q me he inventado para q en las graficas no se vaya de baras el eje de tiempos ya q el JD tiene demasiadas cifras :(
-        final double jd0 = TimeConverter.julianDate(2003, 0, 1);
+        final double jd0 = TimeConverter.julianDate(2001, 0, 1);
 
         final int X = 0;
         final int Y = 1;
