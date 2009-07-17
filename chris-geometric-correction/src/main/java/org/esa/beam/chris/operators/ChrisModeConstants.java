@@ -97,18 +97,24 @@ class ChrisModeConstants {
     }
     
     //  Modes 0 and 20 characteristics are missing (already requested to Mike Cutter)
-    private static final ChrisModeConstants MODE_1 = new ChrisModeConstants(372, 374, 24.1899E-03, 1.29261 * MathUtils.DTOR); 
-    private static final ChrisModeConstants MODE_5 = new ChrisModeConstants(370, 748, 11.4912E-03, 0.63939 * MathUtils.DTOR); 
-    private static final ChrisModeConstants MODE_X = new ChrisModeConstants(744, 748, 11.4912E-03, 1.28570 * MathUtils.DTOR); 
+    private static final ChrisModeConstants MODE_1 = new ChrisModeConstants(   372, 374,  24.1899E-03, 1.29261 * MathUtils.DTOR); 
+    private static final ChrisModeConstants MODE_234 = new ChrisModeConstants( 744, 748,  11.4912E-03, 1.28570 * MathUtils.DTOR);
+    private static final ChrisModeConstants MODE_5 = new ChrisModeConstants(   370, 748,  11.4912E-03, 0.63939 * MathUtils.DTOR); 
+    private static final ChrisModeConstants MODE_0 = new ChrisModeConstants(   744, 1010, 11.4912E-03, 1.28570 * MathUtils.DTOR); 
+    private static final ChrisModeConstants MODE_20 = new ChrisModeConstants(  744, 1024, 11.4912E-03, 1.28570 * MathUtils.DTOR); 
 
     static ChrisModeConstants get(int mode) {
         if (mode == 1) {
             return MODE_1;
         } else if (mode == 5){
             return MODE_5;
+        } else if (mode == 0){
+            return MODE_0;
+        } else if (mode == 20){
+            return MODE_20;
         } else {
             // Modes 2, 3, 3A(30) and 4 share characteristics 
-            return MODE_X;
+            return MODE_234;
         }
     }
 }
