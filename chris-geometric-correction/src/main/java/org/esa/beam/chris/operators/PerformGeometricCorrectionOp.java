@@ -104,7 +104,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
     //This way the calculations can be performed more efficiently.
-    private static final double JD0 = TimeConverter.julianDate(2003, 0, 1);
+    private static final double JD0 = TimeConverter.julianDate(2001, 0, 1);
 
     // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
     private static final double DELAY = 0.999;
@@ -385,7 +385,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                 if (diff < minDiff) {
                     minDiff = diff;
                     tmin = T[i];
-                    wmin = i;
+                    wmin = i; // This is necessary in order to recompute the times more easily
                 }
             }
 
