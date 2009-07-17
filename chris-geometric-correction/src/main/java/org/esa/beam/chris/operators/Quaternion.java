@@ -142,7 +142,10 @@ class Quaternion {
      * identity transform.
      */
     public Quaternion() {
-        this(1.0, 0.0, 0.0, 0.0);
+        this.a = 1.0;
+        this.b = 0.0;
+        this.c = 0.0;
+        this.d = 0.0;
     }
 
     /**
@@ -160,7 +163,8 @@ class Quaternion {
     }
 
     /**
-     * Constructs a new unit quaternion.
+     * Constructs a new instance of this class. The quaternion constructed
+     * is normalized.
      *
      * @param a the scalar part of the quaternion.
      * @param b the i-component of the vector part of the quaternion.
@@ -177,16 +181,22 @@ class Quaternion {
     }
 
     /**
-     * Constructs a new unit quaternion.
+     * Constructs a new instance of this class. The quaternion constructed
+     * is normalized.
      *
      * @param x the x-component of the rotation axis.
      * @param y the y-component of the rotation axis.
      * @param z the z-component of the rotation axis.
-     * @param c the cosine of the rotation angle.
-     * @param s the sine of the rotation angle.
+     * @param c the {@code cos} of half the rotation angle.
+     * @param s the {@code sin} of half the rotation angle.
      */
     private Quaternion(double x, double y, double z, double c, double s) {
-        this(c, s * x, s * y, s * z);
+        final double norm = norm4(0.0, x, y, z);
+
+        this.a = c;
+        this.b = s * (x / norm);
+        this.c = s * (y / norm);
+        this.d = s * (z / norm);
     }
 
     /**

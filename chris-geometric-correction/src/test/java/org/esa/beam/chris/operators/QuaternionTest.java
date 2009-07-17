@@ -23,7 +23,7 @@ public class QuaternionTest {
         final double c = q.getJ();
         final double d = q.getK();
 
-        assertEquals(1.0, Quaternion.norm4(a, b, c, d), 0.0);
+        assertEquals(1.0, Quaternion.norm4(a, b, c, d), 2.0E-16);
 
         assertEquals(0.92387953, a, 0.5E-08);
         assertEquals(0.00000000, b, 0.0);
@@ -39,7 +39,7 @@ public class QuaternionTest {
         final double c1 = q1.getJ();
         final double d1 = q1.getK();
 
-        assertEquals(1.0, Quaternion.norm4(a1, b1, c1, d1), 0.0);
+        assertEquals(1.0, Quaternion.norm4(a1, b1, c1, d1), 2.0E-16);
 
         final Quaternion q2 = Quaternion.createQuaternion(11.0, 13.0, 17.0, Math.toRadians(19.0));
         final double a2 = q2.getR();
@@ -47,7 +47,7 @@ public class QuaternionTest {
         final double c2 = q2.getJ();
         final double d2 = q2.getK();
 
-        assertEquals(1.0, Quaternion.norm4(a2, b2, c2, d2), 0.0);
+        assertEquals(1.0, Quaternion.norm4(a2, b2, c2, d2), 2.0E-16);
 
         final Quaternion q3 = Quaternion.multiply(q1, q2);
         final double a3 = q3.getR();
@@ -55,7 +55,7 @@ public class QuaternionTest {
         final double c3 = q3.getJ();
         final double d3 = q3.getK();
 
-        assertEquals(1.0, Quaternion.norm4(a3, b3, c3, d3), 0.0);
+        assertEquals(1.0, Quaternion.norm4(a3, b3, c3, d3), 2.0E-16);
 
         assertEquals(a1 * a2 - b1 * b2 - c1 * c2 - d1 * d2, a3, 0.5E-15);
         assertEquals(a1 * b2 + b1 * a2 + c1 * d2 - d1 * c2, b3, 0.5E-15);

@@ -1,7 +1,6 @@
 package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.Assert;
-import org.esa.beam.chris.util.math.internal.Pow;
 
 /**
  * Utility class for calculating the intersection of a straight line and an ellipsoid.
@@ -33,18 +32,14 @@ class Intersector {
         Assert.argument(radii.length == 3);
 
         double a = 0.0;
-        for (int i = 0; i < 3; i++) {
-            a += Pow.pow2(direction[i] / radii[i]);
-        }
-
         double b = 0.0;
-        for (int i = 0; i < 3; i++) {
-            b += direction[i] * (point[i] - center[i]) / (Pow.pow2(radii[i]));
-        }
-
         double c = 0.0;
         for (int i = 0; i < 3; i++) {
-            c += Pow.pow2((point[i] - center[i]) / radii[i]);
+            final double q = point[i] - center[i];
+            final double rr = radii[i] * radii[i];
+            a += (direction[i] * direction[i]) / rr;
+            b += (direction[i] * q) / rr;
+            c += (q * q) / rr;
         }
         c -= 1.0;
 
