@@ -1,5 +1,7 @@
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.core.SubProgressMonitor;
 import sun.net.www.protocol.ftp.FtpURLConnection;
 
 import java.io.*;
@@ -17,9 +19,6 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-
-import com.bc.ceres.core.ProgressMonitor;
-import com.bc.ceres.core.SubProgressMonitor;
 
 /**
  * Utility class for converting between several time systems.
@@ -338,7 +337,7 @@ public class TimeConverter {
         return null;
     }
 
-    private static String[] readLines(InputStream is, String taskName, ProgressMonitor pm) {
+    private static String[] readLines(InputStream is, String taskName, ProgressMonitor pm) throws IOException {
         final Scanner scanner = new Scanner(is, "US-ASCII");
         scanner.useLocale(Locale.US);
 
@@ -347,7 +346,7 @@ public class TimeConverter {
             pm.beginTask(taskName, ProgressMonitor.UNKNOWN);
             while (scanner.hasNextLine()) {
                 if (pm.isCanceled()) {
-                    return new String[0];
+                    throw new IOException("Cancelled by user request.");
                 }
                 final String line = scanner.nextLine();
                 lineList.add(line);

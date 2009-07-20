@@ -331,7 +331,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             double minDiff = Double.MAX_VALUE;
             double tmin = Double.MAX_VALUE;
             int wmin = -1;
-            for (int i = Tini[img]; i < Tend[img]; i++) {
+            for (int i = Tini[img]; i <= Tend[img]; i++) {
                 double[] pos = iTGT0_ecf[i];
                 final double diff = Math.sqrt(
                         Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(pos[Z] - GCP_ecf[Z]));
