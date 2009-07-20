@@ -16,16 +16,13 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
 import org.esa.beam.chris.operators.math.SplineInterpolator;
 import org.esa.beam.chris.util.BandFilter;
-import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.chris.util.math.internal.Pow;
-import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.GeoPos;
@@ -37,21 +34,11 @@ import org.esa.beam.framework.datamodel.TiePointGrid;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
-import org.jfree.data.xy.DefaultXYDataset;
 
-import javax.swing.JFrame;
-import java.awt.Rectangle;
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -66,39 +53,6 @@ import java.util.List;
                   copyright = "(c) 2009 by Brockmann Consult",
                   description = "Performs the geometric correction for a CHRIS/Proba RCI.")
 public class PerformGeometricCorrectionOp extends Operator {
-
-    private static class Info {
-
-        private static final int[] CHRONOLOGICAL_IMAGE_NUMBERS = new int[]{2, 1, 3, 0, 4};
-
-        final int mode;
-        final double alt;
-        final double lat;
-        final double lon;
-        final int imageNumber;
-
-        public static Info createInfo(Product product) {
-            final int mode = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
-            final double alt = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_ALT);
-            final double lat = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LAT);
-            final double lon = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LON);
-            final int imageNumber = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_IMAGE_NUMBER, 0, 1);
-
-            return new Info(mode, alt, lat, lon, imageNumber);
-        }
-
-        public Info(int mode, double alt, double lat, double lon, int imageNumber) {
-            this.mode = mode;
-            this.alt = alt;
-            this.lat = lat;
-            this.lon = lon;
-            this.imageNumber = imageNumber;
-        }
-
-        final int getChronologicalImageNumber() {
-            return CHRONOLOGICAL_IMAGE_NUMBERS[imageNumber - 1];
-        }
-    }
 
     private static final int SLOW_DOWN = 5; // Slowdown factor
 
@@ -128,18 +82,19 @@ public class PerformGeometricCorrectionOp extends Operator {
     private Product sourceProduct;
 
     private double[][][] igm;
+    private AcquisitionInfo info;
 
     ///////////////////////////////////////////////////////////
 
     @Override
     public void initialize() throws OperatorException {
         final Telemetry telemetry = getTelemetry();
-        final Info info = Info.createInfo(sourceProduct);
+        info = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
         final double dTgps = getDeltaGPS(sourceProduct);
 
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
-        final ChrisModeConstants mode = ChrisModeConstants.get(info.mode);
+        final ChrisModeConstants mode = ChrisModeConstants.get(info.getMode());
 
         //////////////////////////
         // Prepare Time Frames
@@ -322,11 +277,11 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int img = info.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double TgtAlt = info.alt / 1000;
+        final double TgtAlt = info.getTargetAlt() / 1000;
         final double[] TGTecf = new double[3];
         final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
         final int gcpCount = gcpGroup.getNodeCount();
-        Conversions.wgsToEcef(info.lon, info.lat, TgtAlt, TGTecf);
+        Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), TgtAlt, TGTecf);
 
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
@@ -396,12 +351,11 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             final double[] T2 = T.clone();
             for (int i = 0; i < T.length; i++) {
+                System.out.println("T[i] = " + T[i]);
                 final double newT = tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
+                System.out.println("newT = " + newT);
                 T[i] = newT;
             }
-
-//            Tini[img] = Tini[img] + (wmin - Tini[img] + mode.getNLines() / 2);
-//            Tend[img] = Tend[img] + (wmin - Tini[img] + mode.getNLines() / 2);
 
             // T_GCP = T[wmin]			; Assigns the acquisition time to the GCP
             final double T_GCP = tmin;
@@ -420,32 +374,32 @@ public class PerformGeometricCorrectionOp extends Operator {
                 Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
             }
 
-            final DefaultXYDataset ds1 = new DefaultXYDataset();
-            final double[][] ds1XY = new double[2][T.length];
-            final double[][] ds2XY = new double[2][T.length];
-            for (int i = 0; i < T.length; i++) {
-                final double[] tmp = new double[3];
-                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T2[i] + JD0), iTGT0[i], tmp);
-                final Point2D p1 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
-                ds1XY[0][i] = p1.getX();
-                ds1XY[1][i] = p1.getY();
-                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T[i] + JD0), GCP_eci[i], tmp);
-                final Point2D p2 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
-                ds2XY[0][i] = p2.getX();
-                ds2XY[1][i] = p2.getY();
-            }
-            ds1.addSeries("Nominal", ds1XY);
-            ds1.addSeries("GCP", ds2XY);
-            final XYPlot xyPlot = new XYPlot(ds1, new NumberAxis("lon"), new NumberAxis("lat"),
-                                             new StandardXYItemRenderer());
-
-            final JFreeChart chart = new JFreeChart(xyPlot);
-            final ChartPanel chartPanel = new ChartPanel(chart);
-            chartPanel.setVisible(true);
-
-            final JFrame frame = new JFrame("Plots");
-            frame.add(chartPanel);
-            frame.setVisible(true);
+//            final DefaultXYDataset ds1 = new DefaultXYDataset();
+//            final double[][] ds1XY = new double[2][T.length];
+//            final double[][] ds2XY = new double[2][T.length];
+//            for (int i = 0; i < T.length; i++) {
+//                final double[] tmp = new double[3];
+//                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T2[i] + JD0), iTGT0[i], tmp);
+//                final Point2D p1 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
+//                ds1XY[0][i] = p1.getX();
+//                ds1XY[1][i] = p1.getY();
+//                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T[i] + JD0), GCP_eci[i], tmp);
+//                final Point2D p2 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
+//                ds2XY[0][i] = p2.getX();
+//                ds2XY[1][i] = p2.getY();
+//            }
+//            ds1.addSeries("Nominal", ds1XY);
+//            ds1.addSeries("GCP", ds2XY);
+//            final XYPlot xyPlot = new XYPlot(ds1, new NumberAxis("lon"), new NumberAxis("lat"),
+//                                             new StandardXYItemRenderer());
+//
+//            final JFreeChart chart = new JFreeChart(xyPlot);
+//            final ChartPanel chartPanel = new ChartPanel(chart);
+//            chartPanel.setVisible(true);
+//
+//            final JFrame frame = new JFrame("Plots");
+//            frame.add(chartPanel);
+//            frame.setVisible(true);
 
             iTGT0 = GCP_eci;
         }
@@ -459,7 +413,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         double dRoll = 0.0;
         if (gcpCount != 0) {
             final int nC2;
-            if (info.mode != 5) {
+            if (info.getMode() != 5) {
                 nC2 = mode.getNCols() / 2;
             } else {
                 nC2 = mode.getNCols() - 1;
@@ -479,7 +433,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             double SatX = iX[Tini[img] + i];
             double SatY = iY[Tini[img] + i];
             double SatZ = iZ[Tini[img] + i];
-            double TgtLat = info.lat;
+            double TgtLat = info.getTargetLat();
             ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ, TgtLat);
 
             // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
@@ -566,6 +520,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         double[] uPitchAng = new double[mode.getNLines()];
         double[] uRollAng = new double[mode.getNLines()];
+        System.out.println("dRoll = " + dRoll);
         for (int i = 0; i < mode.getNLines(); i++) {
             uPitchAng[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
                                                                      uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
@@ -595,7 +550,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                                      uEjeYaw,
                                      TgtAlt,
                                      ixSubset, iySubset, izSubset,
-                                     timeSubset, info.mode);
+                                     timeSubset, info.getMode());
 
         final Product targetProduct = createTargetProduct();
 
@@ -633,12 +588,19 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final float[] lons = new float[w * h];
         final float[] lats = new float[w * h];
+
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                lons[y * w + x] = (float) igm[0][y][x];
-                lats[y * w + x] = (float) igm[1][y][x];
+                if (info.isBackscanning()) {
+                    lons[y * w + x] = (float) igm[0][h - 1 - y][x];
+                    lats[y * w + x] = (float) igm[1][h - 1 - y][x];
+                } else {
+                    lons[y * w + x] = (float) igm[0][y][x];
+                    lats[y * w + x] = (float) igm[1][y][x];
+                }
             }
         }
+
         final TiePointGrid lonGrid = new TiePointGrid("lon", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lons);
         final TiePointGrid latGrid = new TiePointGrid("lat", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lats);
         targetProduct.addTiePointGrid(lonGrid);
@@ -646,21 +608,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
 
         return targetProduct;
-    }
-
-    @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        int index = 0;
-        if (targetBand.getName().equals("latitude")) {
-            index = 1;
-        }
-        Rectangle rectangle = targetTile.getRectangle();
-        for (int y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
-            for (int x = rectangle.x; x < rectangle.x + rectangle.width; x++) {
-                targetTile.setSample(x, y, igm[index][y][x]);
-            }
-            checkForCancelation(pm);
-        }
     }
 
     private static double[][] unit(double[][] vec) {

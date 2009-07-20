@@ -75,6 +75,9 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
             final int answer = showQuestionDialog(QUESTION_FETCH_LATEST_TIME_TABLES, KEY_FETCH_LATEST_TIME_TABLES);
             if (answer == JOptionPane.YES_OPTION) {
                 new TimeConverterUpdater(getAppContext().getApplicationWindow(), TITLE, converter).execute();
+            } else {
+                dialog.compareAndSet(null, createDialog(getAppContext()));
+                dialog.get().show();
             }
         } else {
             dialog.compareAndSet(null, createDialog(getAppContext()));
