@@ -227,7 +227,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
         double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
-        double[] eci_opv = {uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
+        double[] eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
         double[] uWecf = new double[3];
         EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
 
@@ -279,8 +279,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         // ---- Target Coordinates in ECI using per-Line Time -------------------
         final double TgtAlt = info.getTargetAlt() / 1000;
         final double[] TGTecf = new double[3];
-        final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
-        final int gcpCount = gcpGroup.getNodeCount();
         Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), TgtAlt, TGTecf);
 
         // Case with Moving Target for imaging time
@@ -303,6 +301,8 @@ public class PerformGeometricCorrectionOp extends Operator {
             Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
         }
 
+        final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
+        final int gcpCount = gcpGroup.getNodeCount();
         if (gcpCount != 0) {
             // we assume only one GCP at target altitude
             final Pin gcp = gcpGroup.get(0);
@@ -346,13 +346,13 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             System.out.println("minDiff = " + minDiff);
             System.out.println("tmin = " + tmin);
-            final double tdiff = tmin - T_ict[img];
-            System.out.println("tmin - T_ict[img]= " + tdiff);
+            final double dT = tmin - T_ict[img];
+            System.out.println("dT = " + dT);
 
             final double[] T2 = T.clone();
             for (int i = 0; i < T.length; i++) {
                 System.out.println("T[i] = " + T[i]);
-                final double newT = tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
+                final double newT = T[i] + dT; //tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
                 System.out.println("newT = " + newT);
                 T[i] = newT;
             }
@@ -362,8 +362,60 @@ public class PerformGeometricCorrectionOp extends Operator {
             // GCP_eci = ecf2eci(T+jd0, GCP_ecf.X, GCP_ecf.Y, GCP_ecf.Z, units = GCP_ecf.units)	; Transform GCP coords to ECI for every time in the acquisition
             for (int i = 0; i < T.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD0);
-                EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
+//                EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
+                EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
             }
+            
+//// COPIED FROM ABOVE
+            iX = spline(gps_njd, get2ndDim(eci, 0, numGPS), T);
+            iY = spline(gps_njd, get2ndDim(eci, 1, numGPS), T);
+            iZ = spline(gps_njd, get2ndDim(eci, 2, numGPS), T);
+            iVX = spline(gps_njd, get2ndDim(eci, 3, numGPS), T);
+            iVY = spline(gps_njd, get2ndDim(eci, 4, numGPS), T);
+            iVZ = spline(gps_njd, get2ndDim(eci, 5, numGPS), T);
+
+            iR = new double[T.length];
+            for (int i = 0; i < iR.length; i++) {
+                iR[i] = Math.sqrt(iX[i] * iX[i] + iY[i] * iY[i] + iZ[i] * iZ[i]);
+            }
+
+            // ==v==v== Get Orbital Plane Vector ==================================================
+            // ---- Calculates normal vector to orbital plane --------------------------
+            Wop = vect_prod(iX, iY, iZ, iVX, iVY, iVZ);
+            uWop = unit(Wop);
+
+            // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
+            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
+            eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
+            uWecf = new double[3];
+            EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
+
+            uW = new double[T.length][3];
+            for (int i = 0; i < T.length; i++) {
+                double gst = TimeConverter.jdToGST(T[i] + JD0);
+                EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
+            }
+
+            // ==v==v== Get Angular Velocity ======================================================
+            // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
+
+            gpsSecs = new double[gpsData.size()];
+            eciX = new double[gpsData.size()];
+            eciY = new double[gpsData.size()];
+            eciZ = new double[gpsData.size()];
+            for (int i = 0; i < gpsData.size(); i++) {
+                gpsSecs[i] = gpsData.get(i).secs;
+                eciX[i] = eci[i][X];
+                eciY[i] = eci[i][Y];
+                eciZ[i] = eci[i][Z];
+            }
+            AngVelRaw = CoordinateUtils.angVel(gpsSecs, eciX, eciY, eciZ);
+            AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
+            smoother = new SimpleSmoother(5);
+            AngVel = new double[AngVelRawSubset.length];
+            smoother.smooth(AngVelRawSubset, AngVel);
+            iAngVel = spline(gps_njd, AngVel, T);
+////  EVOBA MORF DEIPOC
 
             for (int i = 0; i < mode.getNLines(); i++) {
                 final double x = uW[Tini[img] + i][X];
@@ -371,7 +423,8 @@ public class PerformGeometricCorrectionOp extends Operator {
                 final double z = uW[Tini[img] + i][Z];
                 final double a = Math.pow(-1.0,
                                           img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - tmin) * TimeConverter.SECONDS_PER_DAY;
-                Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
+//                Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
+                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
             }
 
 //            final DefaultXYDataset ds1 = new DefaultXYDataset();
@@ -401,7 +454,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            frame.add(chartPanel);
 //            frame.setVisible(true);
 
-            iTGT0 = GCP_eci;
+//            iTGT0 = GCP_eci;
         }
 
         // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T

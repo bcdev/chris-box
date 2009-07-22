@@ -14,7 +14,7 @@ class GeometricCorrectionProductFilter implements ProductFilter {
 
     @Override
     public boolean accept(Product product) {
-        return product.getProductType().matches("CHRIS_M[12345].*");
+        return product.getProductType().matches("CHRIS_M[012345].*");
     }
 
 }

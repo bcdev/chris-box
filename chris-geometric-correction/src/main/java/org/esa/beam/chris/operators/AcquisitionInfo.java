@@ -15,7 +15,13 @@ class AcquisitionInfo {
     private final int chronologicalImageNumber;
 
     public static AcquisitionInfo createAcquisitionInfo(Product product) {
-        final int mode = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_CHRIS_MODE, 0, 1);
+        final String modeString = OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
+        final int mode;
+        if ("3A".equals(modeString)) {
+            mode = 3;
+        } else {
+            mode = Integer.parseInt(modeString);
+        }
         final double alt = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_ALT);
         final double lat = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LAT);
         final double lon = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LON);
