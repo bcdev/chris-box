@@ -27,4 +27,20 @@ public class EcefEciConverterTest {
         assertEquals(ecefZ, eciZ, 0.0);
     }
 
+    @Test
+    public void eciToEcef() {
+        final double eciX = -676318.7711106260;
+        final double eciY = 3743300.458313003;
+        final double eciZ = 5102545.269331731;
+        final double[] eci = new double[]{eciX, eciY, eciZ};
+
+        final double[] ecef = EcefEciConverter.eciToEcef(Math.PI / 2.0, eci, eci.clone());
+        final double ecefX = ecef[0];
+        final double ecefY = ecef[1];
+        final double ecefZ = ecef[2];
+
+        assertEquals(eciY, ecefX, 5.0E-10);
+        assertEquals(-eciX, ecefY, 5.0E-10);
+        assertEquals(eciZ, ecefZ, 0.0);
+    }
 }

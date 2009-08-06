@@ -39,6 +39,7 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -231,7 +232,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] uWecf = new double[3];
         EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
 
-        double[][] uW = new double[T.length][3];
+        final double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
             double gst = TimeConverter.jdToGST(T[i] + JD0);
             EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
@@ -240,20 +241,20 @@ public class PerformGeometricCorrectionOp extends Operator {
         // ==v==v== Get Angular Velocity ======================================================
         // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
 
-        double[] gpsSecs = new double[gpsData.size()];
-        double[] eciX = new double[gpsData.size()];
-        double[] eciY = new double[gpsData.size()];
-        double[] eciZ = new double[gpsData.size()];
+        final double[] gpsSecs = new double[gpsData.size()];
+        final double[] eciX = new double[gpsData.size()];
+        final double[] eciY = new double[gpsData.size()];
+        final double[] eciZ = new double[gpsData.size()];
         for (int i = 0; i < gpsData.size(); i++) {
             gpsSecs[i] = gpsData.get(i).secs;
             eciX[i] = eci[i][X];
             eciY[i] = eci[i][Y];
             eciZ[i] = eci[i][Z];
         }
-        double[] AngVelRaw = CoordinateUtils.angVel(gpsSecs, eciX, eciY, eciZ);
-        double[] AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
+        final double[] AngVelRaw = CoordinateUtils.angVel(gpsSecs, eciX, eciY, eciZ);
+        final double[] AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
         SimpleSmoother smoother = new SimpleSmoother(5);
-        double[] AngVel = new double[AngVelRawSubset.length];
+        final double[] AngVel = new double[AngVelRawSubset.length];
         smoother.smooth(AngVelRawSubset, AngVel);
         double[] iAngVel = spline(gps_njd, AngVel, T);
 
@@ -290,14 +291,12 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==v==v== Rotates TGT to perform scanning ======================================
 
-        final double refTime = T_ict[img];
-
         for (int i = 0; i < mode.getNLines(); i++) {
             final double x = uW[Tini[img] + i][X];
             final double y = uW[Tini[img] + i][Y];
             final double z = uW[Tini[img] + i][Z];
             final double a = Math.pow(-1.0,
-                                      img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - refTime) * TimeConverter.SECONDS_PER_DAY;
+                                      img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
             Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
         }
 
@@ -312,10 +311,18 @@ public class PerformGeometricCorrectionOp extends Operator {
                 throw new OperatorException("GCP without geolocation found,");
             }
 
+            /**
+             * 0. Calculate GCP position in ECEF
+             */
             final double[] GCP_ecf = new double[3];
             Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), TgtAlt, GCP_ecf);
-            final double[][] GCP_eci = new double[T.length][3];
+            final Point2D point2D = Conversions.ecef2wgs(GCP_ecf[0], GCP_ecf[1], GCP_ecf[2]);
+            System.out.println("lon = " + point2D.getX());
+            System.out.println("lat = " + point2D.getY());
 
+            /**
+             * 1. Transform nominal Moving Target to ECEF
+             */
             // Transform Moving Target to ECF in order to find the point closest to GCP0
             // iTGT0_ecf = eci2ecf(T+jd0, iTGT0[X,*], iTGT0[Y,*], iTGT0[Z,*])
             final double[][] iTGT0_ecf = new double[iTGT0.length][3];
@@ -328,6 +335,9 @@ public class PerformGeometricCorrectionOp extends Operator {
             // diff = SQRT((iTGT0_ecf[X,*] - GCP_ecf[X])^2 + (iTGT0_ecf[Y,*] - GCP_ecf[Y])^2 + (iTGT0_ecf[Z,*] - GCP_ecf[Z])^2)	; Calculates the distance between the GCP and each point of the moving target
             // mn = min(diff,wmin) ; Finds where the minimun point is located (wmin)
 
+            /**
+             * 2. Find time offset dT
+             */
             double minDiff = Double.MAX_VALUE;
             double tmin = Double.MAX_VALUE;
             int wmin = -1;
@@ -335,8 +345,8 @@ public class PerformGeometricCorrectionOp extends Operator {
                 double[] pos = iTGT0_ecf[i];
                 final double diff = Math.sqrt(
                         Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(pos[Z] - GCP_ecf[Z]));
-                System.out.println("i = " + (i - Tini[img]));
-                System.out.println("diff = " + diff);
+//                System.out.println("i = " + (i - Tini[img]));
+//                System.out.println("diff = " + diff);
                 if (diff < minDiff) {
                     minDiff = diff;
                     tmin = T[i];
@@ -346,27 +356,45 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             System.out.println("minDiff = " + minDiff);
             System.out.println("tmin = " + tmin);
-            final double dT = tmin - T_ict[img];
+            System.out.println("wmin = " + wmin);
+            final double dY = (wmin % mode.getNLines()) - (gcp.getPixelPos().getY() + 0.5);
+//            final double dT = tmin - T_ict[img];
+//            final double dT = tmin - T_img[(int) gcp.getPixelPos().getY()][img];
+            final double dT = (dY * mode.getDt()) / TimeConverter.SECONDS_PER_DAY;
             System.out.println("dT = " + dT);
 
+            /**
+             * 3. Update T[]: add dT to all times in T[].
+             */
             final double[] T2 = T.clone();
             for (int i = 0; i < T.length; i++) {
-                System.out.println("T[i] = " + T[i]);
+//                System.out.println("T[i] = " + T[i]);
                 final double newT = T[i] + dT; //tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
-                System.out.println("newT = " + newT);
+//                System.out.println("newT = " + newT);
                 T[i] = newT;
             }
+            for (int line = 0; line < mode.getNLines(); line++) {
+                T_img[line][img] += dT;
+            }
 
+            /**
+             * 4. Calculate GCP position in ECI for updated times T[]
+             */
             // T_GCP = T[wmin]			; Assigns the acquisition time to the GCP
             final double T_GCP = tmin;
             // GCP_eci = ecf2eci(T+jd0, GCP_ecf.X, GCP_ecf.Y, GCP_ecf.Z, units = GCP_ecf.units)	; Transform GCP coords to ECI for every time in the acquisition
+            final double[][] GCP_eci = new double[T.length][3];
             for (int i = 0; i < T.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD0);
-//                EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
-                EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
+                EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
+//                EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
             }
-            
+
 //// COPIED FROM ABOVE
+
+            /**
+             * 5. Interpolate satellite positions & velocities for updated times T[]
+             */
             iX = spline(gps_njd, get2ndDim(eci, 0, numGPS), T);
             iY = spline(gps_njd, get2ndDim(eci, 1, numGPS), T);
             iZ = spline(gps_njd, get2ndDim(eci, 2, numGPS), T);
@@ -385,36 +413,21 @@ public class PerformGeometricCorrectionOp extends Operator {
             uWop = unit(Wop);
 
             // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
-            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
-            eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
-            uWecf = new double[3];
-            EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
-
-            uW = new double[T.length][3];
-            for (int i = 0; i < T.length; i++) {
-                double gst = TimeConverter.jdToGST(T[i] + JD0);
-                EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
-            }
+//            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
+//            eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
+//            uWecf = new double[3];
+//            EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
+//
+//            uW = new double[T.length][3];
+//            for (int i = 0; i < T.length; i++) {
+//                double gst = TimeConverter.jdToGST(T[i] + JD0);
+//                EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
+//            }
 
             // ==v==v== Get Angular Velocity ======================================================
             // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
 
-            gpsSecs = new double[gpsData.size()];
-            eciX = new double[gpsData.size()];
-            eciY = new double[gpsData.size()];
-            eciZ = new double[gpsData.size()];
-            for (int i = 0; i < gpsData.size(); i++) {
-                gpsSecs[i] = gpsData.get(i).secs;
-                eciX[i] = eci[i][X];
-                eciY[i] = eci[i][Y];
-                eciZ[i] = eci[i][Z];
-            }
-            AngVelRaw = CoordinateUtils.angVel(gpsSecs, eciX, eciY, eciZ);
-            AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
-            smoother = new SimpleSmoother(5);
-            AngVel = new double[AngVelRawSubset.length];
-            smoother.smooth(AngVelRawSubset, AngVel);
-            iAngVel = spline(gps_njd, AngVel, T);
+            //iAngVel = spline(gps_njd, AngVel, T);
 ////  EVOBA MORF DEIPOC
 
             for (int i = 0; i < mode.getNLines(); i++) {
@@ -423,9 +436,18 @@ public class PerformGeometricCorrectionOp extends Operator {
                 final double z = uW[Tini[img] + i][Z];
                 final double a = Math.pow(-1.0,
                                           img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - tmin) * TimeConverter.SECONDS_PER_DAY;
-//                Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
-                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
+                Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
+                System.out.println("i = " + i);
+                final double gst = TimeConverter.jdToGST(T[Tini[img] + i] + JD0);
+                final double[] ecef = new double[3];
+                EcefEciConverter.eciToEcef(gst, GCP_eci[Tini[img] + i], ecef);
+                final Point2D p = Conversions.ecef2wgs(ecef[0], ecef[1], ecef[2]);
+                System.out.println("lon = " + p.getX());
+                System.out.println("lat = " + p.getY());
+                System.out.println();
+//                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
             }
+
 
 //            final DefaultXYDataset ds1 = new DefaultXYDataset();
 //            final double[][] ds1XY = new double[2][T.length];
@@ -454,7 +476,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            frame.add(chartPanel);
 //            frame.setVisible(true);
 
-//            iTGT0 = GCP_eci;
+            iTGT0 = GCP_eci;
         }
 
         // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
