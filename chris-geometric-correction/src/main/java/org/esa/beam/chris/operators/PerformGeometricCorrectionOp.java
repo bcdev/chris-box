@@ -16,6 +16,7 @@
  */
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
@@ -28,12 +29,14 @@ import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.Pin;
 import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
 import org.esa.beam.framework.datamodel.TiePointGeoCoding;
 import org.esa.beam.framework.datamodel.TiePointGrid;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
@@ -84,6 +87,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private double[][][] igm;
     private AcquisitionInfo info;
+    private Band pixelLonBand;
+    private Band pixelLatBand;
 
     ///////////////////////////////////////////////////////////
 
@@ -232,7 +237,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] uWecf = new double[3];
         EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
 
-        final double[][] uW = new double[T.length][3];
+        double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
             double gst = TimeConverter.jdToGST(T[i] + JD0);
             EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
@@ -413,21 +418,21 @@ public class PerformGeometricCorrectionOp extends Operator {
             uWop = unit(Wop);
 
             // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
-//            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
-//            eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
-//            uWecf = new double[3];
-//            EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
-//
-//            uW = new double[T.length][3];
-//            for (int i = 0; i < T.length; i++) {
-//                double gst = TimeConverter.jdToGST(T[i] + JD0);
-//                EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
-//            }
+            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
+            eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
+            uWecf = new double[3];
+            EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
+
+            uW = new double[T.length][3];
+            for (int i = 0; i < T.length; i++) {
+                double gst = TimeConverter.jdToGST(T[i] + JD0);
+                EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
+            }
 
             // ==v==v== Get Angular Velocity ======================================================
             // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
 
-            //iAngVel = spline(gps_njd, AngVel, T);
+            iAngVel = spline(gps_njd, AngVel, T);
 ////  EVOBA MORF DEIPOC
 
             for (int i = 0; i < mode.getNLines(); i++) {
@@ -632,6 +637,29 @@ public class PerformGeometricCorrectionOp extends Operator {
         setTargetProduct(targetProduct);
     }
 
+    @Override
+    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+        if (targetBand.equals(pixelLonBand)) {
+            fillTile(targetBand, targetTile, igm[0]);
+        }
+        if (targetBand.equals(pixelLatBand)) {
+            fillTile(targetBand, targetTile, igm[1]);
+        }
+    }
+
+    private void fillTile(Band targetBand, Tile targetTile, double[][] data) {
+        final int h = targetBand.getSceneRasterHeight();
+        if (info.isBackscanning()) {
+            for (final Tile.Pos pos : targetTile) {
+                targetTile.setSample(pos.x, pos.y, data[h - 1 - pos.y][pos.x]);
+            }
+        } else {
+            for (final Tile.Pos pos : targetTile) {
+                targetTile.setSample(pos.x, pos.y, data[pos.y][pos.x]);
+            }
+        }
+    }
+
     private Telemetry getTelemetry() {
         final File telemetryRepository;
         if (telemetrySearchPath == null || telemetrySearchPath.isEmpty()) {
@@ -681,6 +709,9 @@ public class PerformGeometricCorrectionOp extends Operator {
         targetProduct.addTiePointGrid(lonGrid);
         targetProduct.addTiePointGrid(latGrid);
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
+
+        pixelLonBand = targetProduct.addBand("pixelLon", ProductData.TYPE_FLOAT64);
+        pixelLatBand = targetProduct.addBand("pixelLat", ProductData.TYPE_FLOAT64);
 
         return targetProduct;
     }
