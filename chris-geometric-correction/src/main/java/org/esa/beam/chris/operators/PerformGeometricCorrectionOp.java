@@ -362,7 +362,12 @@ public class PerformGeometricCorrectionOp extends Operator {
             System.out.println("minDiff = " + minDiff);
             System.out.println("tmin = " + tmin);
             System.out.println("wmin = " + wmin);
-            final double dY = (wmin % mode.getNLines()) - (gcp.getPixelPos().getY() + 0.5);
+            final double dY;
+            if (info.isBackscanning()) {
+                dY = (wmin % mode.getNLines()) - (mode.getNLines() - gcp.getPixelPos().getY() + 0.5);
+            } else {
+                dY = (wmin % mode.getNLines()) - (gcp.getPixelPos().getY() + 0.5);
+            }
 //            final double dT = tmin - T_ict[img];
 //            final double dT = tmin - T_img[(int) gcp.getPixelPos().getY()][img];
             final double dT = (dY * mode.getDt()) / TimeConverter.SECONDS_PER_DAY;
