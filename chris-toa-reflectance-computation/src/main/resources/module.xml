@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-toa-reflectance-computation</symbolicName>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>CHRIS/Proba TOA Reflectance Computation Tool</name>
 
     <description>
@@ -19,6 +19,8 @@
 
     <changelog>
         <![CDATA[
+        Changes in Version 1.0.2<br/>
+        [CBOX-73] Make modules binary compatibility with BEAM 4.6.1<br/>
         Changes in Version 1.0.1<br/>
         [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
         ]]>

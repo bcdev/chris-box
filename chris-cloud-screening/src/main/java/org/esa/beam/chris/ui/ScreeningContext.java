@@ -406,19 +406,14 @@ class ScreeningContext implements LabelingContext {
     }
 
     private static Band findBand(Product product, String prefix, final double wavelength) throws Exception {
-        final Band band = OpUtils.findBand(product, prefix, new BandFilter() {
-            @Override
-            public boolean accept(Band band) {
-                return Math.abs(band.getSpectralWavelength() - wavelength) < band.getSpectralBandwidth();
-            }
-        });
+        final Band[] bands = OpUtils.findBands(product, prefix);
 
-        if (band == null) {
+        if (bands.length == 0) {
             throw new Exception(MessageFormat.format(
-                    "could not find band with prefix = ''{0}'' and spectral wavelength = {1}", prefix, wavelength));
+                    "could not find band with prefix = ''{0}'' and spectral wavelength = {1} nm", prefix, wavelength));
         }
 
-        return band;
+        return bands[OpUtils.findBandIndex(bands, wavelength)];
     }
 
     private static class BrightnessComparator implements Comparator<EMCluster> {

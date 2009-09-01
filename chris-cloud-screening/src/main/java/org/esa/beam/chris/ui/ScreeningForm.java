@@ -20,6 +20,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.ParametersPane;
 import org.esa.beam.framework.gpf.ui.SourceProductSelector;
 import org.esa.beam.framework.ui.AppContext;
+import org.esa.beam.framework.ui.ValueEditorsPane;
 import org.esa.beam.framework.ui.application.SelectionChangeEvent;
 import org.esa.beam.framework.ui.application.SelectionChangeListener;
 
@@ -53,7 +54,7 @@ class ScreeningForm extends JPanel {
         // create parameters panel
         final ValueContainer vc2 = formModel.getParameterValueContainer();
         final BindingContext bc2 = new BindingContext(vc2);
-        final JPanel panel = new ParametersPane(bc2).createPanel();
+        final JPanel panel = new ValueEditorsPane(bc2).createPanel();
         panel.setBorder(BorderFactory.createTitledBorder("Processing Parameters"));
 
         wvCheckBox = (JCheckBox) bc2.getBinding("useWv").getComponents()[0];
