@@ -4,7 +4,18 @@ import com.bc.ceres.core.ProgressMonitor;
 import com.bc.ceres.core.SubProgressMonitor;
 import sun.net.www.protocol.ftp.FtpURLConnection;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.MessageFormat;
@@ -51,6 +62,11 @@ public class TimeConverter {
      */
     public static final double EPOCH_MJD = -40587.0;
     /**
+     * The epoch (days) for the MJD2000 which
+     * corresponds to 2000-01-01 00:00.
+     */
+    public static final double EPOCH_MJD2000 = 10957.0;
+    /**
      * The epoch (millis) for the Modified Julian Date (MJD) which
      * corresponds to 1858-11-17 00:00.
      */
@@ -63,11 +79,11 @@ public class TimeConverter {
      * The number of milli-seconds per day.
      */
     public static final double MILLIS_PER_DAY = 86400000.0;
+
     /**
      * The number of seconds per day.
      */
     public static final double SECONDS_PER_DAY = 86400.0;
-
     private static volatile TimeConverter uniqueInstance;
 
     /**
@@ -437,6 +453,17 @@ public class TimeConverter {
     }
 
     /**
+     * Returns the MJD2000 corresponding to a date.
+     *
+     * @param date the date.
+     *
+     * @return the MJD2000 corresponding to the date.
+     */
+    public static double dateToMJD2000(Date date) {
+        return date.getTime() / MILLIS_PER_DAY - EPOCH_MJD2000;
+    }
+
+    /**
      * Returns the date corresponding to a Modified Julian Date (MJD).
      *
      * @param mjd the MJD.
@@ -445,6 +472,17 @@ public class TimeConverter {
      */
     public static Date mjdToDate(double mjd) {
         return new Date(Math.round((EPOCH_MJD + mjd) * MILLIS_PER_DAY));
+    }
+
+    /**
+     * Returns the date corresponding to an MJD2000.
+     *
+     * @param mjd2000 the MJD2000.
+     *
+     * @return the date corresponding to the MJD2000.
+     */
+    public static Date mjd2000ToDate(double mjd2000) {
+        return new Date(Math.round((EPOCH_MJD2000 + mjd2000) * MILLIS_PER_DAY));
     }
 
     /**
