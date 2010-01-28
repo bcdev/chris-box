@@ -283,9 +283,9 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int img = info.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double TgtAlt = info.getTargetAlt() / 1000;
+        final double targetAltitude = info.getTargetAlt() / 1000;
         final double[] TGTecf = new double[3];
-        Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), TgtAlt, TGTecf);
+        Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude, TGTecf);
 
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
@@ -307,9 +307,11 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
         final int gcpCount = gcpGroup.getNodeCount();
-        if (gcpCount != 0) {
+        int gcpIndex = -1;
+        if (gcpCount > 0) {
+            gcpIndex = findGcpNearPixelPos(mode.getNCols() / 2, mode.getNLines() / 2, gcpGroup);
             // we assume only one GCP at target altitude
-            final Pin gcp = gcpGroup.get(0);
+            final Pin gcp = gcpGroup.get(gcpIndex);
             final GeoPos gcpPos = gcp.getGeoPos();
 
             if (gcpPos == null) {
@@ -320,7 +322,7 @@ public class PerformGeometricCorrectionOp extends Operator {
              * 0. Calculate GCP position in ECEF
              */
             final double[] GCP_ecf = new double[3];
-            Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), TgtAlt, GCP_ecf);
+            Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), targetAltitude, GCP_ecf);
             final Point2D point2D = Conversions.ecef2wgs(GCP_ecf[0], GCP_ecf[1], GCP_ecf[2]);
             System.out.println("lon = " + point2D.getX());
             System.out.println("lat = " + point2D.getY());
@@ -487,7 +489,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            frame.setVisible(true);
 
             iTGT0 = GCP_eci;
-        }
+        } // gcpCount > 0;
 
         // Once GCP and TT are used iTGT0 will be subsetted to the corrected T, but in the nominal case iTGT0 matches already T
         double[][] iTGT = iTGT0;
@@ -503,7 +505,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             } else {
                 nC2 = mode.getNCols() - 1;
             }
-            final Pin gcp = gcpGroup.get(0);
+            final Pin gcp = gcpGroup.get(gcpIndex);
             dRoll = (nC2 - gcp.getPixelPos().getX()) * mode.getIfov();
         }
 
@@ -629,17 +631,168 @@ public class PerformGeometricCorrectionOp extends Operator {
             izSubset[i] = iZ[Tini[img] + i];
             timeSubset[i] = T[Tini[img] + i];
         }
-        igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(),
-                                     uEjePitch, uPitchAng,
-                                     uEjeRoll, uRollAng,
-                                     uEjeYaw,
-                                     TgtAlt,
-                                     ixSubset, iySubset, izSubset,
-                                     timeSubset, info.getMode());
+//        igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(),
+//                                     uEjePitch, uPitchAng,
+//                                     uEjeRoll, uRollAng,
+//                                     uEjeYaw,
+//                                     TgtAlt,
+//                                     ixSubset, iySubset, izSubset,
+//                                     timeSubset, info.getMode());
+
+
+        final int nLines = mode.getNLines();
+        final int nCols = mode.getNCols();
+
+        final double[][] pitchRotation = new double[nLines][nCols];
+        final double[][] rollRotation = new double[nLines][nCols];
+
+        calculateRotations(info.getMode(), mode.getFov(), mode.getIfov(), uPitchAng, uRollAng, pitchRotation,
+                           rollRotation);
+
+        // a. if there ar more than 2 GCPs we can calculate deltas for the pointing angle
+        if (gcpCount > 2) {
+            final double[] xCoords = new double[gcpCount];
+            final double[] yCoords = new double[gcpCount];
+            final double[] deltaPitch = new double[gcpCount];
+            final double[] deltaRoll = new double[gcpCount];
+
+            for (int i = 0; i < gcpCount; i++) {
+                final Pin gcp = gcpGroup.get(i);
+                final double[] realPointing = DOIT(img, T, Tini, gcp, targetAltitude, iX, iY, iZ, uEjePitch, uEjeYaw,
+                                                   uEjeRoll);
+                xCoords[i] = gcp.getPixelPos().getX();
+                yCoords[i] = gcp.getPixelPos().getY();
+                deltaPitch[i] = realPointing[0] - pitchRotation[(int) yCoords[i]][(int) xCoords[i]];
+                deltaRoll[i] = realPointing[1] - rollRotation[(int) yCoords[i]][(int) xCoords[i]];
+            }
+
+            final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaPitch);
+            final RationalFunctionModel deltaRollModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaRoll);
+
+            for (int y = 0; y < nLines; y++) {
+                for (int x = 0; x < nCols; x++) {
+                    pitchRotation[y][x] += deltaPitchModel.getValue(x + 0.5, y + 0.5);
+                    rollRotation[y][x] += deltaRollModel.getValue(x + 0.5, y + 0.5);
+                }
+            }
+        }
+
+        igm = ProbaIgmDoer.doIgmJava2(nLines,
+                                      nCols,
+                                      pitchRotation,
+                                      rollRotation,
+                                      uEjePitch,
+                                      uEjeRoll,
+                                      uEjeYaw,
+                                      targetAltitude,
+                                      ixSubset, iySubset, izSubset,
+                                      timeSubset, info.getMode());
 
         final Product targetProduct = createTargetProduct();
+         // todo - compute viewing angles
+         // todo - add pitch and roll rotations per pixel for Luis A.
+        
 
         setTargetProduct(targetProduct);
+    }
+
+    private double[] DOIT(int img, double[] T, int[] Tini, Pin gcp, double targetAltitude, double[] iX, double[] iY,
+                          double[] iZ, double[][] uEjePitch, double[][] uEjeYaw, double[][] uEjeRoll) {
+        final int x = (int) gcp.getPixelPos().getX();
+        final int y = (int) gcp.getPixelPos().getY();
+        final double lon = gcp.getGeoPos().getLon();
+        final double lat = gcp.getGeoPos().getLat();
+
+        final double[] gcpEcef = new double[3];
+        // todo - replace TgtAlt with altitude from GCP
+        Conversions.wgsToEcef(lon, lat, targetAltitude, gcpEcef);
+
+        final int row = Tini[img] + y;
+        final double gst = TimeConverter.jdToGST(T[row] + JD0);
+        final double[] gcpEci = new double[3];
+        EcefEciConverter.ecefToEci(gst, gcpEcef, gcpEci);
+
+        double dX = gcpEci[X] - iX[row];
+        double dY = gcpEci[Y] - iY[row];
+        double dZ = gcpEci[Z] - iZ[row];
+
+        double[][] uRange = unit(new double[][]{{dX}, {dY}, {dZ}});
+
+        // ScanPlane:
+        //double[][] uSP = new double[3][mode.getNLines()];
+        //double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
+
+        // SightLine:
+        //double[][] uSL = new double[3][mode.getNLines()];
+        //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
+
+        // RollSign:
+        int uRollSign = 0;
+        //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
+
+
+        final double[][] pitchAxis = {{uEjePitch[X][y]}, {uEjePitch[Y][y]}, {uEjePitch[Z][y]}};
+        final double[][] yawAxis = {{uEjeYaw[X][y]}, {uEjeYaw[Y][y]}, {uEjeYaw[Z][y]}};
+        double[][] uSP = vect_prod(uRange, pitchAxis);
+        double[][] uSL = vect_prod(pitchAxis, uSP);
+        double[][] uRoll = unit(vect_prod(uSL, uRange));
+        double total = 0;
+        total += uRoll[X][0] / uSP[X][0];
+        total += uRoll[Y][0] / uSP[Y][0];
+        total += uRoll[Z][0] / uSP[Z][0];
+        uRollSign = (int) Math.signum(total);
+
+        double uPitchAng = 0.0;
+        double uRollAng = 0.0;
+        uPitchAng = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X][0], uSP[Y][0], uSP[Z][0],
+                                                              yawAxis[X][0], yawAxis[Y][0], yawAxis[Z][0]);
+        uRollAng = uRollSign * CoordinateUtils.vectAngle(uSL[X][0], uSL[Y][0], uSL[Z][0],
+                                                         uRange[X][0], uRange[Y][0], uRange[Z][0]);
+
+        return new double[]{uPitchAng, uRollAng};
+    }
+
+    private int findGcpNearPixelPos(int x, int y, ProductNodeGroup<Pin> gcpGroup) {
+        int minIndex = -1;
+        double minDelta = Double.POSITIVE_INFINITY;
+
+        for (int i = 0; i < gcpGroup.getNodeCount(); i++) {
+            final Pin gcp = gcpGroup.get(i);
+            final double dx = gcp.getPixelPos().getX() - x;
+            final double dy = gcp.getPixelPos().getY() - y;
+            final double delta = dx * dx + dy * dy;
+            if (delta < minDelta) {
+                minDelta = delta;
+                minIndex = i;
+            }
+        }
+
+        return minIndex;
+    }
+
+    private void calculateRotations(int mode, double fov, double ifov, double[] uPitchAng, double[] uRollAng,
+                                    double[][] pitchRotation, double[][] rollRotation) {
+        final int rowCount = pitchRotation.length;
+        final int colCount = pitchRotation[0].length;
+
+        final double[] scanAngle = new double[colCount];
+        if (mode == 5) {
+            // In Mode 5 the last pixel is the one pointing to the target, i.e. ScanAng must equal zero for the last pixel.
+            for (int i = 0; i < scanAngle.length; i++) {
+                scanAngle[i] = (i + 0.5) * ifov - fov;
+            }
+        } else {
+            for (int i = 0; i < scanAngle.length; i++) {
+                scanAngle[i] = (i + 0.5) * ifov - fov / 2.0;
+            }
+        }
+
+        for (int l = 0; l < rowCount; l++) {
+            for (int c = 0; c < colCount; c++) {
+                pitchRotation[l][c] = uPitchAng[l];
+                rollRotation[l][c] = uRollAng[l] + scanAngle[c];
+            }
+        }
     }
 
     @Override
