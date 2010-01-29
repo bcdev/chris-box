@@ -68,18 +68,20 @@ class ScreeningForm extends JPanel {
             public void selectionChanged(SelectionChangeEvent event) {
                 final Object selectedValue = event.getSelection().getSelectedValue();
                 final Product selectedProduct = (Product) selectedValue;
-                final boolean available = checkFeatureAvailability(selectedProduct);
+                if (selectedProduct instanceof Product) {
+                    final boolean available = checkFeatureAvailability(selectedProduct);
 
-                wvCheckBox.setEnabled(available);
-                o2CheckBox.setEnabled(available);
-                if (!available) {
-                    wvCheckBox.setSelected(false);
-                    o2CheckBox.setSelected(false);
+                    wvCheckBox.setEnabled(available);
+                    o2CheckBox.setEnabled(available);
+                    if (!available) {
+                        wvCheckBox.setSelected(false);
+                        o2CheckBox.setSelected(false);
+                    }
                 }
             }
 
             private boolean checkFeatureAvailability(Product product) {
-                return product != null && product.getProductType().matches("CHRIS_M[15].*_NR");
+                return product.getProductType().matches("CHRIS_M[15].*_NR");
             }
         });
 

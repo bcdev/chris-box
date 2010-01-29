@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-noise-reduction</symbolicName>
-    <version>1.2</version>
+    <version>1.5</version>
     <name>CHRIS/Proba Noise Reduction Tool</name>
 
     <description>
@@ -15,23 +15,7 @@
     <url>http://envisat.esa.int/beam</url>
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
-    <changelog>
-        <![CDATA[
-        Changes in Version 1.1.2<br/>
-        [CBOX.69] Change non-UTF8 characters
-        [CBOX-68] Make modules binary compatible to BEAM 4.6<br/><br/>
-        Changes in Version 1.1.1<br/>
-        [CBOX-64] Cannot add products to acquisition set<br/>
-        [CBOX-59] CHRIS products stored in DIMAP cannot be added<br/>
-        [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
-
-        Changes in Version 1.1<br/>
-        [CBOX-46] Explain ${sourceName} syntax in dialog<br/>
-        [CBOX-45] Support of Mode 30<br/>
-        [CBOX-38] The noise correction factors product should be displayed optionally<br/>
-        [CBOX-37] Memory is not freed when target products are closed<br/>
-        ]]>
-    </changelog>
+    <changelog/>
 
     <dependency>
         <module>beam-gpf</module>

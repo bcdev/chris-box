@@ -5,7 +5,7 @@
 ; Version 1.2	Searches GPS template for ASCII importing if not found in working directory
 ;		Added TimeType tag to returned structure to reflect if the time frame is GPS or UT1/UTC
 ;		Added TimeDelay tag to returned structure to reflect the correction applied to the GPS time delay
-; Version 1.1	Included DELAY keyword in order to make optional the time correction
+; Version 1.5	Included DELAY keyword in order to make optional the time correction
 
 
 function read_gps, file, dGPStime=dTgps, delay=delay

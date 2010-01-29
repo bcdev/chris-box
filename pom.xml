@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -88,6 +88,48 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-atmospheric-correction</artifactId>
+                <version>1.5-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-atmospheric-correction-lut</artifactId>
+                <version>1.5-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-cloud-screening</artifactId>
+                <version>1.5-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-geometric-correction</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-noise-reduction</artifactId>
+                <version>1.5-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-toa-reflectance-computation</artifactId>
+                <version>1.5-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.esa.beam.chris</groupId>
+                <artifactId>chris-util</artifactId>
+                <version>1.5-SNAPSHOT</version>
+            </dependency>
 
             <!-- Ceres System Level Module ############################################# -->
 
@@ -181,7 +223,7 @@
     </dependencyManagement>
 
     <!--
-       In version 2.1 of Maven the sourceEncoding property will be embedded in the
+       In Version 3 of Maven the sourceEncoding property will be embedded in the
        build tag. For now the convention is to that it as property.
        TODO: Move the sourceEncoding property to the build tag if Version 3 is released
        -->

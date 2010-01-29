@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-atmospheric-correction-lut</symbolicName>
-    <version>1.1</version>
+    <version>1.5</version>
     <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table</name>
     <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table</description>
 
@@ -11,12 +11,7 @@
     <url>http://envisat.esa.int/beam</url>
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
-    <changelog>
-        <![CDATA[
-        Changes in Version 1.0.1<br/>
-        [CBOX-59] Write 'Proba' instead of 'PROBA'<br/><br/>
-        ]]>
-    </changelog>
+    <changelog/>
 
     <dependency>
         <module>beam-core</module>
