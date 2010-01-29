@@ -172,7 +172,6 @@ class LabelingDialog extends ModelessDialog {
 
         view.setCommandUIFactory(visatApp.getCommandUIFactory());
         view.setNoDataOverlayEnabled(false);
-        view.setROIOverlayEnabled(false);
         view.setGraticuleOverlayEnabled(false);
         view.setPinOverlayEnabled(false);
         view.setLayerProperties(visatApp.getPreferences());
@@ -234,9 +233,9 @@ class LabelingDialog extends ModelessDialog {
                 radianceProduct.addBand(newBand);
                 VisatApp.getApp().openProductSceneView(newBand);
             } catch (InterruptedException e) {
-                appContext.handleError(e);
+                appContext.handleError(e.getMessage(), e);
             } catch (ExecutionException e) {
-                appContext.handleError(e.getCause());
+                appContext.handleError(e.getCause().getMessage(), e.getCause());
             }
         }
     }

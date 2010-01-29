@@ -57,7 +57,7 @@ class LabelingForm extends JPanel {
         checkBox = new JCheckBox("Calculate probabilistic cloud mask", false);
         checkBox.setToolTipText("If selected, a probabilistic cloud mask is calculated");
 
-        final BindingContext bc = new BindingContext(formModel.getValueContainer());
+        final BindingContext bc = new BindingContext(formModel.getPropertyContainer());
         bc.bind("probabilistic", checkBox);
         bc.bindEnabledState("probabilistic", true, "probabilisticEnabled", true);
 

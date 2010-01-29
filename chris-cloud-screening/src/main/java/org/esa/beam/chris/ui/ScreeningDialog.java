@@ -105,9 +105,9 @@ class ScreeningDialog extends ModelessDialog {
                 final ModelessDialog dialog = new LabelingDialog(appContext, context);
                 dialog.show();
             } catch (InterruptedException e) {
-                appContext.handleError(e);
+                appContext.handleError(e.getMessage(), e);
             } catch (ExecutionException e) {
-                appContext.handleError(e.getCause());
+                appContext.handleError(e.getCause().getMessage(), e.getCause());
             }
         }
     }

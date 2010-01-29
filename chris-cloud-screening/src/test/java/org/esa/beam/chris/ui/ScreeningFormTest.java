@@ -43,8 +43,8 @@ public class ScreeningFormTest {
         }
         final DefaultAppContext appContext = new DefaultAppContext("test");
         final ScreeningFormModel formModel = new ScreeningFormModel();
-        formModel.getParameterValueContainer().setValue("useWv", true);
-        formModel.getParameterValueContainer().setValue("useO2", true);
+        formModel.getParameterPropertyContainer().setValue("useWv", true);
+        formModel.getParameterPropertyContainer().setValue("useO2", true);
         form = new ScreeningForm(appContext, formModel);
 
         form.getSourceProductSelector().setProductFilter(new ProductFilter() {

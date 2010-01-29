@@ -14,7 +14,7 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.ValueContainer;
+import com.bc.ceres.binding.PropertyContainer;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
@@ -41,24 +41,24 @@ class ScreeningFormModel {
     private final ProductBlock productBlock;
     private final ParameterBlock parameterBlock;
 
-    private final ValueContainer productValueContainer;
-    private final ValueContainer parameterValueContainer;
+    private final PropertyContainer productPropertyContainer;
+    private final PropertyContainer parameterPropertyContainer;
 
     ScreeningFormModel() {
         productBlock = new ProductBlock();
         parameterBlock = new ParameterBlock();
 
         final ParameterDescriptorFactory descriptorFactory = new ParameterDescriptorFactory();
-        productValueContainer = ValueContainer.createObjectBacked(productBlock, descriptorFactory);
-        parameterValueContainer = ValueContainer.createObjectBacked(parameterBlock, descriptorFactory);
+        productPropertyContainer = PropertyContainer.createObjectBacked(productBlock, descriptorFactory);
+        parameterPropertyContainer = PropertyContainer.createObjectBacked(parameterBlock, descriptorFactory);
     }
 
-    public final ValueContainer getProductValueContainer() {
-        return productValueContainer;
+    public final PropertyContainer getProductPropertyContainer() {
+        return productPropertyContainer;
     }
 
-    public final ValueContainer getParameterValueContainer() {
-        return parameterValueContainer;
+    public final PropertyContainer getParameterPropertyContainer() {
+        return parameterPropertyContainer;
     }
 
     final Product getSourceProduct() {

@@ -1,7 +1,7 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.binding.ValidationException;
-import com.bc.ceres.binding.ValueContainer;
+import com.bc.ceres.binding.PropertyContainer;
 import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
 import org.esa.beam.chris.operators.CorrectDropoutsOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
@@ -20,14 +20,14 @@ class AdvancedSettingsPresenter {
 
     private Map<String, Object> destripingParameterMap;
     private Map<String, Object> dropoutCorrectionParameterMap;
-    private ValueContainer destripingValueContainer;
-    private ValueContainer dropoutCorrectionValueContainer;
+    private PropertyContainer destripingPropertyContainer;
+    private PropertyContainer dropoutCorrectionPropertyContainer;
 
     public AdvancedSettingsPresenter() {
         this (new HashMap<String, Object>(7), new HashMap<String, Object>(7));
         try {
-            destripingValueContainer.setDefaultValues();
-            dropoutCorrectionValueContainer.setDefaultValues();
+            destripingPropertyContainer.setDefaultValues();
+            dropoutCorrectionPropertyContainer.setDefaultValues();
         } catch (ValidationException e) {
             throw new IllegalStateException(e);
         }
@@ -43,14 +43,14 @@ class AdvancedSettingsPresenter {
 
     private void initValueContainers() {
         ParameterDescriptorFactory parameterDescriptorFactory = new ParameterDescriptorFactory();
-        destripingValueContainer =
-            ValueContainer.createMapBacked(destripingParameterMap, ComputeDestripingFactorsOp.class, parameterDescriptorFactory);
-        dropoutCorrectionValueContainer =
-            ValueContainer.createMapBacked(dropoutCorrectionParameterMap, CorrectDropoutsOp.class, parameterDescriptorFactory);
+        destripingPropertyContainer =
+            PropertyContainer.createMapBacked(destripingParameterMap, ComputeDestripingFactorsOp.class, parameterDescriptorFactory);
+        dropoutCorrectionPropertyContainer =
+            PropertyContainer.createMapBacked(dropoutCorrectionParameterMap, CorrectDropoutsOp.class, parameterDescriptorFactory);
     }
 
-    public ValueContainer getDestripingValueContainer() {
-        return destripingValueContainer;
+    public PropertyContainer getDestripingPropertyContainer() {
+        return destripingPropertyContainer;
     }
 
     public Map<String, Object> getDestripingParameterMap() {
@@ -61,13 +61,12 @@ class AdvancedSettingsPresenter {
         return dropoutCorrectionParameterMap;
     }
 
-    public ValueContainer getDropoutCorrectionValueContainer() {
-        return dropoutCorrectionValueContainer;
+    public PropertyContainer getDropoutCorrectionPropertyContainer() {
+        return dropoutCorrectionPropertyContainer;
     }
 
     // todo - replace with clone()
     public AdvancedSettingsPresenter createCopy() {
         return new AdvancedSettingsPresenter(destripingParameterMap, dropoutCorrectionParameterMap);
     }
-
 }

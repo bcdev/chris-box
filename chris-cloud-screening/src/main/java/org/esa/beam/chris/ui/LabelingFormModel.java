@@ -15,10 +15,10 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.binding.ValidationException;
-import com.bc.ceres.binding.ValueContainer;
-import com.bc.ceres.binding.ValueDescriptor;
-import com.bc.ceres.binding.ValueModel;
-import com.bc.ceres.binding.accessors.DefaultValueAccessor;
+import com.bc.ceres.binding.PropertyContainer;
+import com.bc.ceres.binding.PropertyDescriptor;
+import com.bc.ceres.binding.Property;
+import com.bc.ceres.binding.accessors.DefaultPropertyAccessor;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -36,16 +36,16 @@ import java.text.MessageFormat;
  */
 class LabelingFormModel {
     private final TableModel tableModel;
-    private final ValueContainer valueContainer;
+    private final PropertyContainer propertyContainer;
 
     LabelingFormModel(LabelingContext labelingContext) {
         tableModel = new TableModel(labelingContext);
 
-        valueContainer = new ValueContainer();
-        valueContainer.addModel(new ValueModel(new ValueDescriptor("probabilistic", boolean.class),
-                                               new DefaultValueAccessor()));
-        valueContainer.addModel(new ValueModel(new ValueDescriptor("probabilisticEnabled", boolean.class),
-                                               new DefaultValueAccessor()));
+        propertyContainer = new PropertyContainer();
+        propertyContainer.addProperty(new Property(new PropertyDescriptor("probabilistic", boolean.class),
+                                               new DefaultPropertyAccessor()));
+        propertyContainer.addProperty(new Property(new PropertyDescriptor("probabilisticEnabled", boolean.class),
+                                               new DefaultPropertyAccessor()));
 
         tableModel.addTableModelListener(new TableModelListener() {
             @Override
@@ -53,10 +53,10 @@ class LabelingFormModel {
                 if (e.getColumn() == TableModel.CLOUDY_COLUMN) {
                     try {
                         if (isAnyCloudFlagSet()) {
-                            valueContainer.getModel("probabilisticEnabled").setValue(true);
+                            propertyContainer.getProperty("probabilisticEnabled").setValue(true);
                         } else {
-                            valueContainer.getModel("probabilisticEnabled").setValue(false);
-                            valueContainer.getModel("probabilistic").setValue(false);
+                            propertyContainer.getProperty("probabilisticEnabled").setValue(false);
+                            propertyContainer.getProperty("probabilistic").setValue(false);
                         }
                     } catch (ValidationException ignored) {
                         // never happens
@@ -79,8 +79,8 @@ class LabelingFormModel {
         return tableModel;
     }
 
-    ValueContainer getValueContainer() {
-        return valueContainer;
+    PropertyContainer getPropertyContainer() {
+        return propertyContainer;
     }
 
     boolean[] getCloudyFlags() {
@@ -92,7 +92,7 @@ class LabelingFormModel {
     }
 
     public boolean isProbabilistic() {
-        return (Boolean) valueContainer.getValue("probabilistic");
+        return (Boolean) propertyContainer.getValue("probabilistic");
     }
 
     static class TableModel extends AbstractTableModel {

@@ -14,17 +14,20 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.ValueContainer;
+import com.bc.ceres.binding.PropertyContainer;
 import com.bc.ceres.binding.swing.BindingContext;
+import com.bc.ceres.swing.selection.AbstractSelectionChangeListener;
+import com.bc.ceres.swing.selection.SelectionChangeEvent;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.ui.ParametersPane;
 import org.esa.beam.framework.gpf.ui.SourceProductSelector;
 import org.esa.beam.framework.ui.AppContext;
-import org.esa.beam.framework.ui.application.SelectionChangeEvent;
-import org.esa.beam.framework.ui.application.SelectionChangeListener;
+import org.esa.beam.framework.ui.PropertyPane;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
 
 /**
  * Cloud screening form.
@@ -46,24 +49,25 @@ class ScreeningForm extends JPanel {
         sourceProductSelector.setProductFilter(new CloudScreeningProductFilter());
         final JComboBox comboBox = sourceProductSelector.getProductNameComboBox();
         comboBox.setPrototypeDisplayValue("[1] CHRIS_HH_HHHHHH_HHHH_HH_NR");
-        final ValueContainer vc1 = formModel.getProductValueContainer();
-        final BindingContext bc1 = new BindingContext(vc1);
+        final PropertyContainer pc1 = formModel.getProductPropertyContainer();
+        final BindingContext bc1 = new BindingContext(pc1);
         bc1.bind("sourceProduct", comboBox);
 
         // create parameters panel
-        final ValueContainer vc2 = formModel.getParameterValueContainer();
-        final BindingContext bc2 = new BindingContext(vc2);
-        final JPanel panel = new ParametersPane(bc2).createPanel();
+        final PropertyContainer pc2 = formModel.getParameterPropertyContainer();
+        final BindingContext bc2 = new BindingContext(pc2);
+        final JPanel panel = new PropertyPane(bc2).createPanel();
         panel.setBorder(BorderFactory.createTitledBorder("Processing Parameters"));
 
         wvCheckBox = (JCheckBox) bc2.getBinding("useWv").getComponents()[0];
         o2CheckBox = (JCheckBox) bc2.getBinding("useO2").getComponents()[0];
 
         // disable check boxes when corresponding features are not available
-        sourceProductSelector.addSelectionChangeListener(new SelectionChangeListener() {
+        sourceProductSelector.addSelectionChangeListener(new AbstractSelectionChangeListener() {
             @Override
             public void selectionChanged(SelectionChangeEvent event) {
-                final Product selectedProduct = (Product) event.getSelection().getFirstElement();
+                final Object selectedValue = event.getSelection().getSelectedValue();
+                final Product selectedProduct = (Product) selectedValue;
                 final boolean available = checkFeatureAvailability(selectedProduct);
 
                 wvCheckBox.setEnabled(available);
