@@ -3,6 +3,7 @@ package org.esa.beam.chris.ui;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.dataio.dimap.DimapFileFilter;
 import org.esa.beam.framework.dataio.ProductIO;
+import org.esa.beam.framework.dataio.ProductSubsetDef;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.MetadataElement;
 import org.esa.beam.framework.datamodel.Product;
@@ -278,7 +279,7 @@ class NoiseReductionPresenter {
                 for (final File file : selectedFiles) {
                     Product product = null;
                     try {
-                        product = ProductIO.readProduct(file, null);
+                        product = ProductIO.readProduct(file);
                     } catch (IOException e1) {
                         JOptionPane.showMessageDialog((Component) e.getSource(), e1.getMessage());
                     }

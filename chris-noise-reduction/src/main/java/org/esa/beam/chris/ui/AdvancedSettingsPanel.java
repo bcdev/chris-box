@@ -1,6 +1,6 @@
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.swing.BindingContext;
+import com.bc.ceres.swing.binding.BindingContext;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

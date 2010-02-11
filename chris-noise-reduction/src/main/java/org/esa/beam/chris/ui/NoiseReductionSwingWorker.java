@@ -122,7 +122,7 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
             }
 
             try {
-                destripingFactorsProduct = ProductIO.readProduct(destripingFactorsTargetFile, null);
+                destripingFactorsProduct = ProductIO.readProduct(destripingFactorsTargetFile);
             } catch (IOException e) {
                 throw new OperatorException(MessageFormat.format(
                         "Cannot read file ''{0}''.", destripingFactorsTargetFile), e);
@@ -161,7 +161,7 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
         } catch (InterruptedException e) {
             // ignore
         } catch (ExecutionException e) {
-            appContext.handleError(e.getCause());
+            appContext.handleError(e.getMessage(), e.getCause());
         }
     }
 
@@ -205,7 +205,7 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
             }
 
             if (openInApp) {
-                final Product product = ProductIO.readProduct(targetFile, null);
+                final Product product = ProductIO.readProduct(targetFile);
                 if (product != null) {
                     publish(product);
                 }

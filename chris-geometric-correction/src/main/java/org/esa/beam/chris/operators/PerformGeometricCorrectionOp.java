@@ -27,7 +27,7 @@ import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.GeoPos;
-import org.esa.beam.framework.datamodel.Pin;
+import org.esa.beam.framework.datamodel.Placemark;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
@@ -305,13 +305,13 @@ public class PerformGeometricCorrectionOp extends Operator {
             Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
         }
 
-        final ProductNodeGroup<Pin> gcpGroup = sourceProduct.getGcpGroup();
+        final ProductNodeGroup<Placemark> gcpGroup = sourceProduct.getGcpGroup();
         final int gcpCount = gcpGroup.getNodeCount();
         int gcpIndex = -1;
         if (gcpCount > 0) {
             gcpIndex = findGcpNearPixelPos(mode.getNCols() / 2, mode.getNLines() / 2, gcpGroup);
             // we assume only one GCP at target altitude
-            final Pin gcp = gcpGroup.get(gcpIndex);
+            final Placemark gcp = gcpGroup.get(gcpIndex);
             final GeoPos gcpPos = gcp.getGeoPos();
 
             if (gcpPos == null) {
@@ -505,7 +505,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             } else {
                 nC2 = mode.getNCols() - 1;
             }
-            final Pin gcp = gcpGroup.get(gcpIndex);
+            final Placemark gcp = gcpGroup.get(gcpIndex);
             dRoll = (nC2 - gcp.getPixelPos().getX()) * mode.getIfov();
         }
 
@@ -649,7 +649,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             final double[] deltaRoll = new double[gcpCount];
 
             for (int i = 0; i < gcpCount; i++) {
-                final Pin gcp = gcpGroup.get(i);
+                final Placemark gcp = gcpGroup.get(i);
                 final double[] realPointing = DOIT(img, T, Tini, gcp, targetAltitude, iX, iY, iZ, uEjePitch, uEjeYaw,
                                                    uEjeRoll);
                 xCoords[i] = gcp.getPixelPos().getX();
@@ -688,7 +688,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         setTargetProduct(targetProduct);
     }
 
-    private double[] DOIT(int img, double[] T, int[] Tini, Pin gcp, double targetAltitude, double[] iX, double[] iY,
+    private double[] DOIT(int img, double[] T, int[] Tini, Placemark gcp, double targetAltitude, double[] iX, double[] iY,
                           double[] iZ, double[][] uEjePitch, double[][] uEjeYaw, double[][] uEjeRoll) {
         final int x = (int) gcp.getPixelPos().getX();
         final int y = (int) gcp.getPixelPos().getY();
@@ -744,12 +744,12 @@ public class PerformGeometricCorrectionOp extends Operator {
         return new double[]{uPitchAng, uRollAng};
     }
 
-    private int findGcpNearPixelPos(int x, int y, ProductNodeGroup<Pin> gcpGroup) {
+    private int findGcpNearPixelPos(int x, int y, ProductNodeGroup<Placemark> gcpGroup) {
         int minIndex = -1;
         double minDelta = Double.POSITIVE_INFINITY;
 
         for (int i = 0; i < gcpGroup.getNodeCount(); i++) {
-            final Pin gcp = gcpGroup.get(i);
+            final Placemark gcp = gcpGroup.get(i);
             final double dx = gcp.getPixelPos().getX() - x;
             final double dy = gcp.getPixelPos().getY() - y;
             final double delta = dx * dx + dy * dy;
@@ -963,23 +963,25 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // 7. copy pins
         for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
-            final Pin pin = sourceProduct.getPinGroup().get(i);
-            targetProduct.getPinGroup().add(new Pin(pin.getName(),
+            final Placemark pin = sourceProduct.getPinGroup().get(i);
+            targetProduct.getPinGroup().add(new Placemark(pin.getName(),
                                                     pin.getLabel(),
                                                     pin.getDescription(),
                                                     pin.getPixelPos(),
                                                     pin.getGeoPos(),
-                                                    pin.getSymbol()));
+                                                    pin.getSymbol(),
+                                                    null));
         }
         // 8. copy GCPs
         for (int i = 0; i < sourceProduct.getGcpGroup().getNodeCount(); i++) {
-            final Pin pin = sourceProduct.getGcpGroup().get(i);
-            targetProduct.getGcpGroup().add(new Pin(pin.getName(),
+            final Placemark pin = sourceProduct.getGcpGroup().get(i);
+            targetProduct.getGcpGroup().add(new Placemark(pin.getName(),
                                                     pin.getLabel(),
                                                     pin.getDescription(),
                                                     pin.getPixelPos(),
                                                     pin.getGeoPos(),
-                                                    pin.getSymbol()));
+                                                    pin.getSymbol(),
+                                                    null));
         }
 
         return targetProduct;

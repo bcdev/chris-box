@@ -70,7 +70,7 @@ class AcquisitionSetProvider {
                                 continue search;
                             }
                         }
-                        final Product product = ProductIO.readProduct(file, null);
+                        final Product product = ProductIO.readProduct(file);
                         if (product.getProductType().equals(selectedProduct.getProductType())) {
                             acquisitionSet.add(product);
                         }
