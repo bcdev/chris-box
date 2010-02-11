@@ -200,7 +200,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.5</version>
+                <version>1.6-SNAPSHOT</version>
             </dependency>
 
             <!-- Java Help Library ############################################# -->
