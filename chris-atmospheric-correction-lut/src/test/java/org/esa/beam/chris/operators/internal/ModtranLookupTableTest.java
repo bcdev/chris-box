@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
  * @author Ralf Quast
  * @version $Revision: 2864 $ $Date: 2008-08-06 11:34:55 +0200 (Mi, 06 Aug 2008) $
  */
+@Ignore
 public class ModtranLookupTableTest {
 
     // unit conversion constant

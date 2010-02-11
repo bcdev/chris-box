@@ -631,14 +631,6 @@ public class PerformGeometricCorrectionOp extends Operator {
             izSubset[i] = iZ[Tini[img] + i];
             timeSubset[i] = T[Tini[img] + i];
         }
-//        igm = ProbaIgmDoer.doIgmJava(mode.getNLines(), mode.getNCols(), mode.getFov(), mode.getIfov(),
-//                                     uEjePitch, uPitchAng,
-//                                     uEjeRoll, uRollAng,
-//                                     uEjeYaw,
-//                                     TgtAlt,
-//                                     ixSubset, iySubset, izSubset,
-//                                     timeSubset, info.getMode());
-
 
         final int nLines = mode.getNLines();
         final int nCols = mode.getNCols();
@@ -677,7 +669,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             }
         }
 
-        igm = ProbaIgmDoer.doIgmJava2(nLines,
+        igm = PositionCalculator.calculatePositions(nLines,
                                       nCols,
                                       pitchRotation,
                                       rollRotation,
@@ -686,7 +678,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                                       uEjeYaw,
                                       targetAltitude,
                                       ixSubset, iySubset, izSubset,
-                                      timeSubset, info.getMode());
+                                      timeSubset);
 
         final Product targetProduct = createTargetProduct();
          // todo - compute viewing angles
