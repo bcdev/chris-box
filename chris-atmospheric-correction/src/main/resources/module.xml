@@ -55,7 +55,7 @@
             <shortDescr>Calculates surface reflectances for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisAtmosphericCorrectionTool</helpID>
+            <helpId>chrisAtmosphericCorrectionTool</helpId>
             <placeAfter>chrisCloudScreening</placeAfter>
         </action>
     </extension>

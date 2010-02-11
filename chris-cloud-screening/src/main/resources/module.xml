@@ -76,7 +76,7 @@
             </shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisCloudScreeningTools</helpID>
+            <helpId>chrisCloudScreeningTools</helpId>
             <placeAfter>chrisComputeToaReflectances</placeAfter>
         </action>
     </extension>

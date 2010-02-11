@@ -49,7 +49,7 @@
             <shortDescr>Performs the noise reduction for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisNoiseReductionTool</helpID>
+            <helpId>chrisNoiseReductionTool</helpId>
             <placeAfter/>
         </action>
     </extension>

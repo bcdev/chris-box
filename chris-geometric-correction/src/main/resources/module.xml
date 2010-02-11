@@ -43,7 +43,7 @@
             <shortDescr>Perfoms the geometric correction for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisGeometricCorrectionTool</helpID>
+            <helpId>chrisGeometricCorrectionTool</helpId>
             <placeAfter>chrisAtmosphericCorrection</placeAfter>
         </action>
     </extension>

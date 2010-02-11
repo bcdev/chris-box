@@ -51,7 +51,7 @@
             <shortDescr>Computes TOA reflectances for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisToaReflectanceComputationTool</helpID>
+            <helpId>chrisToaReflectanceComputationTool</helpId>
             <placeAfter>chrisGeometricCorrection</placeAfter>
             <separatorBefore>true</separatorBefore>
         </action>

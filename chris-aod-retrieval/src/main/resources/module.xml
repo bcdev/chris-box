@@ -40,7 +40,7 @@
             <shortDescr>Retrieves the Aerosol Optical Depth for the selected CHRIS/Proba product</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
-            <helpID>chrisAodRetrievalTool</helpID>
+            <helpId>chrisAodRetrievalTool</helpId>
             <placeAfter>chrisAtmosphericCorrection</placeAfter>
         </action>
     </extension>
