@@ -18,7 +18,7 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.jai.ImageManager;
 
-import java.awt.*;
+import java.awt.Rectangle;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 

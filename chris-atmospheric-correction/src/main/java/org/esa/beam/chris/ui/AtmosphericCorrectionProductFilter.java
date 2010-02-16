@@ -15,9 +15,9 @@
 package org.esa.beam.chris.ui;
 
 import org.esa.beam.chris.util.OpUtils;
+import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductFilter;
-import org.esa.beam.framework.datamodel.Band;
 
 /**
  * Filters CHRIS/Proba products suitable for an atmospheric correction.

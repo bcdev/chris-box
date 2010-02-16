@@ -14,12 +14,12 @@
  */
 package org.esa.beam.chris.operators;
 
+import junit.framework.TestCase;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.IndexCoding;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.jai.BandOpImage;
-import junit.framework.TestCase;
 
 /**
  * Tests for class {@link ExtractEndmembersOp}.

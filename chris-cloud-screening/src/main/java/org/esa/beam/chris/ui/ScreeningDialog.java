@@ -19,7 +19,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModelessDialog;
 
-import javax.swing.*;
+import javax.swing.AbstractButton;
 import java.util.concurrent.ExecutionException;
 
 /**

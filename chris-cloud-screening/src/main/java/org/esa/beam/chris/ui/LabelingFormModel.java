@@ -14,17 +14,17 @@
  */
 package org.esa.beam.chris.ui;
 
-import com.bc.ceres.binding.ValidationException;
+import com.bc.ceres.binding.Property;
 import com.bc.ceres.binding.PropertyContainer;
 import com.bc.ceres.binding.PropertyDescriptor;
-import com.bc.ceres.binding.Property;
+import com.bc.ceres.binding.ValidationException;
 import com.bc.ceres.binding.accessors.DefaultPropertyAccessor;
 
-import javax.swing.*;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
-import java.awt.*;
+import java.awt.Color;
 import java.text.MessageFormat;
 
 /**

@@ -20,11 +20,12 @@ import org.esa.beam.util.ProductUtils;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.Rectangle;
 import java.io.IOException;
-import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static java.lang.Math.*;
 
 /**
  * Operator for extracting features from TOA reflectances needed for

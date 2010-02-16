@@ -21,7 +21,6 @@ import org.esa.beam.cluster.ProbabilityCalculator;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.jai.BandOpImage;
 
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;

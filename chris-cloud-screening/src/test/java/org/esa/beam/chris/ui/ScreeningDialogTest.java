@@ -17,12 +17,13 @@ package org.esa.beam.chris.ui;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.ui.DefaultAppContext;
 import org.junit.After;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.awt.GraphicsEnvironment;
+
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 /**
  * Tests for class {@link ScreeningDialog}.

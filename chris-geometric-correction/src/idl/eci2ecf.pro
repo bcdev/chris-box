@@ -40,7 +40,7 @@ ENDIF
 IF (t NE x) AND (x GT 1) AND (t GT 1) THEN begin
 	print, '% ERROR: Time and Coordinates must be of the same size'
 	print, '%        Unless one of them is of size 1.'
-	RETURN, -1		; Time and position ust be the same size unless either of them is sized one y 3D deben ser iguales a menos q una de las dos sea de tama–o unidad
+	RETURN, -1		; Time and position ust be the same size unless either of them is sized one y 3D deben ser iguales a menos q una de las dos sea de tamaï¿½o unidad
 ENDIF
 
 IF NOT keyword_set(units) THEN units='not set'

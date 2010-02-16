@@ -14,6 +14,8 @@
  */
 package org.esa.beam.chris.ui;
 
+import com.bc.ceres.core.ProgressMonitor;
+import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
 import org.esa.beam.chris.operators.PerformGeometricCorrectionOp;
 import org.esa.beam.chris.operators.TimeConverter;
 import org.esa.beam.framework.datamodel.Product;
@@ -26,15 +28,12 @@ import org.esa.beam.visat.VisatApp;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 
 import javax.swing.JOptionPane;
+import java.awt.Window;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.ExecutionException;
-import java.awt.Window;
-
-import com.bc.ceres.swing.progress.ProgressMonitorSwingWorker;
-import com.bc.ceres.core.ProgressMonitor;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Action for invoking the geometric correction.

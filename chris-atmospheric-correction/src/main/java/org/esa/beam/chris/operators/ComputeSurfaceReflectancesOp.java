@@ -21,7 +21,14 @@ import org.esa.beam.chris.operators.internal.ModtranLookupTableReader;
 import org.esa.beam.chris.operators.internal.RtcTable;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.OpUtils;
-import org.esa.beam.chris.util.math.internal.*;
+import org.esa.beam.chris.util.math.internal.LegendrePolynomials;
+import org.esa.beam.chris.util.math.internal.LocalRegressionSmoother;
+import org.esa.beam.chris.util.math.internal.LowessRegressionWeightCalculator;
+import org.esa.beam.chris.util.math.internal.Regression;
+import org.esa.beam.chris.util.math.internal.Roots;
+import org.esa.beam.chris.util.math.internal.SimpleLinearRegression;
+import org.esa.beam.chris.util.math.internal.Statistics;
+import org.esa.beam.chris.util.math.internal.UnivariateFunction;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
@@ -39,13 +46,16 @@ import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.OpImage;
-import java.awt.*;
+import java.awt.Rectangle;
 import java.awt.image.Raster;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Operator for performing the CHRIS atmospheric correction.

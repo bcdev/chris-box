@@ -21,10 +21,22 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.jai.BandOpImage;
 
-import javax.media.jai.*;
+import javax.media.jai.ComponentSampleModelJAI;
+import javax.media.jai.ImageLayout;
+import javax.media.jai.JAI;
+import javax.media.jai.OpImage;
 import javax.media.jai.PixelAccessor;
-import java.awt.*;
-import java.awt.image.*;
+import javax.media.jai.PlanarImage;
+import javax.media.jai.PointOpImage;
+import javax.media.jai.UnpackedImageData;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 import java.util.Vector;
 
 /**

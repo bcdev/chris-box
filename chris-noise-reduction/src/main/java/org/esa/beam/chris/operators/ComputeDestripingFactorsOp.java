@@ -37,13 +37,14 @@ import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.ImageInputStream;
-import java.awt.*;
+import java.awt.Rectangle;
 import java.io.IOException;
-import static java.lang.Math.*;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.lang.Math.*;
 
 /**
  * Operator for calculating the vertical striping correction factors for noise

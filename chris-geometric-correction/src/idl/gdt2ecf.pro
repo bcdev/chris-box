@@ -46,7 +46,7 @@ IF N_PARAMS() EQ 3 THEN begin
 	ENDIF
 	IF (N_ELEMENTS(h) EQ 1) AND (N_ELEMENTS(lat) GT 1) THEN h = REPLICATE(h, N_ELEMENTS(lat))
 	IF N_ELEMENTS(h) NE N_ELEMENTS(lat) THEN RETURN, -6
-ENDIF ELSE h = lat * 0		; Esto es para q el vector Altura tenga el mismo tama–o q los otros vectores.
+ENDIF ELSE h = lat * 0		; Esto es para q el vector Altura tenga el mismo tamaï¿½o q los otros vectores.
 
 IF NOT KEYWORD_SET(rad) THEN begin
 	lat = lat * !dPI / 180.D

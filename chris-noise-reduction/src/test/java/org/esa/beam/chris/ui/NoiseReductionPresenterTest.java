@@ -1,18 +1,21 @@
 package org.esa.beam.chris.ui;
 
-import junit.framework.TestCase;
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.framework.datamodel.*;
+import org.esa.beam.framework.datamodel.GeoPos;
+import org.esa.beam.framework.datamodel.MetadataAttribute;
+import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.Product;
+import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.gpf.ui.DefaultAppContext;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import javax.swing.*;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
-import java.io.File;
-import java.awt.HeadlessException;
 import java.awt.GraphicsEnvironment;
+import java.io.File;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by IntelliJ IDEA.

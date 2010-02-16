@@ -30,7 +30,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.*;
+import java.awt.Rectangle;
 import java.text.MessageFormat;
 
 /**

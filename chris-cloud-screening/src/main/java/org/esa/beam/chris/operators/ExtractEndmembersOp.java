@@ -38,7 +38,7 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProperty;
 import org.esa.beam.unmixing.Endmember;
 
-import java.awt.*;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 
 /**

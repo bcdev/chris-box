@@ -1,8 +1,6 @@
 package org.esa.beam.chris.operators;
 
 import junit.framework.TestCase;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.gpf.OperatorException;
 
 import java.io.IOException;
 import java.io.InputStream;

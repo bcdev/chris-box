@@ -17,11 +17,12 @@ import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.*;
-import static java.lang.Math.*;
+import java.awt.Rectangle;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.lang.Math.*;
 
 /**
  * Operator for computing TOA reflectances from CHRIS response corrected

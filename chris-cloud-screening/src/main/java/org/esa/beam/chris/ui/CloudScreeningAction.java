@@ -2,8 +2,8 @@ package org.esa.beam.chris.ui;
 
 
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.AppContext;
+import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.actions.AbstractVisatAction;
 

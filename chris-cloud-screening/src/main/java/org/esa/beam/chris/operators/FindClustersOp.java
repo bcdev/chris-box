@@ -27,7 +27,7 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.framework.gpf.annotations.TargetProperty;
 
-import java.awt.*;
+import java.awt.Rectangle;
 import java.util.Comparator;
 
 /**

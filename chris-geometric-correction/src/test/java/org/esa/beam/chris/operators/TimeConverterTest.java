@@ -14,7 +14,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -22,6 +21,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for class {@link TimeConverter}.

@@ -14,7 +14,7 @@
  */
 package org.esa.beam.chris.ui;
 
-import java.awt.*;
+import java.awt.Color;
 
 /**
  * Cloud labeling context.

@@ -15,7 +15,6 @@
 package org.esa.beam.chris.ui;
 
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.*;
 import java.text.NumberFormat;
 
 class FormattedNumberRenderer extends DefaultTableCellRenderer {

@@ -14,8 +14,12 @@
  */
 package org.esa.beam.chris.operators;
 
-import javax.media.jai.*;
-import java.awt.*;
+import javax.media.jai.ComponentSampleModelJAI;
+import javax.media.jai.ImageLayout;
+import javax.media.jai.OpImage;
+import javax.media.jai.PlanarImage;
+import javax.media.jai.SourcelessOpImage;
+import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.SampleModel;

@@ -14,9 +14,10 @@
  */
 package org.esa.beam.chris.util.math.internal;
 
+import java.text.MessageFormat;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
-import java.text.MessageFormat;
 
 /**
  * Methods for finding the minimum of an univariate function.
