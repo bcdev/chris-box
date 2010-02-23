@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="4.2.3" transformSequenceNumber="2">
-  <directoryPresets config="../../../target/chris-box-bin.dir" />
+  <directoryPresets config="../../../target/chris-box-bin" />
   <application name="BEAM CHRIS-Box" distributionSourceDir="" applicationId="9219-0817-4920-6444" mediaDir="../../../target/installers" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="6" lzmaCompression="false" pack200Compression="false" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="beam-chris-box" publisher="Brockmann Consult GmbH" publisherWeb="http://www.brockmann-consult.de/" version="1.5" allPathsRelative="true" backupOnSave="true" autoSave="true" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.6" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
@@ -20,7 +20,7 @@
       <mountPoint id="17" root="" location="modules" mode="755" />
     </mountPoints>
     <entries>
-      <dirEntry mountPoint="17" file="../../../target/chris-box-bin.dir/modules" overwrite="4" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="17" file="../../../target/chris-box-bin/modules" overwrite="4" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude />
       </dirEntry>
     </entries>
@@ -71,7 +71,7 @@
                 <object class="com.install4j.runtime.beans.screens.LicenseScreen">
                   <void property="displayedTextFile">
                     <object class="com.install4j.api.beans.ExternalFile">
-                      <string>../../../target/chris-box-bin.dir/license.html</string>
+                      <string>../../../target/chris-box-bin/license.html</string>
                     </object>
                   </void>
                 </object>
