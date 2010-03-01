@@ -1,0 +1,1 @@
+Place the file 'chrisbox-ac-lut-formatted-1nm.img' into this directory.
