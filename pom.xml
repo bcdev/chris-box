@@ -82,9 +82,6 @@
         <module>chris-geometric-correction</module>
         <module>chris-noise-reduction</module>
         <module>chris-toa-reflectance-computation</module>
-        <!-- not yet available
-          <module>chris-aod-retrieval</module>
-          -->
     </modules>
 
     <dependencyManagement>
