@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests for class {@link ModtranLookupTable}.
  * <p/>
- * Note that running all tests requires about 140 MB of heap space.
+ * The test is ignored by default because it requires about 140 MB of heap space.
  *
  * @author Ralf Quast
  * @version $Revision: 2864 $ $Date: 2008-08-06 11:34:55 +0200 (Mi, 06 Aug 2008) $
