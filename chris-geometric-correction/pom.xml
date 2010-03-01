@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-geometric-correction</artifactId>
     <name>CHRIS/Proba Geometric Correction Tool</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
     <description>CHRIS/Proba Geometric Correction Tool</description>
 
     <dependencies>
