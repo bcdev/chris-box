@@ -1,6 +1,6 @@
 package org.esa.beam.chris.operators;
 
-class EcefEciConverter {
+class CoordinateConverter {
 
     /**
      * Angular rotational velocity of the Earth (rad s-1)
@@ -9,6 +9,24 @@ class EcefEciConverter {
 
     private final double c;
     private final double s;
+    /**
+     * Flattening of WGS-84 ellipsoid.
+     */
+    private static final double WGS84_F = 1.0 / 298.257223563;
+    /**
+     * Eccentricity squared.
+     */
+    private static final double WGS84_E = WGS84_F * (2.0 - WGS84_F);
+    /**
+     * Major radius of WGS-84 ellipsoid (km).
+     */
+    private static final double WGS84_A = 6378.137;
+    /**
+     * Minor radius of WGS-84 ellipsoid (km).
+     */
+    private static final double WGS84_B = WGS84_A * (1.0 - WGS84_F);
+    private static final double ONE_THIRD = 1.0 / 3.0;
+    private static final double FOUR_THIRD = 4.0 / 3.0;
 
     public static double[] ecefToEci(double gst, double[] ecef, double[] eci) {
         if (ecef == null) {
@@ -37,6 +55,54 @@ class EcefEciConverter {
         final double s = Math.sin(gst);
 
         return ecefToEci(c, s, ecef, eci);
+    }
+
+    public static double[] ecefToWgs(double x, double y, double z, double[] wgs) {
+        if (wgs == null) {
+            throw new IllegalArgumentException("wgs == null");
+        }
+        if (wgs.length != 3) {
+            throw new IllegalArgumentException("wgs.length != 3");
+        }
+        final double b = WGS84_B * Math.signum(z);
+        final double r = Math.sqrt(x * x + y * y);
+        final double s = WGS84_A * WGS84_A - b * b;
+        final double e = (b * z - s) / (WGS84_A * r);
+        final double f = (b * z + s) / (WGS84_A * r);
+        final double p = FOUR_THIRD * (e * f + 1.0);
+        final double q = 2.0 * (e * e - f * f);
+        final double d = Math.sqrt(p * p * p + q * q);
+        final double v = Math.pow(d - q, ONE_THIRD) - Math.pow(d + q, ONE_THIRD);
+        final double g = (Math.sqrt(e * e + v) + e) / 2.0;
+        final double t = Math.sqrt(g * g + (f - v * g) / (2.0 * g - e)) - g;
+
+        double phi = Math.atan2(WGS84_A * (1.0 - t * t), 2.0 * b * t);
+        double lam = Math.atan2(y, x);
+        double alt = (r - WGS84_A * t) * Math.cos(phi) + (z - b) * Math.sin(phi);
+
+        if (x == 0.0 && y == 0.0 && z != 0.0) {
+            phi = Math.PI / 2.0 * Math.signum(z);
+            lam = 0.0;
+            alt = Math.abs(z - b);
+        }
+        if (z == 0.0) {
+            phi = 0.0;
+            alt = r - WGS84_A;
+        }
+        double lon = Math.toDegrees(lam);
+        if (lon > 180.0) {
+            lon -= 360.0;
+        }
+        double lat = Math.toDegrees(phi);
+        if (lat > 90.0) {
+            lat -= 180.0;
+        }
+
+        wgs[0] = lon;
+        wgs[1] = lat;
+        wgs[2] = alt;
+
+        return wgs;
     }
 
     public static double[] eciToEcef(double gst, double[] eci, double[] ecef) {
@@ -68,7 +134,36 @@ class EcefEciConverter {
         return eciToEcef(c, s, eci, ecef);
     }
 
-    public EcefEciConverter(double gst) {
+    public static double[] wgsToEcef(double lon, double lat, double alt, double[] ecef) {
+        if (Math.abs(lat) > 90.0) {
+            throw new IllegalArgumentException("|lat| > 90.0");
+        }
+        if (ecef == null) {
+            throw new IllegalArgumentException("ecef == null");
+        }
+        if (ecef.length != 3) {
+            throw new IllegalArgumentException("ecef.length != 3");
+        }
+
+        final double u = Math.toRadians(lon);
+        final double v = Math.toRadians(lat);
+
+        final double cu = Math.cos(u);
+        final double su = Math.sin(u);
+        final double cv = Math.cos(v);
+        final double sv = Math.sin(v);
+
+        final double a = WGS84_A / Math.sqrt(1.0 - WGS84_E * sv * sv);
+        final double b = (a + alt) * cv;
+
+        ecef[0] = b * cu;
+        ecef[1] = b * su;
+        ecef[2] = ((1.0 - WGS84_E) * a + alt) * sv;
+
+        return ecef;
+    }
+
+    CoordinateConverter(double gst) {
         c = Math.cos(gst);
         s = Math.sin(gst);
     }
@@ -125,7 +220,7 @@ class EcefEciConverter {
         return eciToEcef(c, s, eci, ecef);
     }
 
-    static double[] ecefToEci(double c, double s, double[] ecef, double[] eci) {
+    private static double[] ecefToEci(double c, double s, double[] ecef, double[] eci) {
         final double x = ecefToEciX(c, s, ecef[0], ecef[1]);
         final double y = ecefToEciY(c, s, ecef[0], ecef[1]);
         eci[0] = x;
@@ -150,7 +245,7 @@ class EcefEciConverter {
         return eci;
     }
 
-    static double[] eciToEcef(double c, double s, double[] eci, double[] ecef) {
+    private static double[] eciToEcef(double c, double s, double[] eci, double[] ecef) {
         final double x = eciToEcefX(c, s, eci[0], eci[1]);
         final double y = eciToEcefY(c, s, eci[0], eci[1]);
 
@@ -176,35 +271,19 @@ class EcefEciConverter {
         return ecef;
     }
 
-    static double ecefToEciX(double c, double s, double ecefX, double ecefY) {
+    private static double ecefToEciX(double c, double s, double ecefX, double ecefY) {
         return c * ecefX - s * ecefY;
     }
 
-    static double ecefToEciY(double c, double s, double ecefX, double ecefY) {
+    private static double ecefToEciY(double c, double s, double ecefX, double ecefY) {
         return s * ecefX + c * ecefY;
     }
 
-    static double ecefToEciU(double c, double s, double ecefX, double ecefY, double ecefU, double ecefV) {
-        return ecefToEciX(c, s, ecefU, ecefV) - WE * ecefToEciY(c, s, ecefX, ecefY);
-    }
-
-    static double ecefToEciV(double c, double s, double ecefX, double ecefY, double ecefU, double ecefV) {
-        return ecefToEciY(c, s, ecefU, ecefV) + WE * ecefToEciX(c, s, ecefX, ecefY);
-    }
-
-    static double eciToEcefX(double c, double s, double eciX, double eciY) {
+    private static double eciToEcefX(double c, double s, double eciX, double eciY) {
         return c * eciX + s * eciY;
     }
 
-    static double eciToEcefY(double c, double s, double eciX, double eciY) {
+    private static double eciToEcefY(double c, double s, double eciX, double eciY) {
         return c * eciY - s * eciX;
-    }
-
-    static double eciToEcefU(double c, double s, double eciX, double eciY, double eciU, double eciV) {
-        return eciToEcefX(c, s, eciU, eciV) + WE * eciToEcefY(c, s, eciX, eciY);
-    }
-
-    static double eciToEcefV(double c, double s, double eciX, double eciY, double eciU, double eciV) {
-        return eciToEcefY(c, s, eciU, eciV) - WE * eciToEcefX(c, s, eciX, eciY);
     }
 }

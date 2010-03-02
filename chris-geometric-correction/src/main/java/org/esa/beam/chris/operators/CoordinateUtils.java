@@ -16,8 +16,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import java.awt.geom.Point2D;
-
 import static org.esa.beam.chris.util.math.internal.Pow.pow2;
 
 
@@ -26,28 +24,29 @@ class CoordinateUtils {
     /**
      * Given a series satellite positions in ECI and the corresponding times
      * estimates the angular velocity depends on the VECT_ANGLE function.
-     * 
+     * <p/>
      * The result is an array with the angular velocity calculated from
      * consecutive points of the trajectory. The last element is the mean
      * angular velocity (calculated from the first and last position of the
      * trajectory)
-     * 
+     * <p/>
      * Values are in radians!
-     * 
+     *
      * @return the Angular Velocity for a given 3D trajectory
      */
     static double[] angVel(double[] secs, double[] xeci, double[] yeci, double[] zeci) {
         double[] av = new double[secs.length];
-        for (int i = 0; i < (av.length-1); i++) {
-            double a = vectAngle(xeci[i], yeci[i], zeci[i], xeci[i+1], yeci[i+1], zeci[i+1]);
-            double b = secs[i] - secs[i+1];
-            
+        for (int i = 0; i < (av.length - 1); i++) {
+            double a = vectAngle(xeci[i], yeci[i], zeci[i], xeci[i + 1], yeci[i + 1], zeci[i + 1]);
+            double b = secs[i] - secs[i + 1];
+
             av[i] = a / Math.abs(b);
         }
-        double a = vectAngle(xeci[0], yeci[0], zeci[0], xeci[secs.length-1], yeci[secs.length-1], zeci[secs.length-1]);
-        double b = secs[0] - secs[secs.length-1];
-        
-        av[secs.length-1] = a / Math.abs(b);
+        double a = vectAngle(xeci[0], yeci[0], zeci[0], xeci[secs.length - 1], yeci[secs.length - 1],
+                             zeci[secs.length - 1]);
+        double b = secs[0] - secs[secs.length - 1];
+
+        av[secs.length - 1] = a / Math.abs(b);
         return av;
     }
 
@@ -55,70 +54,55 @@ class CoordinateUtils {
      * Angular distance between points.
      */
     static double vectAngle(double x1, double y1, double z1, double x2, double y2, double z2) {
-        // Compute vector dot product for both points
-        double cs = x1*x2 + y1*y2 + z1*z2;
-     
-        // Compute the vector cross product for both points
-        double xc = y1*z2 - z1*y2;
-        double yc = z1*x2 - x1*z2;
-        double zc = x1*y2 - y1*x2;
-        double sn = Math.sqrt(xc*xc + yc*yc + zc*zc);
-     
-        //--- Convert to polar.  ------
-        double[] ra = recpol(cs, sn);
-        return ra[1];
-    }
-    
-    /**
-     * Convert 2-d rectangular coordinates to polar coordinates.
+        // compute the scalar product
+        final double cs = x1 * x2 + y1 * y2 + z1 * z2;
+        // compute the vector product
+        final double u = y1 * z2 - z1 * y2;
+        final double v = z1 * x2 - x1 * z2;
+        final double w = x1 * y2 - y1 * x2;
 
-     * @param x y component of vector in rectangular form
-     * @param y y component of vector in rectangular form
-     * @return two component array containing vector in polar form: radius, angle
-     */
-    static double[] recpol(double x, double y) {
-        //  Angle complicated because atan won't take (0,0) and
-        //  also because want to keep angle in 0 to 360 (2 pi) range.
-        double a = 0; // Output angle
+        final double sn = Math.sqrt(u * u + v * v + w * w);
+        return angle(cs, sn);
+    }
+
+    private static double angle(double x, double y) {
+        double angle = 0.0;
         if (x != 0 && y != 0) {
-            a = Math.atan2(y, x);
+            angle = Math.atan2(y, x);
         }
-        // add 2 pi to angles < 0
-        if (a < 0 ) {
-            a = a + 2 * Math.PI;
+        if (angle < 0.0) {
+            angle = angle + 2.0 * Math.PI;
         }
-     
-        double r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)); // Find radii
-
-        return new double[] {r, a};
+        return angle;
     }
-    
-    
+
+
     /**
      * Calculate the View Angles in the LHLV coordinate system (Local Horizon, Local Vertical)
-     * 
+     * <p/>
      * NOTE: The local vertical is obtained from the latitude geodetica calculated from the position TGT
      */
-    static ViewAng computeViewAng(double TgtX, double TgtY, double TgtZ, double SatX, double SatY, double SatZ, double TgtLat) {
+    static ViewAng computeViewAng(double TgtX, double TgtY, double TgtZ, double SatX, double SatY, double SatZ) {
         double RangX = SatX - TgtX;
         double RangY = SatY - TgtY;
         double RangZ = SatZ - TgtZ;
         double Rango = Math.sqrt(pow2(RangX) + pow2(RangY) + pow2(RangZ));
-        
+
         // Calculates the latitude of geodetica TGT (point where you define the vertical Local)
-        Point2D gdt = Conversions.ecef2wgs(TgtX, TgtY, TgtZ);
-        
-        double sin_lat = Math.sin(Math.toRadians(gdt.getY()));
-        double cos_lat = Math.cos(Math.toRadians(gdt.getY()));
-        
+
+        double[] gdt = CoordinateConverter.ecefToWgs(TgtX, TgtY, TgtZ, new double[3]);
+
+        double sin_lat = Math.sin(Math.toRadians(gdt[1]));
+        double cos_lat = Math.cos(Math.toRadians(gdt[1]));
+
         double sin_theta = TgtY / Math.sqrt(pow2(TgtX) + pow2(TgtY));
         double cos_theta = TgtX / Math.sqrt(pow2(TgtX) + pow2(TgtY));
-        
+
         double top_s = sin_lat * cos_theta * RangX + sin_lat * sin_theta * RangY - cos_lat * RangZ;
         double top_e = -sin_theta * RangX + cos_theta * RangY;
         double top_z = cos_lat * cos_theta * RangX + cos_lat * sin_theta * RangY + sin_lat * RangZ;
 
-        double AZI = Math.atan(-top_e/top_s);
+        double AZI = Math.atan(-top_e / top_s);
         if (top_s > 0) {
             AZI += Math.PI;
         }
@@ -126,18 +110,19 @@ class CoordinateUtils {
             AZI += 2.0 * Math.PI;
         }
         AZI = AZI % (2.0 * Math.PI);
-        double ZEN = Math.PI/2 - Math.asin(top_z/Rango);
+        double ZEN = Math.PI / 2 - Math.asin(top_z / Rango);
 
         return new ViewAng(AZI, ZEN, RangX, RangY, RangZ);
     }
-    
+
     static class ViewAng {
+
         final double azi;
         final double zen;
         final double rangeX;
         final double rangeY;
         final double rangeZ;
-        
+
         public ViewAng(double azi, double zen, double rangeX, double rangeY, double rangeZ) {
             this.azi = azi;
             this.zen = zen;

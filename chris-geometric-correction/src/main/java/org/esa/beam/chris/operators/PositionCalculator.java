@@ -1,7 +1,5 @@
 package org.esa.beam.chris.operators;
 
-import java.awt.geom.Point2D;
-
 class PositionCalculator {
 
     private static final double R = 6378.137;
@@ -26,7 +24,9 @@ class PositionCalculator {
             double[] satZ,
             double[] satT,
             double[][] lons, // [nLines][nCols]
-            double[][] lats // [nLines][nCols]
+            double[][] lats, // [nLines][nCols]
+            double[][] vaa,
+            double[][] vza
     ) {
         final int rowCount = pitchAngles.length;
         final int colCount = pitchAngles[0].length;
@@ -65,11 +65,19 @@ class PositionCalculator {
                 pos[Z] = satZ[i];
 
                 Intersector.intersect(pos, pointings[i][j], ELLIPSOID_CENTER, ELLIPSOID_RADII);
-                EcefEciConverter.eciToEcef(gst, pos, pos);
+                final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(pos[X], 
+                                                                                       pos[Y],
+                                                                                       pos[Z],
+                                                                                       satX[i],
+                                                                                       satY[i],
+                                                                                       satZ[i]);
+                vaa[i][j] = viewAng.azi;
+                vza[i][j] = viewAng.zen;
 
-                final Point2D point = Conversions.ecef2wgs(pos[X], pos[Y], pos[Z]);
-                lons[i][j] = point.getX();
-                lats[i][j] = point.getY();
+                CoordinateConverter.eciToEcef(gst, pos, pos);
+                final double[] wgs = CoordinateConverter.ecefToWgs(pos[X], pos[Y], pos[Z], new double[3]);
+                lons[i][j] = wgs[X];
+                lats[i][j] = wgs[Y];
             }
         }
     }

@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 
-public class EcefEciConverterTest {
+public class CoordinateConverterTest {
 
     @Test
     public void ecefToEci() {
@@ -17,7 +17,7 @@ public class EcefEciConverterTest {
         final double ecefZ = 5102545.269331731;
         final double[] ecef = new double[]{ecefX, ecefY, ecefZ};
 
-        final double[] eci = EcefEciConverter.ecefToEci(Math.PI / 2.0, ecef, ecef.clone());
+        final double[] eci = CoordinateConverter.ecefToEci(Math.PI / 2.0, ecef, ecef.clone());
         final double eciX = eci[0];
         final double eciY = eci[1];
         final double eciZ = eci[2];
@@ -34,7 +34,7 @@ public class EcefEciConverterTest {
         final double eciZ = 5102545.269331731;
         final double[] eci = new double[]{eciX, eciY, eciZ};
 
-        final double[] ecef = EcefEciConverter.eciToEcef(Math.PI / 2.0, eci, eci.clone());
+        final double[] ecef = CoordinateConverter.eciToEcef(Math.PI / 2.0, eci, eci.clone());
         final double ecefX = ecef[0];
         final double ecefY = ecef[1];
         final double ecefZ = ecef[2];

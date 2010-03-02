@@ -26,6 +26,7 @@ import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.Placemark;
+import org.esa.beam.framework.datamodel.PointingFactoryRegistry;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
@@ -41,7 +42,6 @@ import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
 
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -86,6 +86,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private double[][] lons;
     private double[][] lats;
+    private double[][] vaas;
+    private double[][] vzas;
     private AcquisitionInfo info;
     private Band pixelLonBand;
     private Band pixelLatBand;
@@ -206,7 +208,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                     gpsDataRecord.velX / 1000.0, gpsDataRecord.velY / 1000.0, gpsDataRecord.velZ / 1000.0
             };
             double gst = TimeConverter.jdToGST(gpsDataRecord.jd);
-            EcefEciConverter.ecefToEci(gst, ecef, eci[i]);
+            CoordinateConverter.ecefToEci(gst, ecef, eci[i]);
         }
 
         // =======================================================================
@@ -233,12 +235,12 @@ public class PerformGeometricCorrectionOp extends Operator {
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
         double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
         double[] eci_opv;
-        double[] uWecf = EcefEciConverter.eciToEcef(gst_opv, uWop[Tfix], new double[3]);
+        double[] uWecf = CoordinateConverter.eciToEcef(gst_opv, uWop[Tfix], new double[3]);
 
         double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
             double gst = TimeConverter.jdToGST(T[i] + JD0);
-            EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
+            CoordinateConverter.ecefToEci(gst, uWecf, uW[i]);
         }
 
         // ==v==v== Get Angular Velocity ======================================================
@@ -281,15 +283,15 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int img = info.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double targetAltitude = info.getTargetAlt() / 1000;
-        final double[] TGTecf = Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude,
+        final double targetAltitude = 0.0; //info.getTargetAlt() / 1000;
+        final double[] TGTecf = CoordinateConverter.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude,
                                                       new double[3]);
 
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
         for (int i = 0; i < iTGT0.length; i++) {
             double gst = TimeConverter.jdToGST(T[i] + JD0);
-            EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
+            CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
         }
 
         // ==v==v== Rotates TGT to perform scanning ======================================
@@ -320,10 +322,10 @@ public class PerformGeometricCorrectionOp extends Operator {
              * 0. Calculate GCP position in ECEF
              */
             final double[] GCP_ecf = new double[3];
-            Conversions.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), targetAltitude, GCP_ecf);
-            final Point2D point2D = Conversions.ecef2wgs(GCP_ecf[0], GCP_ecf[1], GCP_ecf[2]);
-            System.out.println("lon = " + point2D.getX());
-            System.out.println("lat = " + point2D.getY());
+            CoordinateConverter.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), targetAltitude, GCP_ecf);
+            final double[] wgs = CoordinateConverter.ecefToWgs(GCP_ecf[0], GCP_ecf[1], GCP_ecf[2], new double[3]);
+            System.out.println("lon = " + wgs[X]);
+            System.out.println("lat = " + wgs[Y]);
 
             /**
              * 1. Transform nominal Moving Target to ECEF
@@ -333,7 +335,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             final double[][] iTGT0_ecf = new double[iTGT0.length][3];
             for (int i = 0; i < iTGT0.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD0);
-                EcefEciConverter.eciToEcef(gst, iTGT0[i], iTGT0_ecf[i]);
+                CoordinateConverter.eciToEcef(gst, iTGT0[i], iTGT0_ecf[i]);
             }
 
             // Find the closest point
@@ -395,8 +397,8 @@ public class PerformGeometricCorrectionOp extends Operator {
             final double[][] GCP_eci = new double[T.length][3];
             for (int i = 0; i < T.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD0);
-                EcefEciConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
-//                EcefEciConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
+                CoordinateConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
+//                CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
             }
 
 //// COPIED FROM ABOVE
@@ -423,12 +425,12 @@ public class PerformGeometricCorrectionOp extends Operator {
             // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
             gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
             uWecf = new double[3];
-            EcefEciConverter.eciToEcef(gst_opv, uWop[Tfix], uWecf);
+            CoordinateConverter.eciToEcef(gst_opv, uWop[Tfix], uWecf);
 
             uW = new double[T.length][3];
             for (int i = 0; i < T.length; i++) {
                 double gst = TimeConverter.jdToGST(T[i] + JD0);
-                EcefEciConverter.ecefToEci(gst, uWecf, uW[i]);
+                CoordinateConverter.ecefToEci(gst, uWecf, uW[i]);
             }
 
             // ==v==v== Get Angular Velocity ======================================================
@@ -447,10 +449,10 @@ public class PerformGeometricCorrectionOp extends Operator {
                 System.out.println("i = " + i);
                 final double gst = TimeConverter.jdToGST(T[Tini[img] + i] + JD0);
                 final double[] ecef = new double[3];
-                EcefEciConverter.eciToEcef(gst, GCP_eci[Tini[img] + i], ecef);
-                final Point2D p = Conversions.ecef2wgs(ecef[0], ecef[1], ecef[2]);
-                System.out.println("lon = " + p.getX());
-                System.out.println("lat = " + p.getY());
+                CoordinateConverter.eciToEcef(gst, GCP_eci[Tini[img] + i], ecef);
+                final double[] p = CoordinateConverter.ecefToWgs(ecef[0], ecef[1], ecef[2], new double[3]);
+                System.out.println("lon = " + p[X]);
+                System.out.println("lat = " + p[Y]);
                 System.out.println();
 //                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
             }
@@ -461,11 +463,11 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            final double[][] ds2XY = new double[2][T.length];
 //            for (int i = 0; i < T.length; i++) {
 //                final double[] tmp = new double[3];
-//                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T2[i] + JD0), iTGT0[i], tmp);
+//                CoordinateConverter.eciToEcef(TimeConverter.jdToGST(T2[i] + JD0), iTGT0[i], tmp);
 //                final Point2D p1 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
 //                ds1XY[0][i] = p1.getX();
 //                ds1XY[1][i] = p1.getY();
-//                EcefEciConverter.eciToEcef(TimeConverter.jdToGST(T[i] + JD0), GCP_eci[i], tmp);
+//                CoordinateConverter.eciToEcef(TimeConverter.jdToGST(T[i] + JD0), GCP_eci[i], tmp);
 //                final Point2D p2 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
 //                ds2XY[0][i] = p2.getX();
 //                ds2XY[1][i] = p2.getY();
@@ -516,7 +518,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             double SatY = iY[Tini[img] + i];
             double SatZ = iZ[Tini[img] + i];
             double TgtLat = info.getTargetLat();
-            ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ, TgtLat);
+            ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ);
 
             // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
             // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
@@ -673,6 +675,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         lons = new double[nLines][nCols];
         lats = new double[nLines][nCols];
+        vaas = new double[nLines][nCols];
+        vzas = new double[nLines][nCols];
         PositionCalculator.calculatePositions(
                 pitchRotation,
                 rollRotation,
@@ -682,7 +686,9 @@ public class PerformGeometricCorrectionOp extends Operator {
                 ixSubset, iySubset, izSubset,
                 timeSubset,
                 lons,
-                lats);
+                lats,
+                vaas,
+                vzas);
 
         final Product targetProduct = createTargetProduct();
         // todo - compute viewing angles
@@ -701,12 +707,12 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final double[] gcpEcef = new double[3];
         // todo - replace TgtAlt with altitude from GCP
-        Conversions.wgsToEcef(lon, lat, targetAltitude, gcpEcef);
+        CoordinateConverter.wgsToEcef(lon, lat, targetAltitude, gcpEcef);
 
         final int row = Tini[img] + y;
         final double gst = TimeConverter.jdToGST(T[row] + JD0);
         final double[] gcpEci = new double[3];
-        EcefEciConverter.ecefToEci(gst, gcpEcef, gcpEci);
+        CoordinateConverter.ecefToEci(gst, gcpEcef, gcpEci);
 
         double dX = gcpEci[X] - iX[row];
         double dY = gcpEci[Y] - iY[row];
@@ -853,25 +859,36 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final float[] lons = new float[w * h];
         final float[] lats = new float[w * h];
+        final float[] vaas = new float[w * h];
+        final float[] vzas = new float[w * h];
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 if (info.isBackscanning()) {
                     lons[y * w + x] = (float) this.lons[h - 1 - y][x];
                     lats[y * w + x] = (float) this.lats[h - 1 - y][x];
+                    vaas[y * w + x] = (float) this.vaas[h - 1 - y][x];
+                    vzas[y * w + x] = (float) this.vzas[h - 1 - y][x];
                 } else {
                     lons[y * w + x] = (float) this.lons[y][x];
                     lats[y * w + x] = (float) this.lats[y][x];
+                    vaas[y * w + x] = (float) this.vaas[y][x];
+                    vzas[y * w + x] = (float) this.vzas[y][x];
                 }
             }
         }
 
         final TiePointGrid lonGrid = new TiePointGrid("lon", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lons);
         final TiePointGrid latGrid = new TiePointGrid("lat", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lats);
+        final TiePointGrid vaaGrid = new TiePointGrid("vaa", w, h, 0.5f, 0.5f, 1.0f, 1.0f, vaas);
+        final TiePointGrid vzaGrid = new TiePointGrid("vza", w, h, 0.5f, 0.5f, 1.0f, 1.0f, vzas);
         targetProduct.addTiePointGrid(lonGrid);
         targetProduct.addTiePointGrid(latGrid);
+        targetProduct.addTiePointGrid(vaaGrid);
+        targetProduct.addTiePointGrid(vzaGrid);
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
-
+        targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(type));
+        
         pixelLonBand = targetProduct.addBand("pixelLon", ProductData.TYPE_FLOAT64);
         pixelLatBand = targetProduct.addBand("pixelLat", ProductData.TYPE_FLOAT64);
 
