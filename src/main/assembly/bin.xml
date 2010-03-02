@@ -26,6 +26,7 @@
     <moduleSets>
         <moduleSet>
             <excludes>
+                <exclude>org.esa.beam.chris:chris-atmospheric-correction-lut-bundle</exclude>
                 <exclude>org.esa.beam.chris:chris-bootstrap</exclude>
             </excludes>
 
