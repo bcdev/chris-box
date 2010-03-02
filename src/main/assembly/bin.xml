@@ -21,6 +21,17 @@
             <lineEnding>unix</lineEnding>
             <fileMode>0444</fileMode>
         </file>
+        <file>
+            <source>LICENSE-APACHE.txt</source>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0444</fileMode>
+            <filtered>true</filtered>
+        </file>
+        <file>
+            <source>NOTICE.txt</source>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0444</fileMode>
+        </file>
     </files>
 
     <moduleSets>
