@@ -201,12 +201,12 @@ public class PerformGeometricCorrectionOp extends Operator {
             GpsDataRecord gpsDataRecord = gpsData.get(i);
             // position and velocity is given in meters, 
             // we transform to km in order to keep the values smaller. from now all distances in Km
-            double[] ecf = {
+            double[] ecef = {
                     gpsDataRecord.posX / 1000.0, gpsDataRecord.posY / 1000.0, gpsDataRecord.posZ / 1000.0,
                     gpsDataRecord.velX / 1000.0, gpsDataRecord.velY / 1000.0, gpsDataRecord.velZ / 1000.0
             };
             double gst = TimeConverter.jdToGST(gpsDataRecord.jd);
-            EcefEciConverter.ecefToEci(gst, ecf, eci[i]);
+            EcefEciConverter.ecefToEci(gst, ecef, eci[i]);
         }
 
         // =======================================================================
@@ -228,14 +228,12 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==v==v== Get Orbital Plane Vector ==================================================
         // ---- Calculates normal vector to orbital plane --------------------------
-        double[][] Wop = vect_prod(iX, iY, iZ, iVX, iVY, iVZ);
-        double[][] uWop = unit(Wop);
+        double[][] uWop = toUnitVectors(vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
 
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
         double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
-        double[] eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
-        double[] uWecf = new double[3];
-        EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
+        double[] eci_opv;
+        double[] uWecf = EcefEciConverter.eciToEcef(gst_opv, uWop[Tfix], new double[3]);
 
         double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
@@ -284,8 +282,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
         final double targetAltitude = info.getTargetAlt() / 1000;
-        final double[] TGTecf = new double[3];
-        Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude, TGTecf);
+        final double[] TGTecf = Conversions.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude,
+                                                      new double[3]);
 
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
@@ -378,7 +376,6 @@ public class PerformGeometricCorrectionOp extends Operator {
             /**
              * 3. Update T[]: add dT to all times in T[].
              */
-            final double[] T2 = T.clone();
             for (int i = 0; i < T.length; i++) {
 //                System.out.println("T[i] = " + T[i]);
                 final double newT = T[i] + dT; //tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
@@ -421,14 +418,12 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             // ==v==v== Get Orbital Plane Vector ==================================================
             // ---- Calculates normal vector to orbital plane --------------------------
-            Wop = vect_prod(iX, iY, iZ, iVX, iVY, iVZ);
-            uWop = unit(Wop);
+            uWop = toUnitVectors(vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
 
             // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
             gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
-            eci_opv = new double[]{uWop[X][Tfix], uWop[Y][Tfix], uWop[Z][Tfix]};
             uWecf = new double[3];
-            EcefEciConverter.eciToEcef(gst_opv, eci_opv, uWecf);
+            EcefEciConverter.eciToEcef(gst_opv, uWop[Tfix], uWecf);
 
             uW = new double[T.length][3];
             for (int i = 0; i < T.length; i++) {
@@ -512,7 +507,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         //==== Calculates View Angles ==============================================
 
 //            ViewAng[] viewAngs = new ViewAng[mode.getNLines()];
-        double[][] viewRange = new double[3][mode.getNLines()];
+        double[][] viewRange = new double[mode.getNLines()][3];
         for (int i = 0; i < mode.getNLines(); i++) {
             double TgtX = iTGT[Tini[img] + i][X];
             double TgtY = iTGT[Tini[img] + i][Y];
@@ -525,9 +520,9 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
             // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
-            viewRange[X][i] = -viewAng.rangeX;
-            viewRange[Y][i] = -viewAng.rangeY;
-            viewRange[Z][i] = -viewAng.rangeZ;
+            viewRange[i][X] = -viewAng.rangeX;
+            viewRange[i][Y] = -viewAng.rangeY;
+            viewRange[i][Z] = -viewAng.rangeZ;
 
             //ObsAngAzi[i] = viewAng.azi;
             //ObsAngZen[i] = viewAng.zen;
@@ -538,24 +533,24 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==== Satellite Rotation Axes ==============================================
 
-        double[][] uEjeYaw = new double[3][mode.getNLines()];
+        double[][] yawAxes = new double[mode.getNLines()][3];
         for (int i = 0; i < mode.getNLines(); i++) {
-            uEjeYaw[X][i] = iX[Tini[img] + i];
-            uEjeYaw[Y][i] = iY[Tini[img] + i];
-            uEjeYaw[Z][i] = iZ[Tini[img] + i];
+            yawAxes[i][X] = iX[Tini[img] + i];
+            yawAxes[i][Y] = iY[Tini[img] + i];
+            yawAxes[i][Z] = iZ[Tini[img] + i];
         }
-        uEjeYaw = unit(uEjeYaw);
+        yawAxes = toUnitVectors(yawAxes);
 //        for (int i = 0; i < mode.getNLines(); i++) {
 //            EjeYaw[X][i] = uEjeYaw[X][i];
 //            EjeYaw[Y][i] = uEjeYaw[Y][i];
 //            EjeYaw[Z][i] = uEjeYaw[Z][i];
 //        }
 
-        double[][] uEjePitch = new double[3][mode.getNLines()];
+        double[][] pitchAxes = new double[mode.getNLines()][3];
         for (int i = 0; i < mode.getNLines(); i++) {
-            uEjePitch[X][i] = uWop[X][Tini[img] + i];
-            uEjePitch[Y][i] = uWop[Y][Tini[img] + i];
-            uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
+            pitchAxes[i][X] = uWop[Tini[img] + i][X];
+            pitchAxes[i][Y] = uWop[Tini[img] + i][Y];
+            pitchAxes[i][Z] = uWop[Tini[img] + i][Z];
         }
 //        for (int i = 0; i < mode.getNLines(); i++) {
 //            EjePitch[X][i] = uEjePitch[X][i] = uWop[X][Tini[img] + i];
@@ -563,14 +558,14 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            EjePitch[Z][i] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
 //        }
 
-        double[][] uEjeRoll = vect_prod(uEjePitch, uEjeYaw);
+        double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[mode.getNLines()][3]);
 //        for (int i = 0; i < mode.getNLines(); i++) {
 //            EjeRoll[X][i] = uEjeRoll[X][i];
 //            EjeRoll[Y][i] = uEjeRoll[Y][i];
 //            EjeRoll[Z][i] = uEjeRoll[Z][i];
 //        }
 
-        double[][] uRange = unit(viewRange);
+        double[][] uRange = toUnitVectors(viewRange);
 
         // ScanPlane:
         //double[][] uSP = new double[3][mode.getNLines()];
@@ -584,14 +579,14 @@ public class PerformGeometricCorrectionOp extends Operator {
         int[] uRollSign = new int[mode.getNLines()];
         //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
-        double[][] uSP = vect_prod(uRange, uEjePitch);
-        double[][] uSL = vect_prod(uEjePitch, uSP);
-        double[][] uRoll = unit(vect_prod(uSL, uRange));
+        double[][] uSP = vectorProducts(uRange, pitchAxes, new double[mode.getNLines()][3]);
+        double[][] uSL = vectorProducts(pitchAxes, uSP, new double[mode.getNLines()][3]);
+        double[][] uRoll = toUnitVectors(vectorProducts(uSL, uRange, new double[mode.getNLines()][3]));
         for (int i = 0; i < mode.getNLines(); i++) {
             double total = 0;
-            total += uRoll[X][i] / uSP[X][i];
-            total += uRoll[Y][i] / uSP[Y][i];
-            total += uRoll[Z][i] / uSP[Z][i];
+            total += uRoll[i][X] / uSP[i][X];
+            total += uRoll[i][Y] / uSP[i][Y];
+            total += uRoll[i][Z] / uSP[i][Z];
             uRollSign[i] = (int) Math.signum(total);
         }
 
@@ -609,10 +604,18 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] uRollAng = new double[mode.getNLines()];
         System.out.println("dRoll = " + dRoll);
         for (int i = 0; i < mode.getNLines(); i++) {
-            uPitchAng[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X][i], uSP[Y][i], uSP[Z][i],
-                                                                     uEjeYaw[X][i], uEjeYaw[Y][i], uEjeYaw[Z][i]);
-            uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[X][i], uSL[Y][i], uSL[Z][i],
-                                                                   uRange[X][i], uRange[Y][i], uRange[Z][i]);
+            uPitchAng[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[i][X],
+                                                                     uSP[i][Y],
+                                                                     uSP[i][Z],
+                                                                     yawAxes[i][X],
+                                                                     yawAxes[i][Y],
+                                                                     yawAxes[i][Z]);
+            uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[i][X],
+                                                                   uSL[i][Y],
+                                                                   uSL[i][Z],
+                                                                   uRange[i][X],
+                                                                   uRange[i][Y],
+                                                                   uRange[i][Z]);
             uRollAng[i] += dRoll;
             // Stores the results for each image
             //PitchAng[i] = uPitchAng[i];
@@ -650,8 +653,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             for (int i = 0; i < gcpCount; i++) {
                 final Placemark gcp = gcpGroup.get(i);
-                final double[] realPointing = DOIT(img, T, Tini, gcp, targetAltitude, iX, iY, iZ, uEjePitch, uEjeYaw,
-                                                   uEjeRoll);
+                final double[] realPointing = DOIT(img, T, Tini, gcp, targetAltitude, iX, iY, iZ, pitchAxes, yawAxes);
                 xCoords[i] = gcp.getPixelPos().getX();
                 yCoords[i] = gcp.getPixelPos().getY();
                 deltaPitch[i] = realPointing[0] - pitchRotation[(int) yCoords[i]][(int) xCoords[i]];
@@ -671,18 +673,16 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         lons = new double[nLines][nCols];
         lats = new double[nLines][nCols];
-        PositionCalculator.calculatePositions(nLines,
-                                              nCols,
-                                              pitchRotation,
-                                              rollRotation,
-                                              uEjePitch,
-                                              uEjeRoll,
-                                              uEjeYaw,
-                                              targetAltitude,
-                                              ixSubset, iySubset, izSubset,
-                                              timeSubset,
-                                              lons,
-                                              lats);
+        PositionCalculator.calculatePositions(
+                pitchRotation,
+                rollRotation,
+                pitchAxes,
+                rollAxes,
+                yawAxes,
+                ixSubset, iySubset, izSubset,
+                timeSubset,
+                lons,
+                lats);
 
         final Product targetProduct = createTargetProduct();
         // todo - compute viewing angles
@@ -693,8 +693,7 @@ public class PerformGeometricCorrectionOp extends Operator {
     }
 
     private double[] DOIT(int img, double[] T, int[] Tini, Placemark gcp, double targetAltitude, double[] iX,
-                          double[] iY,
-                          double[] iZ, double[][] uEjePitch, double[][] uEjeYaw, double[][] uEjeRoll) {
+                          double[] iY, double[] iZ, double[][] uEjePitch, double[][] uEjeYaw) {
         final int x = (int) gcp.getPixelPos().getX();
         final int y = (int) gcp.getPixelPos().getY();
         final double lon = gcp.getGeoPos().getLon();
@@ -713,7 +712,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         double dY = gcpEci[Y] - iY[row];
         double dZ = gcpEci[Z] - iZ[row];
 
-        double[][] uRange = unit(new double[][]{{dX}, {dY}, {dZ}});
+        double[] uRange = toUnitVector(new double[]{dX, dY, dZ});
 
         // ScanPlane:
         //double[][] uSP = new double[3][mode.getNLines()];
@@ -728,23 +727,31 @@ public class PerformGeometricCorrectionOp extends Operator {
         //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
 
-        final double[][] pitchAxis = {{uEjePitch[X][y]}, {uEjePitch[Y][y]}, {uEjePitch[Z][y]}};
-        final double[][] yawAxis = {{uEjeYaw[X][y]}, {uEjeYaw[Y][y]}, {uEjeYaw[Z][y]}};
-        double[][] uSP = vect_prod(uRange, pitchAxis);
-        double[][] uSL = vect_prod(pitchAxis, uSP);
-        double[][] uRoll = unit(vect_prod(uSL, uRange));
+        final double[] pitchAxis = uEjePitch[y];
+        final double[] yawAxis = uEjeYaw[y];
+        double[] uSP = vectorProduct(uRange, pitchAxis, new double[3]);
+        double[] uSL = vectorProduct(pitchAxis, uSP, new double[3]);
+        double[] uRoll = toUnitVector(vectorProduct(uSL, uRange, new double[3]));
         double total = 0;
-        total += uRoll[X][0] / uSP[X][0];
-        total += uRoll[Y][0] / uSP[Y][0];
-        total += uRoll[Z][0] / uSP[Z][0];
+        total += uRoll[X] / uSP[X];
+        total += uRoll[Y] / uSP[Y];
+        total += uRoll[Z] / uSP[Z];
         uRollSign = (int) Math.signum(total);
 
         double uPitchAng = 0.0;
         double uRollAng = 0.0;
-        uPitchAng = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X][0], uSP[Y][0], uSP[Z][0],
-                                                              yawAxis[X][0], yawAxis[Y][0], yawAxis[Z][0]);
-        uRollAng = uRollSign * CoordinateUtils.vectAngle(uSL[X][0], uSL[Y][0], uSL[Z][0],
-                                                         uRange[X][0], uRange[Y][0], uRange[Z][0]);
+        uPitchAng = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X],
+                                                              uSP[Y],
+                                                              uSP[Z],
+                                                              yawAxis[X],
+                                                              yawAxis[Y],
+                                                              yawAxis[Z]);
+        uRollAng = uRollSign * CoordinateUtils.vectAngle(uSL[X],
+                                                         uSL[Y],
+                                                         uSL[Z],
+                                                         uRange[X],
+                                                         uRange[Y],
+                                                         uRange[Z]);
 
         return new double[]{uPitchAng, uRollAng};
     }
@@ -871,35 +878,44 @@ public class PerformGeometricCorrectionOp extends Operator {
         return targetProduct;
     }
 
-    private static double[][] unit(double[][] vec) {
-        double[][] result = new double[vec.length][vec[0].length];
-        for (int i = 0; i < vec[0].length; i++) {
-            double norm = Math.sqrt(vec[X][i] * vec[X][i] + vec[Y][i] * vec[Y][i] + vec[Z][i] * vec[Z][i]);
-            result[X][i] = vec[X][i] / norm;
-            result[Y][i] = vec[Y][i] / norm;
-            result[Z][i] = vec[Z][i] / norm;
-        }
-        return result;
+    private static double[] toUnitVector(double[] vector) {
+        final double norm = Math.sqrt(vector[X] * vector[X] + vector[Y] * vector[Y] + vector[Z] * vector[Z]);
+        vector[X] /= norm;
+        vector[Y] /= norm;
+        vector[Z] /= norm;
+        return vector;
     }
 
-    private static double[][] vect_prod(double[] x1, double[] y1, double[] z1, double[] x2, double[] y2, double[] z2) {
-        double[][] product = new double[3][x1.length];
-        for (int i = 0; i < x1.length; i++) {
-            product[X][i] = y1[i] * z2[i] - z1[i] * y2[i];
-            product[Y][i] = z1[i] * x2[i] - x1[i] * z2[i];
-            product[Z][i] = x1[i] * y2[i] - y1[i] * x2[i];
+    private static double[][] toUnitVectors(double[][] vectors) {
+        for (final double[] vector : vectors) {
+            toUnitVector(vector);
         }
-        return product;
+        return vectors;
     }
 
-    private static double[][] vect_prod(double[][] a1, double[][] a2) {
-        double[][] product = new double[3][a1[0].length];
-        for (int i = 0; i < a1[0].length; i++) {
-            product[X][i] = a1[Y][i] * a2[Z][i] - a1[Z][i] * a2[Y][i];
-            product[Y][i] = a1[Z][i] * a2[X][i] - a1[X][i] * a2[Z][i];
-            product[Z][i] = a1[X][i] * a2[Y][i] - a1[Y][i] * a2[X][i];
+    private static double[] vectorProduct(double[] u, double[] v, double[] w) {
+        w[X] = u[Y] * v[Z] - u[Z] * v[Y];
+        w[Y] = u[Z] * v[X] - u[X] * v[Z];
+        w[Z] = u[X] * v[Y] - u[Y] * v[X];
+        return w;
+    }
+
+    private static double[][] vectorProducts(double[][] u, double[][] v, double[][] w) {
+        for (int i = 0; i < u.length; i++) {
+            vectorProduct(u[i], v[i], w[i]);
         }
-        return product;
+        return w;
+    }
+
+    private static double[][] vectorProducts(double[] x, double[] y, double[] z, double[] u, double[] v, double[] w) {
+        final double[][] products = new double[x.length][3];
+        for (int i = 0; i < x.length; i++) {
+            final double[] product = products[i];
+            product[X] = y[i] * w[i] - z[i] * v[i];
+            product[Y] = z[i] * u[i] - x[i] * w[i];
+            product[Z] = x[i] * v[i] - y[i] * u[i];
+        }
+        return products;
     }
 
     private static double[] get2ndDim(double[][] twoDimArray, int secondDimIndex, int numElems) {

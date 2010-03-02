@@ -28,7 +28,7 @@ class Conversions {
     private Conversions() {
     }
 
-    public static void wgsToEcef(double lon, double lat, double alt, double[] ecef) {
+    public static double[] wgsToEcef(double lon, double lat, double alt, double[] ecef) {
         if (Math.abs(lat) > 90.0) {
             throw new IllegalArgumentException("|lat| > 90.0");
         }
@@ -53,6 +53,8 @@ class Conversions {
         ecef[0] = b * cu;
         ecef[1] = b * su;
         ecef[2] = ((1.0 - WGS84_E) * a + alt) * sv;
+
+        return ecef;
     }
 
     /**

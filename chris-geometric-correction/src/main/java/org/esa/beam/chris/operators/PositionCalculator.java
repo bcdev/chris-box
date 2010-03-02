@@ -8,42 +8,47 @@ class PositionCalculator {
     private static final double F = 1.0 / 298.257223563;
     private static final double JD2001 = TimeConverter.julianDate(2001, 0, 1);
 
+    private static final double[] ELLIPSOID_RADII = new double[]{R, R, (1.0 - F) * R};
+    private static final double[] ELLIPSOID_CENTER = new double[3];
+
     private static final int X = 0;
     private static final int Y = 1;
     private static final int Z = 2;
 
-    public static void calculatePositions(int rowCount,
-                                          int colCount,
-                                          double[][] pitchAngles, // [nLines][nCols]
-                                          double[][] rollAngles, // [nLines][nCols]
-                                          double[][] pitchAxes, //[3][nlines]
-                                          double[][] rollAxes,  //[3][nlines]
-                                          double[][] yawAxes,   //[3][nlines]
-                                          double targetAltitude,
-                                          double[] satX,
-                                          double[] satY,
-                                          double[] satZ,
-                                          double[] satT,
-                                          double[][] lons, // [nLines][nCols]
-                                          double[][] lats // [nLines][nCols]
+    static void calculatePositions(
+            double[][] pitchAngles, // [nLines][nCols]
+            double[][] rollAngles, // [nLines][nCols]
+            double[][] pitchAxes, //[nlines][3]
+            double[][] rollAxes,  //[nlines][3]
+            double[][] yawAxes,   //[nlines][3]
+            double[] satX,
+            double[] satY,
+            double[] satZ,
+            double[] satT,
+            double[][] lons, // [nLines][nCols]
+            double[][] lats // [nLines][nCols]
     ) {
+        final int rowCount = pitchAngles.length;
+        final int colCount = pitchAngles[0].length;
         final double[][][] pointings = new double[rowCount][colCount][3];
 
         for (int i = 0; i < rowCount; i++) {
+            final double[] pitchAxis = pitchAxes[i];
+            final double[] rollAxis = new double[3];
+            final double[] yawAxis = yawAxes[i];
             for (int j = 0; j < colCount; j++) {
                 // 1. initialize the pointing
                 final double[] pointing = pointings[i][j];
                 for (int k = 0; k < 3; k++) {
-                    pointing[k] = -yawAxes[k][i];
+                    pointing[k] = -yawAxis[k];
                 }
 
                 // 2. rotate the pointing around the pitch axis
-                final Quaternion pitchRotation = createQuaternion(i, pitchAxes, -pitchAngles[i][j]);
+                final Quaternion pitchRotation = createQuaternion(pitchAxis, -pitchAngles[i][j]);
                 pitchRotation.transform(pointing, pointing);
 
                 // 3. rotate the roll axis around the pitch axis
-                final double[] rollAxis = new double[]{rollAxes[X][i], rollAxes[Y][i], rollAxes[Z][i]};
-                pitchRotation.transform(rollAxis, rollAxis);
+                pitchRotation.transform(rollAxes[i], rollAxis);
 
                 // 4. rotate pointing around roll axis
                 final Quaternion rollRotation = createQuaternion(rollAxis, rollAngles[i][j]);
@@ -51,12 +56,7 @@ class PositionCalculator {
             }
         }
 
-        final double[] earthRadii = new double[]{
-                R + targetAltitude, R + targetAltitude, (1.0 - F) * R + targetAltitude
-        };
-        final double[] earthCenter = new double[3];
         final double[] pos = new double[3];
-
         for (int i = 0; i < rowCount; i++) {
             final double gst = TimeConverter.jdToGST(satT[i] + JD2001);
             for (int j = 0; j < colCount; j++) {
@@ -64,8 +64,7 @@ class PositionCalculator {
                 pos[Y] = satY[i];
                 pos[Z] = satZ[i];
 
-                // todo - intersect with DEM instead
-                Intersector.intersect(pos, pointings[i][j], earthCenter, earthRadii);
+                Intersector.intersect(pos, pointings[i][j], ELLIPSOID_CENTER, ELLIPSOID_RADII);
                 EcefEciConverter.eciToEcef(gst, pos, pos);
 
                 final Point2D point = Conversions.ecef2wgs(pos[X], pos[Y], pos[Z]);
@@ -73,10 +72,6 @@ class PositionCalculator {
                 lats[i][j] = point.getY();
             }
         }
-    }
-
-    private static Quaternion createQuaternion(int axisIndex, double[][] axes, double angle) {
-        return Quaternion.createQuaternion(axes[0][axisIndex], axes[1][axisIndex], axes[2][axisIndex], angle);
     }
 
     private static Quaternion createQuaternion(double[] axis, double angle) {
