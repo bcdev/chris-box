@@ -20,8 +20,6 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
-import org.esa.beam.chris.operators.math.PolynomialSplineFunction;
-import org.esa.beam.chris.operators.math.SplineInterpolator;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.framework.datamodel.Band;
@@ -86,7 +84,8 @@ public class PerformGeometricCorrectionOp extends Operator {
     @SourceProduct
     private Product sourceProduct;
 
-    private double[][][] igm;
+    private double[][] lons;
+    private double[][] lats;
     private AcquisitionInfo info;
     private Band pixelLonBand;
     private Band pixelLatBand;
@@ -670,26 +669,31 @@ public class PerformGeometricCorrectionOp extends Operator {
             }
         }
 
-        igm = PositionCalculator.calculatePositions(nLines,
-                                      nCols,
-                                      pitchRotation,
-                                      rollRotation,
-                                      uEjePitch,
-                                      uEjeRoll,
-                                      uEjeYaw,
-                                      targetAltitude,
-                                      ixSubset, iySubset, izSubset,
-                                      timeSubset);
+        lons = new double[nLines][nCols];
+        lats = new double[nLines][nCols];
+        PositionCalculator.calculatePositions(nLines,
+                                              nCols,
+                                              pitchRotation,
+                                              rollRotation,
+                                              uEjePitch,
+                                              uEjeRoll,
+                                              uEjeYaw,
+                                              targetAltitude,
+                                              ixSubset, iySubset, izSubset,
+                                              timeSubset,
+                                              lons,
+                                              lats);
 
         final Product targetProduct = createTargetProduct();
-         // todo - compute viewing angles
-         // todo - add pitch and roll rotations per pixel for Luis A.
-        
+        // todo - compute viewing angles
+        // todo - add pitch and roll rotations per pixel for Luis A.
+
 
         setTargetProduct(targetProduct);
     }
 
-    private double[] DOIT(int img, double[] T, int[] Tini, Placemark gcp, double targetAltitude, double[] iX, double[] iY,
+    private double[] DOIT(int img, double[] T, int[] Tini, Placemark gcp, double targetAltitude, double[] iX,
+                          double[] iY,
                           double[] iZ, double[][] uEjePitch, double[][] uEjeYaw, double[][] uEjeRoll) {
         final int x = (int) gcp.getPixelPos().getX();
         final int y = (int) gcp.getPixelPos().getY();
@@ -791,10 +795,10 @@ public class PerformGeometricCorrectionOp extends Operator {
     @Override
     public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
         if (targetBand.equals(pixelLonBand)) {
-            fillTile(targetBand, targetTile, igm[0]);
+            fillTile(targetBand, targetTile, lons);
         }
         if (targetBand.equals(pixelLatBand)) {
-            fillTile(targetBand, targetTile, igm[1]);
+            fillTile(targetBand, targetTile, lats);
         }
     }
 
@@ -846,11 +850,11 @@ public class PerformGeometricCorrectionOp extends Operator {
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 if (info.isBackscanning()) {
-                    lons[y * w + x] = (float) igm[0][h - 1 - y][x];
-                    lats[y * w + x] = (float) igm[1][h - 1 - y][x];
+                    lons[y * w + x] = (float) this.lons[h - 1 - y][x];
+                    lats[y * w + x] = (float) this.lats[h - 1 - y][x];
                 } else {
-                    lons[y * w + x] = (float) igm[0][y][x];
-                    lats[y * w + x] = (float) igm[1][y][x];
+                    lons[y * w + x] = (float) this.lons[y][x];
+                    lats[y * w + x] = (float) this.lats[y][x];
                 }
             }
         }
@@ -908,7 +912,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private static double[] spline(double[] x, double[] y, double[] t) {
         double[] v = new double[t.length];
-        PolynomialSplineFunction splineFunction = SplineInterpolator.interpolate(x, y);
+        final PolynomialSplineFunction splineFunction = new SplineInterpolator().interpolate(x, y);
         for (int i = 0; i < v.length; i++) {
             v[i] = splineFunction.value(t[i]);
         }
@@ -966,23 +970,23 @@ public class PerformGeometricCorrectionOp extends Operator {
         for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
             final Placemark pin = sourceProduct.getPinGroup().get(i);
             targetProduct.getPinGroup().add(new Placemark(pin.getName(),
-                                                    pin.getLabel(),
-                                                    pin.getDescription(),
-                                                    pin.getPixelPos(),
-                                                    pin.getGeoPos(),
-                                                    pin.getSymbol(),
-                                                    null));
+                                                          pin.getLabel(),
+                                                          pin.getDescription(),
+                                                          pin.getPixelPos(),
+                                                          pin.getGeoPos(),
+                                                          pin.getSymbol(),
+                                                          null));
         }
         // 8. copy GCPs
         for (int i = 0; i < sourceProduct.getGcpGroup().getNodeCount(); i++) {
             final Placemark pin = sourceProduct.getGcpGroup().get(i);
             targetProduct.getGcpGroup().add(new Placemark(pin.getName(),
-                                                    pin.getLabel(),
-                                                    pin.getDescription(),
-                                                    pin.getPixelPos(),
-                                                    pin.getGeoPos(),
-                                                    pin.getSymbol(),
-                                                    null));
+                                                          pin.getLabel(),
+                                                          pin.getDescription(),
+                                                          pin.getPixelPos(),
+                                                          pin.getGeoPos(),
+                                                          pin.getSymbol(),
+                                                          null));
         }
 
         return targetProduct;
@@ -1030,5 +1034,4 @@ public class PerformGeometricCorrectionOp extends Operator {
             super(PerformGeometricCorrectionOp.class);
         }
     }
-
 }

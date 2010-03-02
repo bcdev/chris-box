@@ -12,7 +12,7 @@ class PositionCalculator {
     private static final int Y = 1;
     private static final int Z = 2;
 
-    public static double[][][] calculatePositions(int rowCount,
+    public static void calculatePositions(int rowCount,
                                           int colCount,
                                           double[][] pitchAngles, // [nLines][nCols]
                                           double[][] rollAngles, // [nLines][nCols]
@@ -23,7 +23,10 @@ class PositionCalculator {
                                           double[] satX,
                                           double[] satY,
                                           double[] satZ,
-                                          double[] satT) {
+                                          double[] satT,
+                                          double[][] lons, // [nLines][nCols]
+                                          double[][] lats // [nLines][nCols]
+    ) {
         final double[][][] pointings = new double[rowCount][colCount][3];
 
         for (int i = 0; i < rowCount; i++) {
@@ -48,15 +51,14 @@ class PositionCalculator {
             }
         }
 
-        final double[][][] IGM = new double[2][rowCount][colCount];
-
-        final double[] earthRadii = new double[]{R + targetAltitude, R + targetAltitude, (1.0 - F) * R + targetAltitude};
+        final double[] earthRadii = new double[]{
+                R + targetAltitude, R + targetAltitude, (1.0 - F) * R + targetAltitude
+        };
         final double[] earthCenter = new double[3];
         final double[] pos = new double[3];
 
         for (int i = 0; i < rowCount; i++) {
             final double gst = TimeConverter.jdToGST(satT[i] + JD2001);
-
             for (int j = 0; j < colCount; j++) {
                 pos[X] = satX[i];
                 pos[Y] = satY[i];
@@ -67,12 +69,10 @@ class PositionCalculator {
                 EcefEciConverter.eciToEcef(gst, pos, pos);
 
                 final Point2D point = Conversions.ecef2wgs(pos[X], pos[Y], pos[Z]);
-                IGM[0][i][j] = point.getX();
-                IGM[1][i][j] = point.getY();
+                lons[i][j] = point.getX();
+                lats[i][j] = point.getY();
             }
         }
-
-        return IGM;
     }
 
     private static Quaternion createQuaternion(int axisIndex, double[][] axes, double angle) {
@@ -82,5 +82,4 @@ class PositionCalculator {
     private static Quaternion createQuaternion(double[] axis, double angle) {
         return Quaternion.createQuaternion(axis[0], axis[1], axis[2], angle);
     }
-
 }

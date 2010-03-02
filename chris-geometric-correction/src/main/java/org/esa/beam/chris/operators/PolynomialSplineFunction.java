@@ -13,12 +13,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * NOTE: THIS FILE HAS BEEN MODIFIED BY BC TO SUIT PARTICULAR NEEDS.
  */
-package org.esa.beam.chris.operators.math;
+package org.esa.beam.chris.operators;
 
-import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.Arrays;
-
 
 /**
  * Represents a polynomial spline function.
@@ -51,15 +52,12 @@ import java.util.Arrays;
  * <li> Let <code>j</code> be the index of the largest knot point that is less
  * than or equal to <code>x</code>.  The value returned is <br>
  * <code>polynomials[j](x - knot[j])</code></li></ol></p>
- *
- * @version $Revision$ $Date$
  */
-public class PolynomialSplineFunction implements Serializable {
+class PolynomialSplineFunction {
 
-    /** Serializable version identifier */
-    private static final long serialVersionUID = 1619940313389547244L;
-
-    /** Spline segment interval delimiters (knots).   Size is n+1 for n segments. */
+    /**
+     * Spline segment interval delimiters (knots).   Size is n+1 for n segments.
+     */
     private double knots[];
 
     /**
@@ -73,7 +71,7 @@ public class PolynomialSplineFunction implements Serializable {
 
     /**
      * Number of spline segments = number of polynomials
-     *  = number of partition points - 1
+     * = number of partition points - 1
      */
     private int n = 0;
 
@@ -85,29 +83,30 @@ public class PolynomialSplineFunction implements Serializable {
      * The constructor copies both arrays and assigns the copies to the knots
      * and polynomials properties, respectively.</p>
      *
-     * @param knots spline segment interval delimiters
+     * @param knots       spline segment interval delimiters
      * @param polynomials polynomial functions that make up the spline
-     * @throws NullPointerException if either of the input arrays is null
-     * @throws IllegalArgumentException if knots has length less than 2,
-     * <code>polynomials.length != knots.length - 1 </code>, or the knots array
-     * is not strictly increasing.
      *
+     * @throws NullPointerException     if either of the input arrays is null
+     * @throws IllegalArgumentException if knots has length less than 2,
+     *                                  <code>polynomials.length != knots.length - 1 </code>, or the knots array
+     *                                  is not strictly increasing.
      */
-    public PolynomialSplineFunction(double knots[], PolynomialFunction polynomials[]) {
+    PolynomialSplineFunction(double knots[], PolynomialFunction polynomials[]) {
         if (knots.length < 2) {
-            throw new IllegalArgumentException
-                ("Not enough knot values -- spline partition must have at least 2 points.");
+            throw new IllegalArgumentException(MessageFormat.format(
+                    "Spline partition must have at least {0} points, got {1}.", 2, knots.length));
         }
         if (knots.length - 1 != polynomials.length) {
-            throw new IllegalArgumentException
-            ("Number of polynomial interpolants must match the number of segments.");
+            throw new IllegalArgumentException(MessageFormat.format(
+                    "Number of polynomial interpolants must match the number of segments ({0} != {1} - 1).",
+                    polynomials.length, knots.length));
         }
         if (!isStrictlyIncreasing(knots)) {
-            throw new IllegalArgumentException
-                ("Knot values must be strictly increasing.");
+            throw new IllegalArgumentException(
+                    "Knot values must be strictly increasing.");
         }
 
-        this.n = knots.length -1;
+        this.n = knots.length - 1;
         this.knots = new double[n + 1];
         System.arraycopy(knots, 0, this.knots, 0, n + 1);
         this.polynomials = new PolynomialFunction[n];
@@ -124,14 +123,17 @@ public class PolynomialSplineFunction implements Serializable {
      * computing the value of the function.</p>
      *
      * @param v the point for which the function value should be computed
+     *
      * @return the value
-     * @throws ArgumentOutsideDomainException if v is outside of the domain of
-     * of the spline function (less than the smallest knot point or greater
-     * than the largest knot point)
+     *
+     * @throws IllegalArgumentException if v is outside of the domain of
+     *                                  of the spline function (less than the smallest knot point or greater
+     *                                  than the largest knot point)
      */
-    public double value(double v) throws IllegalArgumentException {
+    double value(double v) {
         if (v < knots[0] || v > knots[n]) {
-            throw new IllegalArgumentException("v="+v+" knots[0]="+knots[0]+" knots[n]="+knots[n]);
+            throw new IllegalArgumentException(MessageFormat.format(
+                    "Value {0} is out of the domain of the spline function ({1}, {2}).", v, knots[0], knots[n]));
         }
         int i = Arrays.binarySearch(knots, v);
         if (i < 0) {
@@ -140,61 +142,10 @@ public class PolynomialSplineFunction implements Serializable {
         //This will handle the case where v is the last knot value
         //There are only n-1 polynomials, so if v is the last knot
         //then we will use the last polynomial to calculate the value.
-        if ( i >= polynomials.length ) {
+        if (i >= polynomials.length) {
             i--;
         }
         return polynomials[i].value(v - knots[i]);
-    }
-
-    /**
-     * Returns the derivative of the polynomial spline function as a PolynomialSplineFunction
-     *
-     * @return  the derivative function
-     */
-    public PolynomialSplineFunction polynomialSplineDerivative() {
-        PolynomialFunction derivativePolynomials[] = new PolynomialFunction[n];
-        for (int i = 0; i < n; i++) {
-            derivativePolynomials[i] = polynomials[i].polynomialDerivative();
-        }
-        return new PolynomialSplineFunction(knots, derivativePolynomials);
-    }
-
-    /**
-     * Returns the number of spline segments = the number of polynomials
-     * = the number of knot points - 1.
-     *
-     * @return the number of spline segments
-     */
-    public int getN() {
-        return n;
-    }
-
-    /**
-     * Returns a copy of the interpolating polynomials array.
-     * <p>
-     * Returns a fresh copy of the array. Changes made to the copy will
-     * not affect the polynomials property.</p>
-     *
-     * @return the interpolating polynomials
-     */
-    public PolynomialFunction[] getPolynomials() {
-        PolynomialFunction p[] = new PolynomialFunction[n];
-        System.arraycopy(polynomials, 0, p, 0, n);
-        return p;
-    }
-
-    /**
-     * Returns an array copy of the knot points.
-     * <p>
-     * Returns a fresh copy of the array. Changes made to the copy
-     * will not affect the knots property.</p>
-     *
-     * @return the knot points
-     */
-    public double[] getKnots() {
-        double out[] = new double[n + 1];
-        System.arraycopy(knots, 0, out, 0, n + 1);
-        return out;
     }
 
     /**
@@ -202,8 +153,9 @@ public class PolynomialSplineFunction implements Serializable {
      * fashion.
      *
      * @param x the array to examine.
+     *
      * @return <code>true</code> if the elements in <code>x</code> are ordered
-     * in a stricly increasing manner.  <code>false</code>, otherwise.
+     *         in a stricly increasing manner.  <code>false</code>, otherwise.
      */
     private static boolean isStrictlyIncreasing(double[] x) {
         for (int i = 1; i < x.length; ++i) {
