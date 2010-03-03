@@ -20,7 +20,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductFilter;
 
 /**
- * Filters CHRIS/Proba products suitable for an atmospheric correction.
+ * Filters CHRIS/Proba products suitable for the atmospheric correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
@@ -29,7 +29,7 @@ import org.esa.beam.framework.datamodel.ProductFilter;
 class AtmosphericCorrectionProductFilter implements ProductFilter {
     @Override
     public boolean accept(Product product) {
-        if (!product.getProductType().matches("CHRIS_M[12345].*_NR")) {
+        if (product == null || !product.getProductType().matches("CHRIS_M[12345][0A]?_NR")) {
             return false;
         }
 

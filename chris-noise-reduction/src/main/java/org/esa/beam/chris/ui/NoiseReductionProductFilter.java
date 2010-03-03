@@ -17,27 +17,16 @@ package org.esa.beam.chris.ui;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductFilter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * Product filter for CHRIS noise reduction source products.
+ * Filters CHRIS/Proba products suitable for the noise correction.
  *
  * @author Ralf Quast
  * @version $Revision$ $Date$
  */
-class SourceProductFilter implements ProductFilter {
-    static final List<String> PRODUCT_TYPE_LIST;
-
-    static {
-        PRODUCT_TYPE_LIST = new ArrayList<String>(7);
-        Collections.addAll(PRODUCT_TYPE_LIST,
-                           "CHRIS_M1", "CHRIS_M2", "CHRIS_M3", "CHRIS_M30", "CHRIS_M3A", "CHRIS_M4", "CHRIS_M5");
-    }
+class NoiseReductionProductFilter implements ProductFilter {
 
     @Override
     public boolean accept(Product product) {
-        return product != null && PRODUCT_TYPE_LIST.contains(product.getProductType());
+        return product != null && product.getProductType().matches("CHRIS_M[12345][0A]?");
     }
 }
