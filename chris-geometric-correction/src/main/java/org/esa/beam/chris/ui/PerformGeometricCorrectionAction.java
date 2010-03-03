@@ -21,7 +21,6 @@ import org.esa.beam.chris.operators.TimeConverter;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
-import org.esa.beam.framework.ui.AppContext;
 import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
@@ -30,8 +29,6 @@ import org.esa.beam.visat.actions.AbstractVisatAction;
 import javax.swing.JOptionPane;
 import java.awt.Window;
 import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,16 +42,13 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
 
     private static final String TITLE = "CHRIS/Proba Geometric Correction";
     private static final String KEY_FETCH_LATEST_TIME_TABLES = "beam.chris.fetchLatestTimeTables";
-    private static final int UPDATE_PERIOD = 7;
+    private static final String QUESTION_FETCH_LATEST_TIME_TABLES =
+            "Your UT1 and leap second time tables are older than 7 days. Fetching\n" +
+            "the latest time tables from the web can take a few minutes.\n" +
+            "\n" +
+            "Do you want to fetch the latest time tables now?";
 
     private final AtomicReference<ModelessDialog> dialog;
-    private static final String QUESTION_FETCH_LATEST_TIME_TABLES =
-            MessageFormat.format(
-                    "Your UT1 and leap second time tables are older than {0} days. Fetching\n" +
-                    "the latest time tables from the web can take a few minutes.\n" +
-                    "\n" +
-                    "Do you want to fetch the latest time tables now?",
-                    UPDATE_PERIOD);
 
     public PerformGeometricCorrectionAction() {
         dialog = new AtomicReference<ModelessDialog>();
@@ -67,19 +61,22 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
         try {
             converter = TimeConverter.getInstance();
         } catch (IOException e) {
-            handleError("The geometric correction cannot be carried out because an error occurred.", e);
+            getAppContext().handleError("The geometric correction cannot be carried out because an error occurred.", e);
             return;
         }
-        if (isTimeConverterOudated(converter, UPDATE_PERIOD)) {
+        if (converter.isOutdated()) {
             final int answer = showQuestionDialog(QUESTION_FETCH_LATEST_TIME_TABLES, KEY_FETCH_LATEST_TIME_TABLES);
             if (answer == JOptionPane.YES_OPTION) {
-                new TimeConverterUpdater(getAppContext().getApplicationWindow(), TITLE, converter).execute();
+                final Window applicationWindow = getAppContext().getApplicationWindow();
+                final TimeConverterUpdater updater = new TimeConverterUpdater(applicationWindow, TITLE, converter);
+                updater.execute();
+                // dialog is created and shown when updater is done
             } else {
-                dialog.compareAndSet(null, createDialog(getAppContext()));
+                dialog.compareAndSet(null, createDialog());
                 dialog.get().show();
             }
         } else {
-            dialog.compareAndSet(null, createDialog(getAppContext()));
+            dialog.compareAndSet(null, createDialog());
             dialog.get().show();
         }
     }
@@ -90,31 +87,14 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
         setEnabled(selectedProduct == null || new GeometricCorrectionProductFilter().accept(selectedProduct));
     }
 
-    private void handleError(String message, Throwable e) {
-        getAppContext().handleError(message, e);
-    }
-
-    private static ModelessDialog createDialog(AppContext appContext) {
+    private ModelessDialog createDialog() {
+        final String operatorAlias = OperatorSpi.getOperatorAlias(PerformGeometricCorrectionOp.class);
         final DefaultSingleTargetProductDialog dialog =
-                new DefaultSingleTargetProductDialog(OperatorSpi.getOperatorAlias(PerformGeometricCorrectionOp.class),
-                                                     appContext, TITLE, "chrisGeometricCorrectionTool");
+                new DefaultSingleTargetProductDialog(operatorAlias, getAppContext(), TITLE, getHelpId());
         dialog.getJDialog().setName("chrisGeometricCorrectionDialog");
         dialog.setTargetProductNameSuffix("_GC");
 
         return dialog;
-    }
-
-    private static void showInfoDialog(String message) {
-        VisatApp.getApp().showInfoDialog(TITLE, message, null);
-    }
-
-    private static int showQuestionDialog(String message, String preferencesKey) {
-        return VisatApp.getApp().showQuestionDialog(TITLE, message, preferencesKey);
-    }
-
-    private static boolean isTimeConverterOudated(TimeConverter converter, int days) {
-        final Date now = new Date();
-        return now.getTime() - converter.lastModified() > days * TimeConverter.MILLIS_PER_DAY;
     }
 
     private class TimeConverterUpdater extends ProgressMonitorSwingWorker<Object, Object> {
@@ -137,15 +117,24 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
             try {
                 get();
             } catch (InterruptedException e) {
-                handleError("An error occurred while updating the UT1 and leap second time tables.", e);
+                getAppContext().handleError("An error occurred while updating the UT1 and leap second time tables.", e);
                 return;
             } catch (ExecutionException e) {
-                handleError("An error occurred while updating the UT1 and leap second time tables.", e.getCause());
+                getAppContext().handleError("An error occurred while updating the UT1 and leap second time tables.",
+                                            e.getCause());
                 return;
             }
             showInfoDialog("The UT1 and leap second time tables have been updated successfully.");
-            dialog.compareAndSet(null, createDialog(getAppContext()));
+            dialog.compareAndSet(null, createDialog());
             dialog.get().show();
         }
+    }
+
+    private static void showInfoDialog(String message) {
+        VisatApp.getApp().showInfoDialog(TITLE, message, null);
+    }
+
+    private static int showQuestionDialog(String message, String preferencesKey) {
+        return VisatApp.getApp().showQuestionDialog(TITLE, message, preferencesKey);
     }
 }

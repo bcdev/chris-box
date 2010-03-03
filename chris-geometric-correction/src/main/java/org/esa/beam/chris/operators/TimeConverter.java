@@ -158,6 +158,18 @@ public class TimeConverter {
     }
 
     /**
+     * Returns {@code true}, when the time tables used by an
+     * instance of this class are older than seven days.
+     *
+     * @return {@code true}, when the time tables used by an
+     *         instance of this class are older than seven days,
+     *         {@code false} otherwise.
+     */
+    public boolean isOutdated() {
+        return new Date().getTime() - lastModified() > 6.048E8;
+    }
+
+    /**
      * Returns the date (in millis) when the time tables used by an
      * instance of this class were last modified (updated).
      *
