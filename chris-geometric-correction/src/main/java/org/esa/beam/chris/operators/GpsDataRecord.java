@@ -104,7 +104,7 @@ class GpsDataRecord {
                 readRecords = readRecords(csvReader);
             } catch (IOException e) {
                 try {
-                    is.close();
+                    csvReader.close();
                 } catch (IOException e1) {
                     // ignore
                 }

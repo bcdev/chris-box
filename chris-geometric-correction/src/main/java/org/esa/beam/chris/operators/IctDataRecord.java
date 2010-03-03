@@ -26,7 +26,7 @@ import java.util.List;
 
 
 /**
- * Handle image center time reading and calculation
+ * Handle image center time reading and calculation.
  *
  * @author Marco Zuehlke
  * @version $Revision$ $Date$
@@ -34,7 +34,7 @@ import java.util.List;
 class IctDataRecord {
 
     private static final double DAY_SEC = 86400.0;
-    // Julian Date (JD) of  1999-12-26 00:00
+    // Julian Date (JD) of 1999-12-26 00:00
     private static final double JD0 = TimeConverter.julianDate(1999, 11, 26);
 
     final double ict1;
@@ -73,7 +73,7 @@ class IctDataRecord {
                 record = readRecords(csvReader);
             } catch (IOException e) {
                 try {
-                    is.close();
+                    csvReader.close();
                 } catch (IOException e1) {
                     // ignore
                 }

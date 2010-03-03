@@ -12,10 +12,10 @@ class Intersector {
      * <p/>
      * Note that all parameters must be arrays of length 3.
      *
-     * @param point     any point on the straight line. On return contains
-     *                  the intersection point closest this point.
+     * @param point     any point on the straight line. On return contains the
+     *                  intersection point, which is closest to this point.
      *                  If the straight line and the ellipsoid do not intersect,
-     *                  all coordinates are {@link Double#NaN}.
+     *                  all coordinates of this point are {@link Double#NaN}.
      * @param direction the direction of the straight line.
      * @param center    the center of the ellipsoid.
      * @param radii     the radii of the ellipsoid.

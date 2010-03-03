@@ -7,8 +7,6 @@ class CoordinateConverter {
      */
     private static final double WE = 7.292115854788046E-5;
 
-    private final double c;
-    private final double s;
     /**
      * Flattening of WGS-84 ellipsoid.
      */
@@ -25,8 +23,12 @@ class CoordinateConverter {
      * Minor radius of WGS-84 ellipsoid (km).
      */
     private static final double WGS84_B = WGS84_A * (1.0 - WGS84_F);
+
     private static final double ONE_THIRD = 1.0 / 3.0;
     private static final double FOUR_THIRD = 4.0 / 3.0;
+
+    private final double c;
+    private final double s;
 
     public static double[] ecefToEci(double gst, double[] ecef, double[] eci) {
         if (ecef == null) {

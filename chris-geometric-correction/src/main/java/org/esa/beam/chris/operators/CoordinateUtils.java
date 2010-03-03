@@ -36,17 +36,16 @@ class CoordinateUtils {
      */
     static double[] angVel(double[] secs, double[] xeci, double[] yeci, double[] zeci) {
         double[] av = new double[secs.length];
-        for (int i = 0; i < (av.length - 1); i++) {
+        for (int i = 0; i < av.length - 1; i++) {
             double a = vectAngle(xeci[i], yeci[i], zeci[i], xeci[i + 1], yeci[i + 1], zeci[i + 1]);
-            double b = secs[i] - secs[i + 1];
+            double b = secs[i + 1] - secs[i];
 
-            av[i] = a / Math.abs(b);
+            av[i] = a / b;
         }
         double a = vectAngle(xeci[0], yeci[0], zeci[0], xeci[secs.length - 1], yeci[secs.length - 1],
                              zeci[secs.length - 1]);
-        double b = secs[0] - secs[secs.length - 1];
-
-        av[secs.length - 1] = a / Math.abs(b);
+        double b = secs[secs.length - 1] - secs[0];
+        av[secs.length - 1] = a / b;
         return av;
     }
 
