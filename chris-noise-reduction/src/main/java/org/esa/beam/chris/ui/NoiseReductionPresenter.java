@@ -199,7 +199,7 @@ class NoiseReductionPresenter {
             throw new NoiseReductionValidationException("Product is already contained in the acquisition set.");
         }
 
-        final SourceProductFilter sourceProductFilter = new SourceProductFilter();
+        final NoiseReductionProductFilter sourceProductFilter = new NoiseReductionProductFilter();
         if (!sourceProductFilter.accept(product)) {
             throw new NoiseReductionValidationException(MessageFormat.format(
                     "Product type ''{0}''is not valid.", product.getProductType()));

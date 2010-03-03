@@ -42,7 +42,7 @@ class AcquisitionSetProvider {
                 });
 
         final Product selectedProduct = appContext.getSelectedProduct();
-        final SourceProductFilter sourceProductFilter = new SourceProductFilter();
+        final NoiseReductionProductFilter sourceProductFilter = new NoiseReductionProductFilter();
         if (!sourceProductFilter.accept(selectedProduct)) {
             return new Product[0];
         }

@@ -125,7 +125,7 @@ public class NoiseReductionAction extends AbstractVisatAction {
     @Override
     public void updateState() {
         final Product selectedProduct = getAppContext().getSelectedProduct();
-        setEnabled(selectedProduct == null || new SourceProductFilter().accept(selectedProduct));
+        setEnabled(selectedProduct == null || new NoiseReductionProductFilter().accept(selectedProduct));
     }
 
     private void performNoiseReduction(NoiseReductionPresenter presenter,
