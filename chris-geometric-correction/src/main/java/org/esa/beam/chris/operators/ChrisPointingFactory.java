@@ -6,6 +6,7 @@ import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.RasterDataNode;
 import org.esa.beam.framework.datamodel.TiePointGridPointing;
 
+// TODO - remove me
 public final class ChrisPointingFactory implements PointingFactory {
 
     @Override
