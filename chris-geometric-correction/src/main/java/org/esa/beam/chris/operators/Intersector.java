@@ -18,25 +18,25 @@ class Intersector {
      *                  all coordinates of this point are {@link Double#NaN}.
      * @param direction the direction of the straight line.
      * @param center    the center of the ellipsoid.
-     * @param radii     the radii of the ellipsoid.
+     * @param semiAxes  the semi-axes of the ellipsoid.
      */
-    public static void intersect(double[] point, double[] direction, double[] center, double[] radii) {
+    public static void intersect(double[] point, double[] direction, double[] center, double[] semiAxes) {
         Assert.notNull(point);
         Assert.notNull(direction);
         Assert.notNull(center);
-        Assert.notNull(radii);
+        Assert.notNull(semiAxes);
 
         Assert.argument(point.length == 3);
         Assert.argument(direction.length == 3);
         Assert.argument(center.length == 3);
-        Assert.argument(radii.length == 3);
+        Assert.argument(semiAxes.length == 3);
 
         double a = 0.0;
         double b = 0.0;
         double c = 0.0;
         for (int i = 0; i < 3; i++) {
             final double q = point[i] - center[i];
-            final double rr = radii[i] * radii[i];
+            final double rr = semiAxes[i] * semiAxes[i];
             a += (direction[i] * direction[i]) / rr;
             b += (direction[i] * q) / rr;
             c += (q * q) / rr;

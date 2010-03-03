@@ -2,12 +2,14 @@ package org.esa.beam.chris.operators;
 
 class PositionCalculator {
 
-    private static final double R = 6378.137;
-    private static final double F = 1.0 / 298.257223563;
     private static final double JD2001 = TimeConverter.julianDate(2001, 0, 1);
 
-    private static final double[] ELLIPSOID_RADII = new double[]{R, R, (1.0 - F) * R};
-    private static final double[] ELLIPSOID_CENTER = new double[3];
+    private static final double WGS84_INVERSE_FLATTENING = 1.0 / 298.257223563;
+    private static final double WGS84_SEMI_MAJOR = 6378.137;
+    private static final double WGS84_SEMI_MINOR = WGS84_SEMI_MAJOR * (1.0 - WGS84_INVERSE_FLATTENING);
+    
+    private static final double[] WGS84_SEMI_AXES = new double[]{WGS84_SEMI_MAJOR, WGS84_SEMI_MAJOR, WGS84_SEMI_MINOR};
+    private static final double[] WGS84_CENTER = new double[3];
 
     private static final int X = 0;
     private static final int Y = 1;
@@ -64,8 +66,8 @@ class PositionCalculator {
                 pos[Y] = satY[i];
                 pos[Z] = satZ[i];
 
-                Intersector.intersect(pos, pointings[i][j], ELLIPSOID_CENTER, ELLIPSOID_RADII);
-                final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(pos[X], 
+                Intersector.intersect(pos, pointings[i][j], WGS84_CENTER, WGS84_SEMI_AXES);
+                final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(pos[X],
                                                                                        pos[Y],
                                                                                        pos[Z],
                                                                                        satX[i],
