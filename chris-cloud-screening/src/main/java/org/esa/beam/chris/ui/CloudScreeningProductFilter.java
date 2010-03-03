@@ -29,7 +29,7 @@ import org.esa.beam.framework.datamodel.ProductFilter;
 class CloudScreeningProductFilter implements ProductFilter {
     @Override
     public boolean accept(Product product) {
-        if (!product.getProductType().matches("CHRIS_M[12345].*_NR")) {
+        if (product == null || !product.getProductType().matches("CHRIS_M[12345][0A]?_NR")) {
             return false;
         }
 
