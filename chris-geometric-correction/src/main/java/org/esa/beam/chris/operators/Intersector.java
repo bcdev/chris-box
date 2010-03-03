@@ -3,7 +3,8 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.Assert;
 
 /**
- * Utility class for calculating the intersection of a straight line and an ellipsoid.
+ * Utility class for calculating the intersection of a straight line, which is defined
+ * by a point and a direction, and an ellipsoid.
  */
 class Intersector {
 
