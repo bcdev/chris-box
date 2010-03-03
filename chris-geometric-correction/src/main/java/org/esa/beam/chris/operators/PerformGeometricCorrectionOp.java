@@ -24,7 +24,6 @@ import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
-import org.esa.beam.framework.datamodel.GeoPos;
 import org.esa.beam.framework.datamodel.Placemark;
 import org.esa.beam.framework.datamodel.PointingFactoryRegistry;
 import org.esa.beam.framework.datamodel.Product;
@@ -283,9 +282,9 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int img = info.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double targetAltitude = 0.0; //info.getTargetAlt() / 1000;
+        final double targetAltitude = info.getTargetAlt() / 1000;
         final double[] TGTecf = CoordinateConverter.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude,
-                                                      new double[3]);
+                                                              new double[3]);
 
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
@@ -306,23 +305,17 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
 
         final ProductNodeGroup<Placemark> gcpGroup = sourceProduct.getGcpGroup();
-        final int gcpCount = gcpGroup.getNodeCount();
-        int gcpIndex = -1;
-        if (gcpCount > 0) {
-            gcpIndex = findGcpNearPixelPos(mode.getNCols() / 2, mode.getNLines() / 2, gcpGroup);
-            // we assume only one GCP at target altitude
-            final Placemark gcp = gcpGroup.get(gcpIndex);
-            final GeoPos gcpPos = gcp.getGeoPos();
+        final GCP[] gcps = GCP.toGCPs(gcpGroup, targetAltitude);
+        final int bestGcpIndex = findBestGCP(mode.getNCols() / 2, mode.getNLines() / 2, gcps);
 
-            if (gcpPos == null) {
-                throw new OperatorException("GCP without geolocation found,");
-            }
+        if (bestGcpIndex != -1) {
+            final GCP gcp = gcps[bestGcpIndex];
 
             /**
              * 0. Calculate GCP position in ECEF
              */
             final double[] GCP_ecf = new double[3];
-            CoordinateConverter.wgsToEcef(gcpPos.getLon(), gcpPos.getLat(), targetAltitude, GCP_ecf);
+            CoordinateConverter.wgsToEcef(gcp.getLon(), gcp.getLat(), gcp.getAlt(), GCP_ecf);
             final double[] wgs = CoordinateConverter.ecefToWgs(GCP_ecf[0], GCP_ecf[1], GCP_ecf[2], new double[3]);
             System.out.println("lon = " + wgs[X]);
             System.out.println("lat = " + wgs[Y]);
@@ -351,9 +344,10 @@ public class PerformGeometricCorrectionOp extends Operator {
             for (int i = Tini[img]; i <= Tend[img]; i++) {
                 double[] pos = iTGT0_ecf[i];
                 final double diff = Math.sqrt(
-                        Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(pos[Z] - GCP_ecf[Z]));
-//                System.out.println("i = " + (i - Tini[img]));
-//                System.out.println("diff = " + diff);
+                        Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(
+                                pos[Z] - GCP_ecf[Z]));
+                //                System.out.println("i = " + (i - Tini[img]));
+                //                System.out.println("diff = " + diff);
                 if (diff < minDiff) {
                     minDiff = diff;
                     tmin = T[i];
@@ -366,9 +360,9 @@ public class PerformGeometricCorrectionOp extends Operator {
             System.out.println("wmin = " + wmin);
             final double dY;
             if (info.isBackscanning()) {
-                dY = (wmin % mode.getNLines()) - (mode.getNLines() - gcp.getPixelPos().getY() + 0.5);
+                dY = (wmin % mode.getNLines()) - (mode.getNLines() - gcp.getY() + 0.5);
             } else {
-                dY = (wmin % mode.getNLines()) - (gcp.getPixelPos().getY() + 0.5);
+                dY = (wmin % mode.getNLines()) - (gcp.getY() + 0.5);
             }
 //            final double dT = tmin - T_ict[img];
 //            final double dT = tmin - T_img[(int) gcp.getPixelPos().getY()][img];
@@ -379,9 +373,9 @@ public class PerformGeometricCorrectionOp extends Operator {
              * 3. Update T[]: add dT to all times in T[].
              */
             for (int i = 0; i < T.length; i++) {
-//                System.out.println("T[i] = " + T[i]);
+                //                System.out.println("T[i] = " + T[i]);
                 final double newT = T[i] + dT; //tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
-//                System.out.println("newT = " + newT);
+                //                System.out.println("newT = " + newT);
                 T[i] = newT;
             }
             for (int line = 0; line < mode.getNLines(); line++) {
@@ -398,7 +392,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             for (int i = 0; i < T.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD0);
                 CoordinateConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
-//                CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
+                //                CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
             }
 
 //// COPIED FROM ABOVE
@@ -454,7 +448,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                 System.out.println("lon = " + p[X]);
                 System.out.println("lat = " + p[Y]);
                 System.out.println();
-//                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
+                //                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
             }
 
 
@@ -495,15 +489,15 @@ public class PerformGeometricCorrectionOp extends Operator {
         // IF info.Mode NE 5 THEN nC2 = nCols/2 ELSE nC2 = nCols-1		; Determine the column number of the middle of the CCD
         // dRoll = (nC2-GCP[X])*IFOV									; calculates the IFOV angle difference from GCP0's pixel column to the image central pixel (the nominal target)
         double dRoll = 0.0;
-        if (gcpCount != 0) {
+        if (bestGcpIndex != -1) {
             final int nC2;
             if (info.getMode() != 5) {
                 nC2 = mode.getNCols() / 2;
             } else {
                 nC2 = mode.getNCols() - 1;
             }
-            final Placemark gcp = gcpGroup.get(gcpIndex);
-            dRoll = (nC2 - gcp.getPixelPos().getX()) * mode.getIfov();
+            final GCP gcp = gcps[bestGcpIndex];
+            dRoll = (nC2 - gcp.getX()) * mode.getIfov();
         }
 
         //==== Calculates View Angles ==============================================
@@ -517,7 +511,6 @@ public class PerformGeometricCorrectionOp extends Operator {
             double SatX = iX[Tini[img] + i];
             double SatY = iY[Tini[img] + i];
             double SatZ = iZ[Tini[img] + i];
-            double TgtLat = info.getTargetLat();
             ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ);
 
             // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
@@ -647,6 +640,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                            rollRotation);
 
         // a. if there ar more than 2 GCPs we can calculate deltas for the pointing angle
+        final int gcpCount = gcps.length;
         if (gcpCount > 2) {
             final double[] xCoords = new double[gcpCount];
             final double[] yCoords = new double[gcpCount];
@@ -654,12 +648,12 @@ public class PerformGeometricCorrectionOp extends Operator {
             final double[] deltaRoll = new double[gcpCount];
 
             for (int i = 0; i < gcpCount; i++) {
-                final Placemark gcp = gcpGroup.get(i);
-                final double[] realPointing = DOIT(img, T, Tini, gcp, targetAltitude, iX, iY, iZ, pitchAxes, yawAxes);
-                xCoords[i] = gcp.getPixelPos().getX();
-                yCoords[i] = gcp.getPixelPos().getY();
-                deltaPitch[i] = realPointing[0] - pitchRotation[(int) yCoords[i]][(int) xCoords[i]];
-                deltaRoll[i] = realPointing[1] - rollRotation[(int) yCoords[i]][(int) xCoords[i]];
+                final GCP gcp = gcps[i];
+                final double[] realPointing = DOIT(img, T, Tini, gcp, iX, iY, iZ, pitchAxes, yawAxes);
+                xCoords[i] = gcp.getX();
+                yCoords[i] = gcp.getY();
+                deltaPitch[i] = realPointing[0] - pitchRotation[gcp.getRow()][gcp.getCol()];
+                deltaRoll[i] = realPointing[1] - rollRotation[gcp.getRow()][gcp.getCol()];
             }
 
             final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaPitch);
@@ -691,23 +685,21 @@ public class PerformGeometricCorrectionOp extends Operator {
                 vzas);
 
         final Product targetProduct = createTargetProduct();
-        // todo - compute viewing angles
         // todo - add pitch and roll rotations per pixel for Luis A.
 
 
         setTargetProduct(targetProduct);
     }
 
-    private double[] DOIT(int img, double[] T, int[] Tini, Placemark gcp, double targetAltitude, double[] iX,
+    private double[] DOIT(int img, double[] T, int[] Tini, GCP gcp, double[] iX,
                           double[] iY, double[] iZ, double[][] uEjePitch, double[][] uEjeYaw) {
-        final int x = (int) gcp.getPixelPos().getX();
-        final int y = (int) gcp.getPixelPos().getY();
-        final double lon = gcp.getGeoPos().getLon();
-        final double lat = gcp.getGeoPos().getLat();
+        final int x = (int) gcp.getX();
+        final int y = (int) gcp.getY();
+        final double lon = gcp.getLon();
+        final double lat = gcp.getLat();
 
         final double[] gcpEcef = new double[3];
-        // todo - replace TgtAlt with altitude from GCP
-        CoordinateConverter.wgsToEcef(lon, lat, targetAltitude, gcpEcef);
+        CoordinateConverter.wgsToEcef(lon, lat, gcp.getAlt(), gcpEcef);
 
         final int row = Tini[img] + y;
         final double gst = TimeConverter.jdToGST(T[row] + JD0);
@@ -762,21 +754,19 @@ public class PerformGeometricCorrectionOp extends Operator {
         return new double[]{uPitchAng, uRollAng};
     }
 
-    private int findGcpNearPixelPos(int x, int y, ProductNodeGroup<Placemark> gcpGroup) {
+    private int findBestGCP(int x, int y, GCP[] gcps) {
         int minIndex = -1;
         double minDelta = Double.POSITIVE_INFINITY;
 
-        for (int i = 0; i < gcpGroup.getNodeCount(); i++) {
-            final Placemark gcp = gcpGroup.get(i);
-            final double dx = gcp.getPixelPos().getX() - x;
-            final double dy = gcp.getPixelPos().getY() - y;
+        for (int i = 0; i < gcps.length; i++) {
+            final double dx = gcps[i].getX() - x;
+            final double dy = gcps[i].getY() - y;
             final double delta = dx * dx + dy * dy;
             if (delta < minDelta) {
                 minDelta = delta;
                 minIndex = i;
             }
         }
-
         return minIndex;
     }
 
@@ -888,7 +878,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         targetProduct.addTiePointGrid(vzaGrid);
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
         targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(type));
-        
+
         pixelLonBand = targetProduct.addBand("pixelLon", ProductData.TYPE_FLOAT64);
         pixelLatBand = targetProduct.addBand("pixelLat", ProductData.TYPE_FLOAT64);
 

@@ -58,26 +58,26 @@ class PositionCalculator {
             }
         }
 
-        final double[] pos = new double[3];
+        final double[] point = new double[3];
         for (int i = 0; i < rowCount; i++) {
             final double gst = TimeConverter.jdToGST(satT[i] + JD2001);
             for (int j = 0; j < colCount; j++) {
-                pos[X] = satX[i];
-                pos[Y] = satY[i];
-                pos[Z] = satZ[i];
+                point[X] = satX[i];
+                point[Y] = satY[i];
+                point[Z] = satZ[i];
 
-                Intersector.intersect(pos, pointings[i][j], WGS84_CENTER, WGS84_SEMI_AXES);
-                final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(pos[X],
-                                                                                       pos[Y],
-                                                                                       pos[Z],
+                Intersector.intersect(point, pointings[i][j], WGS84_CENTER, WGS84_SEMI_AXES);
+                final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(point[X],
+                                                                                       point[Y],
+                                                                                       point[Z],
                                                                                        satX[i],
                                                                                        satY[i],
                                                                                        satZ[i]);
-                vaa[i][j] = viewAng.azi;
-                vza[i][j] = viewAng.zen;
+                vaa[i][j] = Math.toDegrees(viewAng.azi);
+                vza[i][j] = Math.toDegrees(viewAng.zen);
 
-                CoordinateConverter.eciToEcef(gst, pos, pos);
-                final double[] wgs = CoordinateConverter.ecefToWgs(pos[X], pos[Y], pos[Z], new double[3]);
+                CoordinateConverter.eciToEcef(gst, point, point);
+                final double[] wgs = CoordinateConverter.ecefToWgs(point[X], point[Y], point[Z], new double[3]);
                 lons[i][j] = wgs[X];
                 lats[i][j] = wgs[Y];
             }

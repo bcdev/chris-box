@@ -109,7 +109,7 @@ class CoordinateUtils {
             AZI += 2.0 * Math.PI;
         }
         AZI = AZI % (2.0 * Math.PI);
-        double ZEN = Math.PI / 2 - Math.asin(top_z / Rango);
+        double ZEN = Math.PI / 2.0 - Math.asin(top_z / Rango);
 
         return new ViewAng(AZI, ZEN, RangX, RangY, RangZ);
     }
