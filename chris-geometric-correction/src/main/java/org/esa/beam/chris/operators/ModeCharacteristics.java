@@ -42,7 +42,7 @@ class ModeCharacteristics {
     private final int rowCount;
     private final double integrationTimePerLine;
 
-    static ModeCharacteristics getInstance(int mode) {
+    static ModeCharacteristics get(int mode) {
         switch (mode) {
         case 0:
             return MODE_0;
