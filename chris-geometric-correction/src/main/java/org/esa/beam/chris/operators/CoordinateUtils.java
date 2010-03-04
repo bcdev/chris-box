@@ -32,25 +32,22 @@ class CoordinateUtils {
      *
      * @return the Angular Velocity for a given 3D trajectory
      */
-    static double[] angVel(double[] secs, double[] xeci, double[] yeci, double[] zeci) {
+    static double[] angularVelocity(double[] secs, double[] xeci, double[] yeci, double[] zeci) {
         double[] av = new double[secs.length];
         for (int i = 0; i < av.length - 1; i++) {
-            double a = vectAngle(xeci[i], yeci[i], zeci[i], xeci[i + 1], yeci[i + 1], zeci[i + 1]);
+            double a = angle(xeci[i], yeci[i], zeci[i], xeci[i + 1], yeci[i + 1], zeci[i + 1]);
             double b = secs[i + 1] - secs[i];
 
             av[i] = a / b;
         }
-        double a = vectAngle(xeci[0], yeci[0], zeci[0], xeci[secs.length - 1], yeci[secs.length - 1],
-                             zeci[secs.length - 1]);
+        double a = angle(xeci[0], yeci[0], zeci[0], xeci[secs.length - 1], yeci[secs.length - 1],
+                         zeci[secs.length - 1]);
         double b = secs[secs.length - 1] - secs[0];
         av[secs.length - 1] = a / b;
         return av;
     }
 
-    /**
-     * Angular distance between points.
-     */
-    static double vectAngle(double x1, double y1, double z1, double x2, double y2, double z2) {
+    static double angle(double x1, double y1, double z1, double x2, double y2, double z2) {
         // compute the scalar product
         final double cs = x1 * x2 + y1 * y2 + z1 * z2;
         // compute the vector product
@@ -59,10 +56,10 @@ class CoordinateUtils {
         final double w = x1 * y2 - y1 * x2;
 
         final double sn = Math.sqrt(u * u + v * v + w * w);
-        return angle(cs, sn);
+        return polarAngle(cs, sn);
     }
 
-    private static double angle(double x, double y) {
+    private static double polarAngle(double x, double y) {
         double angle = 0.0;
         if (x != 0 && y != 0) {
             angle = Math.atan2(y, x);
