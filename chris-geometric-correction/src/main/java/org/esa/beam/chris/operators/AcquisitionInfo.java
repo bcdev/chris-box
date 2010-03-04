@@ -22,7 +22,7 @@ class AcquisitionInfo {
         } else {
             mode = Integer.parseInt(modeString);
         }
-        final double alt = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_ALT);
+        final double alt = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_ALT) / 1000.0;
         final double lat = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LAT);
         final double lon = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LON);
         final int imageNumber = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_IMAGE_NUMBER, 0, 1);
