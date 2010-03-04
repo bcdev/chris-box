@@ -98,8 +98,8 @@ public class PerformGeometricCorrectionOp extends Operator {
     }
 
     private Product createTargetProduct(GeometryCalculator calculator, boolean backscanning) {
-        final String type = sourceProduct.getProductType() + "_GC";
-        final Product targetProduct = createCopy(sourceProduct, "GC", type, new BandFilter() {
+        final String productType = sourceProduct.getProductType() + "_GC";
+        final Product targetProduct = createCopy(sourceProduct, "GC", productType, new BandFilter() {
             @Override
             public boolean accept(Band band) {
                 return true;
@@ -144,7 +144,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
 
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
-        targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(type));
+        targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(productType));
 
         return targetProduct;
     }
