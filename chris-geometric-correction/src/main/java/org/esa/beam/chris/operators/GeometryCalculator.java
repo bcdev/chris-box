@@ -116,12 +116,6 @@ class GeometryCalculator {
             }
         }
 
-        //double Tobs = T_e - T_i; // Duration of "imaging mode" for each image. (redundant, should be 20s)
-//        double[] Tobs2 = new double[T_end.length]; // Duration of actual imaging for each image
-//        for (int i = 0; i < Tobs2.length; i++) {
-//            Tobs2[i] = T_end[i] - T_ini[i];
-//        }
-
         // Set the indices of T that correspond to critical times (integration start and stop) for each image
 
         // The first element of T corresponds to the acquisition-setup time, so Tini[0] must skip element 0 of T
@@ -204,21 +198,6 @@ class GeometryCalculator {
         smoother.smooth(AngVelRawSubset, AngVel);
         double[] iAngVel = interpolate(gps_njd, AngVel, T);
 
-        // ==v==v== Initialize Variables ======================================================
-
-        //double[][] Range = new double[3][mode.getNLines()];
-        //double[][] EjeYaw = new double[3][mode.getNLines()];
-        //double[][] EjePitch = new double[3][mode.getNLines()];
-        //double[][] EjeRoll = new double[3][mode.getNLines()];
-        //double[][] SP = new double[3][mode.getNLines()];
-        //double[][] SL = new double[3][mode.getNLines()];
-        //double[] PitchAng = new double[mode.getNLines()];
-        //double[] RollAng = new double[mode.getNLines()];
-        //double[][] PitchAngR = new double[mode.getNCols()][mode.getNLines()];
-        //double[][] RollAngR = new double[mode.getNCols()][mode.getNLines()];
-        //double[] ObsAngAzi = new double[mode.getNLines()];
-        //double[] ObsAngZen = new double[mode.getNLines()];
-
         // ===== Process the correct image ==========================================
 
         final int img = acquisitionInfo.getChronologicalImageNumber();
@@ -273,10 +252,6 @@ class GeometryCalculator {
                 CoordinateConverter.eciToEcef(gst, iTGT0[i], iTGT0_ecf[i]);
             }
 
-            // Find the closest point
-            // diff = SQRT((iTGT0_ecf[X,*] - GCP_ecf[X])^2 + (iTGT0_ecf[Y,*] - GCP_ecf[Y])^2 + (iTGT0_ecf[Z,*] - GCP_ecf[Z])^2)	; Calculates the distance between the GCP and each point of the moving target
-            // mn = min(diff,wmin) ; Finds where the minimun point is located (wmin)
-
             /**
              * 2. Find time offset dT
              */
@@ -288,8 +263,6 @@ class GeometryCalculator {
                 final double diff = Math.sqrt(
                         Pow.pow2(pos[X] - GCP_ecf[X]) + Pow.pow2(pos[Y] - GCP_ecf[Y]) + Pow.pow2(
                                 pos[Z] - GCP_ecf[Z]));
-                //                System.out.println("i = " + (i - Tini[img]));
-                //                System.out.println("diff = " + diff);
                 if (diff < minDiff) {
                     minDiff = diff;
                     tmin = T[i];
@@ -297,17 +270,12 @@ class GeometryCalculator {
                 }
             }
 
-            System.out.println("minDiff = " + minDiff);
-            System.out.println("tmin = " + tmin);
-            System.out.println("wmin = " + wmin);
             final double dY;
             if (acquisitionInfo.isBackscanning()) {
                 dY = (wmin % modeCharacteristics.getRowCount()) - (modeCharacteristics.getRowCount() - gcp.getY() + 0.5);
             } else {
                 dY = (wmin % modeCharacteristics.getRowCount()) - (gcp.getY() + 0.5);
             }
-//            final double dT = tmin - T_ict[img];
-//            final double dT = tmin - T_img[(int) gcp.getPixelPos().getY()][img];
             final double dT = (dY * modeCharacteristics.getTotalTimePerLine()) / TimeConverter.SECONDS_PER_DAY;
             System.out.println("dT = " + dT);
 
@@ -315,9 +283,7 @@ class GeometryCalculator {
              * 3. Update T[]: add dT to all times in T[].
              */
             for (int i = 0; i < T.length; i++) {
-                //                System.out.println("T[i] = " + T[i]);
                 final double newT = T[i] + dT; //tmin + (mode.getDt() * (i - wmin)) / TimeConverter.SECONDS_PER_DAY;
-                //                System.out.println("newT = " + newT);
                 T[i] = newT;
             }
             for (int line = 0; line < modeCharacteristics.getRowCount(); line++) {
@@ -333,7 +299,6 @@ class GeometryCalculator {
             for (int i = 0; i < T.length; i++) {
                 final double gst = TimeConverter.jdToGST(T[i] + JD2001);
                 CoordinateConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
-                //                CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
             }
 
 //// COPIED FROM ABOVE
@@ -389,36 +354,7 @@ class GeometryCalculator {
                 System.out.println("lon = " + p[X]);
                 System.out.println("lat = " + p[Y]);
                 System.out.println();
-                //                Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
             }
-
-
-//            final DefaultXYDataset ds1 = new DefaultXYDataset();
-//            final double[][] ds1XY = new double[2][T.length];
-//            final double[][] ds2XY = new double[2][T.length];
-//            for (int i = 0; i < T.length; i++) {
-//                final double[] tmp = new double[3];
-//                CoordinateConverter.eciToEcef(TimeConverter.jdToGST(T2[i] + JD0), iTGT0[i], tmp);
-//                final Point2D p1 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
-//                ds1XY[0][i] = p1.getX();
-//                ds1XY[1][i] = p1.getY();
-//                CoordinateConverter.eciToEcef(TimeConverter.jdToGST(T[i] + JD0), GCP_eci[i], tmp);
-//                final Point2D p2 = Conversions.ecef2wgs(tmp[0], tmp[1], tmp[2]);
-//                ds2XY[0][i] = p2.getX();
-//                ds2XY[1][i] = p2.getY();
-//            }
-//            ds1.addSeries("Nominal", ds1XY);
-//            ds1.addSeries("GCP", ds2XY);
-//            final XYPlot xyPlot = new XYPlot(ds1, new NumberAxis("lon"), new NumberAxis("lat"),
-//                                             new StandardXYItemRenderer());
-//
-//            final JFreeChart chart = new JFreeChart(xyPlot);
-//            final ChartPanel chartPanel = new ChartPanel(chart);
-//            chartPanel.setVisible(true);
-//
-//            final JFrame frame = new JFrame("Plots");
-//            frame.add(chartPanel);
-//            frame.setVisible(true);
 
             iTGT0 = GCP_eci;
         } // gcpCount > 0;
@@ -457,9 +393,6 @@ class GeometryCalculator {
             viewRange[i][X] = viewingGeometry.x;
             viewRange[i][Y] = viewingGeometry.y;
             viewRange[i][Z] = viewingGeometry.z;
-
-            //ObsAngAzi[i] = viewingGeometry.azi;
-            //ObsAngZen[i] = viewingGeometry.zen;
         }
 
         // Observation angles are not needed for the geometric correction but they are used for research. They are a by-product.
@@ -474,11 +407,6 @@ class GeometryCalculator {
             yawAxes[i][Z] = iZ[Tini[img] + i];
         }
         yawAxes = toUnitVectors(yawAxes);
-//        for (int i = 0; i < mode.getNLines(); i++) {
-//            EjeYaw[X][i] = uEjeYaw[X][i];
-//            EjeYaw[Y][i] = uEjeYaw[Y][i];
-//            EjeYaw[Z][i] = uEjeYaw[Z][i];
-//        }
 
         double[][] pitchAxes = new double[modeCharacteristics.getRowCount()][3];
         for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
@@ -486,32 +414,14 @@ class GeometryCalculator {
             pitchAxes[i][Y] = uWop[Tini[img] + i][Y];
             pitchAxes[i][Z] = uWop[Tini[img] + i][Z];
         }
-//        for (int i = 0; i < mode.getNLines(); i++) {
-//            EjePitch[X][i] = uEjePitch[X][i] = uWop[X][Tini[img] + i];
-//            EjePitch[Y][i] = uEjePitch[Y][i] = uWop[Y][Tini[img] + i];
-//            EjePitch[Z][i] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
-//        }
 
         double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[modeCharacteristics.getRowCount()][3]);
-//        for (int i = 0; i < mode.getNLines(); i++) {
-//            EjeRoll[X][i] = uEjeRoll[X][i];
-//            EjeRoll[Y][i] = uEjeRoll[Y][i];
-//            EjeRoll[Z][i] = uEjeRoll[Z][i];
-//        }
 
         double[][] uRange = toUnitVectors(viewRange);
 
-        // ScanPlane:
-        //double[][] uSP = new double[3][mode.getNLines()];
-        //double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
-
-        // SightLine:
-        //double[][] uSL = new double[3][mode.getNLines()];
-        //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
 
         // RollSign:
         int[] uRollSign = new int[modeCharacteristics.getRowCount()];
-        //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
         double[][] uSP = vectorProducts(uRange, pitchAxes, new double[modeCharacteristics.getRowCount()][3]);
         double[][] uSL = vectorProducts(pitchAxes, uSP, new double[modeCharacteristics.getRowCount()][3]);
@@ -524,16 +434,6 @@ class GeometryCalculator {
             total += uRoll[i][Z] / uSP[i][Z];
             uRollSign[i] = (int) Math.signum(total);
         }
-
-//        for (int i = 0; i < mode.getNLines(); i++) {
-//            SP[X][i] = uSP[X][i];
-//            SP[Y][i] = uSP[Y][i];
-//            SP[Z][i] = uSP[Z][i];
-//
-//            SL[X][i] = uSL[X][i];
-//            SL[Y][i] = uSL[Y][i];
-//            SL[Z][i] = uSL[Z][i];
-//        }
 
         double[] centerPitchAngles = new double[modeCharacteristics.getRowCount()];
         double[] centerRollAngles = new double[modeCharacteristics.getRowCount()];
@@ -552,9 +452,6 @@ class GeometryCalculator {
                                                                   uRange[i][Y],
                                                                   uRange[i][Z]);
             centerRollAngles[i] += dRoll;
-            // Stores the results for each image
-            //PitchAng[i] = uPitchAng[i];
-            //RollAng[i] = uRollAng[i];
         }
 
         // ==== Rotate the Line of Sight and intercept with Earth ==============================================
