@@ -90,6 +90,8 @@ public class PerformGeometricCorrectionOp extends Operator {
     private double[][] lats;
     private double[][] vaas;
     private double[][] vzas;
+    private double[][] pitchAngles;
+    private double[][] rollAngles;
     private AcquisitionInfo info;
 
     ///////////////////////////////////////////////////////////
@@ -107,7 +109,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
-        final ChrisModeConstants mode = ChrisModeConstants.get(info.getMode());
+        final ModeCharacteristics mode = ModeCharacteristics.getInstance(info.getMode());
 
         //////////////////////////
         // Prepare Time Frames
@@ -144,8 +146,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] T_ini = new double[NUM_IMG]; // imaging start time (imaging lasts ~9.5s in every mode)
         double[] T_end = new double[NUM_IMG]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
-            T_ini[i] = ict_njd[i] - (mode.getTimg() / 2.0) / TimeConverter.SECONDS_PER_DAY;
-            T_end[i] = ict_njd[i] + (mode.getTimg() / 2.0) / TimeConverter.SECONDS_PER_DAY;
+            T_ini[i] = ict_njd[i] - (mode.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
+            T_end[i] = ict_njd[i] + (mode.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
         }
 //        double T_i = ict_njd[0] - 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" start time
 //        double T_e = ict_njd[4] + 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
@@ -156,24 +158,24 @@ public class PerformGeometricCorrectionOp extends Operator {
         //---- determine per-Line Time Frame -----------------------------------
 
         // Time elapsed since imaging start at each image line
-        double[] T_lin = new double[mode.getNLines()];
+        double[] T_lin = new double[mode.getRowCount()];
         for (int line = 0; line < T_lin.length; line++) {
-            T_lin[line] = (line * mode.getDt() + mode.getTpl() / 2) / TimeConverter.SECONDS_PER_DAY;
+            T_lin[line] = (line * mode.getTotalTimePerLine() + mode.getIntegrationTimePerLine() / 2) / TimeConverter.SECONDS_PER_DAY;
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
 
-        double[][] T_img = new double[mode.getNLines()][NUM_IMG];
-        for (int line = 0; line < mode.getNLines(); line++) {
+        double[][] T_img = new double[mode.getRowCount()][NUM_IMG];
+        for (int line = 0; line < mode.getRowCount(); line++) {
             for (int img = 0; img < NUM_IMG; img++) {
                 T_img[line][img] = T_ini[img] + T_lin[line];
             }
         }
 
-        double[] T = new double[1 + NUM_IMG * mode.getNLines()];
+        double[] T = new double[1 + NUM_IMG * mode.getRowCount()];
         T[0] = ict_njd[5];
         int Tindex = 1;
         for (int img = 0; img < NUM_IMG; img++) {
-            for (int line = 0; line < mode.getNLines(); line++) {
+            for (int line = 0; line < mode.getRowCount(); line++) {
                 T[Tindex] = T_img[line][img];
                 Tindex++;
             }
@@ -191,8 +193,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         int[] Tini = new int[NUM_IMG];
         int[] Tend = new int[NUM_IMG];
         for (int img = 0; img < NUM_IMG; img++) {
-            Tini[img] = mode.getNLines() * img + 1;
-            Tend[img] = Tini[img] + mode.getNLines() - 1;
+            Tini[img] = mode.getRowCount() * img + 1;
+            Tend[img] = Tini[img] + mode.getRowCount() - 1;
         }
         final int Tfix = 0; // Index corresponding to the time of fixing the orbit
 
@@ -301,7 +303,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==v==v== Rotates TGT to perform scanning ======================================
 
-        for (int i = 0; i < mode.getNLines(); i++) {
+        for (int i = 0; i < mode.getRowCount(); i++) {
             final double x = uW[Tini[img] + i][X];
             final double y = uW[Tini[img] + i][Y];
             final double z = uW[Tini[img] + i][Z];
@@ -312,7 +314,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final ProductNodeGroup<Placemark> gcpGroup = sourceProduct.getGcpGroup();
         final GCP[] gcps = GCP.toGCPs(gcpGroup, targetAltitude);
-        final int bestGcpIndex = findBestGCP(mode.getNCols() / 2, mode.getNLines() / 2, gcps);
+        final int bestGcpIndex = findBestGCP(mode.getColCount() / 2, mode.getRowCount() / 2, gcps);
 
         if (bestGcpIndex != -1) {
             final GCP gcp = gcps[bestGcpIndex];
@@ -366,13 +368,13 @@ public class PerformGeometricCorrectionOp extends Operator {
             System.out.println("wmin = " + wmin);
             final double dY;
             if (info.isBackscanning()) {
-                dY = (wmin % mode.getNLines()) - (mode.getNLines() - gcp.getY() + 0.5);
+                dY = (wmin % mode.getRowCount()) - (mode.getRowCount() - gcp.getY() + 0.5);
             } else {
-                dY = (wmin % mode.getNLines()) - (gcp.getY() + 0.5);
+                dY = (wmin % mode.getRowCount()) - (gcp.getY() + 0.5);
             }
 //            final double dT = tmin - T_ict[img];
 //            final double dT = tmin - T_img[(int) gcp.getPixelPos().getY()][img];
-            final double dT = (dY * mode.getDt()) / TimeConverter.SECONDS_PER_DAY;
+            final double dT = (dY * mode.getTotalTimePerLine()) / TimeConverter.SECONDS_PER_DAY;
             System.out.println("dT = " + dT);
 
             /**
@@ -384,7 +386,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                 //                System.out.println("newT = " + newT);
                 T[i] = newT;
             }
-            for (int line = 0; line < mode.getNLines(); line++) {
+            for (int line = 0; line < mode.getRowCount(); line++) {
                 T_img[line][img] += dT;
             }
 
@@ -439,7 +441,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             iAngVel = interpolate(gps_njd, AngVel, T);
 ////  EVOBA MORF DEIPOC
 
-            for (int i = 0; i < mode.getNLines(); i++) {
+            for (int i = 0; i < mode.getRowCount(); i++) {
                 final double x = uW[Tini[img] + i][X];
                 final double y = uW[Tini[img] + i][Y];
                 final double z = uW[Tini[img] + i][Z];
@@ -498,9 +500,9 @@ public class PerformGeometricCorrectionOp extends Operator {
         if (bestGcpIndex != -1) {
             final int nC2;
             if (info.getMode() != 5) {
-                nC2 = mode.getNCols() / 2;
+                nC2 = mode.getColCount() / 2;
             } else {
-                nC2 = mode.getNCols() - 1;
+                nC2 = mode.getColCount() - 1;
             }
             final GCP gcp = gcps[bestGcpIndex];
             dRoll = (nC2 - gcp.getX()) * mode.getIfov();
@@ -509,8 +511,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         //==== Calculates View Angles ==============================================
 
 //            ViewAng[] viewAngs = new ViewAng[mode.getNLines()];
-        double[][] viewRange = new double[mode.getNLines()][3];
-        for (int i = 0; i < mode.getNLines(); i++) {
+        double[][] viewRange = new double[mode.getRowCount()][3];
+        for (int i = 0; i < mode.getRowCount(); i++) {
             double TgtX = iTGT[Tini[img] + i][X];
             double TgtY = iTGT[Tini[img] + i][Y];
             double TgtZ = iTGT[Tini[img] + i][Z];
@@ -534,8 +536,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==== Satellite Rotation Axes ==============================================
 
-        double[][] yawAxes = new double[mode.getNLines()][3];
-        for (int i = 0; i < mode.getNLines(); i++) {
+        double[][] yawAxes = new double[mode.getRowCount()][3];
+        for (int i = 0; i < mode.getRowCount(); i++) {
             yawAxes[i][X] = iX[Tini[img] + i];
             yawAxes[i][Y] = iY[Tini[img] + i];
             yawAxes[i][Z] = iZ[Tini[img] + i];
@@ -547,8 +549,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            EjeYaw[Z][i] = uEjeYaw[Z][i];
 //        }
 
-        double[][] pitchAxes = new double[mode.getNLines()][3];
-        for (int i = 0; i < mode.getNLines(); i++) {
+        double[][] pitchAxes = new double[mode.getRowCount()][3];
+        for (int i = 0; i < mode.getRowCount(); i++) {
             pitchAxes[i][X] = uWop[Tini[img] + i][X];
             pitchAxes[i][Y] = uWop[Tini[img] + i][Y];
             pitchAxes[i][Z] = uWop[Tini[img] + i][Z];
@@ -559,7 +561,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            EjePitch[Z][i] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
 //        }
 
-        double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[mode.getNLines()][3]);
+        double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[mode.getRowCount()][3]);
 //        for (int i = 0; i < mode.getNLines(); i++) {
 //            EjeRoll[X][i] = uEjeRoll[X][i];
 //            EjeRoll[Y][i] = uEjeRoll[Y][i];
@@ -577,13 +579,13 @@ public class PerformGeometricCorrectionOp extends Operator {
         //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
 
         // RollSign:
-        int[] uRollSign = new int[mode.getNLines()];
+        int[] uRollSign = new int[mode.getRowCount()];
         //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
-        double[][] uSP = vectorProducts(uRange, pitchAxes, new double[mode.getNLines()][3]);
-        double[][] uSL = vectorProducts(pitchAxes, uSP, new double[mode.getNLines()][3]);
-        double[][] uRoll = toUnitVectors(vectorProducts(uSL, uRange, new double[mode.getNLines()][3]));
-        for (int i = 0; i < mode.getNLines(); i++) {
+        double[][] uSP = vectorProducts(uRange, pitchAxes, new double[mode.getRowCount()][3]);
+        double[][] uSL = vectorProducts(pitchAxes, uSP, new double[mode.getRowCount()][3]);
+        double[][] uRoll = toUnitVectors(vectorProducts(uSL, uRange, new double[mode.getRowCount()][3]));
+        for (int i = 0; i < mode.getRowCount(); i++) {
             double total = 0;
             total += uRoll[i][X] / uSP[i][X];
             total += uRoll[i][Y] / uSP[i][Y];
@@ -601,22 +603,22 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            SL[Z][i] = uSL[Z][i];
 //        }
 
-        double[] centerPitchAngles = new double[mode.getNLines()];
-        double[] centerRollAngles = new double[mode.getNLines()];
+        double[] centerPitchAngles = new double[mode.getRowCount()];
+        double[] centerRollAngles = new double[mode.getRowCount()];
         System.out.println("dRoll = " + dRoll);
-        for (int i = 0; i < mode.getNLines(); i++) {
+        for (int i = 0; i < mode.getRowCount(); i++) {
             centerPitchAngles[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[i][X],
-                                                                     uSP[i][Y],
-                                                                     uSP[i][Z],
-                                                                     yawAxes[i][X],
-                                                                     yawAxes[i][Y],
-                                                                     yawAxes[i][Z]);
+                                                                             uSP[i][Y],
+                                                                             uSP[i][Z],
+                                                                             yawAxes[i][X],
+                                                                             yawAxes[i][Y],
+                                                                             yawAxes[i][Z]);
             centerRollAngles[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[i][X],
-                                                                   uSL[i][Y],
-                                                                   uSL[i][Z],
-                                                                   uRange[i][X],
-                                                                   uRange[i][Y],
-                                                                   uRange[i][Z]);
+                                                                           uSL[i][Y],
+                                                                           uSL[i][Z],
+                                                                           uRange[i][X],
+                                                                           uRange[i][Y],
+                                                                           uRange[i][Z]);
             centerRollAngles[i] += dRoll;
             // Stores the results for each image
             //PitchAng[i] = uPitchAng[i];
@@ -625,10 +627,10 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==== Rotate the Line of Sight and intercept with Earth ==============================================
 
-        double[] ixSubset = new double[mode.getNLines()];
-        double[] iySubset = new double[mode.getNLines()];
-        double[] izSubset = new double[mode.getNLines()];
-        double[] timeSubset = new double[mode.getNLines()];
+        double[] ixSubset = new double[mode.getRowCount()];
+        double[] iySubset = new double[mode.getRowCount()];
+        double[] izSubset = new double[mode.getRowCount()];
+        double[] timeSubset = new double[mode.getRowCount()];
         for (int i = 0; i < timeSubset.length; i++) {
             ixSubset[i] = iX[Tini[img] + i];
             iySubset[i] = iY[Tini[img] + i];
@@ -636,13 +638,14 @@ public class PerformGeometricCorrectionOp extends Operator {
             timeSubset[i] = T[Tini[img] + i];
         }
 
-        final int nLines = mode.getNLines();
-        final int nCols = mode.getNCols();
+        final int rowCount = mode.getRowCount();
+        final int colCount = mode.getColCount();
 
-        final double[][] pitchAngles = new double[nLines][nCols];
-        final double[][] rollAngles = new double[nLines][nCols];
+        pitchAngles = new double[rowCount][colCount];
+        rollAngles = new double[rowCount][colCount];
 
-        calculatePitchAndRollAngles(info.getMode(), mode.getFov(), mode.getIfov(), centerPitchAngles, centerRollAngles, pitchAngles,
+        calculatePitchAndRollAngles(info.getMode(), mode.getFov(), mode.getIfov(), centerPitchAngles, centerRollAngles,
+                                    pitchAngles,
                                     rollAngles);
 
         // a. if there ar more than 2 GCPs we can calculate deltas for the pointing angle
@@ -665,18 +668,18 @@ public class PerformGeometricCorrectionOp extends Operator {
             final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaPitch);
             final RationalFunctionModel deltaRollModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaRoll);
 
-            for (int y = 0; y < nLines; y++) {
-                for (int x = 0; x < nCols; x++) {
+            for (int y = 0; y < rowCount; y++) {
+                for (int x = 0; x < colCount; x++) {
                     pitchAngles[y][x] += deltaPitchModel.getValue(x + 0.5, y + 0.5);
                     rollAngles[y][x] += deltaRollModel.getValue(x + 0.5, y + 0.5);
                 }
             }
         }
 
-        lons = new double[nLines][nCols];
-        lats = new double[nLines][nCols];
-        vaas = new double[nLines][nCols];
-        vzas = new double[nLines][nCols];
+        lons = new double[rowCount][colCount];
+        lats = new double[rowCount][colCount];
+        vaas = new double[rowCount][colCount];
+        vzas = new double[rowCount][colCount];
 
         final PositionCalculator positionCalculator = new PositionCalculator(useTargetAltitude ? targetAltitude : 0.0);
         positionCalculator.calculatePositions(
@@ -693,7 +696,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                 vzas);
 
         final Product targetProduct = createTargetProduct();
-        // todo - add pitch and roll rotations per pixel for Luis A.
+        // todo - add pitch and roll angles per pixel for Luis A.
 
 
         setTargetProduct(targetProduct);
