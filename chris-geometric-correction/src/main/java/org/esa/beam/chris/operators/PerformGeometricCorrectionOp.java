@@ -16,7 +16,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.util.BandFilter;
@@ -83,16 +82,20 @@ public class PerformGeometricCorrectionOp extends Operator {
                description = "If true, the pixel lines-of-sight are intersected with a modified WGS-84 ellipsoid")
     private boolean useTargetAltitude;
 
+    @Parameter(label = "Include pitch and roll angles", defaultValue = "false",
+               description = "If true, the target product will include instrument pitch and roll angles per pixel")
+    private boolean includePitchAndRoll;
+
     @SourceProduct(type = "CHRIS_M[012345][0A]?(_NR)?(_AC)?")
     private Product sourceProduct;
 
+    private AcquisitionInfo acquisitionInfo;
     private double[][] lons;
     private double[][] lats;
     private double[][] vaas;
     private double[][] vzas;
     private double[][] pitchAngles;
     private double[][] rollAngles;
-    private AcquisitionInfo info;
 
     ///////////////////////////////////////////////////////////
 
@@ -104,12 +107,12 @@ public class PerformGeometricCorrectionOp extends Operator {
         } catch (IOException e) {
             throw new OperatorException(e);
         }
-        info = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
+        acquisitionInfo = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
         final double dTgps = getDeltaGPS(sourceProduct);
 
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dTgps);
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dTgps);
-        final ModeCharacteristics mode = ModeCharacteristics.getInstance(info.getMode());
+        final ModeCharacteristics modeCharacteristics = ModeCharacteristics.getInstance(acquisitionInfo.getMode());
 
         //////////////////////////
         // Prepare Time Frames
@@ -146,8 +149,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] T_ini = new double[NUM_IMG]; // imaging start time (imaging lasts ~9.5s in every mode)
         double[] T_end = new double[NUM_IMG]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
-            T_ini[i] = ict_njd[i] - (mode.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
-            T_end[i] = ict_njd[i] + (mode.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
+            T_ini[i] = ict_njd[i] - (modeCharacteristics.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
+            T_end[i] = ict_njd[i] + (modeCharacteristics.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
         }
 //        double T_i = ict_njd[0] - 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" start time
 //        double T_e = ict_njd[4] + 10 / Conversions.SECONDS_PER_DAY; // "imaging mode" stop time
@@ -158,24 +161,24 @@ public class PerformGeometricCorrectionOp extends Operator {
         //---- determine per-Line Time Frame -----------------------------------
 
         // Time elapsed since imaging start at each image line
-        double[] T_lin = new double[mode.getRowCount()];
+        double[] T_lin = new double[modeCharacteristics.getRowCount()];
         for (int line = 0; line < T_lin.length; line++) {
-            T_lin[line] = (line * mode.getTotalTimePerLine() + mode.getIntegrationTimePerLine() / 2) / TimeConverter.SECONDS_PER_DAY;
+            T_lin[line] = (line * modeCharacteristics.getTotalTimePerLine() + modeCharacteristics.getIntegrationTimePerLine() / 2) / TimeConverter.SECONDS_PER_DAY;
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
 
-        double[][] T_img = new double[mode.getRowCount()][NUM_IMG];
-        for (int line = 0; line < mode.getRowCount(); line++) {
+        double[][] T_img = new double[modeCharacteristics.getRowCount()][NUM_IMG];
+        for (int line = 0; line < modeCharacteristics.getRowCount(); line++) {
             for (int img = 0; img < NUM_IMG; img++) {
                 T_img[line][img] = T_ini[img] + T_lin[line];
             }
         }
 
-        double[] T = new double[1 + NUM_IMG * mode.getRowCount()];
+        double[] T = new double[1 + NUM_IMG * modeCharacteristics.getRowCount()];
         T[0] = ict_njd[5];
         int Tindex = 1;
         for (int img = 0; img < NUM_IMG; img++) {
-            for (int line = 0; line < mode.getRowCount(); line++) {
+            for (int line = 0; line < modeCharacteristics.getRowCount(); line++) {
                 T[Tindex] = T_img[line][img];
                 Tindex++;
             }
@@ -193,8 +196,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         int[] Tini = new int[NUM_IMG];
         int[] Tend = new int[NUM_IMG];
         for (int img = 0; img < NUM_IMG; img++) {
-            Tini[img] = mode.getRowCount() * img + 1;
-            Tend[img] = Tini[img] + mode.getRowCount() - 1;
+            Tini[img] = modeCharacteristics.getRowCount() * img + 1;
+            Tend[img] = Tini[img] + modeCharacteristics.getRowCount() - 1;
         }
         final int Tfix = 0; // Index corresponding to the time of fixing the orbit
 
@@ -287,11 +290,12 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ===== Process the correct image ==========================================
 
-        final int img = info.getChronologicalImageNumber();
+        final int img = acquisitionInfo.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double targetAltitude = info.getTargetAlt() / 1000;
-        final double[] TGTecf = CoordinateConverter.wgsToEcef(info.getTargetLon(), info.getTargetLat(), targetAltitude,
+        final double targetAltitude = acquisitionInfo.getTargetAlt() / 1000;
+        final double[] TGTecf = CoordinateConverter.wgsToEcef(acquisitionInfo.getTargetLon(),
+                                                              acquisitionInfo.getTargetLat(), targetAltitude,
                                                               new double[3]);
 
         // Case with Moving Target for imaging time
@@ -303,7 +307,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==v==v== Rotates TGT to perform scanning ======================================
 
-        for (int i = 0; i < mode.getRowCount(); i++) {
+        for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             final double x = uW[Tini[img] + i][X];
             final double y = uW[Tini[img] + i][Y];
             final double z = uW[Tini[img] + i][Z];
@@ -314,7 +318,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         final ProductNodeGroup<Placemark> gcpGroup = sourceProduct.getGcpGroup();
         final GCP[] gcps = GCP.toGCPs(gcpGroup, targetAltitude);
-        final int bestGcpIndex = findBestGCP(mode.getColCount() / 2, mode.getRowCount() / 2, gcps);
+        final int bestGcpIndex = findBestGCP(modeCharacteristics.getColCount() / 2,
+                                             modeCharacteristics.getRowCount() / 2, gcps);
 
         if (bestGcpIndex != -1) {
             final GCP gcp = gcps[bestGcpIndex];
@@ -367,14 +372,14 @@ public class PerformGeometricCorrectionOp extends Operator {
             System.out.println("tmin = " + tmin);
             System.out.println("wmin = " + wmin);
             final double dY;
-            if (info.isBackscanning()) {
-                dY = (wmin % mode.getRowCount()) - (mode.getRowCount() - gcp.getY() + 0.5);
+            if (acquisitionInfo.isBackscanning()) {
+                dY = (wmin % modeCharacteristics.getRowCount()) - (modeCharacteristics.getRowCount() - gcp.getY() + 0.5);
             } else {
-                dY = (wmin % mode.getRowCount()) - (gcp.getY() + 0.5);
+                dY = (wmin % modeCharacteristics.getRowCount()) - (gcp.getY() + 0.5);
             }
 //            final double dT = tmin - T_ict[img];
 //            final double dT = tmin - T_img[(int) gcp.getPixelPos().getY()][img];
-            final double dT = (dY * mode.getTotalTimePerLine()) / TimeConverter.SECONDS_PER_DAY;
+            final double dT = (dY * modeCharacteristics.getTotalTimePerLine()) / TimeConverter.SECONDS_PER_DAY;
             System.out.println("dT = " + dT);
 
             /**
@@ -386,7 +391,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                 //                System.out.println("newT = " + newT);
                 T[i] = newT;
             }
-            for (int line = 0; line < mode.getRowCount(); line++) {
+            for (int line = 0; line < modeCharacteristics.getRowCount(); line++) {
                 T_img[line][img] += dT;
             }
 
@@ -441,7 +446,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             iAngVel = interpolate(gps_njd, AngVel, T);
 ////  EVOBA MORF DEIPOC
 
-            for (int i = 0; i < mode.getRowCount(); i++) {
+            for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
                 final double x = uW[Tini[img] + i][X];
                 final double y = uW[Tini[img] + i][Y];
                 final double z = uW[Tini[img] + i][Z];
@@ -499,36 +504,34 @@ public class PerformGeometricCorrectionOp extends Operator {
         double dRoll = 0.0;
         if (bestGcpIndex != -1) {
             final int nC2;
-            if (info.getMode() != 5) {
-                nC2 = mode.getColCount() / 2;
+            if (acquisitionInfo.getMode() != 5) {
+                nC2 = modeCharacteristics.getColCount() / 2;
             } else {
-                nC2 = mode.getColCount() - 1;
+                nC2 = modeCharacteristics.getColCount() - 1;
             }
             final GCP gcp = gcps[bestGcpIndex];
-            dRoll = (nC2 - gcp.getX()) * mode.getIfov();
+            dRoll = (nC2 - gcp.getX()) * modeCharacteristics.getIfov();
         }
 
         //==== Calculates View Angles ==============================================
 
-//            ViewAng[] viewAngs = new ViewAng[mode.getNLines()];
-        double[][] viewRange = new double[mode.getRowCount()][3];
-        for (int i = 0; i < mode.getRowCount(); i++) {
+//            ViewingGeometry[] viewAngs = new ViewingGeometry[mode.getNLines()];
+        double[][] viewRange = new double[modeCharacteristics.getRowCount()][3];
+        for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             double TgtX = iTGT[Tini[img] + i][X];
             double TgtY = iTGT[Tini[img] + i][Y];
             double TgtZ = iTGT[Tini[img] + i][Z];
             double SatX = iX[Tini[img] + i];
             double SatY = iY[Tini[img] + i];
             double SatZ = iZ[Tini[img] + i];
-            ViewAng viewAng = CoordinateUtils.computeViewAng(TgtX, TgtY, TgtZ, SatX, SatY, SatZ);
+            ViewingGeometry viewingGeometry = ViewingGeometry.create(TgtX, TgtY, TgtZ, SatX, SatY, SatZ);
 
-            // ---- View.Rang[XYZ] is the vector pointing from TGT to SAT,
-            // ----  but for the calculations it is nevessary the oposite one, therefore (-) appears.
-            viewRange[i][X] = -viewAng.rangeX;
-            viewRange[i][Y] = -viewAng.rangeY;
-            viewRange[i][Z] = -viewAng.rangeZ;
+            viewRange[i][X] = viewingGeometry.x;
+            viewRange[i][Y] = viewingGeometry.y;
+            viewRange[i][Z] = viewingGeometry.z;
 
-            //ObsAngAzi[i] = viewAng.azi;
-            //ObsAngZen[i] = viewAng.zen;
+            //ObsAngAzi[i] = viewingGeometry.azi;
+            //ObsAngZen[i] = viewingGeometry.zen;
         }
 
         // Observation angles are not needed for the geometric correction but they are used for research. They are a by-product.
@@ -536,8 +539,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==== Satellite Rotation Axes ==============================================
 
-        double[][] yawAxes = new double[mode.getRowCount()][3];
-        for (int i = 0; i < mode.getRowCount(); i++) {
+        double[][] yawAxes = new double[modeCharacteristics.getRowCount()][3];
+        for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             yawAxes[i][X] = iX[Tini[img] + i];
             yawAxes[i][Y] = iY[Tini[img] + i];
             yawAxes[i][Z] = iZ[Tini[img] + i];
@@ -549,8 +552,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            EjeYaw[Z][i] = uEjeYaw[Z][i];
 //        }
 
-        double[][] pitchAxes = new double[mode.getRowCount()][3];
-        for (int i = 0; i < mode.getRowCount(); i++) {
+        double[][] pitchAxes = new double[modeCharacteristics.getRowCount()][3];
+        for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             pitchAxes[i][X] = uWop[Tini[img] + i][X];
             pitchAxes[i][Y] = uWop[Tini[img] + i][Y];
             pitchAxes[i][Z] = uWop[Tini[img] + i][Z];
@@ -561,7 +564,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            EjePitch[Z][i] = uEjePitch[Z][i] = uWop[Z][Tini[img] + i];
 //        }
 
-        double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[mode.getRowCount()][3]);
+        double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[modeCharacteristics.getRowCount()][3]);
 //        for (int i = 0; i < mode.getNLines(); i++) {
 //            EjeRoll[X][i] = uEjeRoll[X][i];
 //            EjeRoll[Y][i] = uEjeRoll[Y][i];
@@ -579,13 +582,13 @@ public class PerformGeometricCorrectionOp extends Operator {
         //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
 
         // RollSign:
-        int[] uRollSign = new int[mode.getRowCount()];
+        int[] uRollSign = new int[modeCharacteristics.getRowCount()];
         //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
-        double[][] uSP = vectorProducts(uRange, pitchAxes, new double[mode.getRowCount()][3]);
-        double[][] uSL = vectorProducts(pitchAxes, uSP, new double[mode.getRowCount()][3]);
-        double[][] uRoll = toUnitVectors(vectorProducts(uSL, uRange, new double[mode.getRowCount()][3]));
-        for (int i = 0; i < mode.getRowCount(); i++) {
+        double[][] uSP = vectorProducts(uRange, pitchAxes, new double[modeCharacteristics.getRowCount()][3]);
+        double[][] uSL = vectorProducts(pitchAxes, uSP, new double[modeCharacteristics.getRowCount()][3]);
+        double[][] uRoll = toUnitVectors(vectorProducts(uSL, uRange, new double[modeCharacteristics.getRowCount()][3]));
+        for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             double total = 0;
             total += uRoll[i][X] / uSP[i][X];
             total += uRoll[i][Y] / uSP[i][Y];
@@ -603,10 +606,10 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            SL[Z][i] = uSL[Z][i];
 //        }
 
-        double[] centerPitchAngles = new double[mode.getRowCount()];
-        double[] centerRollAngles = new double[mode.getRowCount()];
+        double[] centerPitchAngles = new double[modeCharacteristics.getRowCount()];
+        double[] centerRollAngles = new double[modeCharacteristics.getRowCount()];
         System.out.println("dRoll = " + dRoll);
-        for (int i = 0; i < mode.getRowCount(); i++) {
+        for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             centerPitchAngles[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[i][X],
                                                                              uSP[i][Y],
                                                                              uSP[i][Z],
@@ -627,10 +630,10 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // ==== Rotate the Line of Sight and intercept with Earth ==============================================
 
-        double[] ixSubset = new double[mode.getRowCount()];
-        double[] iySubset = new double[mode.getRowCount()];
-        double[] izSubset = new double[mode.getRowCount()];
-        double[] timeSubset = new double[mode.getRowCount()];
+        double[] ixSubset = new double[modeCharacteristics.getRowCount()];
+        double[] iySubset = new double[modeCharacteristics.getRowCount()];
+        double[] izSubset = new double[modeCharacteristics.getRowCount()];
+        double[] timeSubset = new double[modeCharacteristics.getRowCount()];
         for (int i = 0; i < timeSubset.length; i++) {
             ixSubset[i] = iX[Tini[img] + i];
             iySubset[i] = iY[Tini[img] + i];
@@ -638,13 +641,15 @@ public class PerformGeometricCorrectionOp extends Operator {
             timeSubset[i] = T[Tini[img] + i];
         }
 
-        final int rowCount = mode.getRowCount();
-        final int colCount = mode.getColCount();
+        final int rowCount = modeCharacteristics.getRowCount();
+        final int colCount = modeCharacteristics.getColCount();
 
         pitchAngles = new double[rowCount][colCount];
         rollAngles = new double[rowCount][colCount];
 
-        calculatePitchAndRollAngles(info.getMode(), mode.getFov(), mode.getIfov(), centerPitchAngles, centerRollAngles,
+        calculatePitchAndRollAngles(acquisitionInfo.getMode(),
+                                    modeCharacteristics.getFov(),
+                                    modeCharacteristics.getIfov(), centerPitchAngles, centerRollAngles,
                                     pitchAngles,
                                     rollAngles);
 
@@ -696,9 +701,6 @@ public class PerformGeometricCorrectionOp extends Operator {
                 vzas);
 
         final Product targetProduct = createTargetProduct();
-        // todo - add pitch and roll angles per pixel for Luis A.
-
-
         setTargetProduct(targetProduct);
     }
 
@@ -769,6 +771,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         lats = null;
         vaas = null;
         vzas = null;
+        pitchAngles = null;
+        rollAngles = null;
     }
 
     /**
@@ -846,7 +850,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                if (info.isBackscanning()) {
+                if (acquisitionInfo.isBackscanning()) {
                     lons[y * w + x] = (float) this.lons[h - 1 - y][x];
                     lats[y * w + x] = (float) this.lats[h - 1 - y][x];
                     vaas[y * w + x] = (float) this.vaas[h - 1 - y][x];
@@ -860,18 +864,43 @@ public class PerformGeometricCorrectionOp extends Operator {
             }
         }
 
-        final TiePointGrid lonGrid = new TiePointGrid("lon", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lons);
-        final TiePointGrid latGrid = new TiePointGrid("lat", w, h, 0.5f, 0.5f, 1.0f, 1.0f, lats);
-        final TiePointGrid vaaGrid = new TiePointGrid("vaa", w, h, 0.5f, 0.5f, 1.0f, 1.0f, vaas);
-        final TiePointGrid vzaGrid = new TiePointGrid("vza", w, h, 0.5f, 0.5f, 1.0f, 1.0f, vzas);
-        targetProduct.addTiePointGrid(lonGrid);
-        targetProduct.addTiePointGrid(latGrid);
-        targetProduct.addTiePointGrid(vaaGrid);
-        targetProduct.addTiePointGrid(vzaGrid);
+        final TiePointGrid lonGrid = addTiePointGrid(targetProduct, "lon", w, h, lons, "Longitude (deg)", "deg");
+        final TiePointGrid latGrid = addTiePointGrid(targetProduct, "lat", w, h, lats, "Latitude (deg)", "deg");
+        addTiePointGrid(targetProduct, "vaa", w, h, vaas, "View azimuth angle (deg)", "deg");
+        addTiePointGrid(targetProduct, "vza", w, h, vzas, "View zenith angle (deg)", "deg");
+
+        if (includePitchAndRoll) {
+            final float[] p = new float[w * h];
+            final float[] r = new float[w * h];
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    if (acquisitionInfo.isBackscanning()) {
+                        p[y * w + x] = (float) pitchAngles[h - 1 - y][x];
+                        r[y * w + x] = (float) rollAngles[h - 1 - y][x];
+                    } else {
+                        p[y * w + x] = (float) pitchAngles[y][x];
+                        r[y * w + x] = (float) rollAngles[y][x];
+                    }
+                }
+            }
+            addTiePointGrid(targetProduct, "pitch", w, h, p, "Instrument pitch angle (rad)", "rad");
+            addTiePointGrid(targetProduct, "roll", w, h, r, "Instrument roll angle (rad)", "rad");
+        }
+
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
         targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(type));
 
         return targetProduct;
+    }
+
+    private static TiePointGrid addTiePointGrid(Product targetProduct, String name, int w, int h, float[] tiePoints,
+                                                String description, String unit) {
+        final TiePointGrid lonGrid = new TiePointGrid(name, w, h, 0.5f, 0.5f, 1.0f, 1.0f, tiePoints);
+        lonGrid.setDescription(description);
+        lonGrid.setUnit(unit);
+        targetProduct.addTiePointGrid(lonGrid);
+
+        return lonGrid;
     }
 
     private static double[] toUnitVector(double[] vector) {

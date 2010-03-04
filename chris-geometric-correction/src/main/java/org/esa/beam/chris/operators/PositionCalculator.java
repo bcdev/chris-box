@@ -50,7 +50,6 @@ class PositionCalculator {
                 for (int k = 0; k < 3; k++) {
                     pointing[k] = -yawAxis[k];
                 }
-
                 // 2. rotate the pointing around the pitch axis
                 final Quaternion pitchRotation = createQuaternion(pitchAxis, -pitchAngles[i][j]);
                 pitchRotation.transform(pointing, pointing);
@@ -73,14 +72,10 @@ class PositionCalculator {
                 point[Z] = satZ[i];
 
                 Intersector.intersect(point, pointings[i][j], WGS84_CENTER, semiAxes);
-                final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(point[X],
-                                                                                       point[Y],
-                                                                                       point[Z],
-                                                                                       satX[i],
-                                                                                       satY[i],
-                                                                                       satZ[i]);
-                vaa[i][j] = Math.toDegrees(viewAng.azi);
-                vza[i][j] = Math.toDegrees(viewAng.zen);
+                final ViewingGeometry viewingGeometry = ViewingGeometry.create(point[X], point[Y], point[Z], satX[i],
+                                                                               satY[i], satZ[i]);
+                vaa[i][j] = Math.toDegrees(viewingGeometry.azimuth);
+                vza[i][j] = Math.toDegrees(viewingGeometry.zenith);
 
                 CoordinateConverter.eciToEcef(gst, point, point);
                 final double[] wgs = CoordinateConverter.ecefToWgs(point[X], point[Y], point[Z], new double[3]);
