@@ -586,13 +586,8 @@ class GeometryCalculator {
         final PositionCalculator positionCalculator = new PositionCalculator(
                 useTargetAltitude ? targetAltitude : 0.0);
         positionCalculator.calculatePositions(
-                pitchAngles,
+                timeSubset, ixSubset, iySubset, izSubset, pitchAxes, rollAxes, yawAxes, pitchAngles,
                 rollAngles,
-                pitchAxes,
-                rollAxes,
-                yawAxes,
-                ixSubset, iySubset, izSubset,
-                timeSubset,
                 lons,
                 lats,
                 vaas,

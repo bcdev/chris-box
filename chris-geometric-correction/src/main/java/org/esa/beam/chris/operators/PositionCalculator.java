@@ -22,22 +22,18 @@ class PositionCalculator {
     }
 
     void calculatePositions(
-            double[][] pitchAngles, // [nLines][nCols]
-            double[][] rollAngles, // [nLines][nCols]
-            double[][] pitchAxes, //[nlines][3]
-            double[][] rollAxes,  //[nlines][3]
-            double[][] yawAxes,   //[nlines][3]
-            double[] satX,
-            double[] satY,
-            double[] satZ,
-            double[] satT,
-            double[][] lons, // [nLines][nCols]
-            double[][] lats, // [nLines][nCols]
+            double[] satT, double[] satX, double[] satY, double[] satZ,
+            double[][] pitchAxes,
+            double[][] rollAxes,
+            double[][] yawAxes,
+            double[][] pitches,
+            double[][] rolls,
+            double[][] lons,
+            double[][] lats,
             double[][] vaa,
-            double[][] vza
-    ) {
-        final int rowCount = pitchAngles.length;
-        final int colCount = pitchAngles[0].length;
+            double[][] vza) {
+        final int rowCount = pitches.length;
+        final int colCount = pitches[0].length;
         final double[][][] pointings = new double[rowCount][colCount][3];
 
         for (int i = 0; i < rowCount; i++) {
@@ -51,14 +47,14 @@ class PositionCalculator {
                     pointing[k] = -yawAxis[k];
                 }
                 // 2. rotate the pointing around the pitch axis
-                final Quaternion pitchRotation = createQuaternion(pitchAxis, -pitchAngles[i][j]);
+                final Quaternion pitchRotation = createQuaternion(pitchAxis, -pitches[i][j]);
                 pitchRotation.transform(pointing, pointing);
 
                 // 3. rotate the roll axis around the pitch axis
                 pitchRotation.transform(rollAxes[i], rollAxis);
 
                 // 4. rotate pointing around roll axis
-                final Quaternion rollRotation = createQuaternion(rollAxis, rollAngles[i][j]);
+                final Quaternion rollRotation = createQuaternion(rollAxis, rolls[i][j]);
                 rollRotation.transform(pointing, pointing);
             }
         }
