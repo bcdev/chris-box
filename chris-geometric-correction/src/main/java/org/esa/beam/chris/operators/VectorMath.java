@@ -17,7 +17,7 @@
 package org.esa.beam.chris.operators;
 
 
-class CoordinateUtils {
+class VectorMath {
 
     /**
      * Given a series satellite positions in ECI and the corresponding times

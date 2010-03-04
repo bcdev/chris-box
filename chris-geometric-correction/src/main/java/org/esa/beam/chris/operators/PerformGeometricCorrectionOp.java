@@ -257,7 +257,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             eciY[i] = eci[i][Y];
             eciZ[i] = eci[i][Z];
         }
-        final double[] AngVelRaw = CoordinateUtils.angularVelocity(gpsSecs, eciX, eciY, eciZ);
+        final double[] AngVelRaw = VectorMath.angularVelocity(gpsSecs, eciX, eciY, eciZ);
         final double[] AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
         SimpleSmoother smoother = new SimpleSmoother(5);
         final double[] AngVel = new double[AngVelRawSubset.length];
@@ -601,13 +601,13 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[] centerRollAngles = new double[modeCharacteristics.getRowCount()];
         System.out.println("dRoll = " + dRoll);
         for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
-            centerPitchAngles[i] = Math.PI / 2.0 - CoordinateUtils.angle(uSP[i][X],
+            centerPitchAngles[i] = Math.PI / 2.0 - VectorMath.angle(uSP[i][X],
                                                                              uSP[i][Y],
                                                                              uSP[i][Z],
                                                                              yawAxes[i][X],
                                                                              yawAxes[i][Y],
                                                                              yawAxes[i][Z]);
-            centerRollAngles[i] = uRollSign[i] * CoordinateUtils.angle(uSL[i][X],
+            centerRollAngles[i] = uRollSign[i] * VectorMath.angle(uSL[i][X],
                                                                            uSL[i][Y],
                                                                            uSL[i][Z],
                                                                            uRange[i][X],
@@ -735,14 +735,14 @@ public class PerformGeometricCorrectionOp extends Operator {
         final double[] rollAxis = toUnitVector(vectorProduct(sl, pointing, new double[3]));
         final double total = rollAxis[X] / sp[X] + rollAxis[Y] / sp[Y] + rollAxis[Z] / sp[Z];
 
-        final double pitchAngle = Math.PI / 2.0 - CoordinateUtils.angle(sp[X],
+        final double pitchAngle = Math.PI / 2.0 - VectorMath.angle(sp[X],
                                                                             sp[Y],
                                                                             sp[Z],
                                                                             yawAxis[X],
                                                                             yawAxis[Y],
                                                                             yawAxis[Z]);
         final double rollSign = Math.signum(total);
-        final double rollAngle = rollSign * CoordinateUtils.angle(sl[X],
+        final double rollAngle = rollSign * VectorMath.angle(sl[X],
                                                                       sl[Y],
                                                                       sl[Z],
                                                                       pointing[X],
