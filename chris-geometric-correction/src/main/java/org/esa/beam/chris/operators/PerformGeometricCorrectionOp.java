@@ -61,7 +61,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                description = "If true, the pixel lines-of-sight are intersected with a modified WGS-84 ellipsoid")
     private boolean useTargetAltitude;
 
-    @Parameter(label = "Include pitch and roll angles", defaultValue = "false",
+    @Parameter(label = "Include pitch and roll angles (for diagnostics only)", defaultValue = "false",
                description = "If true, the target product will include instrument pitch and roll angles per pixel")
     private boolean includePitchAndRoll;
 
