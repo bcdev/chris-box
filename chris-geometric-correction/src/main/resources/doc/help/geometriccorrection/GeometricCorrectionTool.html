@@ -97,18 +97,10 @@
 <h5>Processing Parameters Panel</h5>
 
 <p class="i1">
-    <b>Telemetry search path:</b>
-    Use this field to specify the search path for the CHRIS telemetry data. A default search
-    path for the CHRIS telemetry data can be defined by editing the <code>beam.config</code> file
-    located in the <code>config</code> directory of your BEAM installation: simply add an entry
-    similar to
-</p>
-<pre>
-    beam.chris.telemetryRepositoryPath = /path/to/local/telemetry/repository
-</pre>
-<p class="i1">
-    to the <code>beam.config</code> file. Note that the parent directory of the source product
-    is searched for CHRIS telemetry data <em>before</em> searching the local repository.
+    <b>Telemetry repository:</b>
+    Use this field to specify the directory containing the CHRIS telemetry data. Note that
+    the parent directory of the source product is searched for CHRIS telemetry data <em>before</em>
+    the local repository is.
 </p>
 
 <h5>Button Group</h5>
@@ -129,8 +121,6 @@
     <b>Help</b>
     Displays this page in VISAT Help.
 </p>
-
-
 <hr>
 </body>
 </html>

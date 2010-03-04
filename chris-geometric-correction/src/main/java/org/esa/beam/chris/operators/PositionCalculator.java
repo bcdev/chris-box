@@ -7,15 +7,21 @@ class PositionCalculator {
     private static final double WGS84_INVERSE_FLATTENING = 1.0 / 298.257223563;
     private static final double WGS84_SEMI_MAJOR = 6378.137;
     private static final double WGS84_SEMI_MINOR = WGS84_SEMI_MAJOR * (1.0 - WGS84_INVERSE_FLATTENING);
-    
-    private static final double[] WGS84_SEMI_AXES = new double[]{WGS84_SEMI_MAJOR, WGS84_SEMI_MAJOR, WGS84_SEMI_MINOR};
     private static final double[] WGS84_CENTER = new double[3];
 
     private static final int X = 0;
     private static final int Y = 1;
     private static final int Z = 2;
 
-    static void calculatePositions(
+    private final double[] semiAxes;
+
+    PositionCalculator(double targetAltitude) {
+        final double semiMajor = WGS84_SEMI_MAJOR + targetAltitude;
+        final double semiMinor = WGS84_SEMI_MINOR + targetAltitude;
+        semiAxes = new double[]{semiMajor, semiMajor, semiMinor};
+    }
+
+    void calculatePositions(
             double[][] pitchAngles, // [nLines][nCols]
             double[][] rollAngles, // [nLines][nCols]
             double[][] pitchAxes, //[nlines][3]
@@ -66,7 +72,7 @@ class PositionCalculator {
                 point[Y] = satY[i];
                 point[Z] = satZ[i];
 
-                Intersector.intersect(point, pointings[i][j], WGS84_CENTER, WGS84_SEMI_AXES);
+                Intersector.intersect(point, pointings[i][j], WGS84_CENTER, semiAxes);
                 final CoordinateUtils.ViewAng viewAng = CoordinateUtils.computeViewAng(point[X],
                                                                                        point[Y],
                                                                                        point[Z],

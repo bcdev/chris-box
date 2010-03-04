@@ -16,7 +16,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.CoordinateUtils.ViewAng;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
@@ -27,7 +26,6 @@ import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.Placemark;
 import org.esa.beam.framework.datamodel.PointingFactoryRegistry;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
 import org.esa.beam.framework.datamodel.ProductNodeGroup;
 import org.esa.beam.framework.datamodel.RationalFunctionModel;
 import org.esa.beam.framework.datamodel.TiePointGeoCoding;
@@ -35,7 +33,6 @@ import org.esa.beam.framework.datamodel.TiePointGrid;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
@@ -56,6 +53,8 @@ import java.util.List;
                   description = "Performs the geometric correction for a CHRIS/Proba RCI.")
 public class PerformGeometricCorrectionOp extends Operator {
 
+    public static final String ALIAS_TELEMETRY_REPOSITORY = "telemetryRepository";
+
     private static final int SLOW_DOWN = 5; // Slowdown factor
 
     //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
@@ -75,12 +74,16 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     ///////////////////////////////////////////////////////////
 
-    @Parameter(label = "Telemetry search path",
-               description = "The path of the directory containing the CHRIS telemetry data. If left blank,\n" +
-                             "the path of the CHRIS telemetry repository is used.")
-    private String telemetrySearchPath;
+    @Parameter(alias = ALIAS_TELEMETRY_REPOSITORY, label = "Telemetry repository", defaultValue = ".",
+               description = "The directory searched for CHRIS telemetry data", notNull = true, notEmpty = true)
+    private File telemetryRepository;
 
-    @SourceProduct
+
+    @Parameter(label = "Use target altitude", defaultValue = "false",
+               description = "If true, the pixel lines-of-sight are intersected with a modified WGS-84 ellipsoid")
+    private boolean useTargetAltitude;
+
+    @SourceProduct(type = "CHRIS_M[012345][0A]?(_NR)?(_AC)?")
     private Product sourceProduct;
 
     private double[][] lons;
@@ -88,14 +91,17 @@ public class PerformGeometricCorrectionOp extends Operator {
     private double[][] vaas;
     private double[][] vzas;
     private AcquisitionInfo info;
-    private Band pixelLonBand;
-    private Band pixelLatBand;
 
     ///////////////////////////////////////////////////////////
 
     @Override
     public void initialize() throws OperatorException {
-        final Telemetry telemetry = getTelemetry();
+        final Telemetry telemetry;
+        try {
+            telemetry = TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        }
         info = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
         final double dTgps = getDeltaGPS(sourceProduct);
 
@@ -215,12 +221,12 @@ public class PerformGeometricCorrectionOp extends Operator {
         // =======================================================================
         // ---- Interpolate GPS ECI position/velocity to per-line time -------
 
-        double[] iX = spline(gps_njd, get2ndDim(eci, 0, numGPS), T);
-        double[] iY = spline(gps_njd, get2ndDim(eci, 1, numGPS), T);
-        double[] iZ = spline(gps_njd, get2ndDim(eci, 2, numGPS), T);
-        double[] iVX = spline(gps_njd, get2ndDim(eci, 3, numGPS), T);
-        double[] iVY = spline(gps_njd, get2ndDim(eci, 4, numGPS), T);
-        double[] iVZ = spline(gps_njd, get2ndDim(eci, 5, numGPS), T);
+        double[] iX = interpolate(gps_njd, get2ndDim(eci, 0, numGPS), T);
+        double[] iY = interpolate(gps_njd, get2ndDim(eci, 1, numGPS), T);
+        double[] iZ = interpolate(gps_njd, get2ndDim(eci, 2, numGPS), T);
+        double[] iVX = interpolate(gps_njd, get2ndDim(eci, 3, numGPS), T);
+        double[] iVY = interpolate(gps_njd, get2ndDim(eci, 4, numGPS), T);
+        double[] iVZ = interpolate(gps_njd, get2ndDim(eci, 5, numGPS), T);
 
         double[] iR = new double[T.length];
         for (int i = 0; i < iR.length; i++) {
@@ -260,7 +266,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         SimpleSmoother smoother = new SimpleSmoother(5);
         final double[] AngVel = new double[AngVelRawSubset.length];
         smoother.smooth(AngVelRawSubset, AngVel);
-        double[] iAngVel = spline(gps_njd, AngVel, T);
+        double[] iAngVel = interpolate(gps_njd, AngVel, T);
 
         // ==v==v== Initialize Variables ======================================================
 
@@ -400,12 +406,12 @@ public class PerformGeometricCorrectionOp extends Operator {
             /**
              * 5. Interpolate satellite positions & velocities for updated times T[]
              */
-            iX = spline(gps_njd, get2ndDim(eci, 0, numGPS), T);
-            iY = spline(gps_njd, get2ndDim(eci, 1, numGPS), T);
-            iZ = spline(gps_njd, get2ndDim(eci, 2, numGPS), T);
-            iVX = spline(gps_njd, get2ndDim(eci, 3, numGPS), T);
-            iVY = spline(gps_njd, get2ndDim(eci, 4, numGPS), T);
-            iVZ = spline(gps_njd, get2ndDim(eci, 5, numGPS), T);
+            iX = interpolate(gps_njd, get2ndDim(eci, 0, numGPS), T);
+            iY = interpolate(gps_njd, get2ndDim(eci, 1, numGPS), T);
+            iZ = interpolate(gps_njd, get2ndDim(eci, 2, numGPS), T);
+            iVX = interpolate(gps_njd, get2ndDim(eci, 3, numGPS), T);
+            iVY = interpolate(gps_njd, get2ndDim(eci, 4, numGPS), T);
+            iVZ = interpolate(gps_njd, get2ndDim(eci, 5, numGPS), T);
 
             iR = new double[T.length];
             for (int i = 0; i < iR.length; i++) {
@@ -430,7 +436,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             // ==v==v== Get Angular Velocity ======================================================
             // Angular velocity is not really used in the model, except the AngVel at orbit fixation time (iAngVel[0])
 
-            iAngVel = spline(gps_njd, AngVel, T);
+            iAngVel = interpolate(gps_njd, AngVel, T);
 ////  EVOBA MORF DEIPOC
 
             for (int i = 0; i < mode.getNLines(); i++) {
@@ -595,23 +601,23 @@ public class PerformGeometricCorrectionOp extends Operator {
 //            SL[Z][i] = uSL[Z][i];
 //        }
 
-        double[] uPitchAng = new double[mode.getNLines()];
-        double[] uRollAng = new double[mode.getNLines()];
+        double[] centerPitchAngles = new double[mode.getNLines()];
+        double[] centerRollAngles = new double[mode.getNLines()];
         System.out.println("dRoll = " + dRoll);
         for (int i = 0; i < mode.getNLines(); i++) {
-            uPitchAng[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[i][X],
+            centerPitchAngles[i] = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[i][X],
                                                                      uSP[i][Y],
                                                                      uSP[i][Z],
                                                                      yawAxes[i][X],
                                                                      yawAxes[i][Y],
                                                                      yawAxes[i][Z]);
-            uRollAng[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[i][X],
+            centerRollAngles[i] = uRollSign[i] * CoordinateUtils.vectAngle(uSL[i][X],
                                                                    uSL[i][Y],
                                                                    uSL[i][Z],
                                                                    uRange[i][X],
                                                                    uRange[i][Y],
                                                                    uRange[i][Z]);
-            uRollAng[i] += dRoll;
+            centerRollAngles[i] += dRoll;
             // Stores the results for each image
             //PitchAng[i] = uPitchAng[i];
             //RollAng[i] = uRollAng[i];
@@ -633,11 +639,11 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int nLines = mode.getNLines();
         final int nCols = mode.getNCols();
 
-        final double[][] pitchRotation = new double[nLines][nCols];
-        final double[][] rollRotation = new double[nLines][nCols];
+        final double[][] pitchAngles = new double[nLines][nCols];
+        final double[][] rollAngles = new double[nLines][nCols];
 
-        calculateRotations(info.getMode(), mode.getFov(), mode.getIfov(), uPitchAng, uRollAng, pitchRotation,
-                           rollRotation);
+        calculatePitchAndRollAngles(info.getMode(), mode.getFov(), mode.getIfov(), centerPitchAngles, centerRollAngles, pitchAngles,
+                                    rollAngles);
 
         // a. if there ar more than 2 GCPs we can calculate deltas for the pointing angle
         final int gcpCount = gcps.length;
@@ -652,8 +658,8 @@ public class PerformGeometricCorrectionOp extends Operator {
                 final double[] realPointing = DOIT(img, T, Tini, gcp, iX, iY, iZ, pitchAxes, yawAxes);
                 xCoords[i] = gcp.getX();
                 yCoords[i] = gcp.getY();
-                deltaPitch[i] = realPointing[0] - pitchRotation[gcp.getRow()][gcp.getCol()];
-                deltaRoll[i] = realPointing[1] - rollRotation[gcp.getRow()][gcp.getCol()];
+                deltaPitch[i] = realPointing[0] - pitchAngles[gcp.getRow()][gcp.getCol()];
+                deltaRoll[i] = realPointing[1] - rollAngles[gcp.getRow()][gcp.getCol()];
             }
 
             final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaPitch);
@@ -661,8 +667,8 @@ public class PerformGeometricCorrectionOp extends Operator {
 
             for (int y = 0; y < nLines; y++) {
                 for (int x = 0; x < nCols; x++) {
-                    pitchRotation[y][x] += deltaPitchModel.getValue(x + 0.5, y + 0.5);
-                    rollRotation[y][x] += deltaRollModel.getValue(x + 0.5, y + 0.5);
+                    pitchAngles[y][x] += deltaPitchModel.getValue(x + 0.5, y + 0.5);
+                    rollAngles[y][x] += deltaRollModel.getValue(x + 0.5, y + 0.5);
                 }
             }
         }
@@ -671,9 +677,11 @@ public class PerformGeometricCorrectionOp extends Operator {
         lats = new double[nLines][nCols];
         vaas = new double[nLines][nCols];
         vzas = new double[nLines][nCols];
-        PositionCalculator.calculatePositions(
-                pitchRotation,
-                rollRotation,
+
+        final PositionCalculator positionCalculator = new PositionCalculator(useTargetAltitude ? targetAltitude : 0.0);
+        positionCalculator.calculatePositions(
+                pitchAngles,
+                rollAngles,
                 pitchAxes,
                 rollAxes,
                 yawAxes,
@@ -693,15 +701,13 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private double[] DOIT(int img, double[] T, int[] Tini, GCP gcp, double[] iX,
                           double[] iY, double[] iZ, double[][] uEjePitch, double[][] uEjeYaw) {
-        final int x = (int) gcp.getX();
-        final int y = (int) gcp.getY();
         final double lon = gcp.getLon();
         final double lat = gcp.getLat();
 
         final double[] gcpEcef = new double[3];
         CoordinateConverter.wgsToEcef(lon, lat, gcp.getAlt(), gcpEcef);
 
-        final int row = Tini[img] + y;
+        final int row = Tini[img] + gcp.getRow();
         final double gst = TimeConverter.jdToGST(T[row] + JD0);
         final double[] gcpEci = new double[3];
         CoordinateConverter.ecefToEci(gst, gcpEcef, gcpEci);
@@ -725,8 +731,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
 
 
-        final double[] pitchAxis = uEjePitch[y];
-        final double[] yawAxis = uEjeYaw[y];
+        final double[] pitchAxis = uEjePitch[gcp.getRow()];
+        final double[] yawAxis = uEjeYaw[gcp.getRow()];
         double[] uSP = vectorProduct(uRange, pitchAxis, new double[3]);
         double[] uSL = vectorProduct(pitchAxis, uSP, new double[3]);
         double[] uRoll = toUnitVector(vectorProduct(uSL, uRange, new double[3]));
@@ -754,84 +760,67 @@ public class PerformGeometricCorrectionOp extends Operator {
         return new double[]{uPitchAng, uRollAng};
     }
 
-    private int findBestGCP(int x, int y, GCP[] gcps) {
-        int minIndex = -1;
-        double minDelta = Double.POSITIVE_INFINITY;
+    @Override
+    public void dispose() {
+        lons = null;
+        lats = null;
+        vaas = null;
+        vzas = null;
+    }
+
+    /**
+     * Finds the GCP which is nearest to some given pixel coordinates (x, y).
+     *
+     * @param x    the x pixel coordinate.
+     * @param y    the y pixel coordinate.
+     * @param gcps the ground control points being searched.
+     *
+     * @return the index of the GCP nearest to ({@code x}, {@code y}) or {@code -1},
+     *         if no such GCP could be found.
+     */
+    private int findBestGCP(double x, double y, GCP[] gcps) {
+        int bestIndex = -1;
+        double bestDelta = Double.POSITIVE_INFINITY;
 
         for (int i = 0; i < gcps.length; i++) {
             final double dx = gcps[i].getX() - x;
             final double dy = gcps[i].getY() - y;
             final double delta = dx * dx + dy * dy;
-            if (delta < minDelta) {
-                minDelta = delta;
-                minIndex = i;
+            if (delta < bestDelta) {
+                bestDelta = delta;
+                bestIndex = i;
             }
         }
-        return minIndex;
+        return bestIndex;
     }
 
-    private void calculateRotations(int mode, double fov, double ifov, double[] uPitchAng, double[] uRollAng,
-                                    double[][] pitchRotation, double[][] rollRotation) {
-        final int rowCount = pitchRotation.length;
-        final int colCount = pitchRotation[0].length;
+    private void calculatePitchAndRollAngles(int mode,
+                                             double fov,
+                                             double ifov,
+                                             double[] centerPitchAngles,
+                                             double[] centerRollAngles,
+                                             double[][] pitchAngles,
+                                             double[][] rollAngles) {
+        final int rowCount = pitchAngles.length;
+        final int colCount = pitchAngles[0].length;
 
-        final double[] scanAngle = new double[colCount];
+        final double[] deltas = new double[colCount];
         if (mode == 5) {
-            // In Mode 5 the last pixel is the one pointing to the target, i.e. ScanAng must equal zero for the last pixel.
-            for (int i = 0; i < scanAngle.length; i++) {
-                scanAngle[i] = (i + 0.5) * ifov - fov;
+            // for Mode 5 the last pixel points to the target, i.e. delta is zero for the last pixel
+            for (int i = 0; i < deltas.length; i++) {
+                deltas[i] = (i + 0.5) * ifov - fov;
             }
         } else {
-            for (int i = 0; i < scanAngle.length; i++) {
-                scanAngle[i] = (i + 0.5) * ifov - fov / 2.0;
+            final double halfFov = fov / 2.0;
+            for (int i = 0; i < deltas.length; i++) {
+                deltas[i] = (i + 0.5) * ifov - halfFov;
             }
         }
-
         for (int l = 0; l < rowCount; l++) {
             for (int c = 0; c < colCount; c++) {
-                pitchRotation[l][c] = uPitchAng[l];
-                rollRotation[l][c] = uRollAng[l] + scanAngle[c];
+                pitchAngles[l][c] = centerPitchAngles[l];
+                rollAngles[l][c] = centerRollAngles[l] + deltas[c];
             }
-        }
-    }
-
-    @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        if (targetBand.equals(pixelLonBand)) {
-            fillTile(targetBand, targetTile, lons);
-        }
-        if (targetBand.equals(pixelLatBand)) {
-            fillTile(targetBand, targetTile, lats);
-        }
-    }
-
-    private void fillTile(Band targetBand, Tile targetTile, double[][] data) {
-        final int h = targetBand.getSceneRasterHeight();
-        if (info.isBackscanning()) {
-            for (final Tile.Pos pos : targetTile) {
-                targetTile.setSample(pos.x, pos.y, data[h - 1 - pos.y][pos.x]);
-            }
-        } else {
-            for (final Tile.Pos pos : targetTile) {
-                targetTile.setSample(pos.x, pos.y, data[pos.y][pos.x]);
-            }
-        }
-    }
-
-    private Telemetry getTelemetry() {
-        final File telemetryRepository;
-        if (telemetrySearchPath == null || telemetrySearchPath.isEmpty()) {
-            telemetrySearchPath = System.getProperty("beam.chris.telemetryRepositoryPath");
-        }
-        if (telemetrySearchPath == null || telemetrySearchPath.isEmpty()) {
-            telemetryRepository = null;
-        } else {
-            telemetryRepository = new File(telemetrySearchPath);
-        }
-        try {
-            return TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
-        } catch (IOException e) {
-            throw new OperatorException(e);
         }
     }
 
@@ -878,9 +867,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         targetProduct.addTiePointGrid(vzaGrid);
         targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
         targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(type));
-
-        pixelLonBand = targetProduct.addBand("pixelLon", ProductData.TYPE_FLOAT64);
-        pixelLatBand = targetProduct.addBand("pixelLat", ProductData.TYPE_FLOAT64);
 
         return targetProduct;
     }
@@ -933,19 +919,27 @@ public class PerformGeometricCorrectionOp extends Operator {
         return secondDim;
     }
 
-    private static double[] spline(double[] x, double[] y, double[] t) {
-        double[] v = new double[t.length];
+    /**
+     * Interpolates a set of values y(x) using a natural spline.
+     *
+     * @param x  the original x values.
+     * @param y  the original y values.
+     * @param x2 the x values used for interpolation.
+     *
+     * @return the interpolated y values, which is an array of length {@code x2.length}.
+     */
+    private static double[] interpolate(double[] x, double[] y, double[] x2) {
         final PolynomialSplineFunction splineFunction = new SplineInterpolator().interpolate(x, y);
-        for (int i = 0; i < v.length; i++) {
-            v[i] = splineFunction.value(t[i]);
+        final double[] y2 = new double[x2.length];
+        for (int i = 0; i < x2.length; i++) {
+            y2[i] = splineFunction.value(x2[i]);
         }
-        return v;
+        return y2;
     }
 
     private static double getDeltaGPS(Product product) {
-        final Date date = product.getStartTime().getAsDate(); // image center time for CHRIS products
+        final Date date = product.getStartTime().getAsDate(); // for CHRIS products, this is the image center time
         final double mjd = TimeConverter.dateToMJD(date);
-
         try {
             return TimeConverter.getInstance().deltaGPS(mjd);
         } catch (IOException e) {
@@ -953,7 +947,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
     }
 
-    // TODO - this is almost a general utility method (rq-20090708)
+    // todo - this is almost a general utility method (rq-20090708)
+
     private static Product createCopy(Product sourceProduct, String name, String type, BandFilter bandFilter) {
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
@@ -965,8 +960,6 @@ public class PerformGeometricCorrectionOp extends Operator {
 
         // 2. copy flag codings
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-
-        // TODO - tie point grids
 
         // 3. copy all bands from source product to target product
         for (final Band sourceBand : sourceProduct.getBands()) {
@@ -980,8 +973,8 @@ public class PerformGeometricCorrectionOp extends Operator {
             }
         }
 
-        // 4. copy bitmask definitions
-        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        // 4. copy masks
+        ProductUtils.copyMasks(sourceProduct, targetProduct);
 
         // 5. copy metadata tree
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());

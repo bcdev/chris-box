@@ -20,7 +20,6 @@ import org.esa.beam.chris.operators.PerformGeometricCorrectionOp;
 import org.esa.beam.chris.operators.TimeConverter;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.OperatorSpi;
-import org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog;
 import org.esa.beam.framework.ui.ModelessDialog;
 import org.esa.beam.framework.ui.command.CommandEvent;
 import org.esa.beam.visat.VisatApp;
@@ -89,12 +88,7 @@ public class PerformGeometricCorrectionAction extends AbstractVisatAction {
 
     private ModelessDialog createDialog() {
         final String operatorAlias = OperatorSpi.getOperatorAlias(PerformGeometricCorrectionOp.class);
-        final DefaultSingleTargetProductDialog dialog =
-                new DefaultSingleTargetProductDialog(operatorAlias, getAppContext(), TITLE, getHelpId());
-        dialog.getJDialog().setName("chrisGeometricCorrectionDialog");
-        dialog.setTargetProductNameSuffix("_GC");
-
-        return dialog;
+        return new GeometricCorrectionDialog(operatorAlias, getAppContext(), TITLE, getHelpId());
     }
 
     private class TimeConverterUpdater extends ProgressMonitorSwingWorker<Object, Object> {
