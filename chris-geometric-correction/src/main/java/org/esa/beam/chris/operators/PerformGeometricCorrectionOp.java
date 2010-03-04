@@ -54,24 +54,17 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     public static final String ALIAS_TELEMETRY_REPOSITORY = "telemetryRepository";
 
-    private static final int SLOW_DOWN = 5; // Slowdown factor
-
-    //Epoch for a reduced Julian Day (all JD values are substracted by this value). 
-    //This way the calculations can be performed more efficiently.
-    private static final double JD0 = TimeConverter.julianDate(2001, 0, 1);
-
-    // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position/velocity.
+    private static final int SLOW_DOWN_FACTOR = 5;
+    private static final double JD2001 = TimeConverter.julianDate(2001, 0, 1);
+    // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position
     private static final double DELAY = 0.999;
 
-    // Variables used for array subscripting, so the code is more readable.
+    // constants used for array indexes, so the code is more readable.
     private static final int X = 0;
     private static final int Y = 1;
     private static final int Z = 2;
-
-    private static final int NUM_IMG = 5;
-
-
-    ///////////////////////////////////////////////////////////
+    // five images for each acquisition
+    private static final int IMAGE_COUNT = 5;
 
     @Parameter(alias = ALIAS_TELEMETRY_REPOSITORY, label = "Telemetry repository", defaultValue = ".",
                description = "The directory searched for CHRIS telemetry data", notNull = true, notEmpty = true)
@@ -97,8 +90,6 @@ public class PerformGeometricCorrectionOp extends Operator {
     private double[][] pitchAngles;
     private double[][] rollAngles;
 
-    ///////////////////////////////////////////////////////////
-
     @Override
     public void initialize() throws OperatorException {
         final Telemetry telemetry;
@@ -119,17 +110,17 @@ public class PerformGeometricCorrectionOp extends Operator {
         //////////////////////////
 
         // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
-        final double acquisitionSetupTime = ictData.ict1 - (10.0 + 390.0) / TimeConverter.SECONDS_PER_DAY - JD0;
+        final double acquisitionSetupTime = ictData.ict1 - (10.0 + 390.0) / TimeConverter.SECONDS_PER_DAY - JD2001;
         double[] ict_njd = {
-                ictData.ict1 - JD0,
-                ictData.ict2 - JD0,
-                ictData.ict3 - JD0,
-                ictData.ict4 - JD0,
-                ictData.ict5 - JD0,
+                ictData.ict1 - JD2001,
+                ictData.ict2 - JD2001,
+                ictData.ict3 - JD2001,
+                ictData.ict4 - JD2001,
+                ictData.ict5 - JD2001,
                 acquisitionSetupTime
         };
 
-        double[] T_ict = Arrays.copyOfRange(ict_njd, 0, NUM_IMG);
+        double[] T_ict = Arrays.copyOfRange(ict_njd, 0, IMAGE_COUNT);
 
         //---- Nos quedamos con todos los elementos de GPS menos el ultimo ----------------
         //----   ya q es donde se almacena la AngVel media, y perder un dato --------------
@@ -141,13 +132,13 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int numGPS = gpsData.size() - 2;
         double[] gps_njd = new double[numGPS];
         for (int i = 0; i < gps_njd.length; i++) {
-            gps_njd[i] = gpsData.get(i).jd - JD0;
+            gps_njd[i] = gpsData.get(i).jd - JD2001;
         }
 
         // ---- Critical Times ---------------------------------------------
 
-        double[] T_ini = new double[NUM_IMG]; // imaging start time (imaging lasts ~9.5s in every mode)
-        double[] T_end = new double[NUM_IMG]; // imaging stop time
+        double[] T_ini = new double[IMAGE_COUNT]; // imaging start time (imaging lasts ~9.5s in every mode)
+        double[] T_end = new double[IMAGE_COUNT]; // imaging stop time
         for (int i = 0; i < T_ini.length; i++) {
             T_ini[i] = ict_njd[i] - (modeCharacteristics.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
             T_end[i] = ict_njd[i] + (modeCharacteristics.getTimePerImage() / 2.0) / TimeConverter.SECONDS_PER_DAY;
@@ -167,17 +158,17 @@ public class PerformGeometricCorrectionOp extends Operator {
             // +TpL/2 is added to set the time at the middle of the integration time, i.e. pixel center
         }
 
-        double[][] T_img = new double[modeCharacteristics.getRowCount()][NUM_IMG];
+        double[][] T_img = new double[modeCharacteristics.getRowCount()][IMAGE_COUNT];
         for (int line = 0; line < modeCharacteristics.getRowCount(); line++) {
-            for (int img = 0; img < NUM_IMG; img++) {
+            for (int img = 0; img < IMAGE_COUNT; img++) {
                 T_img[line][img] = T_ini[img] + T_lin[line];
             }
         }
 
-        double[] T = new double[1 + NUM_IMG * modeCharacteristics.getRowCount()];
+        double[] T = new double[1 + IMAGE_COUNT * modeCharacteristics.getRowCount()];
         T[0] = ict_njd[5];
         int Tindex = 1;
-        for (int img = 0; img < NUM_IMG; img++) {
+        for (int img = 0; img < IMAGE_COUNT; img++) {
             for (int line = 0; line < modeCharacteristics.getRowCount(); line++) {
                 T[Tindex] = T_img[line][img];
                 Tindex++;
@@ -193,9 +184,9 @@ public class PerformGeometricCorrectionOp extends Operator {
         // Set the indices of T that correspond to critical times (integration start and stop) for each image
 
         // The first element of T corresponds to the acquisition-setup time, so Tini[0] must skip element 0 of T
-        int[] Tini = new int[NUM_IMG];
-        int[] Tend = new int[NUM_IMG];
-        for (int img = 0; img < NUM_IMG; img++) {
+        int[] Tini = new int[IMAGE_COUNT];
+        int[] Tend = new int[IMAGE_COUNT];
+        for (int img = 0; img < IMAGE_COUNT; img++) {
             Tini[img] = modeCharacteristics.getRowCount() * img + 1;
             Tend[img] = Tini[img] + modeCharacteristics.getRowCount() - 1;
         }
@@ -243,13 +234,13 @@ public class PerformGeometricCorrectionOp extends Operator {
         double[][] uWop = toUnitVectors(vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
 
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
-        double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
+        double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD2001);
         double[] eci_opv;
         double[] uWecf = CoordinateConverter.eciToEcef(gst_opv, uWop[Tfix], new double[3]);
 
         double[][] uW = new double[T.length][3];
         for (int i = 0; i < T.length; i++) {
-            double gst = TimeConverter.jdToGST(T[i] + JD0);
+            double gst = TimeConverter.jdToGST(T[i] + JD2001);
             CoordinateConverter.ecefToEci(gst, uWecf, uW[i]);
         }
 
@@ -301,7 +292,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         // Case with Moving Target for imaging time
         double[][] iTGT0 = new double[T.length][3];
         for (int i = 0; i < iTGT0.length; i++) {
-            double gst = TimeConverter.jdToGST(T[i] + JD0);
+            double gst = TimeConverter.jdToGST(T[i] + JD2001);
             CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
         }
 
@@ -312,7 +303,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             final double y = uW[Tini[img] + i][Y];
             final double z = uW[Tini[img] + i][Z];
             final double a = Math.pow(-1.0,
-                                      img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
+                                      img) * iAngVel[0] / SLOW_DOWN_FACTOR * (T_img[i][img] - T_ict[img]) * TimeConverter.SECONDS_PER_DAY;
             Quaternion.createQuaternion(x, y, z, a).transform(iTGT0[Tini[img] + i], iTGT0[Tini[img] + i]);
         }
 
@@ -340,7 +331,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             // iTGT0_ecf = eci2ecf(T+jd0, iTGT0[X,*], iTGT0[Y,*], iTGT0[Z,*])
             final double[][] iTGT0_ecf = new double[iTGT0.length][3];
             for (int i = 0; i < iTGT0.length; i++) {
-                final double gst = TimeConverter.jdToGST(T[i] + JD0);
+                final double gst = TimeConverter.jdToGST(T[i] + JD2001);
                 CoordinateConverter.eciToEcef(gst, iTGT0[i], iTGT0_ecf[i]);
             }
 
@@ -403,7 +394,7 @@ public class PerformGeometricCorrectionOp extends Operator {
             // GCP_eci = ecf2eci(T+jd0, GCP_ecf.X, GCP_ecf.Y, GCP_ecf.Z, units = GCP_ecf.units)	; Transform GCP coords to ECI for every time in the acquisition
             final double[][] GCP_eci = new double[T.length][3];
             for (int i = 0; i < T.length; i++) {
-                final double gst = TimeConverter.jdToGST(T[i] + JD0);
+                final double gst = TimeConverter.jdToGST(T[i] + JD2001);
                 CoordinateConverter.ecefToEci(gst, GCP_ecf, GCP_eci[i]);
                 //                CoordinateConverter.ecefToEci(gst, TGTecf, iTGT0[i]);
             }
@@ -430,13 +421,13 @@ public class PerformGeometricCorrectionOp extends Operator {
             uWop = toUnitVectors(vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
 
             // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
-            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD0);
+            gst_opv = TimeConverter.jdToGST(T[Tfix] + JD2001);
             uWecf = new double[3];
             CoordinateConverter.eciToEcef(gst_opv, uWop[Tfix], uWecf);
 
             uW = new double[T.length][3];
             for (int i = 0; i < T.length; i++) {
-                double gst = TimeConverter.jdToGST(T[i] + JD0);
+                double gst = TimeConverter.jdToGST(T[i] + JD2001);
                 CoordinateConverter.ecefToEci(gst, uWecf, uW[i]);
             }
 
@@ -451,10 +442,10 @@ public class PerformGeometricCorrectionOp extends Operator {
                 final double y = uW[Tini[img] + i][Y];
                 final double z = uW[Tini[img] + i][Z];
                 final double a = Math.pow(-1.0,
-                                          img) * iAngVel[0] / SLOW_DOWN * (T_img[i][img] - tmin) * TimeConverter.SECONDS_PER_DAY;
+                                          img) * iAngVel[0] / SLOW_DOWN_FACTOR * (T_img[i][img] - tmin) * TimeConverter.SECONDS_PER_DAY;
                 Quaternion.createQuaternion(x, y, z, a).transform(GCP_eci[Tini[img] + i], GCP_eci[Tini[img] + i]);
                 System.out.println("i = " + i);
-                final double gst = TimeConverter.jdToGST(T[Tini[img] + i] + JD0);
+                final double gst = TimeConverter.jdToGST(T[Tini[img] + i] + JD2001);
                 final double[] ecef = new double[3];
                 CoordinateConverter.eciToEcef(gst, GCP_eci[Tini[img] + i], ecef);
                 final double[] p = CoordinateConverter.ecefToWgs(ecef[0], ecef[1], ecef[2], new double[3]);
@@ -654,31 +645,8 @@ public class PerformGeometricCorrectionOp extends Operator {
                                     rollAngles);
 
         // a. if there ar more than 2 GCPs we can calculate deltas for the pointing angle
-        final int gcpCount = gcps.length;
-        if (gcpCount > 2) {
-            final double[] xCoords = new double[gcpCount];
-            final double[] yCoords = new double[gcpCount];
-            final double[] deltaPitch = new double[gcpCount];
-            final double[] deltaRoll = new double[gcpCount];
-
-            for (int i = 0; i < gcpCount; i++) {
-                final GCP gcp = gcps[i];
-                final double[] realPointing = DOIT(img, T, Tini, gcp, iX, iY, iZ, pitchAxes, yawAxes);
-                xCoords[i] = gcp.getX();
-                yCoords[i] = gcp.getY();
-                deltaPitch[i] = realPointing[0] - pitchAngles[gcp.getRow()][gcp.getCol()];
-                deltaRoll[i] = realPointing[1] - rollAngles[gcp.getRow()][gcp.getCol()];
-            }
-
-            final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaPitch);
-            final RationalFunctionModel deltaRollModel = new RationalFunctionModel(2, 0, xCoords, yCoords, deltaRoll);
-
-            for (int y = 0; y < rowCount; y++) {
-                for (int x = 0; x < colCount; x++) {
-                    pitchAngles[y][x] += deltaPitchModel.getValue(x + 0.5, y + 0.5);
-                    rollAngles[y][x] += deltaRollModel.getValue(x + 0.5, y + 0.5);
-                }
-            }
+        if (gcps.length > 2) {
+            refinePitchAndRollAngles(gcps, timeSubset, ixSubset, iySubset, izSubset, pitchAxes, yawAxes);
         }
 
         lons = new double[rowCount][colCount];
@@ -704,65 +672,85 @@ public class PerformGeometricCorrectionOp extends Operator {
         setTargetProduct(targetProduct);
     }
 
-    private double[] DOIT(int img, double[] T, int[] Tini, GCP gcp, double[] iX,
-                          double[] iY, double[] iZ, double[][] uEjePitch, double[][] uEjeYaw) {
-        final double lon = gcp.getLon();
-        final double lat = gcp.getLat();
+    private void refinePitchAndRollAngles(GCP[] gcps, double[] timeSubset, double[] ixSubset, double[] iySubset,
+                                          double[] izSubset,
+                                          double[][] pitchAxes, double[][] yawAxes) {
+        final int gcpCount = gcps.length;
+        final double[] x = new double[gcpCount];
+        final double[] y = new double[gcpCount];
+        final double[] deltaPitch = new double[gcpCount];
+        final double[] deltaRoll = new double[gcpCount];
+        final double[] pitchRoll = new double[2];
 
-        final double[] gcpEcef = new double[3];
-        CoordinateConverter.wgsToEcef(lon, lat, gcp.getAlt(), gcpEcef);
+        for (int i = 0; i < gcpCount; i++) {
+            final GCP gcp = gcps[i];
+            final int row = gcp.getRow();
+            final int col = gcp.getCol();
+            final double satT = timeSubset[row];
+            final double satX = ixSubset[row];
+            final double satY = iySubset[row];
+            final double satZ = izSubset[row];
+            final double[] pitchAxis = pitchAxes[row];
+            final double[] yawAxis = yawAxes[row];
 
-        final int row = Tini[img] + gcp.getRow();
-        final double gst = TimeConverter.jdToGST(T[row] + JD0);
-        final double[] gcpEci = new double[3];
-        CoordinateConverter.ecefToEci(gst, gcpEcef, gcpEci);
+            calculatePitchRoll(satT, satX, satY, satZ, gcp, pitchAxis, yawAxis, pitchRoll);
 
-        double dX = gcpEci[X] - iX[row];
-        double dY = gcpEci[Y] - iY[row];
-        double dZ = gcpEci[Z] - iZ[row];
+            x[i] = gcp.getX();
+            y[i] = gcp.getY();
+            deltaPitch[i] = pitchRoll[0] - pitchAngles[row][col];
+            deltaRoll[i] = pitchRoll[1] - rollAngles[row][col];
+        }
 
-        double[] uRange = toUnitVector(new double[]{dX, dY, dZ});
+        final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, x, y, deltaPitch);
+        final RationalFunctionModel deltaRollModel = new RationalFunctionModel(2, 0, x, y, deltaRoll);
 
-        // ScanPlane:
-        //double[][] uSP = new double[3][mode.getNLines()];
-        //double[][] uSPr = new double[3][mode.getNLines() * mode.getNCols()];
+        for (int k = 0; k < pitchAngles.length; k++) {
+            final double[] rowPitchAngles = pitchAngles[k];
+            final double[] rowRollAngles = rollAngles[k];
+            for (int l = 0; l < rowPitchAngles.length; l++) {
+                rowPitchAngles[l] += deltaPitchModel.getValue(l + 0.5, k + 0.5);
+                rowRollAngles[l] += deltaRollModel.getValue(l + 0.5, k + 0.5);
+            }
+        }
+    }
 
-        // SightLine:
-        //double[][] uSL = new double[3][mode.getNLines()];
-        //double[][] uSLr = new double[3][mode.getNLines() * mode.getNCols()];
+    private static void calculatePitchRoll(
+            double satT,
+            double satX,
+            double satY,
+            double satZ,
+            GCP gcp,
+            double[] pitchAxis,
+            double[] yawAxis,
+            double[] angles) {
+        final double[] gcpPos = CoordinateConverter.wgsToEcef(gcp.getLon(), gcp.getLat(), gcp.getAlt(), new double[3]);
+        CoordinateConverter.ecefToEci(TimeConverter.jdToGST(satT + JD2001), gcpPos, gcpPos);
 
-        // RollSign:
-        int uRollSign = 0;
-        //int[] uRollSignR = new int[mode.getNLines() * mode.getNCols()];
+        final double dx = gcpPos[X] - satX;
+        final double dy = gcpPos[Y] - satY;
+        final double dz = gcpPos[Z] - satZ;
+        final double[] pointing = toUnitVector(new double[]{dx, dy, dz});
+        final double[] sp = vectorProduct(pointing, pitchAxis, new double[3]);
+        final double[] sl = vectorProduct(pitchAxis, sp, new double[3]);
+        final double[] rollAxis = toUnitVector(vectorProduct(sl, pointing, new double[3]));
+        final double total = rollAxis[X] / sp[X] + rollAxis[Y] / sp[Y] + rollAxis[Z] / sp[Z];
 
+        final double pitchAngle = Math.PI / 2.0 - CoordinateUtils.vectAngle(sp[X],
+                                                                            sp[Y],
+                                                                            sp[Z],
+                                                                            yawAxis[X],
+                                                                            yawAxis[Y],
+                                                                            yawAxis[Z]);
+        final double rollSign = Math.signum(total);
+        final double rollAngle = rollSign * CoordinateUtils.vectAngle(sl[X],
+                                                                      sl[Y],
+                                                                      sl[Z],
+                                                                      pointing[X],
+                                                                      pointing[Y],
+                                                                      pointing[Z]);
 
-        final double[] pitchAxis = uEjePitch[gcp.getRow()];
-        final double[] yawAxis = uEjeYaw[gcp.getRow()];
-        double[] uSP = vectorProduct(uRange, pitchAxis, new double[3]);
-        double[] uSL = vectorProduct(pitchAxis, uSP, new double[3]);
-        double[] uRoll = toUnitVector(vectorProduct(uSL, uRange, new double[3]));
-        double total = 0;
-        total += uRoll[X] / uSP[X];
-        total += uRoll[Y] / uSP[Y];
-        total += uRoll[Z] / uSP[Z];
-        uRollSign = (int) Math.signum(total);
-
-        double uPitchAng = 0.0;
-        double uRollAng = 0.0;
-        uPitchAng = Math.PI / 2.0 - CoordinateUtils.vectAngle(uSP[X],
-                                                              uSP[Y],
-                                                              uSP[Z],
-                                                              yawAxis[X],
-                                                              yawAxis[Y],
-                                                              yawAxis[Z]);
-        uRollAng = uRollSign * CoordinateUtils.vectAngle(uSL[X],
-                                                         uSL[Y],
-                                                         uSL[Z],
-                                                         uRange[X],
-                                                         uRange[Y],
-                                                         uRange[Z]);
-
-        return new double[]{uPitchAng, uRollAng};
+        angles[0] = pitchAngle;
+        angles[1] = rollAngle;
     }
 
     @Override

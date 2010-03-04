@@ -2,6 +2,8 @@ package org.esa.beam.chris.operators;
 
 class ViewingGeometry {
 
+    private static final double TWO_PI = 2.0 * Math.PI;
+    
     final double x;
     final double y;
     final double z;
@@ -39,9 +41,9 @@ class ViewingGeometry {
             azimuth += Math.PI;
         }
         if (topS < 0) {
-            azimuth += 2.0 * Math.PI;
+            azimuth += TWO_PI;
         }
-        azimuth %= (2.0 * Math.PI);
+        azimuth %= TWO_PI;
 
         return new ViewingGeometry(x, y, z, azimuth, zenith);
     }
