@@ -29,7 +29,7 @@ import java.util.List;
  * Handle image center time reading and calculation.
  *
  * @author Marco Zuehlke
- * @version $Revision$ $Date$
+ * @since CHRIS-Box 1.5
  */
 class IctDataRecord {
 

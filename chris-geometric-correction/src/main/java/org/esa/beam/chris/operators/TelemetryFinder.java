@@ -29,7 +29,12 @@ import java.text.MessageFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+/**
+ * Telemetry file finder.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class TelemetryFinder {
 
     static class Telemetry {
@@ -124,7 +129,7 @@ class TelemetryFinder {
                 }
             }
         }
-        
+
         return telemetryFiles;
     }
 

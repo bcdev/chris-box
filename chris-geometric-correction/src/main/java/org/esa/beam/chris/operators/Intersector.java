@@ -7,6 +7,9 @@ import static java.lang.Math.sqrt;
 /**
  * Utility class for calculating the intersection of a straight line, which is defined
  * by a point and a direction, and an ellipsoid.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
  */
 class Intersector {
 

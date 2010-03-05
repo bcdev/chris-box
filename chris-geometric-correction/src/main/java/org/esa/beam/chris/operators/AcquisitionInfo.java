@@ -4,6 +4,13 @@ import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Product;
 
+/**
+ * Acquisition information.
+ *
+ * @author Ralf Quast
+ * @author Marco Zuehlke
+ * @since CHRIS-Box 1.5
+ */
 class AcquisitionInfo {
 
     private static final int[] CHRONOLOGICAL_IMAGE_NUMBERS = new int[]{2, 1, 3, 0, 4};

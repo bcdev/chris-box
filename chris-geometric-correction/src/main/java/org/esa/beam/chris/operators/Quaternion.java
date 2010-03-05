@@ -4,15 +4,16 @@ import com.bc.ceres.core.Assert;
 
 import java.text.MessageFormat;
 
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
+import static java.lang.Math.*;
 
 /**
  * Class for rotating 3-dimensional vectors by means of quaternions.
  * <p/>
  * See http://www.wikipedia.org/wiki/Quaternions for an explanation of
  * Quaternions.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
  */
 class Quaternion {
 

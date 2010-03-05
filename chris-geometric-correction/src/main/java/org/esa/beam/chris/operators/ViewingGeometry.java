@@ -2,14 +2,23 @@ package org.esa.beam.chris.operators;
 
 import static java.lang.Math.*;
 
+/**
+ * Viewing geometry.
+ *
+ * @author Ralf Quast
+ * @author Marco Zuehlke
+ * @since CHRIS-Box 1.5
+ */
 class ViewingGeometry {
 
     private static final double HALF_PI = PI / 2.0;
     private static final double TWO_PI = 2.0 * PI;
 
+    // components of the pointing vector
     final double x;
     final double y;
     final double z;
+    // viewing angles
     final double azimuth;
     final double zenith;
 

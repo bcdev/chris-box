@@ -6,6 +6,9 @@ import org.esa.beam.chris.util.math.internal.Smoother;
 
 /**
  * A simple smoother (effectively doing boxcar averaging).
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
  */
 class SimpleSmoother implements Smoother {
 

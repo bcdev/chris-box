@@ -19,6 +19,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+/**
+ * File editor.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class FileEditor extends PropertyEditor {
 
     private FileEditor() {
@@ -26,6 +32,7 @@ class FileEditor extends PropertyEditor {
 
     // we do not want to add this editor to the {@code com.bc.ceres.swing.binding.PropertyEditorRegistry}
     // todo: - rq/rq merge this file editor with {@code com.bc.ceres.swing.binding.internal.FileEditor}
+
     static FileEditor getInstance() {
         return Holder.INSTANCE;
     }
@@ -72,6 +79,7 @@ class FileEditor extends PropertyEditor {
     }
 
     // holder idiom
+
     private static class Holder {
 
         private static final FileEditor INSTANCE = new FileEditor();

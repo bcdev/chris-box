@@ -2,6 +2,12 @@ package org.esa.beam.chris.operators;
 
 import static java.lang.Math.*;
 
+/**
+ * Coordinate converter.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class CoordinateConverter {
 
     /**

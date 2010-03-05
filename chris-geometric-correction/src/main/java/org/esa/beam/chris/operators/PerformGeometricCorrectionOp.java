@@ -41,10 +41,17 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Operator performing the geometric correction.
+ *
+ * @author Ralf Quast
+ * @author Marco Zuehlke
+ * @since CHRIS-Box 1.5
+ */
 @OperatorMetadata(alias = "chris.PerformGeometricCorrection",
                   version = "1.0",
                   authors = "Ralf Quast, Marco Zühlke",
-                  copyright = "(c) 2009 by Brockmann Consult",
+                  copyright = "(c) 2010 by Brockmann Consult",
                   description = "Performs the geometric correction for a CHRIS/Proba RCI.")
 public class PerformGeometricCorrectionOp extends Operator {
 

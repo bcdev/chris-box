@@ -17,6 +17,13 @@
 package org.esa.beam.chris.operators;
 
 
+/**
+ * Some vector math.
+ *
+ * @author Ralf Quast
+ * @author Marco Zuehlke
+ * @since CHRIS-Box 1.5
+ */
 class VectorMath {
 
     /**

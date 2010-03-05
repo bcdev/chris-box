@@ -2,15 +2,19 @@ package org.esa.beam.chris.operators;
 
 import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.framework.datamodel.RationalFunctionModel;
-import org.esa.beam.framework.gpf.OperatorException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Geometry calculator.
+ * <p/>
+ * NOTE: This is largely unoptimized code. todo: rq/rq - optimize
+ *
+ * @author Ralf Quast
+ * @author Marco Zuehlke
+ * @since CHRIS-Box 1.5
+ */
 class GeometryCalculator {
 
     private static final int SLOW_DOWN_FACTOR = 5;

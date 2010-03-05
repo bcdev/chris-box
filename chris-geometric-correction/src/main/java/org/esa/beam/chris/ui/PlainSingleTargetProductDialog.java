@@ -37,7 +37,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// todo: rq/ rq - merge this class with {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+
+/**
+ * Plain single target product dialog.
+ * <p/>
+ * NOTE: This class has been cloned from {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog},
+ * simplified in some aspects, and refactored. // todo: rq/rq - merge with origin or move to package of origin
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
 
     private final String operatorName;
@@ -72,9 +81,8 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
 
         final PropertyDescriptorFactory parameterDescriptorFactory = new ParameterDescriptorFactory();
         parameterMap = new HashMap<String, Object>(17);
-        final PropertyContainer propertyContainer = PropertyContainer.createMapBacked(parameterMap,
-                                                                                      operatorClass,
-                                                                                      parameterDescriptorFactory);
+        final PropertyContainer propertyContainer =
+                PropertyContainer.createMapBacked(parameterMap, operatorClass, parameterDescriptorFactory);
         try {
             propertyContainer.setDefaultValues();
         } catch (ValidationException e) {
@@ -107,7 +115,8 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         }
     }
 
-    // todo: rq/ rq - merge this method into {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+    // method not exists in {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+
     public Object getParameterValue(String name) {
         return parameterMap.get(name);
     }
@@ -140,11 +149,13 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         return GPF.createProduct(operatorName, parameterMap, sourceProducts);
     }
 
-    // todo: rq/ rq - merge this method into {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+    // method not exists in {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+
     protected void initProperties(PropertySet propertySet) {
     }
 
-    // todo: rq/ rq - merge this method into {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+    // method not exists in {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+
     protected PropertyEditor findPropertyEditor(PropertyDescriptor descriptor) {
         return PropertyEditorRegistry.getInstance().findPropertyEditor(descriptor);
     }
@@ -199,6 +210,8 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
             }
         }
     }
+
+    // method not exists in {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
 
     private JPanel createParametersPanel(PropertyContainer propertyContainer) {
         final BindingContext bindingContext = new BindingContext(propertyContainer);
@@ -262,6 +275,8 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         }
         return sourceProductMap;
     }
+
+    // handler has less functionality than in {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
 
     private class ProductSelectionChangeHandler extends AbstractSelectionChangeListener {
 

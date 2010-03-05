@@ -1,5 +1,11 @@
 package org.esa.beam.chris.operators;
 
+/**
+ * Position calculator.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class PositionCalculator {
 
     private static final double JD2001 = TimeConverter.julianDate(2001, 0, 1);

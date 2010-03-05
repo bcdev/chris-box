@@ -9,6 +9,12 @@ import org.esa.beam.util.PropertyMap;
 
 import java.io.File;
 
+/**
+ * Geometric correction dialog.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class GeometricCorrectionDialog extends PlainSingleTargetProductDialog {
 
     private static final String KEY_TELEMETRY_REPOSITORY = "beam.chris.telemetryRepository";

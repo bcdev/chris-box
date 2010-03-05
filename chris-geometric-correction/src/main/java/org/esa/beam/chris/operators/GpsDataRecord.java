@@ -26,10 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Handles GPS time reading and calculation
+ * Handles GPS time reading and calculation.
  *
  * @author Marco Zuehlke
- * @version $Revision$ $Date$
+ * @since CHRIS-Box 1.5
  */
 class GpsDataRecord {
 

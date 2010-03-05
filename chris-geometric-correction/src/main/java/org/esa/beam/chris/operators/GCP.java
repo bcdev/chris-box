@@ -6,6 +6,12 @@ import org.esa.beam.framework.datamodel.ProductNodeGroup;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Ground control point.
+ *
+ * @author Ralf Quast
+ * @since CHRIS-Box 1.5
+ */
 class GCP {
 
     private final double x;
