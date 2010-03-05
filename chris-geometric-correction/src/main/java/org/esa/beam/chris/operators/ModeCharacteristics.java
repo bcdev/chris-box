@@ -19,6 +19,7 @@ package org.esa.beam.chris.operators;
 /**
  * CHRIS Constants, some differ for each mode
  *
+ * @author Ralf Quast
  * @author Marco Zuehlke
  * @since CHRIS-Box 1.5
  */
