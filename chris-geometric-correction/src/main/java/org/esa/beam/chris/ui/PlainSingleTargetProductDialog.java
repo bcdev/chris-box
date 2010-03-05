@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// todo: rq/ rq - merge this class with {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
 class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
 
     private final String operatorName;
@@ -79,7 +80,7 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         } catch (ValidationException e) {
             showErrorDialog(e.getMessage());
         }
-        customizeProperties(propertyContainer);
+        initProperties(propertyContainer);
 
         form = new JTabbedPane();
         final TableLayout tableLayout = new TableLayout(1);
@@ -106,6 +107,7 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         }
     }
 
+    // todo: rq/ rq - merge this method into {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
     public Object getParameterValue(String name) {
         return parameterMap.get(name);
     }
@@ -138,9 +140,11 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         return GPF.createProduct(operatorName, parameterMap, sourceProducts);
     }
 
-    protected void customizeProperties(PropertySet propertySet) {
+    // todo: rq/ rq - merge this method into {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
+    protected void initProperties(PropertySet propertySet) {
     }
 
+    // todo: rq/ rq - merge this method into {@code org.esa.beam.framework.gpf.ui.DefaultSingleTargetProductDialog}
     protected PropertyEditor findPropertyEditor(PropertyDescriptor descriptor) {
         return PropertyEditorRegistry.getInstance().findPropertyEditor(descriptor);
     }

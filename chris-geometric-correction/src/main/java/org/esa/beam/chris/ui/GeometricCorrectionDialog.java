@@ -20,7 +20,7 @@ class GeometricCorrectionDialog extends PlainSingleTargetProductDialog {
     }
 
     @Override
-    protected void customizeProperties(PropertySet propertySet) {
+    protected void initProperties(PropertySet propertySet) {
         final String propertyName = PerformGeometricCorrectionOp.ALIAS_TELEMETRY_REPOSITORY;
         propertySet.getDescriptor(propertyName).setAttribute("directory", true);
 

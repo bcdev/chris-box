@@ -7,8 +7,7 @@ import org.esa.beam.framework.datamodel.ProductFilter;
  * Filters CHRIS/Proba products suitable for the geometric correction.
  *
  * @author Ralf Quast
- * @version $Revision $ $Date $
- * @since CHRIS-Box 1.1
+ * @since CHRIS-Box 1.5
  */
 class GeometricCorrectionProductFilter implements ProductFilter {
 

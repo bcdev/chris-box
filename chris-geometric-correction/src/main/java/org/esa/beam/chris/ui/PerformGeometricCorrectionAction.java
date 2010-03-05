@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Action for invoking the geometric correction.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
+ * @since CHRIS-Box 1.5
  */
 public class PerformGeometricCorrectionAction extends AbstractVisatAction {
 

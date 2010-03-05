@@ -25,6 +25,7 @@ class FileEditor extends PropertyEditor {
     }
 
     // we do not want to add this editor to the {@code com.bc.ceres.swing.binding.PropertyEditorRegistry}
+    // todo: - rq/rq merge this file editor with {@code com.bc.ceres.swing.binding.internal.FileEditor}
     static FileEditor getInstance() {
         return Holder.INSTANCE;
     }
