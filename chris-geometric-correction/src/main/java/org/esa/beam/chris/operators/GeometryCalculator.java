@@ -28,7 +28,7 @@ class GeometryCalculator {
     final double[][] pitchAngles;
     final double[][] rollAngles;
 
-    public GeometryCalculator(AcquisitionInfo acquisitionInfo, GCP[] gcps, boolean useTargetAltitude) {
+    public GeometryCalculator(AcquisitionInfo acquisitionInfo) {
         this.acquisitionInfo = acquisitionInfo;
 
         final ModeCharacteristics modeCharacteristics = ModeCharacteristics.get(acquisitionInfo.getMode());

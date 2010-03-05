@@ -89,7 +89,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dT);
         final AcquisitionInfo acquisitionInfo = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
         final GCP[] gcps = GCP.toGCPs(sourceProduct.getGcpGroup(), acquisitionInfo.getTargetAlt());
-        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo, gcps, useTargetAltitude);
+        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo);
 
         calculator.calculate(ictData, gpsData, gcps, useTargetAltitude);
 
