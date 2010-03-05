@@ -129,7 +129,7 @@ public class ComputeToaReflectancesOp extends Operator {
             }
         }
 
-        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        ProductUtils.copyMasks(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
         targetProduct.setPreferredTileSize(32, 32);

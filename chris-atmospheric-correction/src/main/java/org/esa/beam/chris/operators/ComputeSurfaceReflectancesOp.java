@@ -303,7 +303,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
         }
 
-        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        ProductUtils.copyMasks(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
         // ESSENTIAL - ALGORITHM WILL NOT WORK WITH A DIFFERENT TILE SIZE!

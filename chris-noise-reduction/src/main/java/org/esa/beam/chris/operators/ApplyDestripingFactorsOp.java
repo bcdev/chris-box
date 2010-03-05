@@ -75,7 +75,7 @@ public class ApplyDestripingFactorsOp extends Operator {
                 targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
             }
         }
-        ProductUtils.copyBitmaskDefs(sourceProduct, targetProduct);
+        ProductUtils.copyMasks(sourceProduct, targetProduct);
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
