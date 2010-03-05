@@ -56,7 +56,6 @@ public class PerformGeometricCorrectionOp extends Operator {
                description = "The directory searched for CHRIS telemetry data", notNull = true, notEmpty = true)
     private File telemetryRepository;
 
-
     @Parameter(label = "Use target altitude", defaultValue = "false",
                description = "If true, the pixel lines-of-sight are intersected with a modified WGS-84 ellipsoid")
     private boolean useTargetAltitude;
@@ -89,8 +88,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dT);
         final AcquisitionInfo acquisitionInfo = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
         final GCP[] gcps = GCP.toGCPs(sourceProduct.getGcpGroup(), acquisitionInfo.getTargetAlt());
-        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo);
 
+        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo);
         calculator.calculate(ictData, gpsData, gcps, useTargetAltitude);
 
         final Product targetProduct = createTargetProduct(calculator, acquisitionInfo.isBackscanning());
@@ -159,7 +158,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         return lonGrid;
     }
 
-    // todo - this is almost a general utility method (rq-20090708)
+    // todo - this is a quite general utility method (rq-20090708)
     private static Product createCopy(Product sourceProduct, String name, String type, BandFilter bandFilter) {
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
