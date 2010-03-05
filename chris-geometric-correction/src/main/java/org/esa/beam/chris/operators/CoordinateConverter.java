@@ -1,5 +1,7 @@
 package org.esa.beam.chris.operators;
 
+import static java.lang.Math.*;
+
 class CoordinateConverter {
 
     /**
@@ -53,8 +55,8 @@ class CoordinateConverter {
             throw new IllegalArgumentException("eci.length != ecef.length");
         }
 
-        final double c = Math.cos(gst);
-        final double s = Math.sin(gst);
+        final double c = cos(gst);
+        final double s = sin(gst);
 
         return ecefToEci(c, s, ecef, eci);
     }
@@ -66,24 +68,24 @@ class CoordinateConverter {
         if (wgs.length != 3) {
             throw new IllegalArgumentException("wgs.length != 3");
         }
-        final double b = WGS84_B * Math.signum(z);
-        final double r = Math.sqrt(x * x + y * y);
+        final double b = WGS84_B * signum(z);
+        final double r = sqrt(x * x + y * y);
         final double s = WGS84_A * WGS84_A - b * b;
         final double e = (b * z - s) / (WGS84_A * r);
         final double f = (b * z + s) / (WGS84_A * r);
         final double p = FOUR_THIRD * (e * f + 1.0);
         final double q = 2.0 * (e * e - f * f);
-        final double d = Math.sqrt(p * p * p + q * q);
-        final double v = Math.pow(d - q, ONE_THIRD) - Math.pow(d + q, ONE_THIRD);
-        final double g = (Math.sqrt(e * e + v) + e) / 2.0;
-        final double t = Math.sqrt(g * g + (f - v * g) / (2.0 * g - e)) - g;
+        final double d = sqrt(p * p * p + q * q);
+        final double v = pow(d - q, ONE_THIRD) - pow(d + q, ONE_THIRD);
+        final double g = (sqrt(e * e + v) + e) / 2.0;
+        final double t = sqrt(g * g + (f - v * g) / (2.0 * g - e)) - g;
 
-        double phi = Math.atan2(WGS84_A * (1.0 - t * t), 2.0 * b * t);
-        double lam = Math.atan2(y, x);
-        double alt = (r - WGS84_A * t) * Math.cos(phi) + (z - b) * Math.sin(phi);
+        double phi = atan2(WGS84_A * (1.0 - t * t), 2.0 * b * t);
+        double lam = atan2(y, x);
+        double alt = (r - WGS84_A * t) * cos(phi) + (z - b) * sin(phi);
 
         if (x == 0.0 && y == 0.0 && z != 0.0) {
-            phi = Math.PI / 2.0 * Math.signum(z);
+            phi = Math.PI / 2.0 * signum(z);
             lam = 0.0;
             alt = Math.abs(z - b);
         }
@@ -91,11 +93,11 @@ class CoordinateConverter {
             phi = 0.0;
             alt = r - WGS84_A;
         }
-        double lon = Math.toDegrees(lam);
+        double lon = toDegrees(lam);
         if (lon > 180.0) {
             lon -= 360.0;
         }
-        double lat = Math.toDegrees(phi);
+        double lat = toDegrees(phi);
         if (lat > 90.0) {
             lat -= 180.0;
         }
@@ -130,8 +132,8 @@ class CoordinateConverter {
             throw new IllegalArgumentException("ecef.length != eci.length");
         }
 
-        final double c = Math.cos(gst);
-        final double s = Math.sin(gst);
+        final double c = cos(gst);
+        final double s = sin(gst);
 
         return eciToEcef(c, s, eci, ecef);
     }
@@ -150,12 +152,12 @@ class CoordinateConverter {
         final double u = Math.toRadians(lon);
         final double v = Math.toRadians(lat);
 
-        final double cu = Math.cos(u);
-        final double su = Math.sin(u);
-        final double cv = Math.cos(v);
-        final double sv = Math.sin(v);
+        final double cu = cos(u);
+        final double su = sin(u);
+        final double cv = cos(v);
+        final double sv = sin(v);
 
-        final double a = WGS84_A / Math.sqrt(1.0 - WGS84_E * sv * sv);
+        final double a = WGS84_A / sqrt(1.0 - WGS84_E * sv * sv);
         final double b = (a + alt) * cv;
 
         ecef[0] = b * cu;
@@ -166,8 +168,8 @@ class CoordinateConverter {
     }
 
     CoordinateConverter(double gst) {
-        c = Math.cos(gst);
-        s = Math.sin(gst);
+        c = cos(gst);
+        s = sin(gst);
     }
 
     public double[] ecefToEci(double[] ecef, double[] eci) {
