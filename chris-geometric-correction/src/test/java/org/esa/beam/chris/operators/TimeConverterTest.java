@@ -28,8 +28,7 @@ import static org.junit.Assert.*;
  * Tests for class {@link TimeConverter}.
  *
  * @author Ralf Quast
- * @version $Revision$ $Date$
- * @since CHRIS-Box 1.1
+ * @since CHRIS-Box 1.5
  */
 public class TimeConverterTest {
 

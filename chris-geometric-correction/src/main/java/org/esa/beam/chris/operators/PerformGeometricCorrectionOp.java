@@ -48,9 +48,14 @@ import java.util.List;
                   description = "Performs the geometric correction for a CHRIS/Proba RCI.")
 public class PerformGeometricCorrectionOp extends Operator {
 
+    /**
+     * The alias of the {@code telemetryRepository} parameter.
+     */
     public static final String ALIAS_TELEMETRY_REPOSITORY = "telemetryRepository";
-    // there is a delay of 0.999s between the GPS time tag and the actual time of the reported position
-    private static final double DELAY = 0.999;
+    /**
+     * The delay of 0.999s between the GPS time tag and the actual time of the reported position.
+     */
+    public static final double DELAY = 0.999;
 
     @Parameter(alias = ALIAS_TELEMETRY_REPOSITORY, label = "Telemetry repository", defaultValue = ".",
                description = "The directory searched for CHRIS telemetry data", notNull = true, notEmpty = true)
@@ -85,9 +90,9 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
 
         final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dT);
-        final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), DELAY, dT);
-        final AcquisitionInfo acquisitionInfo = AcquisitionInfo.createAcquisitionInfo(sourceProduct);
-        final GCP[] gcps = GCP.toGCPs(sourceProduct.getGcpGroup(), acquisitionInfo.getTargetAlt());
+        final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), dT, DELAY);
+        final AcquisitionInfo acquisitionInfo = AcquisitionInfo.create(sourceProduct);
+        final GCP[] gcps = GCP.createArray(sourceProduct.getGcpGroup(), acquisitionInfo.getTargetAlt());
 
         final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo);
         calculator.calculate(ictData, gpsData, gcps, useTargetAltitude);
@@ -159,6 +164,7 @@ public class PerformGeometricCorrectionOp extends Operator {
     }
 
     // todo - this is a quite general utility method (rq-20090708)
+
     private static Product createCopy(Product sourceProduct, String name, String type, BandFilter bandFilter) {
         final int w = sourceProduct.getSceneRasterWidth();
         final int h = sourceProduct.getSceneRasterHeight();
@@ -218,7 +224,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         return targetProduct;
     }
 
-    private static List<GpsDataRecord> readGpsData(File gpsFile, double delay, double deltaGPS) {
+    static List<GpsDataRecord> readGpsData(File gpsFile, double deltaGPS, double delay) {
         InputStream is = null;
         try {
             is = new FileInputStream(gpsFile);
@@ -236,7 +242,7 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
     }
 
-    private static IctDataRecord readIctData(File ictFile, double deltaGPS) {
+    static IctDataRecord readIctData(File ictFile, double deltaGPS) {
         InputStream is = null;
         try {
             is = new FileInputStream(ictFile);

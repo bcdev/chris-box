@@ -27,7 +27,7 @@ public class GpsDataReaderTest extends TestCase {
 
     public void testReadGPSTimes() throws IOException {
         final InputStream is = GpsDataReaderTest.class.getResourceAsStream(
-                "CHRIS_13350_13354_PROBA1_GPS_Data.txt");
+                "CHRIS_13350_13354_PROBA1_GPS_Data");
         
         GpsDataRecord.GpsDataReader reader = new GpsDataRecord.GpsDataReader(is);
         List<String[]> readRecords = reader.getReadRecords();

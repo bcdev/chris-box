@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Ground control points for image CHRIS_BR_050709_56F4_41 -->
+<Placemarks>
+    <Placemark name="GCP01">
+        <LABEL>GCP01</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.059013</LATITUDE>
+        <LONGITUDE>-2.078641</LONGITUDE>
+        <PIXEL_X>205.4</PIXEL_X>
+        <PIXEL_Y>197.6</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP02">
+        <LABEL>GCP02</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.067524</LATITUDE>
+        <LONGITUDE>-2.102884</LONGITUDE>
+        <PIXEL_X>143.3</PIXEL_X>
+        <PIXEL_Y>180.2</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP03">
+        <LABEL>GCP03</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.115601</LATITUDE>
+        <LONGITUDE>-2.081055</LONGITUDE>
+        <PIXEL_X>171.4</PIXEL_X>
+        <PIXEL_Y>27.4</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP04">
+        <LABEL>GCP04</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.048046</LATITUDE>
+        <LONGITUDE>-2.099637</LONGITUDE>
+        <PIXEL_X>160.1</PIXEL_X>
+        <PIXEL_Y>238.5</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP05">
+        <LABEL>GCP05</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.026554</LATITUDE>
+        <LONGITUDE>-2.144263</LONGITUDE>
+        <PIXEL_X>63.9</PIXEL_X>
+        <PIXEL_Y>320.6</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP06">
+        <LABEL>GCP06</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.058876</LATITUDE>
+        <LONGITUDE>-2.044472</LONGITUDE>
+        <PIXEL_X>287.8</PIXEL_X>
+        <PIXEL_Y>185.8</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP07">
+        <LABEL>GCP07</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.013451</LATITUDE>
+        <LONGITUDE>-2.058036</LONGITUDE>
+        <PIXEL_X>276.4</PIXEL_X>
+        <PIXEL_Y>328.6</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP08">
+        <LABEL>GCP08</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.076305</LATITUDE>
+        <LONGITUDE>-2.027086</LONGITUDE>
+        <PIXEL_X>320.0</PIXEL_X>
+        <PIXEL_Y>126.2</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP09">
+        <LABEL>GCP09</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.016132</LATITUDE>
+        <LONGITUDE>-2.050471</LONGITUDE>
+        <PIXEL_X>293.0</PIXEL_X>
+        <PIXEL_Y>317.2</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP10">
+        <LABEL>GCP10</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.032803</LATITUDE>
+        <LONGITUDE>-2.109270</LONGITUDE>
+        <PIXEL_X>144.2</PIXEL_X>
+        <PIXEL_Y>288.9</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP11">
+        <LABEL>GCP11</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.110588</LATITUDE>
+        <LONGITUDE>-2.151916</LONGITUDE>
+        <PIXEL_X>5.1</PIXEL_X>
+        <PIXEL_Y>67.2</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP12">
+        <LABEL>GCP12</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.031776</LATITUDE>
+        <LONGITUDE>-2.144156</LONGITUDE>
+        <PIXEL_X>61.7</PIXEL_X>
+        <PIXEL_Y>304.7</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP13">
+        <LABEL>GCP13</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.038437</LATITUDE>
+        <LONGITUDE>-2.058160</LONGITUDE>
+        <PIXEL_X>264.0</PIXEL_X>
+        <PIXEL_Y>252.5</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP14">
+        <LABEL>GCP14</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.039555</LATITUDE>
+        <LONGITUDE>-2.034682</LONGITUDE>
+        <PIXEL_X>320.1</PIXEL_X>
+        <PIXEL_Y>241.0</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP15">
+        <LABEL>GCP15</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.031326</LATITUDE>
+        <LONGITUDE>-2.162227</LONGITUDE>
+        <PIXEL_X>18.9</PIXEL_X>
+        <PIXEL_Y>312.2</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP16">
+        <LABEL>GCP16</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.028606</LATITUDE>
+        <LONGITUDE>-2.058431</LONGITUDE>
+        <PIXEL_X>269.0</PIXEL_X>
+        <PIXEL_Y>283.0</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP17">
+        <LABEL>GCP17</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.091900</LATITUDE>
+        <LONGITUDE>-2.138681</LONGITUDE>
+        <PIXEL_X>46.1</PIXEL_X>
+        <PIXEL_Y>119.7</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP18">
+        <LABEL>GCP18</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.006660</LATITUDE>
+        <LONGITUDE>-2.053519</LONGITUDE>
+        <PIXEL_X>290.3</PIXEL_X>
+        <PIXEL_Y>347.2</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP19">
+        <LABEL>GCP19</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.060402</LATITUDE>
+        <LONGITUDE>-2.079198</LONGITUDE>
+        <PIXEL_X>203.9</PIXEL_X>
+        <PIXEL_Y>193.3</PIXEL_Y>
+    </Placemark>
+    <Placemark name="GCP20">
+        <LABEL>GCP20</LABEL>
+        <DESCRIPTION/>
+        <LATITUDE>39.113838</LATITUDE>
+        <LONGITUDE>-2.148659</LONGITUDE>
+        <PIXEL_X>11.3</PIXEL_X>
+        <PIXEL_Y>56.8</PIXEL_Y>
+    </Placemark>
+</Placemarks>

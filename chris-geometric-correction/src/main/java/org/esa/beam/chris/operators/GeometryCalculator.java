@@ -2,7 +2,12 @@ package org.esa.beam.chris.operators;
 
 import org.esa.beam.chris.util.math.internal.Pow;
 import org.esa.beam.framework.datamodel.RationalFunctionModel;
+import org.esa.beam.framework.gpf.OperatorException;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 

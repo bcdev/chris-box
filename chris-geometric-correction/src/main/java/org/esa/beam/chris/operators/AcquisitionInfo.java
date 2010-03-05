@@ -14,7 +14,7 @@ class AcquisitionInfo {
     private final double targetLon;
     private final int chronologicalImageNumber;
 
-    public static AcquisitionInfo createAcquisitionInfo(Product product) {
+    public static AcquisitionInfo create(Product product) {
         final String modeString = OpUtils.getAnnotationString(product, ChrisConstants.ATTR_NAME_CHRIS_MODE);
         final int mode;
         if ("3A".equals(modeString)) {
@@ -27,11 +27,11 @@ class AcquisitionInfo {
         final double lon = OpUtils.getAnnotationDouble(product, ChrisConstants.ATTR_NAME_TARGET_LON);
         final int imageNumber = OpUtils.getAnnotationInt(product, ChrisConstants.ATTR_NAME_IMAGE_NUMBER, 0, 1);
 
-        return new AcquisitionInfo(mode, alt, lat, lon, CHRONOLOGICAL_IMAGE_NUMBERS[imageNumber - 1]);
+        return new AcquisitionInfo(mode, lon, lat, alt, CHRONOLOGICAL_IMAGE_NUMBERS[imageNumber - 1]);
     }
 
-    private AcquisitionInfo(int mode, double targetAlt, double targetLat, double targetLon,
-                            int chronologicalImageNumber) {
+    AcquisitionInfo(int mode, double targetLon, double targetLat, double targetAlt,
+                    int chronologicalImageNumber) {
         this.mode = mode;
         this.targetAlt = targetAlt;
         this.targetLat = targetLat;

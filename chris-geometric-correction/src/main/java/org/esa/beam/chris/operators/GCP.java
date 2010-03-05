@@ -14,16 +14,33 @@ class GCP {
     private final double lat;
     private final double alt;
 
-    GCP(Placemark placemark) {
-        this(placemark, 0.0);
+    GCP(double x, double y, double lon, double lat, double alt) {
+        this.x = x;
+        this.y = y;
+        this.lon = lon;
+        this.lat = lat;
+        this.alt = alt;
     }
 
-    GCP(Placemark placemark, double defaultAltitude) {
-        x = placemark.getPixelPos().getX();
-        y = placemark.getPixelPos().getY();
-        lon = placemark.getGeoPos().getLon();
-        lat = placemark.getGeoPos().getLat();
-        alt = parseAltitude(placemark.getDescription(), defaultAltitude);
+    static GCP create(Placemark placemark, double defaultAltitude) {
+        final double x = placemark.getPixelPos().getX();
+        final double y = placemark.getPixelPos().getY();
+        final double lon = placemark.getGeoPos().getLon();
+        final double lat = placemark.getGeoPos().getLat();
+        final double alt = parseAltitude(placemark.getDescription(), defaultAltitude);
+
+        return new GCP(x, y, lon, lat, alt);
+    }
+
+    static GCP[] createArray(ProductNodeGroup<Placemark> placemarkGroup, double defaultAltitude) {
+        final int placemarkCount = placemarkGroup.getNodeCount();
+        final List<GCP> gcpList = new ArrayList<GCP>(placemarkCount);
+        for (final Placemark placemark : placemarkGroup.toArray(new Placemark[placemarkCount])) {
+            if (isValid(placemark)) {
+                gcpList.add(create(placemark, defaultAltitude));
+            }
+        }
+        return gcpList.toArray(new GCP[gcpList.size()]);
     }
 
     int getCol() {
@@ -52,16 +69,6 @@ class GCP {
 
     double getAlt() {
         return alt;
-    }
-
-    static GCP[] toGCPs(ProductNodeGroup<Placemark> placemarkGroup, double defaultAltitude) {
-        final List<GCP> gcpList = new ArrayList<GCP>(placemarkGroup.getNodeCount());
-        for (Placemark placemark : placemarkGroup.toArray(new Placemark[placemarkGroup.getNodeCount()])) {
-            if (isValid(placemark)) {
-                gcpList.add(new GCP(placemark, defaultAltitude));
-            }
-        }
-        return gcpList.toArray(new GCP[gcpList.size()]);
     }
 
     static double parseAltitude(String description, double defaultAltitude) {
