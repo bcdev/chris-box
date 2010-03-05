@@ -68,15 +68,15 @@ class PositionCalculator {
                 point[Z] = satZ[i];
 
                 Intersector.intersect(point, pointings[i][j], WGS84_CENTER, semiAxes);
-                final ViewingGeometry viewingGeometry = ViewingGeometry.create(point[X], point[Y], point[Z], satX[i],
-                                                                               satY[i], satZ[i]);
+                final ViewingGeometry viewingGeometry =
+                        ViewingGeometry.create(point[X], point[Y], point[Z], satX[i], satY[i], satZ[i]);
                 vaa[i][j] = Math.toDegrees(viewingGeometry.azimuth);
                 vza[i][j] = Math.toDegrees(viewingGeometry.zenith);
 
                 CoordinateConverter.eciToEcef(gst, point, point);
-                final double[] wgs = CoordinateConverter.ecefToWgs(point[X], point[Y], point[Z], new double[3]);
-                lons[i][j] = wgs[X];
-                lats[i][j] = wgs[Y];
+                CoordinateConverter.ecefToWgs(point[X], point[Y], point[Z], point);
+                lons[i][j] = point[X];
+                lats[i][j] = point[Y];
             }
         }
     }
