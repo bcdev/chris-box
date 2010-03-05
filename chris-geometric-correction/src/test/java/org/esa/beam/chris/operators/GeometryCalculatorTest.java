@@ -42,7 +42,7 @@ public class GeometryCalculatorTest {
     }
 
     @Test
-    public void verifyCalculation() { // calculation is verified for three arbitrary points
+    public void verifyCalculation() { // calculation is verified for three arbitrary chosen points
         final GeometryCalculator calculator = new GeometryCalculator(ACQUISITION_INFO);
         calculator.calculate(ictData, gpsData, gcps, true);
 
