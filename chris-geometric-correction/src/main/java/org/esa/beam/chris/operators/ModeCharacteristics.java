@@ -20,7 +20,7 @@ package org.esa.beam.chris.operators;
  * CHRIS Constants, some differ for each mode
  *
  * @author Marco Zuehlke
- * @version $Revision$ $Date$
+ * @since CHRIS-Box 1.5
  */
 class ModeCharacteristics {
 
