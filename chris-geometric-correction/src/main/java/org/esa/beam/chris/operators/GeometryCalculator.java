@@ -203,7 +203,7 @@ class GeometryCalculator {
         final int img = acquisitionInfo.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double targetAltitude = acquisitionInfo.getTargetAlt() / 1000;
+        final double targetAltitude = acquisitionInfo.getTargetAlt();
         final double[] TGTecf = CoordinateConverter.wgsToEcef(acquisitionInfo.getTargetLon(),
                                                               acquisitionInfo.getTargetLat(), targetAltitude,
                                                               new double[3]);
