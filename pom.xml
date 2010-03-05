@@ -160,7 +160,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-core</artifactId>
-                <version>4.7</version>
+                <version>4.7.1</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
@@ -198,7 +198,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.6</version>
+                <version>1.6.1</version>
             </dependency>
 
             <!-- Java Help Library ############################################# -->

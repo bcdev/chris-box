@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Geometry calculator.
  * <p/>
- * NOTE: This is largely unoptimized code. todo: rq/rq - clean-up and optimize
+ * NOTE: This is largely unoptimized code.
  *
  * @author Ralf Quast
  * @author Marco Zuehlke
