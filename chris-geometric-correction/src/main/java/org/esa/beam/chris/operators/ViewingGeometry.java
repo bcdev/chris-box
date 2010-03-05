@@ -1,9 +1,12 @@
 package org.esa.beam.chris.operators;
 
+import static java.lang.Math.*;
+
 class ViewingGeometry {
 
-    private static final double TWO_PI = 2.0 * Math.PI;
-    
+    private static final double HALF_PI = PI / 2.0;
+    private static final double TWO_PI = 2.0 * PI;
+
     final double x;
     final double y;
     final double z;
@@ -18,27 +21,26 @@ class ViewingGeometry {
         this.zenith = zenith;
     }
 
-    static ViewingGeometry create(double targetX, double targetY, double targetZ, double satX, double satY,
-                                  double satZ) {
+    static ViewingGeometry create(double posX, double posY, double posZ, double satX, double satY, double satZ) {
         // the components of the pointing vector
-        final double x = targetX - satX;
-        final double y = targetY - satY;
-        final double z = targetZ - satZ;
+        final double x = posX - satX;
+        final double y = posY - satY;
+        final double z = posZ - satZ;
 
-        final double[] wgs = CoordinateConverter.ecefToWgs(targetX, targetY, targetZ, new double[3]);
+        final double[] wgs = CoordinateConverter.ecefToWgs(posX, posY, posZ, new double[3]);
         final double phi = Math.toRadians(wgs[1]);
-        final double sinPhi = Math.sin(phi);
-        final double cosPhi = Math.cos(phi);
-        final double sinTheta = targetY / Math.sqrt(targetX * targetX + targetY * targetY);
-        final double cosTheta = targetX / Math.sqrt(targetX * targetX + targetY * targetY);
+        final double sinPhi = sin(phi);
+        final double cosPhi = cos(phi);
+        final double sinTheta = posY / sqrt(posX * posX + posY * posY);
+        final double cosTheta = posX / sqrt(posX * posX + posY * posY);
         final double topS = cosPhi * z - sinPhi * cosTheta * x - sinPhi * sinTheta * y;
-        final double topE = sinTheta * x - cosTheta * y;
-        final double topZ = -cosPhi * cosTheta * x - cosPhi * sinTheta * y - sinPhi * z;
-        final double zenith = Math.PI / 2.0 - Math.asin(topZ / Math.sqrt(x * x + y * y + z * z));
+        final double topE = cosTheta * y - sinTheta * x;
+        final double topZ = cosPhi * cosTheta * x + cosPhi * sinTheta * y + sinPhi * z;
+        final double zenith = HALF_PI + asin(topZ / sqrt(x * x + y * y + z * z));
 
-        double azimuth = Math.atan(-topE / topS);
+        double azimuth = Math.atan(topE / topS);
         if (topS > 0) {
-            azimuth += Math.PI;
+            azimuth += PI;
         }
         if (topS < 0) {
             azimuth += TWO_PI;
