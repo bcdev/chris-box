@@ -34,6 +34,18 @@ class VectorMath {
     /**
      * Calculates the angle between two vectors.
      *
+     * @param u the 1st vector.
+     * @param v the 2nd vector.
+     *
+     * @return the angle (radian).
+     */
+    static double angle(double[] u, double[] v) {
+        return angle(u[X], u[Y], u[Z], v[X], v[Y], v[Z]);
+    }
+
+    /**
+     * Calculates the angle between two vectors.
+     *
      * @param x1 the x-coordinate of the 1st vector.
      * @param y1 the y-coordinate of the 1st vector.
      * @param z1 the z-coordinate of the 1st vector.
