@@ -2,6 +2,8 @@ package org.esa.beam.chris.operators;
 
 import com.bc.ceres.core.Assert;
 
+import static java.lang.Math.sqrt;
+
 /**
  * Utility class for calculating the intersection of a straight line, which is defined
  * by a point and a direction, and an ellipsoid.
@@ -47,9 +49,9 @@ class Intersector {
         final double d = b * b - a * c;
         final double t;
         if (b > 0.0) {
-            t = (-b + Math.sqrt(d)) / a;
+            t = (-b + sqrt(d)) / a;
         } else {
-            t = (-b - Math.sqrt(d)) / a;
+            t = (-b - sqrt(d)) / a;
         }
 
         for (int i = 0; i < 3; i++) {
