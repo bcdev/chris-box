@@ -4,6 +4,10 @@ import com.bc.ceres.core.Assert;
 
 import java.text.MessageFormat;
 
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+
 /**
  * Class for rotating 3-dimensional vectors by means of quaternions.
  * <p/>
@@ -30,8 +34,8 @@ class Quaternion {
      */
     public static Quaternion createQuaternion(double x, double y, double z, double angle) {
         final double alpha = angle / 2.0;
-        final double c = Math.cos(alpha);
-        final double s = Math.sin(alpha);
+        final double c = cos(alpha);
+        final double s = sin(alpha);
 
         return new Quaternion(x, y, z, c, s);
     }
@@ -246,6 +250,6 @@ class Quaternion {
         final double cc = c * c;
         final double dd = d * d;
 
-        return Math.sqrt(aa + bb + cc + dd);
+        return sqrt(aa + bb + cc + dd);
     }
 }
