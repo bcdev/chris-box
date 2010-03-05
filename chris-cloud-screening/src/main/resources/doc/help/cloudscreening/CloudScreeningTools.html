@@ -1,218 +1,248 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>CHRIS/Proba Cloud Screening Tools</title>
-    <link rel="stylesheet" href="../../style.css">
+  <meta name="generator" content=
+  "HTML Tidy for Mac OS X (vers 25 March 2009), see www.w3.org" />
+
+  <title>CHRIS/Proba Cloud Screening Tools</title>
+  <link rel="stylesheet" href="../../style.css" type="text/css" />
 </head>
 
 <body>
-
-<table class="header">
+  <table class="header">
     <tr class="header">
-        <td class="header">&nbsp;
-            CHRIS/Proba Cloud Screening
-        </td>
-        <td class="header" align="right"><a href="../../index.html"><img src="../images/BeamHeader.jpg" border=0></a>
-        </td>
+      <td class="header">&nbsp; CHRIS/Proba Cloud Screening</td>
+
+      <td class="header" align="right"><a href=
+      "../../index.html"><img src="../images/BeamHeader.jpg"
+      border="0" /></a></td>
     </tr>
-</table>
+  </table>
 
-<h3>CHRIS/Proba Cloud Screening</h3>
+  <h3>CHRIS/Proba Cloud Screening</h3>
 
-<p>
-    The Cloud Screening Tools is used to mask cloudy pixels in CHRIS images.
-    The cloud masking algorithm described below helps the user to find cloudy regions in the image and provides cloud probability
-    and abundances for each pixel instead of a single flag.
-</p>
+  <p>The Cloud Screening Tools is used to mask cloudy pixels in
+  CHRIS images. The cloud masking algorithm described below helps
+  the user to find cloudy regions in the image and provides cloud
+  probability and abundances for each pixel instead of a single
+  flag.</p>
 
-<h4>Cloud Screening Algorithm</h4>
+  <h4>Cloud Screening Algorithm</h4>
 
-<p>
-    <b>The cloud screening algorithm consists of the following steps:</b>
-</p>
-<ol>
-    <li><b>TOA Reflectance Computation:</b> <a href="../reflectancecomputation/ReflectanceComputationTool.html">Top-of-Atmosphere reflectance</a> is estimated from the CHRIS products to remove in practice the
-        dependence on particular illumination conditions (day of the year and angular configuration).
-    </li>
-    <li><b>Feature extraction:</b> physically-inspired features are extracted to increase separability of clouds and
-        surface taking into account that the measured spectral signature depends on the illumination (TOA reflectance is already estimated),
-        the atmosphere (oxygen and water vapor atmospheric absorptions are used to estimate the optical path related to the cloud height),
-        and the surface (spectral whiteness and brightness helps to characterize the cloud's spectral behavior).
-    </li>
-    <li><b>Image clustering:</b> an unsupervised <a href="../clusteranalysis/EM.html">Expectation-Maximization</a> (EM) <a href="../clusteranalysis/ClusterAnalysis.html">clustering algorithm</a> is performed on the
-        extracted features in order to separate clouds from the ground-cover while obtaining posterior probabilities of
-        each pixel to each cluster.
-    </li>
-    <li><b>Cluster labeling:</b> resulting clusters are subsequently labeled by the user.
-        Once all clusters corresponding to clouds have been identified, it is straightforward
-        to merge all the clusters belonging to a cloud type (cloud-clusters). In the clustering of the extracted
-        features, the EM algorithm provides a probabilistic membership for each cluster, thus the probability of being
-        cloud is computed as the sum of the posteriors of the cloud-clusters.
-    </li>
-    <li><b>Spectral unmixing:</b> a Fully Constrained Linear Spectral Unmixing (FCLSU) is applied to the image in order
-        to obtain the fraction of cloud content for each pixel (rather than flags or a binary classification).
-    </li>
-</ol>
-<p>The final cloud product is obtained combining the cloud probability and the cloud fraction by means of a
-    pixel-by-pixel multiplication. That is, combining two complementary sources of information processed by independent
-    methods: the cloud probability (obtained from the extracted features), which is close to one in cloud-like pixels
-    and close to zero in remaining areas; and the cloud abundance or mixing (obtained from the spectra).</p>
+  <p><b>The cloud screening algorithm consists of the following
+  steps:</b></p>
 
+  <ol>
+    <li><b>TOA Reflectance Computation:</b> <a href=
+    "../reflectancecomputation/ReflectanceComputationTool.html">Top-of-Atmosphere
+    reflectance</a> is estimated from the CHRIS products to remove
+    in practice the dependence on particular illumination
+    conditions (day of the year and angular configuration).</li>
 
-<h4>User Interface</h4>
+    <li><b>Feature extraction:</b> physically-inspired features are
+    extracted to increase separability of clouds and surface taking
+    into account that the measured spectral signature depends on
+    the illumination (TOA reflectance is already estimated), the
+    atmosphere (oxygen and water vapor atmospheric absorptions are
+    used to estimate the optical path related to the cloud height),
+    and the surface (spectral whiteness and brightness helps to
+    characterize the cloud's spectral behavior).</li>
 
+    <li><b>Image clustering:</b> an unsupervised <a href=
+    "../clusteranalysis/EM.html">Expectation-Maximization</a> (EM)
+    <a href="../clusteranalysis/ClusterAnalysis.html">clustering
+    algorithm</a> is performed on the extracted features in order
+    to separate clouds from the ground-cover while obtaining
+    posterior probabilities of each pixel to each cluster.</li>
 
-<p>
-    The Cloud Screening tool can be invoked from VISAT <b>Tools</b> menu by selecting
-    the <b>Cloud Screening...</b> command in the <b>CHRIS/Proba Tools</b> submenu. It performs the cloud screening on
-    the currently selected product, if applicable.
-</p>
+    <li><b>Cluster labeling:</b> resulting clusters are
+    subsequently labeled by the user. Once all clusters
+    corresponding to clouds have been identified, it is
+    straightforward to merge all the clusters belonging to a cloud
+    type (cloud-clusters). In the clustering of the extracted
+    features, the EM algorithm provides a probabilistic membership
+    for each cluster, thus the probability of being cloud is
+    computed as the sum of the posteriors of the
+    cloud-clusters.</li>
 
-<p>
-    Selecting the <b>Cloud Screening...</b> command brings up the following dialog :
-</p>
+    <li><b>Spectral unmixing:</b> a Fully Constrained Linear
+    Spectral Unmixing (FCLSU) is applied to the image in order to
+    obtain the fraction of cloud content for each pixel (rather
+    than flags or a binary classification).</li>
+  </ol>
 
-<p align="center">
-    <img src="images/CloudScreeningInitialDialog.png" alt="Cluster Analysis Progress Dialog"/>
-</p>
-<h6>Source Product</h6>
+  <p>The final cloud product is obtained combining the cloud
+  probability and the cloud fraction by means of a pixel-by-pixel
+  multiplication. That is, combining two complementary sources of
+  information processed by independent methods: the cloud
+  probability (obtained from the extracted features), which is
+  close to one in cloud-like pixels and close to zero in remaining
+  areas; and the cloud abundance or mixing (obtained from the
+  spectra).</p>
 
-<p class="i1">
-    <b>Name:</b>
-    Here the user specifies the source product. The combo box presents
-    a list of all products open in VISAT. The user may select one of these
-    or, by clicking on the button next to the combo box, choose a product
-    from the file system.
-</p>
+  <h4>User Interface</h4>
 
-<h6>Processing Parameter</h6>
-<p class="i1">
-    <b>Number of clusters:</b>
-    Use this field to specify the number of clusters. The default is 14 clusters.
-</p>
+  <p>The Cloud Screening tool can be invoked from VISAT
+  <b>Tools</b> menu by selecting the <b>Cloud Screening...</b>
+  command in the <b>CHRIS/Proba Tools</b> submenu. It performs the
+  cloud screening on the currently selected product, if
+  applicable.</p>
 
-<p class="i1">
-    <b>Number of iterations:</b>
-    Use this field to specify the maximum number of iterations to be carried out. The default is 30 iterations.
-    The cluster analysis stops when the maximum number of iterations is exceeded.
-</p>
+  <p>Selecting the <b>Cloud Screening...</b> command brings up the
+  following dialog :</p>
 
-<p class="i1">
-    <b>Random seed:</b>
-    Use this field to specify the random seed used to initialize the clustering algorithm. The default seed is 31415.
-</p>
+  <p align="center"><img src=
+  "images/CloudScreeningInitialDialog.png" alt=
+  "Cluster Analysis Progress Dialog" /></p>
 
-<p class="i1">
-    <b>Use NIR brightness:</b>
-    Specifies whether or not to use the NIR brigthnness for clustering.
-</p>
-<p class="i1">
-    <b>Use NIR whiteness:</b>
-    Specifies whether or not to use the NIR whiteness for clustering.
-</p>
-<p class="i1">
-    <b>Use atmospheric water vapour feature:</b>
-    Specifies whether or not to use the atmospheric water vapour feature for clustering.
-</p>
-<p class="i1">
-    <b>Use atmospheric oxygen feature:</b>
-    Specifies whether or not to use atmospheric oxygen feature for clustering.
-</p>
+  <h6>Source Product</h6>
 
-<p align="center">
-    <img src="images/ClusterAnalysisProgress.jpg" alt="Cluster Analysis Progress Dialog"/>
-</p>
+  <p class="i1"><b>Name:</b> Here the user specifies the source
+  product. The combo box presents a list of all products open in
+  VISAT. The user may select one of these or, by clicking on the
+  button next to the combo box, choose a product from the file
+  system.</p>
 
-<p>
-    While the progress dialog is shown the first three steps (TOA Reflectance Computation, Feature extraction, Image
-    clustering) of the algorithm are performed. This might take some time. Depending on the size of the scene and on
-    the performance of your system.
-</p>
+  <h6>Processing Parameter</h6>
 
-<p>
-    After the cluster analysis has been performed two scene images are opened. One is an RGB image of the scene the
-    other is the resulting image of the clustering. Additionally a window is opened showing a table with an entry for
-    each class.
-</p>
+  <p class="i1"><b>Number of clusters:</b> Use this field to
+  specify the number of clusters. The default is 14 clusters.</p>
 
-<p class="inote"><b>Hint:</b><br/>
-    Use the <b>Tile Evenly</b> command in the <b>Window</b> menu to display both scenes side by side. <br/>
-    It's also useful to synchronize both views. Use the chain symbol in the
-    <a href="visat/NavigationWindow.html#synchronise">Navigation Window</a> for that purpose.
+  <p class="i1"><b>Number of iterations:</b> Use this field to
+  specify the maximum number of iterations to be carried out. The
+  default is 30 iterations. The cluster analysis stops when the
+  maximum number of iterations is exceeded.</p>
 
-<p align="center">
-    <img src="images/CloudLabelingWindows.png" alt="Manual Cloud Labeling"/>
-</p>
+  <p class="i1"><b>Random seed:</b> Use this field to specify the
+  random seed used to initialize the clustering algorithm. The
+  default seed is 31415.</p>
 
-<p>
-    <b>Manual Cloud Labeling</b><br/>
-    Mark the classes as cloud which you can identify to be a cloud class.<br/>
-    If one class contains cloud and surface samples you can reject them (mixed clusters are rejected). Thereby the concerned samples will be
-    re-distributed to the classes with the second highest probability.<br/>
-    You can also enable the computation of the probabilistic cloud mask by means of spectral unmixing. This will give a better separation between
-    real cloud pixels and those which were wrongly classified as cloud by the clustering.<br/>
-    After you're satisfied with your labeling settings you can click on the <b>Run</b> button.
-    The resulting mask is added to the source product as band named <b>cloud_product</b>.
-</p>
+  <p class="i1"><b>Use NIR brightness:</b> Specifies whether or not
+  to use the NIR brigthnness for clustering.</p>
 
-<p class="inote"><b class="note">Note:</b> The probabilistic cloud mask gives you better results in uncertain cases, but note
-    that it can be very time consuming.
-</p>
+  <p class="i1"><b>Use NIR whiteness:</b> Specifies whether or not
+  to use the NIR whiteness for clustering.</p>
 
-<h4>The Cloud Mask Result</h4>
-<ul>
-    <li><b>without probabilistic cloud mask</b> results in a binary mask, only distinguishing between one and zero.
-        Where one means cloud and zero means cloud free.<br/>
-    </li>
-    <li><b>with probabilistic cloud mask</b> results in a gradient mask, whose values vary from zero and one. The higher the
-        value the higher is the probability that the sample is a cloud.<br/>
-    </li>
-</ul>
+  <p class="i1"><b>Use atmospheric water vapour feature:</b>
+  Specifies whether or not to use the atmospheric water vapour
+  feature for clustering.</p>
 
-<div align="center">
+  <p class="i1"><b>Use atmospheric oxygen feature:</b> Specifies
+  whether or not to use atmospheric oxygen feature for
+  clustering.</p>
+
+  <p align="center"><img src="images/ClusterAnalysisProgress.jpg"
+  alt="Cluster Analysis Progress Dialog" /></p>
+
+  <p>While the progress dialog is shown the first three steps (TOA
+  Reflectance Computation, Feature extraction, Image clustering) of
+  the algorithm are performed. This might take some time. Depending
+  on the size of the scene and on the performance of your
+  system.</p>
+
+  <p>After the cluster analysis has been performed two scene images
+  are opened. One is an RGB image of the scene the other is the
+  resulting image of the clustering. Additionally a window is
+  opened showing a table with an entry for each class.</p>
+
+  <p class="inote"><b>Hint:</b><br />
+  Use the <b>Tile Evenly</b> command in the <b>Window</b> menu to
+  display both scenes side by side.<br />
+  It's also useful to synchronize both views. Use the chain symbol
+  in the <a href=
+  "visat/NavigationWindow.html#synchronise">Navigation Window</a>
+  for that purpose.</p>
+
+  <p align="center"><img src="images/CloudLabelingWindows.png" alt=
+  "Manual Cloud Labeling" /></p>
+
+  <p><b>Manual Cloud Labeling</b><br />
+  Mark the classes as cloud which you can identify to be a cloud
+  class.<br />
+  If one class contains cloud and surface samples you can reject
+  them (mixed clusters are rejected). Thereby the concerned samples
+  will be re-distributed to the classes with the second highest
+  probability.<br />
+  You can also enable the computation of the probabilistic cloud
+  mask by means of spectral unmixing. This will give a better
+  separation between real cloud pixels and those which were wrongly
+  classified as cloud by the clustering.<br />
+  After you're satisfied with your labeling settings you can click
+  on the <b>Run</b> button. The resulting mask is added to the
+  source product as band named <b>cloud_product</b>.</p>
+
+  <p class="inote"><b class="note">Note:</b> The probabilistic
+  cloud mask gives you better results in uncertain cases, but note
+  that it can be very time consuming.</p>
+
+  <h4>The Cloud Mask Result</h4>
+
+  <ul>
+    <li><b>without probabilistic cloud mask</b> results in a binary
+    mask, only distinguishing between one and zero. Where one means
+    cloud and zero means cloud free.<br /></li>
+
+    <li><b>with probabilistic cloud mask</b> results in a gradient
+    mask, whose values vary from zero and one. The higher the value
+    the higher is the probability that the sample is a
+    cloud.<br /></li>
+  </ul>
+
+  <div align="center">
     <table align="center">
-        <tr>
-            <td><img src="images/CloudLabelingResult.jpg" alt="Result of cloud labeling without spectral unmixing"/>
-            </td>
-            <td><img src="images/CloudLabelingResultUnmixed.jpg"
-                     alt="Result of cloud labeling using spectral unmixing"/></td>
-        </tr>
-        <tr align="center">
-            <td>Result without probabilistic cloud mask</td>
-            <td>Result with probabilistic cloud mask</td>
-        </tr>
+      <tr>
+        <td><img src="images/CloudLabelingResult.jpg" alt=
+        "Result of cloud labeling without spectral unmixing" /></td>
+
+        <td><img src="images/CloudLabelingResultUnmixed.jpg" alt=
+        "Result of cloud labeling using spectral unmixing" /></td>
+      </tr>
+
+      <tr align="center">
+        <td>Result without probabilistic cloud mask</td>
+
+        <td>Result with probabilistic cloud mask</td>
+      </tr>
     </table>
-</div>
+  </div>
 
+  <h4>CHRIS Acquisition Modes</h4>
 
-<h4>CHRIS Acquisition Modes</h4>
+  <p>One of the main advantages of CHRIS instrument is the high
+  configurability of its operation mode. In fact, the number of
+  bands and their nominal wavelength allocations changes to a great
+  extent from one mode to another. However, this advantage is a
+  problem for the detection of clouds since the method has to take
+  into account the number and configuration of the spectral bands
+  for each CHRIS acquisition mode.</p>
 
-<p>
-    One of the main advantages of CHRIS instrument is the high configurability of its operation mode.
-    In fact, the number of bands and their nominal wavelength allocations changes to a great extent from one mode to another.
-    However, this advantage is a problem for the detection of clouds since the method has to take into account the number and
-    configuration of the spectral bands for each CHRIS acquisition mode.
-</p>
+  <p>The cloud screening algorithm has been designed for CHRIS
+  Modes with full spectral information (Modes 1 and 5). For
+  example, the oxygen and water vapor atmospheric absorptions or
+  the ice/snow absorption are only present in the spectral region
+  registered by Modes 1 and 5. In addition, in the case of the
+  brightness and whiteness features, the number of spectral bands
+  available to compute them is lower for modes 2, 3, and 4.
+  Therefore the robustness and the discrimination power of the
+  extracted features will be poorer for these modes. In
+  consequence, the proposed algorithm might present a poor
+  performance for Modes 2-3-4 images in critical cloud screening
+  situations, such as over bright surfaces (ice, snow, sand, etc)
+  and around cloud borders or thin semitransparent clouds.</p>
 
-<p>
-    The cloud screening algorithm has been designed for CHRIS Modes with full spectral information (Modes 1 and 5).
-    For example, the oxygen and water vapor atmospheric
-    absorptions or the ice/snow absorption are only present in the spectral region registered by Modes 1 and 5.
-    In addition, in the case of the brightness and whiteness features, the number of spectral bands available to compute them
-    is lower for modes 2, 3, and 4.
-    Therefore the robustness and the discrimination power of the extracted features will be poorer for these modes.
-    In consequence, the proposed algorithm might present a poor performance for Modes 2-3-4 images in critical cloud screening situations,
-    such as over bright surfaces (ice, snow, sand, etc) and around cloud borders or thin semitransparent clouds.
-</p>
-
-<p class="inote"><b class="note">Note:</b> In these cases, the default options of the <b>Compute Cloud Mask</b> command in the
-    <b>CHRIS/Proba Tools</b> submenu could be inappropriate. If resulting clusters are not satisfactory, the user should run again the
-    steps of the cloud screening algorithm with the following options:<br/>
-    - To select the most appropriate extracted features as source bands in the <a href="../clusteranalysis/EM.html">cluster analysis</a>.<br/>
-    - To change the number of clusters in the <a href="../clusteranalysis/EM.html">cluster analysis</a>.
-</p>
-
-
-
-<hr>
+  <p class="inote"><b class="note">Note:</b> In these cases, the
+  default options of the <b>Compute Cloud Mask</b> command in the
+  <b>CHRIS/Proba Tools</b> submenu could be inappropriate. If
+  resulting clusters are not satisfactory, the user should run
+  again the steps of the cloud screening algorithm with the
+  following options:<br />
+  - To select the most appropriate extracted features as source
+  bands in the <a href="../clusteranalysis/EM.html">cluster
+  analysis</a>.<br />
+  - To change the number of clusters in the <a href=
+  "../clusteranalysis/EM.html">cluster analysis</a>.</p>
+  <hr />
 </body>
 </html>

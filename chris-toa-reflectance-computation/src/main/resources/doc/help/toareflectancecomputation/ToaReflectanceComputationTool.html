@@ -1,167 +1,167 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>CHRIS/Proba TOA Reflectance Computation Tool</title>
-    <link rel="stylesheet" href="../../style.css">
+  <meta name="generator" content=
+  "HTML Tidy for Mac OS X (vers 25 March 2009), see www.w3.org" />
+
+  <title>CHRIS/Proba TOA Reflectance Computation Tool</title>
+  <link rel="stylesheet" href="../../style.css" type="text/css" />
 </head>
 
 <body>
-
-<table class="header">
+  <table class="header">
     <tr class="header">
-        <td class="header">&nbsp;
-            CHRIS/Proba TOA Reflectance Computation
-        </td>
-        <td class="header" align="right"><a href="../../index.html"><img src="../images/BeamHeader.jpg" border=0></a>
-        </td>
+      <td class="header">&nbsp; CHRIS/Proba TOA Reflectance
+      Computation</td>
+
+      <td class="header" align="right"><a href=
+      "../../index.html"><img src="../images/BeamHeader.jpg"
+      border="0" /></a></td>
     </tr>
-</table>
+  </table>
 
-<h3>CHRIS/Proba TOA Reflectance Computation</h3>
+  <h3>CHRIS/Proba TOA Reflectance Computation</h3>
 
-<h4>TOA Reflectance Algorithm</h4>
+  <h4>TOA Reflectance Algorithm</h4>
 
-<p>
-    CHRIS products are provided in top of the atmosphere (TOA) radiance (radiometrically calibrated data).<br>
-    The TOA apparent reflectance is estimated according to:
-</p>
+  <p>CHRIS products are provided in top of the atmosphere (TOA)
+  radiance (radiometrically calibrated data).<br />
+  The TOA apparent reflectance is estimated according to:</p>
 
-<div align="center"><img src="images/ToaReflectanceFormula.jpg" alt="Toa Reflectance Formula"/></div>
+  <div align="center"><img src="images/ToaReflectanceFormula.jpg"
+  alt="Toa Reflectance Formula" /></div>
 
-<p> where L(x, y, &lambda;<sub>i</sub>) is the provided at-sensor upward radiance at the image location (x, y), I(&lambda;<sub>i</sub>)
-    is the
-    extraterrestrial instantaneous solar irradiance, and &theta;(x, y) is the angle between the illumination
-    direction and the vector perpendicular to the surface.
-    In the proposed algorithm, &theta;(x, y) is approximated by the Solar Zenith Angle provided in the CHRIS attributes
-    since one can assume flat landscape and constant illumination angle for the area observed in a CHRIS image.
-    Finally, the Sun irradiance, I(&lambda;), is taken from Thuillier et al. (2003), corrected for the acquisition
-    day, and convolved with the CHRIS spectral channels.
-</p>
+  <p>where L(x, y, &lambda;<sub>i</sub>) is the provided at-sensor
+  upward radiance at the image location (x, y),
+  I(&lambda;<sub>i</sub>) is the extraterrestrial instantaneous
+  solar irradiance, and &theta;(x, y) is the angle between the
+  illumination direction and the vector perpendicular to the
+  surface. In the proposed algorithm, &theta;(x, y) is approximated
+  by the Solar Zenith Angle provided in the CHRIS attributes since
+  one can assume flat landscape and constant illumination angle for
+  the area observed in a CHRIS image. Finally, the Sun irradiance,
+  I(&lambda;), is taken from Thuillier et al. (2003), corrected for
+  the acquisition day, and convolved with the CHRIS spectral
+  channels.</p>
 
-<p class="inote">
-    Thuillier, G., Hers&eacute;, M., Labs, D., Foujols, T., Peetermans, W., Gillotay, D., Simon, P. C., and
-    Mandel, H. (2003). The solar spectral irradiance from 200 to 2400 nm as measured by the
-    SOLSPEC spectrometer from the ATLAS and EURECA missions. Solar Physics, 214:1�22.
-</p>
+  <p class="inote">Thuillier, G., Hers&eacute;, M., Labs, D.,
+  Foujols, T., Peetermans, W., Gillotay, D., Simon, P. C., and
+  Mandel, H. (2003). The solar spectral irradiance from 200 to 2400
+  nm as measured by the SOLSPEC spectrometer from the ATLAS and
+  EURECA missions. Solar Physics,
+  214:1&iuml;&iquest;&frac12;22.</p>
 
-<p align="center">
-    <img src="images/Figure2.jpg"><br>
-    Sun irradiance corrected for the day of the year and the CHRIS channels (left)<br/>
-    and TOA apparent reflectance estimated from the sensor radiance (right).
-</p>
+  <p align="center"><img src="images/Figure2.jpg" /><br />
+  Sun irradiance corrected for the day of the year and the CHRIS
+  channels (left)<br />
+  and TOA apparent reflectance estimated from the sensor radiance
+  (right).</p>
 
-<p>
-    The extraterrestrial solar irradiance I(&lambda;) given in Thuillier et al. (2003) is provided from 200
-    to 2400 nm in mW/m2/nm. It shall be corrected for the Julian day of year (DOY), J, according
-    to the following approximate formulae:
-</p>
+  <p>The extraterrestrial solar irradiance I(&lambda;) given in
+  Thuillier et al. (2003) is provided from 200 to 2400 nm in
+  mW/m2/nm. It shall be corrected for the Julian day of year (DOY),
+  J, according to the following approximate formulae:</p>
 
-<div align="center"><img src="images/ThuillierDoyCorrection.jpg" alt="Thuillier Julian day of year correction"/></div>
+  <div align="center"><img src="images/ThuillierDoyCorrection.jpg"
+  alt="Thuillier Julian day of year correction" /></div>
 
-<p>
-    where the day of year can be easily obtained from the Image Date metadata of the CHRIS file. <br>
-    Since the reference extraterrestrial solar irradiance presents a different spectral sampling, it is
-    resampled to the CHRIS spectral channels. A specific CHRIS band, i, consists of the addition of
-    one or more CCD detector pixel elements depending on the band width. Therefore, the spectral
-    response of a CHRIS band, S<sub>i</sub>(&lambda;), is the sum of the the spectral response S(&lambda;) of the
-    corresponding
-    detectors of the CCD array. Then, the mean solar irradiance for a given band, I(&lambda;<sub>i</sub>), is obtained
-    by integrating the extraterrestrial solar irradiance by its spectral response:
-</p>
+  <p>where the day of year can be easily obtained from the Image
+  Date metadata of the CHRIS file.<br />
+  Since the reference extraterrestrial solar irradiance presents a
+  different spectral sampling, it is resampled to the CHRIS
+  spectral channels. A specific CHRIS band, i, consists of the
+  addition of one or more CCD detector pixel elements depending on
+  the band width. Therefore, the spectral response of a CHRIS band,
+  S<sub>i</sub>(&lambda;), is the sum of the the spectral response
+  S(&lambda;) of the corresponding detectors of the CCD array.
+  Then, the mean solar irradiance for a given band,
+  I(&lambda;<sub>i</sub>), is obtained by integrating the
+  extraterrestrial solar irradiance by its spectral response:</p>
 
-<div align="center"><img src="images/MeanSolarIrradianceFormula.jpg" alt="Mean Solar Irradiance"/></div>
+  <div align="center"><img src=
+  "images/MeanSolarIrradianceFormula.jpg" alt=
+  "Mean Solar Irradiance" /></div>
 
-<p>
-    The theoretical half-width of the instrument line-spread functions correspond to spectral resolutions of 1.25 nm at
-    415 nm, increasing to 11.25 nm at 1050 nm. One could assume a Gaussian response function, S(&lambda;), for each
-    element using its full-width half-maximum (FWHM), and sum up all the elements of the band. However, in the header of
-    the CHRIS files, although the CCD row number for lower and upper wavelengths of each band is provided, the FWHM of
-    each CCD element is not. Therefore, for the shake of simplicity, the spectral response of a CHRIS band,
-    S<sub>i</sub>(&lambda;), is defined as a bell-shaped function depending on the mid-wavelength, &lambda;<sub>i</sub>,
-    and the band width, &Delta;&lambda;<sub>i</sub>, of the band, directly:
-</p>
+  <p>The theoretical half-width of the instrument line-spread
+  functions correspond to spectral resolutions of 1.25 nm at 415
+  nm, increasing to 11.25 nm at 1050 nm. One could assume a
+  Gaussian response function, S(&lambda;), for each element using
+  its full-width half-maximum (FWHM), and sum up all the elements
+  of the band. However, in the header of the CHRIS files, although
+  the CCD row number for lower and upper wavelengths of each band
+  is provided, the FWHM of each CCD element is not. Therefore, for
+  the shake of simplicity, the spectral response of a CHRIS band,
+  S<sub>i</sub>(&lambda;), is defined as a bell-shaped function
+  depending on the mid-wavelength, &lambda;<sub>i</sub>, and the
+  band width, &Delta;&lambda;<sub>i</sub>, of the band,
+  directly:</p>
 
-<div align="center"><img src="images/ChrisSpectralBandResponseFormula.jpg"
-                         alt="Spectral Response function for a CHRIS band"/></div>
+  <div align="center"><img src=
+  "images/ChrisSpectralBandResponseFormula.jpg" alt=
+  "Spectral Response function for a CHRIS band" /></div>
 
-<p>
-    where both the mid-wavelength and the band width values for each channel are included in the CHRIS
-    file.
-</p>
+  <p>where both the mid-wavelength and the band width values for
+  each channel are included in the CHRIS file.</p>
 
-<h4>User Interface</h4>
+  <h4>User Interface</h4>
 
-<p>
-    The TOA Reflectance Computation tool can be invoked from VISAT <b>Tools</b> menu by selecting
-    the <b>TOA Reflectance Computation...</b> command in the <b>CHRIS/Proba Tools</b> submenu.
-</p>
+  <p>The TOA Reflectance Computation tool can be invoked from VISAT
+  <b>Tools</b> menu by selecting the <b>TOA Reflectance
+  Computation...</b> command in the <b>CHRIS/Proba Tools</b>
+  submenu.</p>
 
-<h5>IO Parameters Tab</h5>
+  <h5>IO Parameters Tab</h5>
 
-<p align="center">
-    <img src="images/IOParameterReflComputation.jpg" alt="IO Parameters Tab"/>
-</p>
+  <p align="center"><img src=
+  "images/IOParameterReflComputation.jpg" alt=
+  "IO Parameters Tab" /></p>
 
-<h6>Source Product Group</h6>
+  <h6>Source Product Group</h6>
 
-<p class="i1">
-    <b>Name:</b>
-    Here the user specifies the name of the source product. The combo box presents
-    a list of all products open in VISAT. The user may select one of these
-    or, by clicking on the button next to the combo box, choose a product
-    from the file system.
-</p>
+  <p class="i1"><b>Name:</b> Here the user specifies the name of
+  the source product. The combo box presents a list of all products
+  open in VISAT. The user may select one of these or, by clicking
+  on the button next to the combo box, choose a product from the
+  file system.</p>
 
-<h6>Target Product Group</h6>
+  <h6>Target Product Group</h6>
 
-<p class="i1">
-    <b>Name:</b>
-    Used to specify the name of the target product.
-</p>
+  <p class="i1"><b>Name:</b> Used to specify the name of the target
+  product.</p>
 
-<p class="i1">
-    <b>Save as:</b>
-    Used to specify whether the target product should be saved to the file system. The
-    combo box presents a list of file formats, currently BEAM-DIMAP, GeoTIFF, and HDF5.
-    The text field allows to specify a target directory.
-</p>
+  <p class="i1"><b>Save as:</b> Used to specify whether the target
+  product should be saved to the file system. The combo box
+  presents a list of file formats, currently BEAM-DIMAP, GeoTIFF,
+  and HDF5. The text field allows to specify a target
+  directory.</p>
 
-<p class="i1">
-    <b>Open in VISAT:</b>
-    Used to specify whether the target product should be opened in VISAT. When the
-    the target product is not saved, it is opened in VISAT automatically.
-</p>
+  <p class="i1"><b>Open in VISAT:</b> Used to specify whether the
+  target product should be opened in VISAT. When the the target
+  product is not saved, it is opened in VISAT automatically.</p>
 
-<h5>Processing Parameters Tab</h5>
-<p align="center">
-    <img src="images/ProcessingParameterReflComputation.jpg" alt="Processing Parameters Tab"/>
-</p>
+  <h5>Processing Parameters Tab</h5>
 
-<p class="i1">
-    <b>Copy radiance bands:</b>
-    Here the user selects whether the radiance bands shall be copied to the output product or not.
-</p>
+  <p align="center"><img src=
+  "images/ProcessingParameterReflComputation.jpg" alt=
+  "Processing Parameters Tab" /></p>
 
+  <p class="i1"><b>Copy radiance bands:</b> Here the user selects
+  whether the radiance bands shall be copied to the output product
+  or not.</p>
 
-<h5>Dialog Buttons</h5>
+  <h5>Dialog Buttons</h5>
 
-<p class="i1">
-    <b>Run</b>
-    Creates the target product. The processing is actually deferred until the target band data are accessed,
-    either by writing the product to the file system or by viewing the band data. When the <b>Save as</b> option is
-    checked, the processing is triggered automatically.
-</p>
+  <p class="i1"><b>Run</b> Creates the target product. The
+  processing is actually deferred until the target band data are
+  accessed, either by writing the product to the file system or by
+  viewing the band data. When the <b>Save as</b> option is checked,
+  the processing is triggered automatically.</p>
 
-<p class="i1">
-    <b>Close</b>
-    Closes the dialog.
-</p>
+  <p class="i1"><b>Close</b> Closes the dialog.</p>
 
-<p class="i1">
-    <b>Help</b>
-    Displays this page in VISAT Help.
-</p>
-
-
-<hr>
+  <p class="i1"><b>Help</b> Displays this page in VISAT Help.</p>
+  <hr />
 </body>
 </html>
