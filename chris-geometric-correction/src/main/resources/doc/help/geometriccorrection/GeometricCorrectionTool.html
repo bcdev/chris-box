@@ -50,6 +50,11 @@
 </p>
 
 <p>
+    The geometric correction adds tie point grids for latitude, longitude, as well as view azimuth and zenith angles
+    to a CHRIS/Proba product.
+</p>
+
+<p>
     Selecting the <b>Geometric Correction...</b> command from the VISAT tool menu pops up the
     following dialog:
 </p>
@@ -101,6 +106,13 @@
     Use this field to specify the directory containing the CHRIS telemetry data. Note that
     the parent directory of the source product is searched for CHRIS telemetry data <em>before</em>
     the local repository is.
+</p>
+
+<p class="i1">
+    <b>Use target altitude:</b>
+    Use this field to specify that the nominal target altitude shall be taken into account when
+    calculating the longitude and latitude coordinates. <em>Note that the resulting geo-coding
+    is more accurate, but is not suitable for ortho-rectification.</em>.
 </p>
 
 <h5>Button Group</h5>
