@@ -64,6 +64,12 @@
     <img src="images/gc-dialog.png" alt="Geometric Correction Dialog"/>
 </p>
 
+<p>
+    You may be asked to update the auxiiary time tables, which are included in the module. Time tables
+    are updated at <a href="ftp://maia.usno.navy.mil/ser7/">ftp://maia.usno.navy.mil/ser7/</a> every
+    week. If you work with recent CHRIS/Proba products, you will need to update the time tables regularly.
+</p>
+
 <h5>Source Product Group</h5>
 
 <p class="i1">
@@ -112,7 +118,13 @@
     <b>Use target altitude:</b>
     Use this field to specify that the nominal target altitude shall be taken into account when
     calculating the longitude and latitude coordinates. <em>Note that the resulting geo-coding
-    is more accurate, but is not suitable for ortho-rectification.</em>.
+    is more accurate, but not suitable for ortho-rectification.</em>.
+</p>
+
+<p class="i1">
+    <b>Include pitch and roll angles:</b>
+    Use this field to specify that the instrument pitch and roll angles, which are calculated anyway, shall
+    included in the product. This option is for diagnostics only.
 </p>
 
 <h5>Button Group</h5>
