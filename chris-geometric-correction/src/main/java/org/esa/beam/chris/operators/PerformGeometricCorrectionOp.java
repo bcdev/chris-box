@@ -101,8 +101,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         final AcquisitionInfo acquisitionInfo = AcquisitionInfo.create(sourceProduct);
         final GCP[] gcps = GCP.createArray(sourceProduct.getGcpGroup(), acquisitionInfo.getTargetAlt());
 
-        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo);
-        calculator.calculate(ictData, gpsData, gcps, useTargetAltitude);
+        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo, gcps);
+        calculator.calculate(ictData, gpsData, useTargetAltitude);
 
         final Product targetProduct = createTargetProduct(calculator, acquisitionInfo.isBackscanning());
         setTargetProduct(targetProduct);
@@ -128,10 +128,10 @@ public class PerformGeometricCorrectionOp extends Operator {
         for (int row = 0; row < h; row++) {
             final int y = backscanning ? h - 1 - row : row;
             for (int x = 0; x < w; x++) {
-                lons[row * w + x] = (float) calculator.getLon(y, x);
-                lats[row * w + x] = (float) calculator.getLat(y, x);
-                vaas[row * w + x] = (float) calculator.getVaa(y, x);
-                vzas[row * w + x] = (float) calculator.getVza(y, x);
+                lons[row * w + x] = (float) calculator.getLon(x, y);
+                lats[row * w + x] = (float) calculator.getLat(x, y);
+                vaas[row * w + x] = (float) calculator.getVaa(x, y);
+                vzas[row * w + x] = (float) calculator.getVza(x, y);
             }
         }
 
@@ -146,8 +146,8 @@ public class PerformGeometricCorrectionOp extends Operator {
             for (int row = 0; row < h; row++) {
                 final int y = backscanning ? h - 1 - row : row;
                 for (int x = 0; x < w; x++) {
-                    p[row * w + x] = (float) calculator.getPitchAngle(y, x);
-                    r[row * w + x] = (float) calculator.getRollAngle(y, x);
+                    p[row * w + x] = (float) calculator.getPitch(x, y);
+                    r[row * w + x] = (float) calculator.getRoll(x, y);
                 }
             }
             addTiePointGrid(targetProduct, "pitch", w, h, p, "Instrument pitch angle (rad)", "rad");

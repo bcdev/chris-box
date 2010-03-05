@@ -24,21 +24,27 @@ class GeometryCalculator {
     private static final int X = 0;
     private static final int Y = 1;
     private static final int Z = 2;
+    private static final int U = 3;
+    private static final int V = 4;
+    private static final int W = 5;
+
     // five images for each acquisition
     private static final int IMAGE_COUNT = 5;
 
     final AcquisitionInfo acquisitionInfo;
+    private final GCP[] gcps;
 
     final double[][] lats;
     final double[][] lons;
     final double[][] vaas;
     final double[][] vzas;
 
-    final double[][] pitchAngles;
-    final double[][] rollAngles;
+    final double[][] pitches;
+    final double[][] rolls;
 
-    public GeometryCalculator(AcquisitionInfo acquisitionInfo) {
+    public GeometryCalculator(AcquisitionInfo acquisitionInfo, GCP[] gcps) {
         this.acquisitionInfo = acquisitionInfo;
+        this.gcps = gcps;
 
         final ModeCharacteristics modeCharacteristics = ModeCharacteristics.get(acquisitionInfo.getMode());
         final int rowCount = modeCharacteristics.getRowCount();
@@ -49,14 +55,11 @@ class GeometryCalculator {
         vaas = new double[rowCount][colCount];
         vzas = new double[rowCount][colCount];
 
-        pitchAngles = new double[rowCount][colCount];
-        rollAngles = new double[rowCount][colCount];
+        pitches = new double[rowCount][colCount];
+        rolls = new double[rowCount][colCount];
     }
 
-    void calculate(IctDataRecord ictData, List<GpsDataRecord> gpsData, GCP[] gcps, boolean useTargetAltitude) {
-        //////////////////////////
-        // Prepare Time Frames
-        //////////////////////////
+    void calculate(IctDataRecord ictData, List<GpsDataRecord> gpsData, boolean useTargetAltitude) {
 
         // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
         final ModeCharacteristics modeCharacteristics = ModeCharacteristics.get(acquisitionInfo.getMode());
@@ -161,12 +164,13 @@ class GeometryCalculator {
         // =======================================================================
         // ---- Interpolate GPS ECI position/velocity to per-line time -------
 
-        double[] iX = interpolate(gps_njd, get2ndDim(eci, 0, numGPS), T);
-        double[] iY = interpolate(gps_njd, get2ndDim(eci, 1, numGPS), T);
-        double[] iZ = interpolate(gps_njd, get2ndDim(eci, 2, numGPS), T);
-        double[] iVX = interpolate(gps_njd, get2ndDim(eci, 3, numGPS), T);
-        double[] iVY = interpolate(gps_njd, get2ndDim(eci, 4, numGPS), T);
-        double[] iVZ = interpolate(gps_njd, get2ndDim(eci, 5, numGPS), T);
+        double[][] transposedEci = VectorMath.transpose(Arrays.copyOf(eci, numGPS));
+        double[] iX = interpolate(gps_njd, transposedEci[0], T);
+        double[] iY = interpolate(gps_njd, transposedEci[1], T);
+        double[] iZ = interpolate(gps_njd, transposedEci[2], T);
+        double[] iVX = interpolate(gps_njd, transposedEci[3], T);
+        double[] iVY = interpolate(gps_njd, transposedEci[4], T);
+        double[] iVZ = interpolate(gps_njd, transposedEci[5], T);
 
         double[] iR = new double[T.length];
         for (int i = 0; i < iR.length; i++) {
@@ -175,7 +179,7 @@ class GeometryCalculator {
 
         // ==v==v== Get Orbital Plane Vector ==================================================
         // ---- Calculates normal vector to orbital plane --------------------------
-        double[][] uWop = toUnitVectors(vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
+        double[][] uWop = VectorMath.unitVectors(VectorMath.vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
 
         // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
         double gst_opv = TimeConverter.jdToGST(T[Tfix] + JD2001);
@@ -200,7 +204,7 @@ class GeometryCalculator {
             eciY[i] = eci[i][Y];
             eciZ[i] = eci[i][Z];
         }
-        final double[] AngVelRaw = VectorMath.angularVelocity(gpsSecs, eciX, eciY, eciZ);
+        final double[] AngVelRaw = VectorMath.angularVelocities(gpsSecs, eciX, eciY, eciZ);
         final double[] AngVelRawSubset = Arrays.copyOfRange(AngVelRaw, 0, numGPS);
         SimpleSmoother smoother = new SimpleSmoother(5);
         final double[] AngVel = new double[AngVelRawSubset.length];
@@ -236,7 +240,7 @@ class GeometryCalculator {
         }
 
         final int bestGcpIndex = findBestGCP(modeCharacteristics.getColCount() / 2,
-                                             modeCharacteristics.getRowCount() / 2, gcps);
+                                             modeCharacteristics.getRowCount() / 2);
 
         if (bestGcpIndex != -1) {
             final GCP gcp = gcps[bestGcpIndex];
@@ -315,12 +319,13 @@ class GeometryCalculator {
             /**
              * 5. Interpolate satellite positions & velocities for updated times T[]
              */
-            iX = interpolate(gps_njd, get2ndDim(eci, 0, numGPS), T);
-            iY = interpolate(gps_njd, get2ndDim(eci, 1, numGPS), T);
-            iZ = interpolate(gps_njd, get2ndDim(eci, 2, numGPS), T);
-            iVX = interpolate(gps_njd, get2ndDim(eci, 3, numGPS), T);
-            iVY = interpolate(gps_njd, get2ndDim(eci, 4, numGPS), T);
-            iVZ = interpolate(gps_njd, get2ndDim(eci, 5, numGPS), T);
+            transposedEci = VectorMath.transpose(Arrays.copyOf(eci, numGPS));
+            iX = interpolate(gps_njd, transposedEci[0], T);
+            iY = interpolate(gps_njd, transposedEci[1], T);
+            iZ = interpolate(gps_njd, transposedEci[2], T);
+            iVX = interpolate(gps_njd, transposedEci[3], T);
+            iVY = interpolate(gps_njd, transposedEci[4], T);
+            iVZ = interpolate(gps_njd, transposedEci[5], T);
 
             iR = new double[T.length];
             for (int i = 0; i < iR.length; i++) {
@@ -329,7 +334,7 @@ class GeometryCalculator {
 
             // ==v==v== Get Orbital Plane Vector ==================================================
             // ---- Calculates normal vector to orbital plane --------------------------
-            uWop = toUnitVectors(vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
+            uWop = VectorMath.unitVectors(VectorMath.vectorProducts(iX, iY, iZ, iVX, iVY, iVZ));
 
             // Fixes orbital plane vector to the corresponding point on earth at the time of acquistion setup
             gst_opv = TimeConverter.jdToGST(T[Tfix] + JD2001);
@@ -415,7 +420,7 @@ class GeometryCalculator {
             yawAxes[i][Y] = iY[Tini[img] + i];
             yawAxes[i][Z] = iZ[Tini[img] + i];
         }
-        yawAxes = toUnitVectors(yawAxes);
+        yawAxes = VectorMath.unitVectors(yawAxes);
 
         double[][] pitchAxes = new double[modeCharacteristics.getRowCount()][3];
         for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
@@ -424,18 +429,18 @@ class GeometryCalculator {
             pitchAxes[i][Z] = uWop[Tini[img] + i][Z];
         }
 
-        double[][] rollAxes = vectorProducts(pitchAxes, yawAxes, new double[modeCharacteristics.getRowCount()][3]);
-
-        double[][] uRange = toUnitVectors(viewRange);
+        double[][] rollAxes = VectorMath.vectorProducts(pitchAxes, yawAxes,
+                                                        new double[modeCharacteristics.getRowCount()][3]);
+        double[][] uRange = VectorMath.unitVectors(viewRange);
 
 
         // RollSign:
         int[] uRollSign = new int[modeCharacteristics.getRowCount()];
 
-        double[][] uSP = vectorProducts(uRange, pitchAxes, new double[modeCharacteristics.getRowCount()][3]);
-        double[][] uSL = vectorProducts(pitchAxes, uSP, new double[modeCharacteristics.getRowCount()][3]);
-        double[][] uRoll = toUnitVectors(
-                vectorProducts(uSL, uRange, new double[modeCharacteristics.getRowCount()][3]));
+        double[][] uSP = VectorMath.vectorProducts(uRange, pitchAxes, new double[modeCharacteristics.getRowCount()][3]);
+        double[][] uSL = VectorMath.vectorProducts(pitchAxes, uSP, new double[modeCharacteristics.getRowCount()][3]);
+        double[][] uRoll = VectorMath.unitVectors(
+                VectorMath.vectorProducts(uSL, uRange, new double[modeCharacteristics.getRowCount()][3]));
         for (int i = 0; i < modeCharacteristics.getRowCount(); i++) {
             double total = 0;
             total += uRoll[i][X] / uSP[i][X];
@@ -478,104 +483,55 @@ class GeometryCalculator {
 
         calculatePitchAndRollAngles(acquisitionInfo.getMode(),
                                     modeCharacteristics.getFov(),
-                                    modeCharacteristics.getIfov(), centerPitchAngles, centerRollAngles,
-                                    pitchAngles,
-                                    rollAngles);
+                                    modeCharacteristics.getIfov(), centerPitchAngles, centerRollAngles);
 
         // a. if there ar more than 2 GCPs we can calculate deltas for the pointing angle
         if (gcps.length > 2) {
-            refinePitchAndRollAngles(gcps, timeSubset, ixSubset, iySubset, izSubset, pitchAxes, yawAxes,
-                                     pitchAngles, rollAngles);
+            refinePitchAndRollAngles(timeSubset, ixSubset, iySubset, izSubset, pitchAxes, yawAxes);
         }
 
 
         final PositionCalculator positionCalculator = new PositionCalculator(
                 useTargetAltitude ? targetAltitude : 0.0);
         positionCalculator.calculatePositions(
-                timeSubset, ixSubset, iySubset, izSubset, pitchAxes, rollAxes, yawAxes, pitchAngles,
-                rollAngles,
+                timeSubset, ixSubset, iySubset, izSubset, pitchAxes, rollAxes, yawAxes, pitches,
+                rolls,
                 lons,
                 lats,
                 vaas,
                 vzas);
     }
 
-    final double getLon(int y, int x) {
+    final double getLon(int x, int y) {
         return lons[y][x];
     }
 
-    final double getLat(int y, int x) {
+    final double getLat(int x, int y) {
         return lats[y][x];
     }
 
-    final double getVaa(int y, int x) {
+    final double getVaa(int x, int y) {
         return vaas[y][x];
     }
 
-    final double getVza(int y, int x) {
+    final double getVza(int x, int y) {
         return vzas[y][x];
     }
 
-    final double getPitchAngle(int y, int x) {
-        return pitchAngles[y][x];
+    final double getPitch(int x, int y) {
+        return pitches[y][x];
     }
 
-    final double getRollAngle(int y, int x) {
-        return rollAngles[y][x];
+    final double getRoll(int x, int y) {
+        return rolls[y][x];
     }
 
-    private static double[] toUnitVector(double[] vector) {
-        final double norm = Math.sqrt(vector[X] * vector[X] + vector[Y] * vector[Y] + vector[Z] * vector[Z]);
-        vector[X] /= norm;
-        vector[Y] /= norm;
-        vector[Z] /= norm;
-        return vector;
-    }
-
-    private static double[][] toUnitVectors(double[][] vectors) {
-        for (final double[] vector : vectors) {
-            toUnitVector(vector);
-        }
-        return vectors;
-    }
-
-    private static double[] vectorProduct(double[] u, double[] v, double[] w) {
-        w[X] = u[Y] * v[Z] - u[Z] * v[Y];
-        w[Y] = u[Z] * v[X] - u[X] * v[Z];
-        w[Z] = u[X] * v[Y] - u[Y] * v[X];
-        return w;
-    }
-
-    private static double[][] vectorProducts(double[][] u, double[][] v, double[][] w) {
-        for (int i = 0; i < u.length; i++) {
-            vectorProduct(u[i], v[i], w[i]);
-        }
-        return w;
-    }
-
-    private static double[][] vectorProducts(double[] x, double[] y, double[] z, double[] u, double[] v, double[] w) {
-        final double[][] products = new double[x.length][3];
-        for (int i = 0; i < x.length; i++) {
-            final double[] product = products[i];
-            product[X] = y[i] * w[i] - z[i] * v[i];
-            product[Y] = z[i] * u[i] - x[i] * w[i];
-            product[Z] = x[i] * v[i] - y[i] * u[i];
-        }
-        return products;
-    }
-
-    private static double[] get2ndDim(double[][] twoDimArray, int secondDimIndex, int numElems) {
-        double[] secondDim = new double[numElems];
-        for (int i = 0; i < numElems; i++) {
-            secondDim[i] = twoDimArray[i][secondDimIndex];
-        }
-        return secondDim;
-    }
-
-    private static void refinePitchAndRollAngles(GCP[] gcps, double[] timeSubset, double[] ixSubset, double[] iySubset,
-                                                 double[] izSubset,
-                                                 double[][] pitchAxes, double[][] yawAxes, double[][] pitchAngles,
-                                                 double[][] rollAngles) {
+    private void refinePitchAndRollAngles(double[] imgT,
+                                          double[] imgX,
+                                          double[] imgY,
+                                          double[] imgZ,
+                                          double[][] pitchAxes,
+                                          double[][] yawAxes) {
         final int gcpCount = gcps.length;
         final double[] x = new double[gcpCount];
         final double[] y = new double[gcpCount];
@@ -587,10 +543,10 @@ class GeometryCalculator {
             final GCP gcp = gcps[i];
             final int row = gcp.getRow();
             final int col = gcp.getCol();
-            final double satT = timeSubset[row];
-            final double satX = ixSubset[row];
-            final double satY = iySubset[row];
-            final double satZ = izSubset[row];
+            final double satT = imgT[row];
+            final double satX = imgX[row];
+            final double satY = imgY[row];
+            final double satZ = imgZ[row];
             final double[] pitchAxis = pitchAxes[row];
             final double[] yawAxis = yawAxes[row];
 
@@ -598,16 +554,16 @@ class GeometryCalculator {
 
             x[i] = gcp.getX();
             y[i] = gcp.getY();
-            deltaPitch[i] = pitchRoll[0] - pitchAngles[row][col];
-            deltaRoll[i] = pitchRoll[1] - rollAngles[row][col];
+            deltaPitch[i] = pitchRoll[0] - pitches[row][col];
+            deltaRoll[i] = pitchRoll[1] - rolls[row][col];
         }
 
         final RationalFunctionModel deltaPitchModel = new RationalFunctionModel(2, 0, x, y, deltaPitch);
         final RationalFunctionModel deltaRollModel = new RationalFunctionModel(2, 0, x, y, deltaRoll);
 
-        for (int k = 0; k < pitchAngles.length; k++) {
-            final double[] rowPitchAngles = pitchAngles[k];
-            final double[] rowRollAngles = rollAngles[k];
+        for (int k = 0; k < pitches.length; k++) {
+            final double[] rowPitchAngles = pitches[k];
+            final double[] rowRollAngles = rolls[k];
             for (int l = 0; l < rowPitchAngles.length; l++) {
                 rowPitchAngles[l] += deltaPitchModel.getValue(l + 0.5, k + 0.5);
                 rowRollAngles[l] += deltaRollModel.getValue(l + 0.5, k + 0.5);
@@ -615,54 +571,45 @@ class GeometryCalculator {
         }
     }
 
-    private static void calculatePitchRoll(
-            double satT,
-            double satX,
-            double satY,
-            double satZ,
-            GCP gcp,
-            double[] pitchAxis,
-            double[] yawAxis,
-            double[] angles) {
+    private static void calculatePitchRoll(double satT, double satX, double satY, double satZ, GCP gcp,
+                                           double[] pitchAxis, double[] yawAxis, double[] pitchRoll) {
         final double[] gcpPos = CoordinateConverter.wgsToEcef(gcp.getLon(), gcp.getLat(), gcp.getAlt(), new double[3]);
         CoordinateConverter.ecefToEci(TimeConverter.jdToGST(satT + JD2001), gcpPos, gcpPos);
 
         final double dx = gcpPos[X] - satX;
         final double dy = gcpPos[Y] - satY;
         final double dz = gcpPos[Z] - satZ;
-        final double[] pointing = toUnitVector(new double[]{dx, dy, dz});
-        final double[] sp = vectorProduct(pointing, pitchAxis, new double[3]);
-        final double[] sl = vectorProduct(pitchAxis, sp, new double[3]);
-        final double[] rollAxis = toUnitVector(vectorProduct(sl, pointing, new double[3]));
+        final double[] pointing = VectorMath.unitVector(new double[]{dx, dy, dz});
+        final double[] sp = VectorMath.vectorProduct(pointing, pitchAxis, new double[3]);
+        final double[] sl = VectorMath.vectorProduct(pitchAxis, sp, new double[3]);
+        final double[] rollAxis = VectorMath.unitVector(VectorMath.vectorProduct(sl, pointing, new double[3]));
         final double total = rollAxis[X] / sp[X] + rollAxis[Y] / sp[Y] + rollAxis[Z] / sp[Z];
 
-        final double pitchAngle = Math.PI / 2.0 - VectorMath.angle(sp[X],
-                                                                   sp[Y],
-                                                                   sp[Z],
-                                                                   yawAxis[X],
-                                                                   yawAxis[Y],
-                                                                   yawAxis[Z]);
+        final double pitch = Math.PI / 2.0 - VectorMath.angle(sp[X],
+                                                              sp[Y],
+                                                              sp[Z],
+                                                              yawAxis[X],
+                                                              yawAxis[Y],
+                                                              yawAxis[Z]);
         final double rollSign = Math.signum(total);
-        final double rollAngle = rollSign * VectorMath.angle(sl[X],
-                                                             sl[Y],
-                                                             sl[Z],
-                                                             pointing[X],
-                                                             pointing[Y],
-                                                             pointing[Z]);
+        final double roll = rollSign * VectorMath.angle(sl[X],
+                                                        sl[Y],
+                                                        sl[Z],
+                                                        pointing[X],
+                                                        pointing[Y],
+                                                        pointing[Z]);
 
-        angles[0] = pitchAngle;
-        angles[1] = rollAngle;
+        pitchRoll[0] = pitch;
+        pitchRoll[1] = roll;
     }
 
-    private static void calculatePitchAndRollAngles(int mode,
-                                                    double fov,
-                                                    double ifov,
-                                                    double[] centerPitchAngles,
-                                                    double[] centerRollAngles,
-                                                    double[][] pitchAngles,
-                                                    double[][] rollAngles) {
-        final int rowCount = pitchAngles.length;
-        final int colCount = pitchAngles[0].length;
+    private void calculatePitchAndRollAngles(int mode,
+                                             double fov,
+                                             double ifov,
+                                             double[] rowCenterPitches,
+                                             double[] rowCenterRolls) {
+        final int rowCount = pitches.length;
+        final int colCount = pitches[0].length;
 
         final double[] deltas = new double[colCount];
         if (mode == 5) {
@@ -678,8 +625,8 @@ class GeometryCalculator {
         }
         for (int l = 0; l < rowCount; l++) {
             for (int c = 0; c < colCount; c++) {
-                pitchAngles[l][c] = centerPitchAngles[l];
-                rollAngles[l][c] = centerRollAngles[l] + deltas[c];
+                pitches[l][c] = rowCenterPitches[l];
+                rolls[l][c] = rowCenterRolls[l] + deltas[c];
             }
         }
     }
@@ -687,14 +634,13 @@ class GeometryCalculator {
     /**
      * Finds the GCP which is nearest to some given pixel coordinates (x, y).
      *
-     * @param x    the x pixel coordinate.
-     * @param y    the y pixel coordinate.
-     * @param gcps the ground control points being searched.
+     * @param x the x pixel coordinate.
+     * @param y the y pixel coordinate.
      *
      * @return the index of the GCP nearest to ({@code x}, {@code y}) or {@code -1},
      *         if no such GCP could be found.
      */
-    private static int findBestGCP(double x, double y, GCP[] gcps) {
+    private int findBestGCP(double x, double y) {
         int bestIndex = -1;
         double bestDelta = Double.POSITIVE_INFINITY;
 

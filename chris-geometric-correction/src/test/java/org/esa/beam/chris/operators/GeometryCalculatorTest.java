@@ -43,38 +43,38 @@ public class GeometryCalculatorTest {
 
     @Test
     public void verifyCalculation() { // calculation is verified for three arbitrary chosen points
-        final GeometryCalculator calculator = new GeometryCalculator(ACQUISITION_INFO);
-        calculator.calculate(ictData, gpsData, gcps, true);
+        final GeometryCalculator calculator = new GeometryCalculator(ACQUISITION_INFO, gcps);
+        calculator.calculate(ictData, gpsData, true);
 
         final double lon1 = -2.1467485;
         final double lat1 = 39.082634;
         final double vaa1 = 110.73890;
         final double vza1 = 12.794340;
 
-        assertEquals(lon1, calculator.getLon(150, 31), 2.0E-07);
-        assertEquals(lat1, calculator.getLat(150, 31), 5.0E-06);
-        assertEquals(vaa1, calculator.getVaa(150, 31), 5.0E-06);
-        assertEquals(vza1, calculator.getVza(150, 31), 5.0E-06);
+        assertEquals(lon1, calculator.getLon(31, 150), 2.0E-07);
+        assertEquals(lat1, calculator.getLat(31, 150), 5.0E-06);
+        assertEquals(vaa1, calculator.getVaa(31, 150), 5.0E-06);
+        assertEquals(vza1, calculator.getVza(31, 150), 5.0E-06);
 
         final double lon2 = -2.0291290;
         final double lat2 = 39.103485;
         final double vaa2 = 103.96323;
         final double vza2 = 11.660949;
 
-        assertEquals(lon2, calculator.getLon(45, 301), 2.0E-07);
-        assertEquals(lat2, calculator.getLat(45, 301), 5.0E-06);
-        assertEquals(vaa2, calculator.getVaa(45, 301), 5.0E-06);
-        assertEquals(vza2, calculator.getVza(45, 301), 5.0E-06);
+        assertEquals(lon2, calculator.getLon(301, 45), 2.0E-07);
+        assertEquals(lat2, calculator.getLat(301, 45), 5.0E-06);
+        assertEquals(vaa2, calculator.getVaa(301, 45), 5.0E-06);
+        assertEquals(vza2, calculator.getVza(301, 45), 5.0E-06);
 
         final double lon3 = -2.0862782;
         final double lat3 = 39.009377;
         final double vaa3 = 125.21822;
         final double vza3 = 12.938542;
 
-        assertEquals(lon3, calculator.getLon(351, 210), 2.0E-07);
-        assertEquals(lat3, calculator.getLat(351, 210), 5.0E-06);
-        assertEquals(vaa3, calculator.getVaa(351, 210), 5.0E-06);
-        assertEquals(vza3, calculator.getVza(351, 210), 5.0E-06);
+        assertEquals(lon3, calculator.getLon(210, 351), 2.0E-07);
+        assertEquals(lat3, calculator.getLat(210, 351), 5.0E-06);
+        assertEquals(vaa3, calculator.getVaa(210, 351), 5.0E-06);
+        assertEquals(vza3, calculator.getVza(210, 351), 5.0E-06);
     }
 
     private void readIctData() throws URISyntaxException {
