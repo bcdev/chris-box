@@ -26,6 +26,11 @@
             <groupId>org.esa.beam</groupId>
             <artifactId>beam-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>chris-atmospheric-correction-lut-bundle</artifactId>
+            <version>1.5</version>
+        </dependency>
     </dependencies>
 
     <build>
