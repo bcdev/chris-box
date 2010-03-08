@@ -77,11 +77,14 @@
         <module>chris-util</module>
         <module>chris-atmospheric-correction</module>
         <module>chris-atmospheric-correction-lut</module>
-        <module>chris-atmospheric-correction-lut-bundle</module>
         <module>chris-cloud-screening</module>
         <module>chris-geometric-correction</module>
         <module>chris-noise-reduction</module>
         <module>chris-toa-reflectance-computation</module>
+        <!-- Resource bundle should not be included in project.
+             When it should be deployed execute explicitly. 
+        -->
+        <!--<module>chris-atmospheric-correction-lut-bundle</module>-->
     </modules>
 
     <dependencyManagement>
