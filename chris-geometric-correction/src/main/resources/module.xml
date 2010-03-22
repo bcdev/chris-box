@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-geometric-correction</symbolicName>
-    <version>1.0</version>
+    <version>1.5.1</version>
     <name>CHRIS/Proba Geometric Correction Tool</name>
     <description>CHRIS/Proba Geometric Correction Tool</description>
 
@@ -12,6 +12,12 @@
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
     <changelog/>
+    <changelog>
+        <![CDATA[
+        <p>Changes in Version 1.5.1
+        [CBOX-78] Not possible to use gpt after CHRIS-Box installation<br/>
+        ]]>
+    </changelog>
 
     <dependency>
         <module>beam-gpf</module>
