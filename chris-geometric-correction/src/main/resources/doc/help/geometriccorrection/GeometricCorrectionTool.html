@@ -45,34 +45,152 @@
 
   <h5>Algorithm</h5>
 
-  <p>No description available yet.</p>
+  <p>The proposed approach for the geometric correction of
+  CHRIS/Proba is based on the parametric modelling of the
+  acquisition process. It makes use of the satellite's position,
+  velocity and pointing at the moment of line acquisition,
+  projecting the line of sight onto the Earth's surface to
+  calculate the geographical coordinate of each pixel. The
+  coordinate map can then be used for the ortho-rectification of
+  the images.</p>
+
+  <p>In principle the algorithm does not require any user input,
+  since it is based on the geometry of acquisition. Unfortunately
+  the Proba platform does have a pointing problem, which has not
+  been identified yet. Therefore, at least a single ground control
+  point (GCP) per image is required in order to compensate for the
+  de-pointing, although the precision of the single-GCP correction
+  is not good enough. Three GCPs per image provide satisfactory
+  results, and nine GCPs per image result in an excellent
+  co-registration of all 5 images, for the tested cases (all in
+  Barrax).</p>
+
+  <p>The choice of the orbital parametric approach is based on the
+  particular requirements the acquisition process of CHRIS/Proba
+  imposes on other existing methods for geometric correction.</p>
+
+  <p>The GCP method requires a quite large number of points for an
+  accurate geometric correction (at least 30, and more than 50 for
+  high accuracy over flat terrain), and they need to be evenly
+  distributed. These requirements exists for each image in the
+  acquisition set</p>
+
+  <p>An alternative method is based on the photo-grammetric
+  equation applied to the five images, but it makes the assumption
+  that each image is acquired instantly from a fixed point in
+  space, which is not the case for CHRIS/Proba. In order to
+  compensate this difference in the acquisition assumptions the use
+  of GCPs distributed through the image is necessary</p>
+
+  <p>The overlap of the five images is not too high, around 65%
+  (estimate) due to de-pointing, but even with perfect pointing,
+  larger observation angles provide different spatial coverage due
+  to perspective. Therefore the co-registration of the five images
+  is only possible in a portion of each image, which reduces the
+  accuracy in the excluded areas. This makes necessary a
+  high-resolution reference image for the selection of GCPs.</p>
+
+  <p>Even if the requirements of these methods were met, there is
+  the unsolved problem of open water targets, where it is not
+  possible to use GCP at all, except for very few pixels in the
+  best case. The same situation appears in the case of cloudy
+  images, rendering useless scenes that might have still some
+  useful portions.</p>
+
+  <p>The inputs needed by the algorithm are: telemetry with the
+  satellite position, velocity and image timing, target centre
+  coordinate, and, for doing an ortho-rectification, a local
+  digital elevation model (DEM). The outputs of this algorithm
+  consist on the coordinates map in IGM files, or the rectified
+  images if the desired output is the rectified images, then they
+  should be also provided. As side product, observa-tion angles
+  maps can be produced for each of the images.</p>
+
+  <p>It must be noted that the method requires ESA to provide the
+  corresponding telemetry for each acquisition. Though it is
+  possible to use orbit propagation models in order to substitute
+  the telemetry when it is missing, this option has not been
+  implemented.</p>
+
+  <p>An archive of heritage telemetry data, which are distributed
+  at <a href=
+  "http://194.78.233.110/products/data/CHRIS_Additional_data/index.html">
+  http://194.78.233.110/products/data/CHRIS_Additional_data/index.html</a>
+  can be downloaded from <a href=
+  "http://www.brockmann-consult.de/beam/data/Archive_CHRIS_Tags_12000_38000_Telemetry_Data.zip">
+  http://www.brockmann-consult.de/beam/data/Archive_CHRIS_Tags_12000_38000_Telemetry_Data.zip</a>.
+  The algorithm requires that the unpacked archive is available on
+  the local file system.</p>
+
+  <h5>Getting started</h5>
+
+  <p>First download and unpack the CHRIS telemetry data, which are
+  a prerequisite for the geometric correction. In order to carry
+  out the geo-correction:</p>
+
+  <ol>
+    <li>Open a CHRIS/proba atmosphere-corrected product (the
+    geometric correction is applicable to any CHRIS product, but
+    the geometric correction marks the last step in the processing,
+    i.e. you can geo-correct a noise-corrected image, but then
+    cannot process the geo-corrected image with the CHRIS-Box tools
+    any further)</li>
+
+    <li>Define at least three GCPs near to the first, central, and
+    last rows in the image; additional GCPs yield better results.
+    Besides latitude and longitude, you may specify a GCP's
+    altitude by adding something like <code>Madrid (alt[m] =
+    750)</code> to the description of a GCP. This is optional and
+    not required, but improves the calculation of the instrument's
+    pointing</li>
+
+    <li>If you have a flat target you may check the '<b>Use target
+    altitude</b>' option in the processing parameters. If your
+    target has some topography, results might still be fine when
+    this option is checked</li>
+
+    <li>Run the geometric correction tool</li>
+
+    <li>Run the BEAM ortho-rectification tool on the geo-corrected
+    product in order to obtain an ortho-rectified product; you
+    cannot do this if you have checked the '<b>Use target
+    altitude</b>' option</li>
+  </ol>
+
+  <p>Instructions on how to use a DEM can be found in the VISAT
+  Help by searching for DEM.</p>
 
   <h3>User Interface</h3>
 
   <p>The geometric correction tool can be invoked from VISAT tool
-  menu by selecting the <b>Geomatric Correction...</b> command in
+  menu by selecting the <b>Geometric Correction...</b> command in
   the <b>CHRIS-Box</b> submenu. In the command line it is available
   by means of the Graph Processing Tool <code>gpt</code> which is
   located in the BEAM <code>bin</code> directory. For further
   information type <code>gpt chris.PerformGeometricCorrection
   -h</code> at the command prompt.</p>
 
-  <p>The geometric correction adds tie point grids for latitude,
-  longitude, as well as view azimuth and zenith angles to a
-  CHRIS/Proba product.</p>
+  <p>The geometric correction adds grids for latitude and
+  longitude, as well as view azimuth and zenith angles to an
+  existing CHRIS/Proba product.</p>
 
   <p>Selecting the <b>Geometric Correction...</b> command from the
   VISAT tool menu pops up the following dialog:</p>
 
-  <p align="center"><!-- todo - make screenshot -->
+  <p align="center">
    <img src="images/gc-dialog.png" alt=
   "Geometric Correction Dialog" /></p>
 
-  <p>You may be asked to update the auxiiary time tables, which are
-  included in the module. Time tables are updated at <a href=
+  <p>You will be asked to update the auxiliary time tables,
+  which are included in the module. The required time tables are
+  updated at <a href=
   "ftp://maia.usno.navy.mil/ser7/">ftp://maia.usno.navy.mil/ser7/</a>
-  every week. If you work with recent CHRIS/Proba products, you
-  will need to update the time tables regularly.</p>
+  every week. You will need to update the time tables regularly, if
+  you work with recent CHRIS/Proba products.</p>
+
+  <p align="center">
+   <img src="images/gc-time-tables.png" alt=
+  "Update Time Tables Dialog" /></p>
 
   <h5>Source Product Group</h5>
 
@@ -97,14 +215,14 @@
   target product should be opened in VISAT. When the the target
   product is not saved, it is opened in VISAT automatically.</p>
 
-  <p align="center"><!-- todo - make screenshot -->
+  <p align="center">
    <img src="images/gc-parameters.png" alt=
   "Geometric Correction Parameters" /></p>
 
   <h5>Processing Parameters Panel</h5>
 
   <p class="i1"><b>Telemetry repository:</b> Use this field to
-  specify the directory containing the CHRIS telemetry data. Note
+  specify the directory, which contains the CHRIS telemetry data. Note
   that the parent directory of the source product is searched for
   CHRIS telemetry data <em>before</em> the local repository is.</p>
 

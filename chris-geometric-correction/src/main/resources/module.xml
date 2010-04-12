@@ -14,6 +14,8 @@
     <changelog>
         <![CDATA[
         <p>Changes in Version 1.5.1
+        [CBOX-80] Use of bands instead of tie points<br/>
+        [CBOX-79] Insufficient help<br/>
         [CBOX-78] Not possible to use gpt after CHRIS-Box installation<br/>
         ]]>
     </changelog>

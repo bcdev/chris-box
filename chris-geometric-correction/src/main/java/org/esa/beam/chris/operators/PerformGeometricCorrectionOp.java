@@ -21,11 +21,14 @@ import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.util.BandFilter;
 import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.FlagCoding;
+import org.esa.beam.framework.datamodel.PixelGeoCoding;
 import org.esa.beam.framework.datamodel.Placemark;
-import org.esa.beam.framework.datamodel.PointingFactoryRegistry;
 import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.TiePointGeoCoding;
-import org.esa.beam.framework.datamodel.TiePointGrid;
+import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.dataop.dem.ElevationModel;
+import org.esa.beam.framework.dataop.dem.ElevationModelDescriptor;
+import org.esa.beam.framework.dataop.dem.ElevationModelRegistry;
+import org.esa.beam.framework.dataop.resamp.Resampling;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
@@ -120,54 +123,51 @@ public class PerformGeometricCorrectionOp extends Operator {
         final int w = targetProduct.getSceneRasterWidth();
         final int h = targetProduct.getSceneRasterHeight();
 
-        final float[] lons = new float[w * h];
-        final float[] lats = new float[w * h];
-        final float[] vaas = new float[w * h];
-        final float[] vzas = new float[w * h];
+        final double[] lons = new double[w * h];
+        final double[] lats = new double[w * h];
+        final double[] vaas = new double[w * h];
+        final double[] vzas = new double[w * h];
 
         for (int row = 0; row < h; row++) {
             final int y = backscanning ? h - 1 - row : row;
             for (int x = 0; x < w; x++) {
-                lons[row * w + x] = (float) calculator.getLon(x, y);
-                lats[row * w + x] = (float) calculator.getLat(x, y);
-                vaas[row * w + x] = (float) calculator.getVaa(x, y);
-                vzas[row * w + x] = (float) calculator.getVza(x, y);
+                lons[row * w + x] = calculator.getLon(x, y);
+                lats[row * w + x] = calculator.getLat(x, y);
+                vaas[row * w + x] = calculator.getVaa(x, y);
+                vzas[row * w + x] = calculator.getVza(x, y);
             }
         }
 
-        final TiePointGrid lonGrid = addTiePointGrid(targetProduct, "lon", w, h, lons, "Longitude (deg)", "deg");
-        final TiePointGrid latGrid = addTiePointGrid(targetProduct, "lat", w, h, lats, "Latitude (deg)", "deg");
-        addTiePointGrid(targetProduct, "vaa", w, h, vaas, "View azimuth angle (deg)", "deg");
-        addTiePointGrid(targetProduct, "vza", w, h, vzas, "View zenith angle (deg)", "deg");
+        final Band lonBand = addBand(targetProduct, "lon", lons, "Longitude (deg)", "deg");
+        final Band latBand = addBand(targetProduct, "lat", lats, "Latitude (deg)", "deg");
+        addBand(targetProduct, "vaa", vaas, "View azimuth angle (deg)", "deg");
+        addBand(targetProduct, "vza", vzas, "View zenith angle (deg)", "deg");
 
         if (includePitchAndRoll) {
-            final float[] p = new float[w * h];
-            final float[] r = new float[w * h];
+            final double[] pitches = new double[w * h];
+            final double[] rolls = new double[w * h];
             for (int row = 0; row < h; row++) {
                 final int y = backscanning ? h - 1 - row : row;
                 for (int x = 0; x < w; x++) {
-                    p[row * w + x] = (float) calculator.getPitch(x, y);
-                    r[row * w + x] = (float) calculator.getRoll(x, y);
+                    pitches[row * w + x] = calculator.getPitch(x, y);
+                    rolls[row * w + x] = calculator.getRoll(x, y);
                 }
             }
-            addTiePointGrid(targetProduct, "pitch", w, h, p, "Instrument pitch angle (rad)", "rad");
-            addTiePointGrid(targetProduct, "roll", w, h, r, "Instrument roll angle (rad)", "rad");
+            addBand(targetProduct, "pitch", pitches, "Instrument pitch angle (rad)", "rad");
+            addBand(targetProduct, "roll", rolls, "Instrument roll angle (rad)", "rad");
         }
-
-        targetProduct.setGeoCoding(new TiePointGeoCoding(latGrid, lonGrid));
-        targetProduct.setPointingFactory(PointingFactoryRegistry.getInstance().getPointingFactory(productType));
+        targetProduct.setGeoCoding(new PixelGeoCoding(latBand, lonBand, "true", 20));
 
         return targetProduct;
     }
 
-    private static TiePointGrid addTiePointGrid(Product targetProduct, String name, int w, int h, float[] tiePoints,
-                                                String description, String unit) {
-        final TiePointGrid lonGrid = new TiePointGrid(name, w, h, 0.5f, 0.5f, 1.0f, 1.0f, tiePoints);
-        lonGrid.setDescription(description);
-        lonGrid.setUnit(unit);
-        targetProduct.addTiePointGrid(lonGrid);
+    private static Band addBand(Product targetProduct, String name, double[] floats, String description, String unit) {
+        final Band band = targetProduct.addBand(name, ProductData.TYPE_FLOAT64);
+        band.setDataElems(floats);
+        band.setDescription(description);
+        band.setUnit(unit);
 
-        return lonGrid;
+        return band;
     }
 
     // todo - this is a quite general utility method (rq-20090708)

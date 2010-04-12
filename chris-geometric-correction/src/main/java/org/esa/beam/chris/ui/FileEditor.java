@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -45,6 +46,7 @@ class FileEditor extends PropertyEditor {
     @Override
     public JComponent createEditorComponent(PropertyDescriptor propertyDescriptor, BindingContext bindingContext) {
         final JTextField textField = new JTextField();
+        textField.setColumns(30);
         final ComponentAdapter adapter = new TextComponentAdapter(textField);
         final Binding binding = bindingContext.bind(propertyDescriptor.getName(), adapter);
         final JPanel editorPanel = new JPanel(new BorderLayout(2, 2));
@@ -53,6 +55,9 @@ class FileEditor extends PropertyEditor {
         final Object choosableFileFilter = propertyDescriptor.getAttribute("choosableFileFilter");
 
         final JButton etcButton = new JButton("...");
+        final Dimension size = new Dimension(26, 16);
+        etcButton.setPreferredSize(size);
+        etcButton.setMinimumSize(size);
         etcButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
