@@ -122,36 +122,36 @@
   acquisition the user has to follow these steps:</p>
 
   <ol>
-    <li>Get <code>[Target Name]</code> and <code>[Date]</code> from
+    <li>Get <b>[Target Name]</b> and <b>[Date]</b> from
     the image meta data; the dashes '-' from the date have to be
     ignored. For example, for image CHRIS_MB_080501_9BE1_41 the
-    <code>[Target Name]</code> is <em>Manly-Beach</em> and the
-    <code>[Date]</code> is <em>20080501</em>, where the dashes '-'
+    <b>[Target Name]</b> is <em>Manly-Beach</em> and the
+    <b>[Date]</b> is <em>20080501</em>, where the dashes '-'
     have been removed in the meta data date value, which is
     <em>2008-05-01</em></li>
 
     <li>Connect to the <a href=
     "http://194.78.233.110/products/data/CHRIS_Additional_data/index.html">
-    Telemetry Archive</a></li>
+    telemetry archive</a></li>
 
-    <li>Use a filter <code>*.[Target
-    Name]?????_CHRIS_center_times_[Date]_*</code> to locate the
+    <li>Use a filter <b>*.[Target
+    Name]?????_CHRIS_center_times_[Date]_*</b> to locate the
     Image Center Times file. For the example above it finds the
     file
     <em>Pass9301.Manly-Beach_39905_CHRIS_center_times_20080501_65534</em></li>
 
-    <li><code>?????</code> should match a five-digit string to be
-    used as reference <code>[Ref]</code>. For the example above it
+    <li><b>?????</b> should match a five-digit string to be
+    used as reference <b>[Ref]</b>. For the example above it
     is <em>39905</em></li>
 
-    <li>Use a filter <code>CHRIS_[Ref]_*.tar.gz</code> to locate
+    <li>Use a filter <b>CHRIS_[Ref]_*.tar.gz</b> to locate
     the compressed GPS file. For the example above it finds
     <em>CHRIS_39905_39909.tar.gz</em></li>
 
     <li>From the compressed GPS file extract the file
-    <code>CHRIS_[Ref]__PROBA1_GPS_Data</code>, where PROBA's GPS
+    <b>CHRIS_[Ref]_PROBA1_GPS_Data</b>, where PROBA's GPS
     position and velocity data are recorded. The second file in the
-    compressed GPS file <code>PPU_UPLOAD_*</code> can be ignored.
+    compressed GPS file <b>PPU_UPLOAD_*</b> can be ignored.
     For the example above extract the file
     <em>CHRIS_39905_39909_PROBA1_GPS_Data</em></li>
   </ol>
