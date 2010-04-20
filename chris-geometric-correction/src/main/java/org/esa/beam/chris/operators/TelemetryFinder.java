@@ -16,7 +16,6 @@
  */
 package org.esa.beam.chris.operators;
 
-import com.bc.ceres.core.Assert;
 import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Product;
@@ -25,6 +24,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URLConnection;
 import java.text.MessageFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,9 +58,7 @@ class TelemetryFinder {
         }
     }
 
-    public static Telemetry findTelemetry(Product chrisProduct, File telemetryRepository) throws IOException {
-        Assert.notNull(chrisProduct);
-
+    static Telemetry findTelemetry(Product chrisProduct, File telemetryRepository) throws IOException {
         final String imageDateWithDashes = OpUtils.getAnnotationString(chrisProduct,
                                                                        ChrisConstants.ATTR_NAME_IMAGE_DATE);
         final String imageDate = imageDateWithDashes.replace("-", "");
