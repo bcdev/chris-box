@@ -71,8 +71,9 @@ public class PerformGeometricCorrectionOp extends Operator {
                description = "The directory searched for CHRIS telemetry data", notNull = true, notEmpty = true)
     private File telemetryRepository;
 
-    @Parameter(label = "Use target altitude", defaultValue = "false",
-               description = "If true, the pixel lines-of-sight are intersected with a modified WGS-84 ellipsoid")
+    @Parameter(label = "Use target altitude", defaultValue = "true",
+               description = "If true, the pixel lines-of-sight are intersected with a modified WGS-84 ellipsoid," +
+                             "which increased by the nominal target altitude")
     private boolean useTargetAltitude;
 
     @Parameter(label = "Include pitch and roll angles (for diagnostics only)", defaultValue = "false",
