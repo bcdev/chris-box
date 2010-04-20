@@ -44,6 +44,7 @@
             <binaries>
                 <includeDependencies>false</includeDependencies>
 <!--
+                <includeDependencies>true</includeDependencies>
                 <includes>
                     <include>org.esa.beam:beam-chris-reader</include>
                     <include>org.esa.beam:beam-core</include>
