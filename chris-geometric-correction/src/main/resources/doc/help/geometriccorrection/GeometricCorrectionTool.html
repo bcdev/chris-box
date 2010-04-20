@@ -111,27 +111,64 @@
 
   <p>An archive of updated telemetry data is accesible at <a href=
   "http://194.78.233.110/products/data/CHRIS_Additional_data/index.html">
-  http://194.78.233.110/products/data/CHRIS_Additional_data/index.html</a>
-  <b>Older packed telemetry data</b>can be downloaded from <a href=
+  http://194.78.233.110/products/data/CHRIS_Additional_data/index.html</a>.
+  Older packed telemetry data can be downloaded from <a href=
   "http://www.brockmann-consult.de/beam/data/Archive_CHRIS_Tags_12000_38000_Telemetry_Data.zip">
   http://www.brockmann-consult.de/beam/data/Archive_CHRIS_Tags_12000_38000_Telemetry_Data.zip</a>.
-  The algorithm requires that the unpacked archive is available on
-  the local file system.</p><b>Include instructions to retrieve the
-  telemetry data.</b>
+  The algorithm requires that archive is available unpacked on the
+  local file system.</p>
+
+  <p>In order to find the corresponding telemetry files for a given
+  acquisition the user has to follow these steps:</p>
+
+  <ol>
+    <li>Get <code>[Target Name]</code> and <code>[Date]</code> from
+    the image meta data; the dashes '-' from the date have to be
+    ignored. For example, for image CHRIS_MB_080501_9BE1_41 the
+    <code>[Target Name]</code> is <em>Manly-Beach</em> and the
+    <code>[Date]</code> is <em>20080501</em>, where the dashes '-'
+    have been removed in the meta data date value, which is
+    <em>2008-05-01</em></li>
+
+    <li>Connect to the <a href=
+    "http://194.78.233.110/products/data/CHRIS_Additional_data/index.html">
+    Telemetry Archive</a></li>
+
+    <li>Use a filter <code>*.[Target
+    Name]?????_CHRIS_center_times_[Date]_*</code> to locate the
+    Image Center Times file. For the example above it finds the
+    file
+    <em>Pass9301.Manly-Beach_39905_CHRIS_center_times_20080501_65534</em></li>
+
+    <li><code>?????</code> should match a five-digit string to be
+    used as reference <code>[Ref]</code>. For the example above it
+    is <em>39905</em></li>
+
+    <li>Use a filter <code>CHRIS_[Ref]_*.tar.gz</code> to locate
+    the compressed GPS file. For the example above it finds
+    <em>CHRIS_39905_39909.tar.gz</em></li>
+
+    <li>From the compressed GPS file extract the file
+    <code>CHRIS_[Ref]__PROBA1_GPS_Data</code>, where PROBA's GPS
+    position and velocity data are recorded. The second file in the
+    compressed GPS file <code>PPU_UPLOAD_*</code> can be ignored.
+    For the example above extract the file
+    <em>CHRIS_39905_39909_PROBA1_GPS_Data</em></li>
+  </ol>
 
   <h5>Getting started</h5>
 
   <p>First download and unpack the CHRIS telemetry data, which are
-  a prerequisite for the geometric correction. In order to carry
-  out the geo-correction:</p>
+  a prerequisite for the geometric correction. Then carry out the
+  geometric correction:</p>
 
   <ol>
     <li>Open a CHRIS/proba atmosphere-corrected product, or any
     derived product (the geometric correction is applicable to any
     CHRIS product, but the geometric correction marks the last step
-    in the processing, i.e. you can geo-correct a noise-corrected
-    image, but then cannot process the geo-corrected image with the
-    CHRIS-Box tools any further)</li>
+    in the processing, i.e. the user can geo-correct a
+    noise-corrected image, but then cannot process the
+    geo-corrected image with the CHRIS-Box tools any further)</li>
 
     <li>Define at least three GCPs near to the first, central, and
     last rows in the image; additional GCPs yield better results.
@@ -145,7 +182,7 @@
     +---+---+---+
     | 7 | 8 | 9 |
     +---+---+---+
-</pre>Besides latitude and longitude, you may specify a GCP's
+</pre>Besides latitude and longitude, the user may specify a GCP's
 altitude by adding something like <code>Madrid (alt[m] =
 750)</code> to the description of a GCP. This is optional and not
 required, but improves the calculation of the instrument's pointing
@@ -153,17 +190,17 @@ especially in areas with strong topography. If not provided, the
 target's altitude is used.
     </li>
 
-    <li>If you have a flat target you may check the '<b>Use target
-    altitude</b>' option in the processing parameters. If your
-    target has some topography, results might still be fine when
-    this option is checked</li>
+    <li>If the target has a flat topography the user may check the
+    '<b>Use target altitude</b>' option in the processing
+    parameters. If the target is not flat, results might still be
+    fine when this option is checked</li>
 
     <li>Run the geometric correction tool</li>
 
     <li>Run the BEAM ortho-rectification tool on the geo-corrected
-    product in order to obtain an ortho-rectified product; you
-    cannot do this if you have checked the '<b>Use target
-    altitude</b>' option</li>
+    product in order to obtain an ortho-rectified product; this
+    must never be done when the '<b>Use target altitude</b>' option
+    has been checked.</li>
   </ol>
 
   <p>Instructions on how to use a DEM can be found in the VISAT
@@ -185,17 +222,17 @@ target's altitude is used.
   <p>Selecting the <b>Geometric Correction...</b> command from the
   VISAT tool menu pops up the following dialog:</p>
 
-  <p align="center"><img src="./gc-dialog.png" alt=
+  <p align="center"><img src="images/gc-dialog.png" alt=
   "Geometric Correction Dialog" /></p>
 
-  <p>You will be asked to update the auxiliary time tables, which
-  are included in the module. The required time tables are updated
-  at <a href=
+  <p>The user will be asked to update the auxiliary time tables,
+  which are included in the module. The required time tables are
+  updated at <a href=
   "ftp://maia.usno.navy.mil/ser7/">ftp://maia.usno.navy.mil/ser7/</a>
-  every week. Let the the time tables be updated regularly, if you
-  work with recent CHRIS/Proba products.</p>
+  every week. The user must let the time tables be updated
+  regularly, if he works with recent CHRIS/Proba products.</p>
 
-  <p align="center"><img src="./gc-time-tables.png" alt=
+  <p align="center"><img src="images/gc-time-tables.png" alt=
   "Update Time Tables Dialog" /></p>
 
   <h5>Source Product Group</h5>
@@ -221,25 +258,28 @@ target's altitude is used.
   target product should be opened in VISAT. When the the target
   product is not saved, it is opened in VISAT automatically.</p>
 
-  <p align="center"><img src="./gc-parameters.png" alt=
+  <p align="center"><img src="images/gc-parameters.png" alt=
   "Geometric Correction Parameters" /></p>
 
   <h5>Processing Parameters Panel</h5>
 
-  <p class="i1"><b>Telemetry repository:</b> Use this field to
+  <p class="i1"><b>Telemetry repository:</b> This field is used to
   specify the directory, which contains the CHRIS telemetry data.
   Note that the parent directory of the source product is searched
   for CHRIS telemetry data <em>before</em> the local repository
   is.</p>
 
-  <p class="i1"><b>Use target altitude:</b> Use this field to
+  <p class="i1"><b>Use target altitude:</b> This field is used to
   specify that the nominal target altitude shall be taken into
-  account when calculating the longitude and latitude coordinates.
-  <em>Note that the resulting geo-coding is more accurate, but not
-  suitable for ortho-rectification.</em>.</p>
+  account when calculating the longitude and latitude coordinates,
+  i.e. the pixel lines-of-sight are intersected with a modified
+  WGS-84 ellipsoid, which is increased by the nominal target
+  altitude. <em>Note that the resulting geo-coding is more accurate
+  when option has been checked, but not suitable for
+  ortho-rectification.</em>.</p>
 
-  <p class="i1"><b>Include pitch and roll angles:</b> Use this
-  field to specify that the instrument pitch and roll angles, which
+  <p class="i1"><b>Include pitch and roll angles:</b> This field is
+  used to specify that the instrument pitch and roll angles, which
   are calculated, shall be included in the product. This option is
   for diagnostics only.</p>
 
