@@ -126,7 +126,7 @@
 File[] chrisModuleFiles = modulesDir.listFiles(new FileFilter() {
     public boolean accept(File file) {
         String name = file.getName();
-        return name.startsWith("chris-") || name.equals("beam-chris-reader-1.6.jar") || name.equals("beam-core-4.7.jar");        
+        return name.startsWith("chris-");        
     }
 });
 

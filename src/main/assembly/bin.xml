@@ -42,11 +42,13 @@
             </excludes>
 
             <binaries>
+<!--
                 <includeDependencies>true</includeDependencies>
                 <includes>
                     <include>org.esa.beam:beam-chris-reader</include>
                     <include>org.esa.beam:beam-core</include>
                 </includes>
+-->
                 <fileMode>0444</fileMode>
                 <unpack>false</unpack>
                 <outputDirectory>modules</outputDirectory>
