@@ -43,8 +43,8 @@ public class GeometryCalculatorTest {
 
     @Test
     public void verifyCalculation() { // calculation is verified for three arbitrary chosen points
-        final GeometryCalculator calculator = new GeometryCalculator(ACQUISITION_INFO, gcps);
-        calculator.calculate(ictData, gpsData, true);
+        final GeometryCalculator calculator = new GeometryCalculator(ictData, gpsData, ACQUISITION_INFO, gcps);
+        calculator.calculate(true);
 
         final double lon1 = -2.1467485;
         final double lat1 = 39.082634;
@@ -77,14 +77,14 @@ public class GeometryCalculatorTest {
         assertEquals(vza3, calculator.getVza(210, 351), 5.0E-06);
     }
 
-    private void readIctData() throws URISyntaxException {
+    private void readIctData() throws URISyntaxException, IOException {
         final URL url = getClass().getResource("Pass5180.Barrax_22260_CHRIS_center_times_20050709_65534");
         final URI uri = url.toURI();
 
         ictData = PerformGeometricCorrectionOp.readIctData(new File(uri), DELTA_GPS);
     }
 
-    private void readGpsData() throws URISyntaxException {
+    private void readGpsData() throws URISyntaxException, IOException {
         final URL url = getClass().getResource("CHRIS_22260_22264_PROBA1_GPS_Data");
         final URI uri = url.toURI();
 

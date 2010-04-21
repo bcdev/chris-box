@@ -33,25 +33,29 @@ class GeometryCalculator {
     // five images for each acquisition
     private static final int IMAGE_COUNT = 5;
 
-    final AcquisitionInfo acquisitionInfo;
+    private final IctDataRecord ictData;
+    private final List<GpsDataRecord> gpsData;
+    private final AcquisitionInfo info;
+    private final GCP[] gcps;
+
     private final ModeCharacteristics modeCharacteristics;
     private final int rowCount;
     private final int colCount;
 
-    private final GCP[] gcps;
-    final double[][] lats;
-    final double[][] lons;
+    private final double[][] lats;
+    private final double[][] lons;
+    private final double[][] vaas;
+    private final double[][] vzas;
+    private double[][] pitches;
+    private double[][] rolls;
 
-    final double[][] vaas;
-    final double[][] vzas;
-    final double[][] pitches;
-    final double[][] rolls;
-
-    public GeometryCalculator(AcquisitionInfo acquisitionInfo, GCP[] gcps) {
-        this.acquisitionInfo = acquisitionInfo;
+    public GeometryCalculator(IctDataRecord ictData, List<GpsDataRecord> gpsData, AcquisitionInfo info, GCP[] gcps) {
+        this.ictData = ictData;
+        this.gpsData = gpsData;
+        this.info = info;
         this.gcps = gcps;
 
-        modeCharacteristics = ModeCharacteristics.get(acquisitionInfo.getMode());
+        modeCharacteristics = ModeCharacteristics.get(info.getMode());
         rowCount = modeCharacteristics.getRowCount();
         colCount = modeCharacteristics.getColCount();
 
@@ -64,7 +68,7 @@ class GeometryCalculator {
         rolls = new double[rowCount][colCount];
     }
 
-    void calculate(IctDataRecord ictData, List<GpsDataRecord> gpsData, boolean useTargetAltitude) {
+    void calculate(boolean useTargetAltitude) {
         // TODO: rq/rq -  REVISE CODE BELOW
         // The last element of ict_njd corresponds to the acquisition setup time, that occurs 390s before the start of acquisition.
         final double acquisitionSetupTime = ictData.ict1 - (10.0 + 390.0) / TimeConverter.SECONDS_PER_DAY - JD2001;
@@ -206,12 +210,12 @@ class GeometryCalculator {
 
         // ===== Process the correct image ==========================================
 
-        final int imageIndex = acquisitionInfo.getChronologicalImageNumber();
+        final int imageIndex = info.getChronologicalImageNumber();
 
         // ---- Target Coordinates in ECI using per-Line Time -------------------
-        final double targetAltitude = acquisitionInfo.getTargetAlt();
-        final double[] TGTecf = CoordinateConverter.wgsToEcef(acquisitionInfo.getTargetLon(),
-                                                              acquisitionInfo.getTargetLat(), targetAltitude,
+        final double targetAltitude = info.getTargetAlt();
+        final double[] TGTecf = CoordinateConverter.wgsToEcef(info.getTargetLon(),
+                                                              info.getTargetLat(), targetAltitude,
                                                               new double[3]);
 
         // Case with Moving Target for imaging time
@@ -277,7 +281,7 @@ class GeometryCalculator {
             }
 
             final double dY;
-            if (acquisitionInfo.isBackscanning()) {
+            if (info.isBackscanning()) {
                 dY = (wmin % modeCharacteristics.getRowCount()) - (modeCharacteristics.getRowCount() - gcp.getY() + 0.5);
             } else {
                 dY = (wmin % modeCharacteristics.getRowCount()) - (gcp.getY() + 0.5);
@@ -423,7 +427,7 @@ class GeometryCalculator {
         if (bestGcpIndex != -1) {
             // calculate the roll offset due to the GCP not being in the middle of the CCD
             final int nC2;
-            if (acquisitionInfo.getMode() != 5) {
+            if (info.getMode() != 5) {
                 nC2 = modeCharacteristics.getColCount() / 2;
             } else {
                 nC2 = modeCharacteristics.getColCount() - 1;
@@ -559,7 +563,7 @@ class GeometryCalculator {
         final double ifov = modeCharacteristics.getIfov();
 
         final double[] deltas = new double[colCount];
-        if (acquisitionInfo.getMode() == 5) {
+        if (info.getMode() == 5) {
             // for Mode 5 the last pixel points to the target, i.e. delta is zero for the last pixel
             for (int i = 0; i < deltas.length; i++) {
                 deltas[i] = (i + 0.5) * ifov - fov;

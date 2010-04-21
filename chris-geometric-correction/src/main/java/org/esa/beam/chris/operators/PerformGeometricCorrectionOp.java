@@ -16,6 +16,7 @@
  */
 package org.esa.beam.chris.operators;
 
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.util.BandFilter;
@@ -25,24 +26,23 @@ import org.esa.beam.framework.datamodel.PixelGeoCoding;
 import org.esa.beam.framework.datamodel.Placemark;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.dataop.dem.ElevationModel;
-import org.esa.beam.framework.dataop.dem.ElevationModelDescriptor;
-import org.esa.beam.framework.dataop.dem.ElevationModelRegistry;
-import org.esa.beam.framework.dataop.resamp.Resampling;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.framework.gpf.OperatorSpi;
+import org.esa.beam.framework.gpf.Tile;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
 import org.esa.beam.util.ProductUtils;
 
+import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Operator performing the geometric correction.
@@ -83,36 +83,85 @@ public class PerformGeometricCorrectionOp extends Operator {
     @SourceProduct(type = "CHRIS_M[012345][0A]?(_NR)?(_AC)?")
     private Product sourceProduct;
 
+    private transient Telemetry telemetry;
+
     @Override
     public void initialize() throws OperatorException {
-        final Telemetry telemetry;
         try {
             telemetry = TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
         } catch (IOException e) {
             throw new OperatorException(e);
         }
-        final Date ict = sourceProduct.getStartTime().getAsDate();
-        final double mjd = TimeConverter.dateToMJD(ict);
-        final double dT;
-        try {
-            dT = TimeConverter.getInstance().deltaGPS(mjd);
-        } catch (IOException e) {
-            throw new OperatorException(e);
-        }
-
-        final IctDataRecord ictData = readIctData(telemetry.getIctFile(), dT);
-        final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), dT, DELAY);
-        final AcquisitionInfo acquisitionInfo = AcquisitionInfo.create(sourceProduct);
-        final GCP[] gcps = GCP.createArray(sourceProduct.getGcpGroup(), acquisitionInfo.getTargetAlt());
-
-        final GeometryCalculator calculator = new GeometryCalculator(acquisitionInfo, gcps);
-        calculator.calculate(ictData, gpsData, useTargetAltitude);
-
-        final Product targetProduct = createTargetProduct(calculator, acquisitionInfo.isBackscanning());
+        final Product targetProduct = createTargetProduct();
         setTargetProduct(targetProduct);
     }
 
-    private Product createTargetProduct(GeometryCalculator calculator, boolean backscanning) {
+    @Override
+    public void dispose() {
+        telemetry = null;
+    }
+
+    @Override
+    public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
+                                 ProgressMonitor pm) throws OperatorException {
+        try {
+            pm.beginTask("Performing geometric correction...", 30 + targetRectangle.width * targetRectangle.height);
+
+            // 1. get GPS time delay from image center time
+            final Date ict = sourceProduct.getStartTime().getAsDate();
+            final double mjd = TimeConverter.dateToMJD(ict);
+            final double deltaGPS = TimeConverter.getInstance().deltaGPS(mjd);
+            pm.worked(10);
+
+            // 2. read image center times from telemetry
+            final IctDataRecord ictData = readIctData(telemetry.getIctFile(), deltaGPS);
+            pm.worked(10);
+
+            // 3. read trajectory from telemetry
+            final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), deltaGPS, DELAY);
+            pm.worked(10);
+
+            // 4. calculate geometry
+            final AcquisitionInfo info = AcquisitionInfo.create(sourceProduct);
+            final GCP[] gcps = GCP.createArray(sourceProduct.getGcpGroup(), info.getTargetAlt());
+            final GeometryCalculator calculator = new GeometryCalculator(ictData, gpsData, info, gcps);
+            calculator.calculate(useTargetAltitude);
+
+            // 5. copy calculated geometry into image tiles
+            final Tile lonTile = targetTileMap.get(getTargetProduct().getBand("lon"));
+            final Tile latTile = targetTileMap.get(getTargetProduct().getBand("lat"));
+            final Tile vaaTile = targetTileMap.get(getTargetProduct().getBand("vaa"));
+            final Tile vzaTile = targetTileMap.get(getTargetProduct().getBand("vza"));
+            final Tile pitchTile;
+            final Tile rollTile;
+            if (includePitchAndRoll) {
+                pitchTile = targetTileMap.get(getTargetProduct().getBand("pitch"));
+                rollTile = targetTileMap.get(getTargetProduct().getBand("roll"));
+            } else {
+                pitchTile = null;
+                rollTile = null;
+            }
+            for (final Tile.Pos pos : lonTile) {
+                checkForCancelation(pm);
+                final int sourceRow = info.isBackscanning() ? targetRectangle.height - 1 - pos.y : pos.y;
+                lonTile.setSample(pos.x, pos.y, calculator.getLon(pos.x, sourceRow));
+                latTile.setSample(pos.x, pos.y, calculator.getLat(pos.x, sourceRow));
+                vaaTile.setSample(pos.x, pos.y, calculator.getVaa(pos.x, sourceRow));
+                vzaTile.setSample(pos.x, pos.y, calculator.getVza(pos.x, sourceRow));
+                if (includePitchAndRoll) {
+                    pitchTile.setSample(pos.x, pos.y, calculator.getPitch(pos.x, sourceRow));
+                    rollTile.setSample(pos.x, pos.y, calculator.getRoll(pos.x, sourceRow));
+                }
+                pm.worked(1);
+            }
+        } catch (IOException e) {
+            throw new OperatorException(e);
+        } finally {
+            pm.done();
+        }
+    }
+
+    private Product createTargetProduct() {
         final String productType = sourceProduct.getProductType() + "_GC";
         final Product targetProduct = createCopy(sourceProduct, "GC", productType, new BandFilter() {
             @Override
@@ -121,50 +170,26 @@ public class PerformGeometricCorrectionOp extends Operator {
             }
         });
 
-        final int w = targetProduct.getSceneRasterWidth();
-        final int h = targetProduct.getSceneRasterHeight();
-
-        final double[] lons = new double[w * h];
-        final double[] lats = new double[w * h];
-        final double[] vaas = new double[w * h];
-        final double[] vzas = new double[w * h];
-
-        for (int row = 0; row < h; row++) {
-            final int y = backscanning ? h - 1 - row : row;
-            for (int x = 0; x < w; x++) {
-                lons[row * w + x] = calculator.getLon(x, y);
-                lats[row * w + x] = calculator.getLat(x, y);
-                vaas[row * w + x] = calculator.getVaa(x, y);
-                vzas[row * w + x] = calculator.getVza(x, y);
-            }
-        }
-
-        final Band lonBand = addBand(targetProduct, "lon", lons, "Longitude (deg)", "deg");
-        final Band latBand = addBand(targetProduct, "lat", lats, "Latitude (deg)", "deg");
-        addBand(targetProduct, "vaa", vaas, "View azimuth angle (deg)", "deg");
-        addBand(targetProduct, "vza", vzas, "View zenith angle (deg)", "deg");
+        final Band lonBand = addBand(targetProduct, "lon", "Longitude (deg)", "deg");
+        final Band latBand = addBand(targetProduct, "lat", "Latitude (deg)", "deg");
+        addBand(targetProduct, "vaa", "View azimuth angle (deg)", "deg");
+        addBand(targetProduct, "vza", "View zenith angle (deg)", "deg");
 
         if (includePitchAndRoll) {
-            final double[] pitches = new double[w * h];
-            final double[] rolls = new double[w * h];
-            for (int row = 0; row < h; row++) {
-                final int y = backscanning ? h - 1 - row : row;
-                for (int x = 0; x < w; x++) {
-                    pitches[row * w + x] = calculator.getPitch(x, y);
-                    rolls[row * w + x] = calculator.getRoll(x, y);
-                }
-            }
-            addBand(targetProduct, "pitch", pitches, "Instrument pitch angle (rad)", "rad");
-            addBand(targetProduct, "roll", rolls, "Instrument roll angle (rad)", "rad");
+            addBand(targetProduct, "pitch", "Instrument pitch angle (rad)", "rad");
+            addBand(targetProduct, "roll", "Instrument roll angle (rad)", "rad");
         }
+
+        final int w = targetProduct.getSceneRasterWidth();
+        final int h = targetProduct.getSceneRasterHeight();
+        targetProduct.setPreferredTileSize(w, h);
         targetProduct.setGeoCoding(new PixelGeoCoding(latBand, lonBand, "true", 20));
 
         return targetProduct;
     }
 
-    private static Band addBand(Product targetProduct, String name, double[] floats, String description, String unit) {
+    private static Band addBand(Product targetProduct, String name, String description, String unit) {
         final Band band = targetProduct.addBand(name, ProductData.TYPE_FLOAT64);
-        band.setDataElems(floats);
         band.setDescription(description);
         band.setUnit(unit);
 
@@ -214,7 +239,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                                                           pin.getDescription(),
                                                           pin.getPixelPos(),
                                                           pin.getGeoPos(),
-                                                          pin.getSymbol(),
+                                                          pin.getPlacemarkDescriptor(),
                                                           null));
         }
         // 8. copy GCPs
@@ -225,20 +250,18 @@ public class PerformGeometricCorrectionOp extends Operator {
                                                           pin.getDescription(),
                                                           pin.getPixelPos(),
                                                           pin.getGeoPos(),
-                                                          pin.getSymbol(),
+                                                          pin.getPlacemarkDescriptor(),
                                                           null));
         }
 
         return targetProduct;
     }
 
-    static List<GpsDataRecord> readGpsData(File gpsFile, double deltaGPS, double delay) {
+    static List<GpsDataRecord> readGpsData(File gpsFile, double deltaGPS, double delay) throws IOException {
         InputStream is = null;
         try {
             is = new FileInputStream(gpsFile);
             return GpsDataRecord.create(new GpsDataRecord.GpsDataReader(is).getReadRecords(), deltaGPS, delay);
-        } catch (IOException e) {
-            throw new OperatorException(e);
         } finally {
             if (is != null) {
                 try {
@@ -250,13 +273,11 @@ public class PerformGeometricCorrectionOp extends Operator {
         }
     }
 
-    static IctDataRecord readIctData(File ictFile, double deltaGPS) {
+    static IctDataRecord readIctData(File ictFile, double deltaGPS) throws IOException {
         InputStream is = null;
         try {
             is = new FileInputStream(ictFile);
             return IctDataRecord.create(new IctDataReader(is).getLastIctValues(), deltaGPS);
-        } catch (IOException e) {
-            throw new OperatorException(e);
         } finally {
             if (is != null) {
                 try {
