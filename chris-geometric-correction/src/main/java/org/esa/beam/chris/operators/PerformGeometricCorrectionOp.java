@@ -83,63 +83,71 @@ public class PerformGeometricCorrectionOp extends Operator {
     @SourceProduct(type = "CHRIS_M[012345][0A]?(_NR)?(_AC)?")
     private Product sourceProduct;
 
-    private transient Telemetry telemetry;
+    private transient IctDataRecord ictData;
+    private transient List<GpsDataRecord> gpsData;
+    private transient AcquisitionInfo info;
+    private transient GCP[] gcps;
 
     @Override
     public void initialize() throws OperatorException {
         try {
-            telemetry = TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
+            // 1. get the telemetry
+            final Telemetry telemetry = TelemetryFinder.findTelemetry(sourceProduct, telemetryRepository);
+
+            // 2. get GPS time delay from image center time
+            final Date ict = sourceProduct.getStartTime().getAsDate();
+            final double mjd = TimeConverter.dateToMJD(ict);
+            final double deltaGPS = TimeConverter.getInstance().deltaGPS(mjd);
+
+            // 3. read image center times from telemetry
+            ictData = readIctData(telemetry.getIctFile(), deltaGPS);
+
+            // 4. read trajectory from telemetry
+            gpsData = readGpsData(telemetry.getGpsFile(), deltaGPS, DELAY);
+
+            // 5. create acquisition info
+            info = AcquisitionInfo.create(sourceProduct);
+
+            // 6. create GCPs
+            gcps = GCP.createArray(sourceProduct.getGcpGroup(), info.getTargetAlt());
+
+            // 7. set the target product
+            setTargetProduct(createTargetProduct());
         } catch (IOException e) {
             throw new OperatorException(e);
         }
-        final Product targetProduct = createTargetProduct();
-        setTargetProduct(targetProduct);
     }
 
     @Override
     public void dispose() {
-        telemetry = null;
+        ictData = null;
+        gpsData = null;
+        info = null;
+        gcps = null;
     }
 
     @Override
     public void computeTileStack(Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
                                  ProgressMonitor pm) throws OperatorException {
         try {
-            pm.beginTask("Performing geometric correction...", 30 + targetRectangle.width * targetRectangle.height);
+            pm.beginTask("Performing geometric correction...", targetRectangle.width * targetRectangle.height);
 
-            // 1. get GPS time delay from image center time
-            final Date ict = sourceProduct.getStartTime().getAsDate();
-            final double mjd = TimeConverter.dateToMJD(ict);
-            final double deltaGPS = TimeConverter.getInstance().deltaGPS(mjd);
-            pm.worked(10);
-
-            // 2. read image center times from telemetry
-            final IctDataRecord ictData = readIctData(telemetry.getIctFile(), deltaGPS);
-            pm.worked(10);
-
-            // 3. read trajectory from telemetry
-            final List<GpsDataRecord> gpsData = readGpsData(telemetry.getGpsFile(), deltaGPS, DELAY);
-            pm.worked(10);
-
-            // 4. calculate geometry
-            final AcquisitionInfo info = AcquisitionInfo.create(sourceProduct);
-            final GCP[] gcps = GCP.createArray(sourceProduct.getGcpGroup(), info.getTargetAlt());
             final GeometryCalculator calculator = new GeometryCalculator(ictData, gpsData, info, gcps);
+            // todo - add progress monitor as argument(rq-20100421)
             calculator.calculate(useTargetAltitude);
 
-            // 5. copy calculated geometry into image tiles
             final Tile lonTile = targetTileMap.get(getTargetProduct().getBand("lon"));
             final Tile latTile = targetTileMap.get(getTargetProduct().getBand("lat"));
             final Tile vaaTile = targetTileMap.get(getTargetProduct().getBand("vaa"));
             final Tile vzaTile = targetTileMap.get(getTargetProduct().getBand("vza"));
-            final Tile pitchTile;
-            final Tile rollTile;
+            final Tile ipaTile;
+            final Tile iraTile;
             if (includePitchAndRoll) {
-                pitchTile = targetTileMap.get(getTargetProduct().getBand("pitch"));
-                rollTile = targetTileMap.get(getTargetProduct().getBand("roll"));
+                ipaTile = targetTileMap.get(getTargetProduct().getBand("ipa"));
+                iraTile = targetTileMap.get(getTargetProduct().getBand("ira"));
             } else {
-                pitchTile = null;
-                rollTile = null;
+                ipaTile = null;
+                iraTile = null;
             }
             for (final Tile.Pos pos : lonTile) {
                 checkForCancelation(pm);
@@ -149,13 +157,13 @@ public class PerformGeometricCorrectionOp extends Operator {
                 vaaTile.setSample(pos.x, pos.y, calculator.getVaa(pos.x, sourceRow));
                 vzaTile.setSample(pos.x, pos.y, calculator.getVza(pos.x, sourceRow));
                 if (includePitchAndRoll) {
-                    pitchTile.setSample(pos.x, pos.y, calculator.getPitch(pos.x, sourceRow));
-                    rollTile.setSample(pos.x, pos.y, calculator.getRoll(pos.x, sourceRow));
+                    assert ipaTile != null;
+                    assert iraTile != null;
+                    ipaTile.setSample(pos.x, pos.y, calculator.getPitch(pos.x, sourceRow));
+                    iraTile.setSample(pos.x, pos.y, calculator.getRoll(pos.x, sourceRow));
                 }
                 pm.worked(1);
             }
-        } catch (IOException e) {
-            throw new OperatorException(e);
         } finally {
             pm.done();
         }
@@ -176,8 +184,8 @@ public class PerformGeometricCorrectionOp extends Operator {
         addBand(targetProduct, "vza", "View zenith angle (deg)", "deg");
 
         if (includePitchAndRoll) {
-            addBand(targetProduct, "pitch", "Instrument pitch angle (rad)", "rad");
-            addBand(targetProduct, "roll", "Instrument roll angle (rad)", "rad");
+            addBand(targetProduct, "ipa", "Instrument pitch angle (rad)", "rad");
+            addBand(targetProduct, "ira", "Instrument roll angle (rad)", "rad");
         }
 
         final int w = targetProduct.getSceneRasterWidth();
