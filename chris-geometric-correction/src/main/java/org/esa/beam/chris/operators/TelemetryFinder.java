@@ -94,7 +94,10 @@ class TelemetryFinder {
                                           PatternFilenameFilter filter) throws IOException {
         File[] files = new File[0];
         if (productDir != null) {
-            files = productDir.listFiles(filter);
+            final File[] localFiles = productDir.listFiles(filter);
+            if (localFiles != null) {
+                files = localFiles;
+            }
         }
         if (files.length == 0) {
             if (repositoryDir != null) {
@@ -109,27 +112,29 @@ class TelemetryFinder {
         }
         if (files.length == 0) {
             throw new FileNotFoundException(MessageFormat.format(
-                    "Cannot find telemetry file matching pattern ''{0}''.", filter.getPattern()));
+                    "Cannot find telemetry file, which matches pattern ''{0}''.", filter.getPattern()));
         }
         return files[0];
     }
 
     private static File[] findTelemetryFiles(File dir, FilenameFilter filter) {
-        File[] telemetryFiles = dir.listFiles(filter);
-
-        if (telemetryFiles.length != 0) {
-            return telemetryFiles;
+        File[] files = dir.listFiles(filter);
+        if (files == null) {
+            files = new File[0];
+        }
+        if (files.length != 0) {
+            return files;
         }
         for (final File file : dir.listFiles()) {
             if (file.isDirectory() && file.canRead()) {
-                telemetryFiles = findTelemetryFiles(file, filter);
-                if (telemetryFiles.length != 0) {
-                    return telemetryFiles;
+                files = findTelemetryFiles(file, filter);
+                if (files.length != 0) {
+                    return files;
                 }
             }
         }
 
-        return telemetryFiles;
+        return files;
     }
 
     private static String getReferenceString(Pattern ictPattern, String ictFileName) {
