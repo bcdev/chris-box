@@ -24,7 +24,10 @@
     <url>http://envisat.esa.int/beam</url>
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
-    <changelog/>
+    <changelog>
+        Changes since Version 1.5:<br/>
+        [BEAM-1129] Synthetic bands are not displayed (workaround)
+    </changelog>
 
     <dependency>
         <module>beam-chris-reader</module>
