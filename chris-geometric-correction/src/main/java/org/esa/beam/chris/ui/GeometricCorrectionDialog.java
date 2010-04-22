@@ -50,9 +50,8 @@ class GeometricCorrectionDialog extends PlainSingleTargetProductDialog {
     }
 
     private File getDefaultTelemetryRepository() {
-        final String def = System.getProperty("user.home", ".");
         final PropertyMap map = getAppContext().getPreferences();
-        final String pathname = map.getPropertyString(KEY_TELEMETRY_REPOSITORY, def);
+        final String pathname = map.getPropertyString(KEY_TELEMETRY_REPOSITORY, ".");
 
         return new File(pathname);
     }

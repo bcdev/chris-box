@@ -125,7 +125,11 @@ class TelemetryFinder {
         if (files.length != 0) {
             return files;
         }
-        for (final File file : dir.listFiles()) {
+        File[] dirFiles = dir.listFiles();
+        if (dirFiles == null) {
+            return files;
+        }
+        for (final File file : dirFiles) {
             if (file.isDirectory() && file.canRead()) {
                 files = findTelemetryFiles(file, filter);
                 if (files.length != 0) {
@@ -133,7 +137,6 @@ class TelemetryFinder {
                 }
             }
         }
-
         return files;
     }
 
