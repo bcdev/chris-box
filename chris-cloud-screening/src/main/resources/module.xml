@@ -26,7 +26,7 @@
 
     <changelog>
         Changes since Version 1.5:<br/>
-        [BEAM-1129] Synthetic bands are not displayed (workaround)
+        [BEAM-1129] Synthetic bands are not displayed (workaround)<br/>
     </changelog>
 
     <dependency>
