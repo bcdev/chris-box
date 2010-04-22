@@ -423,6 +423,7 @@ class ScreeningContext implements LabelingContext {
 
         band.setRasterData(RasterDataUtils.createRasterData(sourceImage, pm));
         band.setSynthetic(true);
+        band.getSourceImage();
 
         return band;
     }
