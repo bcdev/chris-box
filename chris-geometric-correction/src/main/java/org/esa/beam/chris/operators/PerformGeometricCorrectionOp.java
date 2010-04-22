@@ -103,9 +103,11 @@ public class PerformGeometricCorrectionOp extends Operator {
             // 6. create GCPs
             final GCP[] gcps = GCP.createArray(sourceProduct.getGcpGroup(), info.getTargetAlt());
 
-            // 7. create and set the target product
+            // 7. calculate geometry
             final GeometryCalculator calculator = new GeometryCalculator(ictData, gpsData, info, gcps);
             calculator.calculate(useTargetAltitude);
+
+            // 8. create and set the target product
             setTargetProduct(createTargetProduct(calculator, info.isBackscanning()));
         } catch (IOException e) {
             throw new OperatorException(e);
