@@ -75,7 +75,7 @@ public class PerformGeometricCorrectionOp extends Operator {
                description = "If true, the target product will include instrument pitch and roll angles per pixel")
     private boolean includePitchAndRoll;
 
-    @SourceProduct(type = "CHRIS_M[012345][0A]?(_NR)?(_AC)?")
+    @SourceProduct(type = "CHRIS_M[012345][0A]?(_NR)?(_TOA_REFL)?(_AC)?")
     private Product sourceProduct;
 
     @Override
