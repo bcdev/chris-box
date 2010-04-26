@@ -68,14 +68,11 @@ public class ApplyDestripingFactorsOp extends Operator {
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
 
         for (final Band sourceBand : sourceProduct.getBands()) {
-            final String sourceName = sourceBand.getName();
-            final Band targetBand = ProductUtils.copyBand(sourceName, sourceProduct, targetProduct);
+            final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
+
             final FlagCoding flagCoding = sourceBand.getFlagCoding();
             if (flagCoding != null) {
                 targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
-            }
-            if (!sourceName.startsWith("radiance")) {
-                targetBand.setSourceImage(sourceBand.getSourceImage());
             }
         }
         ProductUtils.copyMasks(sourceProduct, targetProduct);
@@ -92,6 +89,9 @@ public class ApplyDestripingFactorsOp extends Operator {
         final String name = band.getName();
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetTile, pm);
+        } else {
+            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle(), pm);
+            targetTile.setRawSamples(sourceTile.getRawSamples());
         }
     }
 
