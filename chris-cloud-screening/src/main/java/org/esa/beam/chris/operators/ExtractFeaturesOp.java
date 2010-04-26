@@ -147,6 +147,7 @@ public class ExtractFeaturesOp extends Operator {
         }
 
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        // DO NOT CHANGE TILE SIZE - IT IS NEEDED FOR PROGRESS MONITORING!
         targetProduct.setPreferredTileSize(32, 32);
     }
 

@@ -188,20 +188,6 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             }
 
             ac.computeTileStack(targetTileMap, targetRectangle, SubProgressMonitor.create(pm, 60));
-
-            // compute remaining bands
-            for (final Band targetBand : targetTileMap.keySet()) {
-                final String name = targetBand.getName();
-                if (name.startsWith(SURFACE_REFL) || name.equals(WATER_VAPOUR)) {
-                    continue;
-                }
-
-                final Band sourceBand = sourceProduct.getBand(name);
-                final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, ProgressMonitor.NULL);
-                final Tile targetTile = targetTileMap.get(targetBand);
-
-                targetTile.setRawSamples(sourceTile.getRawSamples());
-            }
         } finally {
             pm.done();
         }
@@ -289,6 +275,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             if (flagCoding != null) {
                 targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
             }
+            targetBand.setSourceImage(sourceBand.getSourceImage());
         }
 
         // add water vapour band, if applicable
@@ -835,6 +822,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
         }
 
         private class SpikyPixel implements Comparable<SpikyPixel> {
+
             private double ndvi;
             private Tile.Pos pos;
 

@@ -84,7 +84,7 @@ public class ComputeToaReflectancesOp extends Operator {
                                                                    sourceBand.getSpectralWavelength(),
                                                                    sourceBand.getSpectralBandwidth());
                     targetBand.setSolarFlux((float) solarIrradiance);
-                    sourceBandMap.put(targetBand, sourceBand);
+                    targetBand.setSourceImage(sourceBand.getSourceImage());
                 }
             }
         }
@@ -108,10 +108,10 @@ public class ComputeToaReflectancesOp extends Operator {
                                                                sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 targetProduct.addBand(targetBand);
-                sourceBandMap.put(targetBand, sourceBand);
 
                 final double conversionFactor = PI / (cos(toRadians(solarZenithAngle)) * 1000.0 * solarIrradiance);
                 conversionFactorMap.put(targetBand, conversionFactor);
+                sourceBandMap.put(targetBand, sourceBand);
             } else if (sourceBand.getName().startsWith("mask")) {
                 final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
                 final double solarIrradiance = getAverageValue(table,
@@ -119,31 +119,27 @@ public class ComputeToaReflectancesOp extends Operator {
                                                                sourceBand.getSpectralBandwidth());
                 targetBand.setSolarFlux((float) solarIrradiance);
                 final FlagCoding flagCoding = sourceBand.getFlagCoding();
+                targetBand.setSourceImage(sourceBand.getSourceImage());
                 if (flagCoding != null) {
                     targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
                 }
-                sourceBandMap.put(targetBand, sourceBand);
             } else {
                 final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-                sourceBandMap.put(targetBand, sourceBand);
+                targetBand.setSourceImage(sourceBand.getSourceImage());
             }
         }
 
         ProductUtils.copyMasks(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
+        // DO NOT CHANGE TILE SIZE - IT IS NEEDED FOR PROGRESS MONITORING IN THE CLOUD SCREENING!
         targetProduct.setPreferredTileSize(32, 32);
     }
 
     @Override
     public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
-        if (targetBand.getName().startsWith(TOA_REFL)) {
+        if (sourceBandMap.containsKey(targetBand)) {
             computeReflectances(targetBand, targetTile, pm);
-        } else {
-            final Band sourceBand = sourceBandMap.get(targetBand);
-            final Tile sourceTile = getSourceTile(sourceBand, targetTile.getRectangle(), pm);
-
-            targetTile.setRawSamples(sourceTile.getRawSamples());
         }
     }
 
@@ -182,7 +178,7 @@ public class ComputeToaReflectancesOp extends Operator {
                     checkForCancelation(pm);
 
                     targetSamples[targetIndex] = (short) (sourceSamples[sourceIndex] * conversionFactor /
-                            TOA_REFL_SCALING_FACTOR + 0.5);
+                                                          TOA_REFL_SCALING_FACTOR + 0.5);
 
                     ++sourceIndex;
                     ++targetIndex;
@@ -198,6 +194,7 @@ public class ComputeToaReflectancesOp extends Operator {
     }
 
     // todo - move or make an averager class
+
     private static double getAverageValue(double[][] table, double wavelength, double width) {
         final double[] x = table[0];
         final double[] y = table[1];

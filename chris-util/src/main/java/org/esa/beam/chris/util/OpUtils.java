@@ -2,11 +2,16 @@ package org.esa.beam.chris.util;
 
 import org.esa.beam.dataio.chris.ChrisConstants;
 import org.esa.beam.framework.datamodel.Band;
+import org.esa.beam.framework.datamodel.FlagCoding;
 import org.esa.beam.framework.datamodel.MetadataElement;
+import org.esa.beam.framework.datamodel.Placemark;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.ProductData;
+import org.esa.beam.framework.datamodel.RasterDataNode;
+import org.esa.beam.framework.datamodel.TiePointGrid;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
+import org.esa.beam.util.ProductUtils;
 
 import javax.imageio.stream.FileCacheImageInputStream;
 import javax.imageio.stream.ImageInputStream;
@@ -469,5 +474,77 @@ public class OpUtils {
             } catch (IOException ignore) {
             }
         }
+    }
+
+    public static Product createCopy(Product sourceProduct, String name, String type, BandFilter bandFilter) {
+        final int w = sourceProduct.getSceneRasterWidth();
+        final int h = sourceProduct.getSceneRasterHeight();
+        final Product targetProduct = new Product(name, type, w, h);
+
+        // 1. set start and end times
+        targetProduct.setStartTime(sourceProduct.getStartTime());
+        targetProduct.setEndTime(sourceProduct.getEndTime());
+        // 2. copy flag codings
+        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+        // 3. copy all tie point grids
+        for (final TiePointGrid sourceGrid : sourceProduct.getTiePointGrids()) {
+            final String sourceName = sourceGrid.getName();
+            final TiePointGrid targetGrid = ProductUtils.copyTiePointGrid(sourceName, sourceProduct, targetProduct);
+            ProductUtils.copyRasterDataNodeProperties(sourceGrid, targetGrid);
+            targetGrid.setSourceImage(sourceGrid.getSourceImage());
+        }
+        // 4. copy all bands matching the filter
+        for (final Band sourceBand : sourceProduct.getBands()) {
+            if (bandFilter.accept(sourceBand)) {
+                final String sourceName = sourceBand.getName();
+                final Band targetBand = ProductUtils.copyBand(sourceName, sourceProduct, targetProduct);
+                targetBand.setSourceImage(sourceBand.getSourceImage());
+                final FlagCoding flagCoding = sourceBand.getFlagCoding();
+                if (flagCoding != null) {
+                    targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
+                }
+            }
+        }
+        // 5. copy masks
+        ProductUtils.copyMasks(sourceProduct, targetProduct);
+        // 6. copy meta data
+        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
+        // 7. copy pins
+        for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
+            final Placemark pin = sourceProduct.getPinGroup().get(i);
+            targetProduct.getPinGroup().add(new Placemark(pin.getName(),
+                                                          pin.getLabel(),
+                                                          pin.getDescription(),
+                                                          pin.getPixelPos(),
+                                                          pin.getGeoPos(),
+                                                          pin.getPlacemarkDescriptor(),
+                                                          null));
+        }
+        // 8. copy GCPs
+        for (int i = 0; i < sourceProduct.getGcpGroup().getNodeCount(); i++) {
+            final Placemark gcp = sourceProduct.getGcpGroup().get(i);
+            targetProduct.getGcpGroup().add(new Placemark(gcp.getName(),
+                                                          gcp.getLabel(),
+                                                          gcp.getDescription(),
+                                                          gcp.getPixelPos(),
+                                                          gcp.getGeoPos(),
+                                                          gcp.getPlacemarkDescriptor(),
+                                                          null));
+        }
+        // 9. copy pins
+        for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
+            final Placemark pin = sourceProduct.getPinGroup().get(i);
+            targetProduct.getGcpGroup().add(new Placemark(pin.getName(),
+                                                          pin.getLabel(),
+                                                          pin.getDescription(),
+                                                          pin.getPixelPos(),
+                                                          pin.getGeoPos(),
+                                                          pin.getPlacemarkDescriptor(),
+                                                          null));
+        }
+        // 10. set preferred tile size
+        targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
+
+        return targetProduct;
     }
 }

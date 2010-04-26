@@ -19,9 +19,8 @@ package org.esa.beam.chris.operators;
 import org.esa.beam.chris.operators.IctDataRecord.IctDataReader;
 import org.esa.beam.chris.operators.TelemetryFinder.Telemetry;
 import org.esa.beam.chris.util.BandFilter;
+import org.esa.beam.chris.util.OpUtils;
 import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.FlagCoding;
-import org.esa.beam.framework.datamodel.Placemark;
 import org.esa.beam.framework.datamodel.PointingFactoryRegistry;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.datamodel.TiePointGeoCoding;
@@ -32,7 +31,6 @@ import org.esa.beam.framework.gpf.OperatorSpi;
 import org.esa.beam.framework.gpf.annotations.OperatorMetadata;
 import org.esa.beam.framework.gpf.annotations.Parameter;
 import org.esa.beam.framework.gpf.annotations.SourceProduct;
-import org.esa.beam.util.ProductUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -116,7 +114,7 @@ public class PerformGeometricCorrectionOp extends Operator {
 
     private Product createTargetProduct(GeometryCalculator calculator, boolean backscanning) {
         final String productType = sourceProduct.getProductType() + "_GC";
-        final Product targetProduct = createCopy(sourceProduct, "GC", productType, new BandFilter() {
+        final Product targetProduct = OpUtils.createCopy(sourceProduct, "GC", productType, new BandFilter() {
             @Override
             public boolean accept(Band band) {
                 return true;
@@ -174,67 +172,6 @@ public class PerformGeometricCorrectionOp extends Operator {
         targetProduct.addTiePointGrid(lonGrid);
 
         return lonGrid;
-    }
-
-    // todo - this is a quite general utility method (rq-20090708)
-
-    private static Product createCopy(Product sourceProduct, String name, String type, BandFilter bandFilter) {
-        final int w = sourceProduct.getSceneRasterWidth();
-        final int h = sourceProduct.getSceneRasterHeight();
-        final Product targetProduct = new Product(name, type, w, h);
-
-        // 1. set start and end times
-        targetProduct.setStartTime(sourceProduct.getStartTime());
-        targetProduct.setEndTime(sourceProduct.getEndTime());
-
-        // 2. copy flag codings
-        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-
-        // 3. copy all bands from source product to target product
-        for (final Band sourceBand : sourceProduct.getBands()) {
-            if (bandFilter.accept(sourceBand)) {
-                final Band targetBand = ProductUtils.copyBand(sourceBand.getName(), sourceProduct, targetProduct);
-                targetBand.setSourceImage(sourceBand.getSourceImage());
-                final FlagCoding flagCoding = sourceBand.getFlagCoding();
-                if (flagCoding != null) {
-                    targetBand.setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
-                }
-            }
-        }
-
-        // 4. copy masks
-        ProductUtils.copyMasks(sourceProduct, targetProduct);
-
-        // 5. copy metadata tree
-        ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
-
-        // 6. set preferred tile size
-        targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
-
-        // 7. copy pins
-        for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
-            final Placemark pin = sourceProduct.getPinGroup().get(i);
-            targetProduct.getPinGroup().add(new Placemark(pin.getName(),
-                                                          pin.getLabel(),
-                                                          pin.getDescription(),
-                                                          pin.getPixelPos(),
-                                                          pin.getGeoPos(),
-                                                          pin.getPlacemarkDescriptor(),
-                                                          null));
-        }
-        // 8. copy GCPs
-        for (int i = 0; i < sourceProduct.getGcpGroup().getNodeCount(); i++) {
-            final Placemark pin = sourceProduct.getGcpGroup().get(i);
-            targetProduct.getGcpGroup().add(new Placemark(pin.getName(),
-                                                          pin.getLabel(),
-                                                          pin.getDescription(),
-                                                          pin.getPixelPos(),
-                                                          pin.getGeoPos(),
-                                                          pin.getPlacemarkDescriptor(),
-                                                          null));
-        }
-
-        return targetProduct;
     }
 
     static List<GpsDataRecord> readGpsData(File gpsFile, double deltaGPS, double delay) throws IOException {
