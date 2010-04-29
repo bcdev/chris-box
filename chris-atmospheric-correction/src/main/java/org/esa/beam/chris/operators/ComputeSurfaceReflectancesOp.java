@@ -449,6 +449,8 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.05, lowerVis, upperVis);
             aot550 = findMaxAot(tableFactory, darkPixels, aot550, 0.005, lowerVis, upperVis);
 
+            // todo - refine AOT land here (rq-20100428)
+
             if (aot550 == tableFactory.getMinAot()) {
                 final double fza = OpUtils.getAnnotationDouble(sourceProduct,
                                                                ChrisConstants.ATTR_NAME_FLY_BY_ZENITH_ANGLE);
