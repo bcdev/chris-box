@@ -561,6 +561,7 @@ public class OpUtils {
         // 10. set preferred tile size
         targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());
 
+        targetProduct.setAutoGrouping(sourceProduct.getAutoGrouping());
         return targetProduct;
     }
 }

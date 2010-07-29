@@ -116,6 +116,7 @@ public class CorrectDropoutsOp extends Operator {
                 targetMskBands[i].setSampleCoding(targetProduct.getFlagCodingGroup().get(flagCoding.getName()));
             }
         }
+        targetProduct.setAutoGrouping(sourceProduct.getAutoGrouping());
         ProductUtils.copyMasks(sourceProduct, targetProduct);
         dropoutCorrection = new DropoutCorrection(neighborhoodType);
         targetProduct.setPreferredTileSize(targetProduct.getSceneRasterWidth(), 16);

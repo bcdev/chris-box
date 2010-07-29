@@ -144,6 +144,11 @@ public class ComputeToaReflectancesOp extends Operator {
                 targetBand.setSourceImage(sourceBand.getSourceImage());
             }
         }
+        if (copyRadianceBands) {
+            targetProduct.setAutoGrouping("radiance:mask:"+TOA_REFL);
+        } else {
+            targetProduct.setAutoGrouping("mask:"+TOA_REFL);
+        }
 
         ProductUtils.copyMasks(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());

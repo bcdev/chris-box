@@ -76,7 +76,7 @@ public class ApplyDestripingFactorsOp extends Operator {
             }
         }
         ProductUtils.copyMasks(sourceProduct, targetProduct);
-
+        targetProduct.setAutoGrouping(sourceProduct.getAutoGrouping());
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
         OpUtils.setAnnotationString(targetProduct, ChrisConstants.ATTR_NAME_NOISE_REDUCTION,
                                     OpUtils.getAnnotationString(factorProduct,

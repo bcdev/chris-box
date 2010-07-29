@@ -290,7 +290,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 targetProduct.addBand(wvBand);
             }
         }
-
+        targetProduct.setAutoGrouping(SURFACE_REFL+":mask");
         ProductUtils.copyMasks(sourceProduct, targetProduct);
         ProductUtils.copyMetadata(sourceProduct.getMetadataRoot(), targetProduct.getMetadataRoot());
 
