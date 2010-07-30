@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.5.1</version>
+    <version>1.5.2</version>
 
     <packaging>pom</packaging>
 
@@ -105,43 +105,43 @@
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-atmospheric-correction</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-atmospheric-correction-lut</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-cloud-screening</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-geometric-correction</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-noise-reduction</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-toa-reflectance-computation</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam.chris</groupId>
                 <artifactId>chris-util</artifactId>
-                <version>1.5.1</version>
+                <version>1.5.2</version>
             </dependency>
 
             <!-- Ceres System Level Module ############################################# -->

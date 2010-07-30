@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.5.1</version>
+        <version>1.5.2</version>
     </parent>
 
     <packaging>jar</packaging>
@@ -14,7 +14,7 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-geometric-correction</artifactId>
     <name>CHRIS/Proba Geometric Correction Tool</name>
-    <version>1.5.1</version>
+    <version>1.5.2</version>
     <description>CHRIS/Proba Geometric Correction Tool</description>
 
     <dependencies>
