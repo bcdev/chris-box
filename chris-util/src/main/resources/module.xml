@@ -3,7 +3,8 @@
     <symbolicName>chris-util</symbolicName>
     <version>1.5.2</version>
     <name>CHRIS/Proba Utilities</name>
-    <description>CHRIS/Proba Utilities</description>
+
+    <description>This module bundles several CHRIS/Proba Utilities.</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>

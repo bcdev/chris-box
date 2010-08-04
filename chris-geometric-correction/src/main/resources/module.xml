@@ -3,7 +3,8 @@
     <symbolicName>chris-geometric-correction</symbolicName>
     <version>1.5.2</version>
     <name>CHRIS/Proba Geometric Correction Tool</name>
-    <description>CHRIS/Proba Geometric Correction Tool</description>
+    
+    <description>This module comprises the CHRIS/Proba Geometric Correction Tool.</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>

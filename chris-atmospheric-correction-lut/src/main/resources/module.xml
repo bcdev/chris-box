@@ -3,7 +3,8 @@
     <symbolicName>chris-atmospheric-correction-lut</symbolicName>
     <version>1.5.2</version>
     <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table</name>
-    <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table</description>
+
+    <description>This module merely contains the CHRIS/Proba Atmospheric Correction Tool Lookup Table</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
