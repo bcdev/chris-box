@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -425,11 +425,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
 
             for (int i = 0; i < toaBands.length; ++i) {
-                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, ProgressMonitor.NULL);
+                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle);
 
                 for (final Tile.Pos pos : toaTile) {
                     if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                     }
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
 
@@ -515,11 +515,11 @@ public class ComputeSurfaceReflectancesOp extends Operator {
             final Raster waterMaskRaster = waterMaskImage.getData(targetRectangle);
 
             for (int i = 0; i < toaBands.length; ++i) {
-                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, ProgressMonitor.NULL);
+                final Tile toaTile = getSourceTile(toaBands[i], targetRectangle);
 
                 for (final Tile.Pos pos : toaTile) {
                     if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                     }
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int waterMask = waterMaskRaster.getSample(pos.x, pos.y, 0);
@@ -720,7 +720,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                 for (final Tile.Pos pos : redTile) {
                     if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                     }
                     final double nir = nirTile.getSampleDouble(pos.x, pos.y);
                     final double red = redTile.getSampleDouble(pos.x, pos.y);
@@ -807,7 +807,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                         final Tile targetTile = targetTileMap.get(rhoBands[i]);
                         for (final Tile.Pos pos : targetTile) {
                             if (pos.x == targetRectangle.x) {
-                                checkForCancelation(pm);
+                                checkForCancellation();
                             }
 
                             final double rho = targetTile.getSampleDouble(pos.x, pos.y);
@@ -852,7 +852,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final Tile[] rhoTiles = new Tile[rhoBands.length];
 
                 for (int i = 0; i < toaBands.length; i++) {
-                    toaTiles[i] = getSourceTile(toaBands[i], targetRectangle, ProgressMonitor.NULL);
+                    toaTiles[i] = getSourceTile(toaBands[i], targetRectangle);
                 }
                 for (int i = 0; i < rhoBands.length; i++) {
                     rhoTiles[i] = targetTileMap.get(rhoBands[i]);
@@ -865,7 +865,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 // first pass for land pixels only
                 for (final Tile.Pos pos : rhoTiles[0]) {
                     if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                     }
 
                     final double[] toa = new double[toaBands.length];
@@ -902,7 +902,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 // second pass for water pixels only
                 for (final Tile.Pos pos : rhoTiles[0]) {
                     if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                     }
                     final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                     final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
@@ -1037,18 +1037,18 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
         private void ac(Map<Band, Tile> targetTileMap, Rectangle targetRectangle, ProgressMonitor pm) {
             try {
-                pm.beginTask("Computing surface reflectances...", targetRectangle.height * rhoBands.length);
+                pm.beginTask("Computing surface reflectances...", targetRectangle.height);
 
                 final Raster hyperMaskRaster = hyperMaskImage.getData(targetRectangle);
                 final Raster cloudMaskRaster = cloudMaskImage.getData(targetRectangle);
 
                 for (int i = 0; i < rhoBands.length; ++i) {
-                    final Tile toaTile = getSourceTile(toaBands[i], targetRectangle, pm);
+                    final Tile toaTile = getSourceTile(toaBands[i], targetRectangle);
                     final Tile rhoTile = targetTileMap.get(rhoBands[i]);
 
                     for (final Tile.Pos pos : rhoTile) {
                         if (pos.x == targetRectangle.x) {
-                            checkForCancelation(pm);
+                            checkForCancellation();
                         }
                         final int hyperMask = hyperMaskRaster.getSample(pos.x, pos.y, 0);
                         final int cloudMask = cloudMaskRaster.getSample(pos.x, pos.y, 0);
@@ -1087,7 +1087,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                 for (final Tile.Pos pos : interTile) {
                     if (pos.x == targetRectangle.x) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                     }
 
                     final double lowerSample = lowerTile.getSampleDouble(pos.x, pos.y);
@@ -1132,7 +1132,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
 
                     int targetLineOffset = targetTile.getScanlineOffset();
                     for (int y = 0; y < targetRectangle.height; y++) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
 
                         int targetPixelIndex = targetLineOffset;
                         for (int x = 0; x < targetRectangle.width; x++) {
@@ -1163,7 +1163,7 @@ public class ComputeSurfaceReflectancesOp extends Operator {
                 final short[] targetSamples = targetTile.getDataBufferShort();
 
                 for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
-                    checkForCancelation(pm);
+                    checkForCancellation();
 
                     final int minY = Math.max(targetRectangle.y, y - halfKernelSize);
                     final int maxY = Math.min(targetRectangle.height, y + halfKernelSize);

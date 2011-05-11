@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -90,7 +90,7 @@ public class ApplyDestripingFactorsOp extends Operator {
         if (name.startsWith("radiance")) {
             computeRciBand(name, targetTile, pm);
         } else {
-            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle(), pm);
+            final Tile sourceTile = getSourceTile(sourceProduct.getBand(name), targetTile.getRectangle());
             targetTile.setRawSamples(sourceTile.getRawSamples());
         }
     }
@@ -104,8 +104,8 @@ public class ApplyDestripingFactorsOp extends Operator {
             final Rectangle targetRectangle = targetTile.getRectangle();
             final Rectangle factorRectangle = new Rectangle(targetRectangle.x, 0, targetRectangle.width, 1);
 
-            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
-            final Tile factorTile = getSourceTile(factorBand, factorRectangle, pm);
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle);
+            final Tile factorTile = getSourceTile(factorBand, factorRectangle);
 
             final int[] sourceSamples = sourceTile.getDataBufferInt();
             final int[] targetSamples = targetTile.getDataBufferInt();
@@ -116,7 +116,7 @@ public class ApplyDestripingFactorsOp extends Operator {
             int targetOffset = targetTile.getScanlineOffset();
 
             for (int y = 0; y < targetTile.getHeight(); ++y) {
-                checkForCancelation(pm);
+                checkForCancellation();
 
                 int sourceIndex = sourceOffset;
                 int factorIndex = factorOffset;

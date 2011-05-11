@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -216,7 +216,7 @@ public class ExtractEndmembersOp extends Operator {
                     }
                 }
                 if (i % 500 == 0) {
-                    op.checkForCancelation(pm);
+                    op.checkForCancellation();
                     pm.worked(1);
                 }
             }
@@ -257,7 +257,7 @@ public class ExtractEndmembersOp extends Operator {
                     }
                 }
                 if (i % 500 == 0) {
-                    op.checkForCancelation(pm);
+                    op.checkForCancellation();
                     pm.worked(1);
                 }
             }
@@ -281,7 +281,7 @@ public class ExtractEndmembersOp extends Operator {
         final Tile[] tiles = new Tile[bands.length];
 
         for (int i = 0; i < tiles.length; ++i) {
-            tiles[i] = op.getSourceTile(bands[i], rectangle, ProgressMonitor.NULL);
+            tiles[i] = op.getSourceTile(bands[i], rectangle);
         }
 
         return new TilePixelAccessor(tiles);
@@ -294,7 +294,7 @@ public class ExtractEndmembersOp extends Operator {
         final Tile[] tiles = new Tile[bandNames.length];
 
         for (int i = 0; i < tiles.length; ++i) {
-            tiles[i] = op.getSourceTile(product.getBand(bandNames[i]), rectangle, ProgressMonitor.NULL);
+            tiles[i] = op.getSourceTile(product.getBand(bandNames[i]), rectangle);
         }
 
         return new TilePixelAccessor(tiles);

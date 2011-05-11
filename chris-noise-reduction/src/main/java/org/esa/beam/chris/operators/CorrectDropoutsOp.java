@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -130,8 +130,8 @@ public class CorrectDropoutsOp extends Operator {
             final Rectangle sourceRectangle = createSourceRectangle(targetRectangle);
 
             for (int bandIndex = 0; bandIndex < spectralBandCount; ++bandIndex) {
-                checkForCancelation(pm);
-                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle, pm);
+                checkForCancellation();
+                computeDropoutCorrection(bandIndex, targetTileMap, targetRectangle, sourceRectangle);
                 pm.worked(1);
             }
         } finally {
@@ -149,7 +149,7 @@ public class CorrectDropoutsOp extends Operator {
     }
 
     private void computeDropoutCorrection(int bandIndex, Map<Band, Tile> targetTileMap, Rectangle targetRectangle,
-                                          Rectangle sourceRectangle, ProgressMonitor pm) throws OperatorException {
+                                          Rectangle sourceRectangle) throws OperatorException {
         final int minBandIndex = max(bandIndex - neighborBandCount, 0);
         final int maxBandIndex = min(bandIndex + neighborBandCount, spectralBandCount - 1);
         final int bandCount = maxBandIndex - minBandIndex + 1;
@@ -157,8 +157,8 @@ public class CorrectDropoutsOp extends Operator {
         final int[][] sourceRciData = new int[bandCount][];
         final short[][] sourceMskData = new short[bandCount][];
 
-        final Tile sourceRciTile = getSourceTile(sourceRciBands[bandIndex], sourceRectangle, pm);
-        final Tile sourceMskTile = getSourceTile(sourceMskBands[bandIndex], sourceRectangle, pm);
+        final Tile sourceRciTile = getSourceTile(sourceRciBands[bandIndex], sourceRectangle);
+        final Tile sourceMskTile = getSourceTile(sourceMskBands[bandIndex], sourceRectangle);
 
         final int sourceScanlineOffset = sourceRciTile.getScanlineOffset();
         final int sourceScanlineStride = sourceRciTile.getScanlineStride();
@@ -171,8 +171,8 @@ public class CorrectDropoutsOp extends Operator {
 
         for (int i = minBandIndex, j = 1; i <= maxBandIndex; ++i) {
             if (i != bandIndex) {
-                final Tile neighborRciTile = getSourceTile(sourceRciBands[i], sourceRectangle, pm);
-                final Tile neighborMskTile = getSourceTile(sourceMskBands[i], sourceRectangle, pm);
+                final Tile neighborRciTile = getSourceTile(sourceRciBands[i], sourceRectangle);
+                final Tile neighborMskTile = getSourceTile(sourceMskBands[i], sourceRectangle);
 
                 Assert.state(sourceScanlineOffset == neighborRciTile.getScanlineOffset());
                 Assert.state(sourceScanlineStride == neighborRciTile.getScanlineStride());

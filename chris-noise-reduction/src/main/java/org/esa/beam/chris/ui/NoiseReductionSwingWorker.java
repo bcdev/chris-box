@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -111,8 +111,9 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
                                                          destripingFactorsSourceProducts);
 
             try {
-                WriteOp.writeProduct(destripingFactorsProduct, destripingFactorsTargetFile, targetFormatName,
-                                     new SubProgressMonitor(pm, 50));
+                WriteOp writeOp = new WriteOp(destripingFactorsProduct, destripingFactorsTargetFile, targetFormatName);
+                writeOp.setWriteEntireTileRows(true);
+                writeOp.writeProduct(new SubProgressMonitor(pm, 50));
             } finally {
                 destripingFactorsProduct.dispose();
                 for (final Product sourceProduct : destripingFactorsSourceProducts) {
@@ -200,7 +201,9 @@ class NoiseReductionSwingWorker extends ProgressMonitorSwingWorker<Object, Produ
             pm.beginTask("Writing " + targetProduct.getName() + "...", openInApp ? 100 : 95);
 
             try {
-                WriteOp.writeProduct(targetProduct, targetFile, targetFormatName, new SubProgressMonitor(pm, 95));
+                WriteOp writeOp = new WriteOp(targetProduct, targetFile, targetFormatName);
+                writeOp.setWriteEntireTileRows(true);
+                writeOp.writeProduct(new SubProgressMonitor(pm, 50));
             } finally {
                 targetProduct.dispose();
             }

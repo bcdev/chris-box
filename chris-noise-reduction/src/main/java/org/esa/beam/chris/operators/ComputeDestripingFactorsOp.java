@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -216,11 +216,11 @@ public class ComputeDestripingFactorsOp extends Operator {
             final int[] count = new int[panorama.width];
 
             for (int j = 0; j < sourceProducts.length; ++j) {
-                final Tile rci = getSceneTile(sourceRciBands[bandIndex][j], pm);
-                final Tile mask = getSceneTile(sourceMskBands[bandIndex][j], pm);
+                final Tile rci = getSceneTile(sourceRciBands[bandIndex][j]);
+                final Tile mask = getSceneTile(sourceMskBands[bandIndex][j]);
 
                 for (int y = 0; y < rci.getHeight(); ++y) {
-                    checkForCancelation(pm);
+                    checkForCancellation();
                     double r1 = getDouble(rci, 0, y);
 
                     for (int x = 1; x < rci.getWidth(); ++x) {
@@ -343,10 +343,10 @@ public class ComputeDestripingFactorsOp extends Operator {
             // 1. Compute the squares and across-track scalar products of the spectral vectors
             for (final Band[] bands : sourceRciBands) {
                 for (int i = 0; i < bands.length; i++) {
-                    final Tile data = getSceneTile(bands[i], pm);
+                    final Tile data = getSceneTile(bands[i]);
 
                     for (int y = 0; y < data.getHeight(); ++y) {
-                        checkForCancelation(pm);
+                        checkForCancellation();
                         double r1 = getDouble(data, 0, y);
                         sad[0][panorama.getY(i, y)] += r1 * r1;
 
@@ -363,7 +363,7 @@ public class ComputeDestripingFactorsOp extends Operator {
             }
             // 2. Compute the across-track spectral angle differences
             for (int y = 0; y < panorama.height; ++y) {
-                checkForCancelation(pm);
+                checkForCancellation();
                 double norm1 = sqrt(sad[0][y]);
                 sad[0][y] = 0.0;
 
@@ -395,7 +395,7 @@ public class ComputeDestripingFactorsOp extends Operator {
             // 4. Create the edge mask
             final boolean[][] edgeMask = new boolean[panorama.height][panorama.width];
             for (int y = 0; y < panorama.height; ++y) {
-                checkForCancelation(pm);
+                checkForCancellation();
                 for (int x = 1; x < panorama.width; ++x) {
                     if (sad[x][y] > threshold) {
                         edgeMask[y][x] = true;
@@ -428,8 +428,8 @@ public class ComputeDestripingFactorsOp extends Operator {
         }
     }
 
-    private Tile getSceneTile(Band band, ProgressMonitor pm) throws OperatorException {
-        return getSourceTile(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()), pm);
+    private Tile getSceneTile(Band band) throws OperatorException {
+        return getSourceTile(band, new Rectangle(0, 0, band.getSceneRasterWidth(), band.getSceneRasterHeight()));
     }
 
     private static double getEdgeDetectionThreshold(Product product) throws OperatorException {

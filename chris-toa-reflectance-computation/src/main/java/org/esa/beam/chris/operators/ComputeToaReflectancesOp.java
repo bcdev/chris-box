@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -179,7 +179,7 @@ public class ComputeToaReflectancesOp extends Operator {
 
             final Band sourceBand = sourceBandMap.get(targetBand);
             final Rectangle targetRectangle = targetTile.getRectangle();
-            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle);
 
             final double conversionFactor = conversionFactorMap.get(targetBand);
 
@@ -196,7 +196,7 @@ public class ComputeToaReflectancesOp extends Operator {
                 int targetIndex = targetOffset;
 
                 for (int x = 0; x < targetTile.getWidth(); ++x) {
-                    checkForCancelation(pm);
+                    checkForCancellation();
 
                     targetSamples[targetIndex] = (short) (sourceSamples[sourceIndex] * conversionFactor /
                                                           TOA_REFL_SCALING_FACTOR + 0.5);

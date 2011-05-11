@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -263,14 +263,14 @@ public class ExtractFeaturesOp extends Operator {
         pm.beginTask("computing surface features...", targetRectangle.height);
         try {
             final double[] wavelengths = getSpectralWavelengths(sourceBands);
-            final Tile[] sourceTiles = getSourceTiles(sourceBands, targetRectangle, pm);
+            final Tile[] sourceTiles = getSourceTiles(sourceBands, targetRectangle);
 
             final Tile bTile = targetTileMap.get(bBand);
             final Tile wTile = targetTileMap.get(wBand);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    checkForCancelation(pm);
+                    checkForCancellation();
 
                     final double[] reflectances = getSamples(x, y, sourceTiles);
                     final double b = brightness(wavelengths, reflectances);
@@ -287,11 +287,11 @@ public class ExtractFeaturesOp extends Operator {
         }
     }
 
-    private Tile[] getSourceTiles(Band[] bands, Rectangle targetRectangle, ProgressMonitor pm) {
+    private Tile[] getSourceTiles(Band[] bands, Rectangle targetRectangle) {
         final Tile[] sourceTiles = new Tile[bands.length];
 
         for (int i = 0; i < bands.length; ++i) {
-            sourceTiles[i] = getSourceTile(bands[i], targetRectangle, pm);
+            sourceTiles[i] = getSourceTile(bands[i], targetRectangle);
         }
         return sourceTiles;
     }
@@ -314,17 +314,17 @@ public class ExtractFeaturesOp extends Operator {
             final Band[] infBands = bandInterpolator.getInfBands();
             final Band[] supBands = bandInterpolator.getSupBands();
 
-            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle, pm);
+            final Tile sourceTile = getSourceTile(sourceBand, targetRectangle);
             final Tile targetTile = targetTileMap.get(targetBand);
 
-            final Tile[] infTiles = getSourceTiles(infBands, targetRectangle, pm);
-            final Tile[] supTiles = getSourceTiles(supBands, targetRectangle, pm);
+            final Tile[] infTiles = getSourceTiles(infBands, targetRectangle);
+            final Tile[] supTiles = getSourceTiles(supBands, targetRectangle);
 
             final double c = mu / log(transmittance);
 
             for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; ++y) {
                 for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; ++x) {
-                    checkForCancelation(pm);
+                    checkForCancellation();
 
                     final double a = getMean(x, y, infTiles);
                     final double b = getMean(x, y, supTiles);
