@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -18,6 +18,7 @@ package org.esa.beam.chris.operators;
 import com.bc.ceres.core.ProgressMonitor;
 import org.esa.beam.chris.operators.internal.Clusterer;
 import org.esa.beam.cluster.EMCluster;
+import org.esa.beam.framework.datamodel.Band;
 import org.esa.beam.framework.datamodel.Product;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
@@ -51,7 +52,7 @@ public class FindClustersOp extends Operator {
     @TargetProperty
     private EMCluster[] clusters;
 
-    @Parameter(label = "Source bands", sourceProductId = "source")
+    @Parameter(label = "Source bands", rasterDataNodeType = Band.class)
     private String[] sourceBandNames;
     @Parameter(label = "Number of clusters", defaultValue = "14", interval = "[2,99]")
     private int clusterCount;

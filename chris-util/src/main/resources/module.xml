@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-util</symbolicName>
-    <version>1.5.2</version>
+    <version>1.5.3</version>
     <name>CHRIS/Proba Utilities</name>
 
     <description>This module bundles several CHRIS/Proba Utilities.</description>

@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.5.2</version>
+        <version>1.5.3-SNAPSHOT</version>
     </parent>
 
     <packaging>jar</packaging>
@@ -14,7 +14,6 @@
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-cloud-screening</artifactId>
     <name>CHRIS/Proba Cloud Screening Tools</name>
-    <version>1.5.2</version>
     <description>CHRIS/Proba Cloud Screening Tools</description>
 
     <dependencies>

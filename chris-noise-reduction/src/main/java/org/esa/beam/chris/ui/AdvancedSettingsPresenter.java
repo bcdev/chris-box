@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -17,7 +17,6 @@
 package org.esa.beam.chris.ui;
 
 import com.bc.ceres.binding.PropertyContainer;
-import com.bc.ceres.binding.ValidationException;
 import org.esa.beam.chris.operators.ComputeDestripingFactorsOp;
 import org.esa.beam.chris.operators.CorrectDropoutsOp;
 import org.esa.beam.framework.gpf.annotations.ParameterDescriptorFactory;
@@ -41,12 +40,8 @@ class AdvancedSettingsPresenter {
 
     public AdvancedSettingsPresenter() {
         this (new HashMap<String, Object>(7), new HashMap<String, Object>(7));
-        try {
-            destripingPropertyContainer.setDefaultValues();
-            dropoutCorrectionPropertyContainer.setDefaultValues();
-        } catch (ValidationException e) {
-            throw new IllegalStateException(e);
-        }
+        destripingPropertyContainer.setDefaultValues();
+        dropoutCorrectionPropertyContainer.setDefaultValues();
     }
 
     private AdvancedSettingsPresenter(Map<String, Object> destripingParameterMap,

@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-cloud-screening</symbolicName>
-    <version>1.5.2</version>
+    <version>1.5.3</version>
     <name>CHRIS/Proba Cloud Screening Tools</name>
 
     <description>

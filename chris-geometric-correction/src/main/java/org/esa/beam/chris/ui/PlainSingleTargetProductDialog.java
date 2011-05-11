@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Brockmann Consult GmbH (info@brockmann-consult.de)
+ * Copyright (C) 2011 Brockmann Consult GmbH (info@brockmann-consult.de)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -21,7 +21,6 @@ import com.bc.ceres.binding.PropertyContainer;
 import com.bc.ceres.binding.PropertyDescriptor;
 import com.bc.ceres.binding.PropertyDescriptorFactory;
 import com.bc.ceres.binding.PropertySet;
-import com.bc.ceres.binding.ValidationException;
 import com.bc.ceres.swing.TableLayout;
 import com.bc.ceres.swing.binding.BindingContext;
 import com.bc.ceres.swing.binding.PropertyEditor;
@@ -99,11 +98,7 @@ class PlainSingleTargetProductDialog extends SingleTargetProductDialog {
         parameterMap = new HashMap<String, Object>(17);
         final PropertyContainer propertyContainer =
                 PropertyContainer.createMapBacked(parameterMap, operatorClass, parameterDescriptorFactory);
-        try {
-            propertyContainer.setDefaultValues();
-        } catch (ValidationException e) {
-            showErrorDialog(e.getMessage());
-        }
+        propertyContainer.setDefaultValues();
         initProperties(propertyContainer);
 
         form = new JTabbedPane();
