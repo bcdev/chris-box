@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.5.3-SNAPSHOT</version>
+        <version>1.5.3</version>
     </parent>
 
     <packaging>jar</packaging>
@@ -38,7 +38,8 @@
                         </goals>
                         <configuration>
                             <resourceBundles>
-                                <resourceBundle>${project.groupId}:chris-atmospheric-correction-lut-bundle:1.5</resourceBundle>
+                                <resourceBundle>${project.groupId}:chris-atmospheric-correction-lut-bundle:1.5
+                                </resourceBundle>
                             </resourceBundles>
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                         </configuration>

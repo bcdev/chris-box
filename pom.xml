@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.5.3-SNAPSHOT</version>
+    <version>1.5.3</version>
 
     <packaging>pom</packaging>
 
@@ -70,9 +70,9 @@
             <id>bc-mvn-repo-public</id>
             <name>Public Maven Repository at Brockmann Consult</name>
             <url>scp://www.brockmann-consult.de/var/www/www.brockmann-consult.de/mvn/os</url>
-            <uniqueVersion>false</uniqueVersion>            
+            <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
-    </distributionManagement>    
+    </distributionManagement>
 
     <modules>
         <module>chris-bootstrap</module>
@@ -96,11 +96,11 @@
     -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <beam.version>4.9-SNAPSHOT</beam.version>
-        <ceres.version>0.12-SNAPSHOT</ceres.version>
-        <chris.version>1.5.3-SNAPSHOT</chris.version>
+        <beam.version>4.9</beam.version>
+        <ceres.version>0.12</ceres.version>
+        <chris.version>1.5.3</chris.version>
     </properties>
-        
+
 
     <dependencyManagement>
         <dependencies>
@@ -210,13 +210,13 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-unmix</artifactId>
-                <version>1.0.1</version>
+                <version>1.1</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.6.1</version>
+                <version>1.6.101</version>
             </dependency>
 
             <!-- Java Help Library ############################################# -->
@@ -311,6 +311,15 @@
                 </configuration>
             </plugin>
         </plugins>
+
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>1.0-beta-7</version>
+            </extension>
+        </extensions>
+
     </build>
 
     <reporting>
@@ -365,5 +374,5 @@
             </roles>
         </developer>
     </developers>
-    
+
 </project>

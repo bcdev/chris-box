@@ -6,7 +6,7 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.5.3-SNAPSHOT</version>
+        <version>1.5.3</version>
     </parent>
 
     <packaging>jar</packaging>
@@ -17,24 +17,24 @@
     <version>1.5</version>
     <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table Bundle</description>
 
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-remote-resources-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>bundle</goal>
-						</goals>
-						<configuration>
-						  <includes>
-						      <param>**/*.img</param> 
-						  </includes>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <param>**/*.img</param>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
 
