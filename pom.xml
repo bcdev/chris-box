@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
 
     <packaging>pom</packaging>
 
@@ -96,9 +96,9 @@
     -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <beam.version>4.9</beam.version>
-        <ceres.version>0.12</ceres.version>
-        <chris.version>1.5.3</chris.version>
+        <beam.version>4.10</beam.version>
+        <ceres.version>0.13</ceres.version>
+        <chris.version>1.5.4</chris.version>
     </properties>
 
 
@@ -210,7 +210,7 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-unmix</artifactId>
-                <version>1.1</version>
+                <version>1.2</version>
             </dependency>
 
             <dependency>

@@ -17,14 +17,7 @@
 package org.esa.beam.chris.util;
 
 import org.esa.beam.dataio.chris.ChrisConstants;
-import org.esa.beam.framework.datamodel.Band;
-import org.esa.beam.framework.datamodel.FlagCoding;
-import org.esa.beam.framework.datamodel.MetadataElement;
-import org.esa.beam.framework.datamodel.Placemark;
-import org.esa.beam.framework.datamodel.Product;
-import org.esa.beam.framework.datamodel.ProductData;
-import org.esa.beam.framework.datamodel.RasterDataNode;
-import org.esa.beam.framework.datamodel.TiePointGrid;
+import org.esa.beam.framework.datamodel.*;
 import org.esa.beam.framework.gpf.Operator;
 import org.esa.beam.framework.gpf.OperatorException;
 import org.esa.beam.util.ProductUtils;
@@ -528,35 +521,35 @@ public class OpUtils {
         // 7. copy pins
         for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
             final Placemark pin = sourceProduct.getPinGroup().get(i);
-            targetProduct.getPinGroup().add(new Placemark(pin.getName(),
-                                                          pin.getLabel(),
-                                                          pin.getDescription(),
-                                                          pin.getPixelPos(),
-                                                          pin.getGeoPos(),
-                                                          pin.getPlacemarkDescriptor(),
-                                                          null));
+            targetProduct.getPinGroup().add(Placemark.createPointPlacemark(pin.getDescriptor(),
+                                           pin.getName(),
+                                           pin.getLabel(),
+                                           pin.getDescription(),
+                                           pin.getPixelPos(),
+                                           pin.getGeoPos(),
+                                           sourceProduct.getGeoCoding()));
         }
         // 8. copy GCPs
         for (int i = 0; i < sourceProduct.getGcpGroup().getNodeCount(); i++) {
             final Placemark gcp = sourceProduct.getGcpGroup().get(i);
-            targetProduct.getGcpGroup().add(new Placemark(gcp.getName(),
-                                                          gcp.getLabel(),
-                                                          gcp.getDescription(),
-                                                          gcp.getPixelPos(),
-                                                          gcp.getGeoPos(),
-                                                          gcp.getPlacemarkDescriptor(),
-                                                          null));
+            targetProduct.getGcpGroup().add(Placemark.createPointPlacemark(gcp.getDescriptor(),
+                                                                           gcp.getName(),
+                                                                           gcp.getLabel(),
+                                                                           gcp.getDescription(),
+                                                                           gcp.getPixelPos(),
+                                                                           gcp.getGeoPos(),
+                                                                           sourceProduct.getGeoCoding()));
         }
         // 9. copy pins
         for (int i = 0; i < sourceProduct.getPinGroup().getNodeCount(); i++) {
             final Placemark pin = sourceProduct.getPinGroup().get(i);
-            targetProduct.getGcpGroup().add(new Placemark(pin.getName(),
-                                                          pin.getLabel(),
-                                                          pin.getDescription(),
-                                                          pin.getPixelPos(),
-                                                          pin.getGeoPos(),
-                                                          pin.getPlacemarkDescriptor(),
-                                                          null));
+            targetProduct.getGcpGroup().add(Placemark.createPointPlacemark(pin.getDescriptor(),
+                                                                           pin.getName(),
+                                                                           pin.getLabel(),
+                                                                           pin.getDescription(),
+                                                                           pin.getPixelPos(),
+                                                                           pin.getGeoPos(),
+                                                                           sourceProduct.getGeoCoding()));
         }
         // 10. set preferred tile size
         targetProduct.setPreferredTileSize(sourceProduct.getPreferredTileSize());

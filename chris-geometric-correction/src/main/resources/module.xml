@@ -1,12 +1,13 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-geometric-correction</symbolicName>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
     <name>CHRIS/Proba Geometric Correction Tool</name>
     
     <description>This module comprises the CHRIS/Proba Geometric Correction Tool.</description>
 
     <vendor>Brockmann Consult GmbH</vendor>
+    <funding>ESA/ESRIN</funding>
     <contactAddress>Max Planck Str.2, 21502 Geesthacht (Germany)</contactAddress>
     <copyright>(C) 2010 by Brockmann Consult GmbH</copyright>
     <url>http://envisat.esa.int/beam</url>
