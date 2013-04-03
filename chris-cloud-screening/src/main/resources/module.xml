@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-cloud-screening</symbolicName>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
     <name>CHRIS/Proba Cloud Screening Tools</name>
 
     <description>
@@ -26,8 +26,10 @@
     <licenseUrl>http://www.gnu.org/licenses/gpl.html</licenseUrl>
 
     <changelog>
-        Changes since Version 1.5:<br/>
-        [BEAM-1129] Synthetic bands are not displayed (workaround)<br/>
+        Changes since Version 1.5:
+        <br/>
+        [BEAM-1129] Synthetic bands are not displayed (workaround)
+        <br/>
     </changelog>
 
     <dependency>

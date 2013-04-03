@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
 
     <packaging>pom</packaging>
 
@@ -89,16 +89,11 @@
         <!--<module>chris-atmospheric-correction-lut-bundle</module>-->
     </modules>
 
-    <!--
-    In version 3 of Maven the sourceEncoding property will be embedded in the
-    build tag. For now the convention is to that it as property.
-    TODO: Move the sourceEncoding property to the build tag if version 3 is released
-    -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <beam.version>4.10</beam.version>
-        <ceres.version>0.13</ceres.version>
-        <chris.version>1.5.4</chris.version>
+        <beam.version>4.11</beam.version>
+        <ceres.version>0.13.2</ceres.version>
+        <chris.version>1.5.5</chris.version>
     </properties>
 
 

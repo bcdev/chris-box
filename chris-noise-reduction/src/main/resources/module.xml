@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-noise-reduction</symbolicName>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
     <name>CHRIS/Proba Noise Reduction Tool</name>
 
     <description>

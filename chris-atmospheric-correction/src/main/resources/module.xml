@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-atmospheric-correction</symbolicName>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
     <name>CHRIS/Proba Atmospheric Correction Tool</name>
 
     <description>
@@ -9,7 +9,7 @@
         The Atmospheric Correction Tool implements a surface reflectance retrieval algorithm.
         The method uses noise-corrected radiance images and probabilistic cloud masks as generated
         by the Cloud Masking Tool.
-        ]]>        
+        ]]>
     </description>
 
     <vendor>Brockmann Consult GmbH</vendor>

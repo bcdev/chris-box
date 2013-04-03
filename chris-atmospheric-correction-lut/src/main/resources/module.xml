@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-atmospheric-correction-lut</symbolicName>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
     <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table</name>
 
     <description>This module merely contains the CHRIS/Proba Atmospheric Correction Tool Lookup Table</description>

@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-toa-reflectance-computation</symbolicName>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
     <name>CHRIS/Proba TOA Reflectance Computation Tool</name>
 
     <description>
@@ -33,7 +33,7 @@
     <dependency>
         <module>chris-util</module>
     </dependency>
- 
+
     <categories>Application,Processor,CHRIS</categories>
 
     <extension point="beam-ui:actions">
@@ -109,5 +109,5 @@
             <blue>toa_refl_1</blue>
         </rgbProfile>
     </extension>
-    
+
 </module>
