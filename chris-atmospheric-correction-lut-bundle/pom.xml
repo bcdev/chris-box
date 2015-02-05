@@ -13,7 +13,6 @@
 
     <artifactId>chris-atmospheric-correction-lut-bundle</artifactId>
     <name>CHRIS/Proba Atmospheric Correction Tool Lookup Table Bundle</name>
-    <version>2.0.0-SNAPSHOT</version>
     <description>CHRIS/Proba Atmospheric Correction Tool Lookup Table Bundle</description>
 
     <build>
