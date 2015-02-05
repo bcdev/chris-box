@@ -76,9 +76,7 @@
             <id>chrisExtractFeatures</id>
             <class>org.esa.beam.chris.ui.ExtractFeaturesAction</class>
             <text>Feature Extraction...</text>
-            <shortDescr>
-                Extracts features from the selected CHRIS/Proba product which are used for cloud screening
-            </shortDescr>
+            <shortDescr>Extracts features from the selected CHRIS/Proba product which are used for cloud screening</shortDescr>
             <mnemonic/>
             <parent>chris</parent>
             <helpId>chrisCloudScreeningTools</helpId>
