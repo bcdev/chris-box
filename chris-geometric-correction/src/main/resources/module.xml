@@ -1,7 +1,7 @@
 <module>
     <manifestVersion>1.0.0</manifestVersion>
     <symbolicName>chris-geometric-correction</symbolicName>
-    <version>1.5.5</version>
+    <version>2.0.0</version>
     <name>CHRIS/Proba Geometric Correction Tool</name>
 
     <description>This module comprises the CHRIS/Proba Geometric Correction Tool.</description>
@@ -15,9 +15,7 @@
 
     <changelog>
         <![CDATA[
-        <p>Changes in Version 1.5.1
-        [CBOX-79] Insufficient help<br/>
-        [CBOX-78] Not possible to use gpt after CHRIS-Box installation<br/>
+        Initial release for BEAM-5.
         ]]>
     </changelog>
 

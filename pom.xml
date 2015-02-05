@@ -7,7 +7,7 @@
     <name>CHRIS-Box</name>
     <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-box</artifactId>
-    <version>1.5.5</version>
+    <version>2.0.0-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -91,9 +91,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <beam.version>4.11</beam.version>
-        <ceres.version>0.13.2</ceres.version>
-        <chris.version>1.5.5</chris.version>
+        <chris.version>2.0.0-SNAPSHOT</chris.version>
     </properties>
 
 
@@ -147,25 +145,25 @@
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-launcher</artifactId>
-                <version>${ceres.version}</version>
+                <version>0.14.1</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-core</artifactId>
-                <version>${ceres.version}</version>
+                <version>0.14</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-binding</artifactId>
-                <version>${ceres.version}</version>
+                <version>0.14</version>
             </dependency>
 
             <dependency>
                 <groupId>com.bc.ceres</groupId>
                 <artifactId>ceres-ui</artifactId>
-                <version>${ceres.version}</version>
+                <version>0.14</version>
             </dependency>
 
             <!-- BEAM System Level Modules ############################################# -->
@@ -173,45 +171,45 @@
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-core</artifactId>
-                <version>${beam.version}</version>
+                <version>5.0.3</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-ui</artifactId>
-                <version>${beam.version}</version>
+                <version>5.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-visat</artifactId>
-                <version>${beam.version}</version>
+                <version>5.0</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-bootstrap</artifactId>
-                <version>${beam.version}</version>
+                <version>5.0</version>
             </dependency>
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-gpf</artifactId>
-                <version>${beam.version}</version>
+                <version>5.0.4</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-cluster-analysis</artifactId>
-                <version>1.1.1</version>
+                <version>5.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-unmix</artifactId>
-                <version>1.2</version>
+                <version>5.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.esa.beam</groupId>
                 <artifactId>beam-chris-reader</artifactId>
-                <version>1.6.101</version>
+                <version>5.0</version>
             </dependency>
 
             <!-- Java Help Library ############################################# -->

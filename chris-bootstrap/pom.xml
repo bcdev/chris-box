@@ -7,12 +7,11 @@
     <parent>
         <artifactId>chris-box</artifactId>
         <groupId>org.esa.beam.chris</groupId>
-        <version>1.5.5</version>
+        <version>2.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>jar</packaging>
 
-    <groupId>org.esa.beam.chris</groupId>
     <artifactId>chris-bootstrap</artifactId>
     <name>CHRIS/Proba Bootstrap Classpath</name>
     <description>Provides the bootstrap classpath for all CHRIS/Proba modules</description>
